@@ -35,6 +35,15 @@ applyMove prev next curState curValue =
     --                 else Stay
 
 
+findMap : (a -> Maybe x) -> List a -> Maybe x
+findMap toValue =  -- TODO: re-use in code where such `foldl` is used
+    List.foldl
+        (\item maybeResult ->
+            case maybeResult of
+                Nothing -> toValue item
+                _ -> maybeResult
+        )
+        Nothing
 alterKnob : KnobState -> AlterKnob -> Float -> Float
 alterKnob { min, max, step } alter curValue =
     case alter of

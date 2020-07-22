@@ -1,9 +1,6 @@
 module Gui.Def exposing (..)
 
 
-import Gui.Mouse exposing (..)
-
-
 type alias Label = String
 
 type alias ItemChosen = Int
