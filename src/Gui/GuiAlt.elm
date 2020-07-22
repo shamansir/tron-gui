@@ -18,13 +18,6 @@ type alias Id = Int
 type alias Label = String
 
 
-{- type alias Converter a =
-    { toId : a -> String
-    , toLabel : a -> String
-    , fromString : String -> Maybe a
-    } -}
-
-
 type ToggleState
     = On
     | Off
@@ -211,6 +204,10 @@ encodeAt path gui =
 
 encode : Gui msg -> E.Value
 encode = encodeAt []
+
+
+make : List ( Label, Property msg ) -> Gui msg
+make = List.indexedMap (\index ( label, prop ) -> (index, label, prop))
 
 
 ghost : Property msg

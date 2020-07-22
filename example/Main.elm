@@ -10,16 +10,10 @@ import Html.Attributes as Html
 import Gui.GuiAlt as Gui
 import Gui.GuiAlt exposing (Gui)
 
-
-type Msg
-    = NoOp
+import Simple.Gui as Simple
 
 
-gui : Gui Msg
-gui = [ ( "root", Gui.ghost ) ]
-
-
-init = gui
+init = Simple.gui
 
 
 view model =
