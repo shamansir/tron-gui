@@ -3,18 +3,26 @@ module Gui.GuiAlt exposing (..)
 import Json.Encode as E
 
 import Gui.Util exposing (findMap)
-
-
-type alias Label = String
+import Process exposing (Id)
 
 
 type alias Color = String
 
 
-type alias Path = List { item : String, index : Int }
+type alias Path = List Id
 
 
-type alias Error = String
+type alias Id = Int
+
+
+type alias Label = String
+
+
+{- type alias Converter a =
+    { toId : a -> String
+    , toLabel : a -> String
+    , fromString : String -> Maybe a
+    } -}
 
 
 type ToggleState
@@ -22,93 +30,91 @@ type ToggleState
     | Off
 
 
-type Option = Option String -- means it should be unique
-
-
 type ExpandState
     = Collapsed
     | Expanded
-
-
-type alias Gui msg
-    = List ( Label, Property msg )
-
-
-type alias Update =
-    { path : Path
-    , value : String
-    }
 
 
 type Property msg
     = Ghost
     | Slider { min: Float, max : Float, step : Float } Float ( Float -> msg )
     | Input String ( String -> msg )
-    | Choice ( List ( Label, Option ) ) ( Maybe Option ) ( Option -> msg )
+    | Choice ( List ( Id, Label ) ) ( Maybe Id ) ( Id -> Maybe msg )
     | Color Color ( Color -> msg )
     | Toggle ToggleState ( ToggleState -> msg )
     | Button ( () -> msg )
     | Nested ExpandState ( Gui msg )
 
 
-updateProperty : String -> Property msg -> Maybe msg
+type alias Gui msg
+    = List ( Id, Label, Property msg )
+
+
+type Value
+    = FromSlider Float
+    | FromInput String
+    | FromChoice Id
+    | FromColor Color
+    | FromToggle ToggleState
+    | FromButton
+    | Other
+
+
+type alias Update =
+    { path : Path
+    , value : Value
+    }
+
+
+updateProperty : Value -> Property msg -> Maybe msg
 updateProperty value property
-    = case property of
-        Ghost ->
+    = case ( property, value ) of
+        ( Ghost, _ ) ->
             Nothing
-        Slider _ _ toMsg ->
-            String.toFloat value |> Maybe.map toMsg
-        Input _ toMsg ->
-            Just <| toMsg value
-        Choice options maybeDefault toMsg ->
+        ( Slider _ _ toMsg, FromSlider f ) ->
+            Just <| toMsg f
+        ( Input _ toMsg, FromInput s ) ->
+            Just <| toMsg s
+        ( Choice options maybeDefault toMsg, FromChoice chosenId ) ->
             findMap
-                (\( _, Option option ) ->
-                    if value == option
-                        then Just <| toMsg <| Option value
+                (\( id, _ ) ->
+                    if chosenId == id
+                        then toMsg id
                         else Nothing
                 )
                 options
-        Color _ toMsg ->
-            Just <| toMsg value
-        Toggle _ toMsg ->
-            case value of
-                "on" -> Just <| toMsg On
-                "off" -> Just <| toMsg Off
-                _ -> Nothing
-        Button toMsg ->
+        ( Color _ toMsg, FromColor c ) ->
+            Just <| toMsg c
+        ( Toggle _ toMsg, FromToggle t ) ->
+            Just <| toMsg t
+        ( Button toMsg, FromButton ) ->
             Just <| toMsg ()
-        Nested _ _ ->
+        ( Nested _ _, _ ) ->
             Nothing
+        _ -> Nothing
 
 
 update : Update -> Gui msg -> Maybe msg
 update { path, value } gui =
     case path of
         [] -> Nothing
-        { item, index } :: next ->
+        id :: next ->
             gui
-                |> List.indexedMap (Tuple.pair)
                 |> findMap
-                (\( otherIndex, ( otherLabel, property ) ) ->
-                    if (item == otherLabel) && (index == otherIndex) then
-                            case property of
-                                Nested _ innerGui ->
-                                    update { path = next, value = value } innerGui
-                                directProperty ->
-                                    updateProperty value directProperty
-                        else Nothing
+                (\( otherId, _, property ) ->
+                    if id == otherId then
+                        case property of
+                            Nested _ innerGui ->
+                                update { path = next, value = value } innerGui
+                            directProperty ->
+                                updateProperty value directProperty
+                    else Nothing
                 )
 
 
 encodePath : Path -> E.Value
 encodePath=
-    E.list
-        (\{ item, index } ->
-            E.object
-                [ ( "item", E.string item )
-                , ( "index", E.int index )
-                ]
-        )
+    E.list E.int
 
 
 encodePropertyAt : Path -> Property msg -> E.Value
@@ -139,17 +145,16 @@ encodePropertyAt path property =
                 [ ( "type", E.string "choice" )
                 , ( "path", encodePath path )
                 , ( "current", maybeVal
-                    |> Maybe.map (optionToString >> E.string)
+                    |> Maybe.map E.int
                     |> Maybe.withDefault E.null )
                 , ( "options", E.list
-                        (\(index, (label, Option option)) ->
+                        (\(index, label) ->
                             E.object
                                 [ ( "index", E.int index )
                                 , ( "label", E.string label )
-                                , ( "value", E.string option )
                                 ]
                         )
-                        <| List.indexedMap Tuple.pair options )
+                        options )
                 ]
         Color val _ ->
             E.object
@@ -188,18 +193,18 @@ encodeAt path gui =
         [
             ( "gui"
             , E.list
-                (\(index, ( label, property) ) ->
+                (\(id, label, property) ->
                     E.object
-                        [ ( "index", E.int index )
+                        [ ( "index", E.int id )
                         , ( "label", E.string label )
                         , ( "property"
                             , encodePropertyAt
-                                    ( path ++ [ { item = label, index = index } ] )
+                                    ( path ++ [ id ] )
                                     property
                             )
                         ]
                     )
-                <| List.indexedMap Tuple.pair gui
+                gui
             )
         ]
 
@@ -244,18 +249,39 @@ color = Color
 
 
 choice
-     : ( String -> Result Error a )
-    -> ( a -> ( Label, Option ) )
+     : ( a -> Label )
     -> List a
     -> Maybe a
-    -> ( ( Option, Error ) -> msg )
+    -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Property msg
-choice decoder toOption options maybeSelected onError toMsg =
-    Choice
-        (options |> List.map toOption)
-        (maybeSelected |> Maybe.map (toOption >> Tuple.second))
-        (withFallback decoder onError toMsg)
+choice toLabel options maybeCurrent compare toMsg =
+    let
+        indexedOptions =
+            options |> List.indexedMap Tuple.pair
+    in
+        Choice
+            (indexedOptions |> List.map (Tuple.mapSecond toLabel))
+            (maybeCurrent
+                |> Maybe.andThen (\current ->
+                    indexedOptions
+                        |> findMap
+                            (\(index, option) ->
+                                if compare option current then
+                                    Just index else Nothing
+                            )
+                )
+            )
+            (\selectedIndex ->
+                indexedOptions
+                    |> findMap
+                        (\(index, option) ->
+                            if selectedIndex == index
+                                then Just option
+                                else Nothing
+                        )
+                    |> Maybe.map toMsg
+            )
 
 
 strings
@@ -263,11 +289,13 @@ strings
     -> Maybe String
     -> ( String -> msg )
     -> Property msg
-strings options maybeSelected toMsg =
-    Choice
-        (options |> List.map Option |> List.map labelFromValue)
-        (maybeSelected |> Maybe.map Option)
-        (optionToString >> toMsg)
+strings options maybeCurrent toMsg =
+    choice
+        identity
+        options
+        maybeCurrent
+        ((==))
+        toMsg
 
 
 toggle : ToggleState -> (ToggleState -> msg) -> Property msg
@@ -287,7 +315,9 @@ none = Ghost
 
 
 map : ( msgA -> msgB ) -> Gui msgA -> Gui msgB
-map = List.map << Tuple.mapSecond << mapProperty
+map f =
+    List.map
+        (\(id, label, prop) -> (id, label, mapProperty f prop))
 
 
 mapProperty : ( msgA -> msgB ) -> Property msgA -> Property msgB
@@ -300,27 +330,7 @@ mapProperty f prop =
         Toggle val toMsg -> Toggle val (f << toMsg)
         Button toMsg -> Button (f << toMsg)
         Nested state gui -> Nested state (map f gui)
-        Choice vals options toMsg -> Choice vals options (f << toMsg)
-
-
-withFallback
-     : ( String -> Result Error a )
-    -> ( ( Option, Error ) -> msg )
-    -> ( a -> msg ) -> ( Option -> msg )
-withFallback decode onError toMsg =
-    \(Option option) ->
-        case decode option of
-            Ok val -> toMsg val
-            Err error -> onError ( Option option, error )
-
-
-labelFromValue : Option -> ( Label, Option )
-labelFromValue (Option value) =
-    ( value, Option value )
-
-
-optionToString : Option -> String
-optionToString (Option option) = option
+        Choice vals options toMsg -> Choice vals options (Maybe.map f << toMsg)
 
 
 toggleToBool : ToggleState -> Bool

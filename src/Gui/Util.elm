@@ -44,6 +44,8 @@ findMap toValue =  -- TODO: re-use in code where such `foldl` is used
                 _ -> maybeResult
         )
         Nothing
+
+
 alterKnob : KnobState -> AlterKnob -> Float -> Float
 alterKnob { min, max, step } alter curValue =
     case alter of
