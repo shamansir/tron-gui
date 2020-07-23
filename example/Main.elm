@@ -46,7 +46,7 @@ update msg example =
             Simple <| Simple.update simpleMsg simpleExample
         ( ElmsfeuerMsg, Elmsfeuer ) ->
             Elmsfeuer
-        _ -> None
+        _ -> example
 
 
 main =

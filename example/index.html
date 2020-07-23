@@ -5,8 +5,35 @@
     <title>Elm Tron GUI Example</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta charset="utf-8" />
+    <script src="./example/dat.gui.min.js"></script>
+    <script src="./example/app.js"></script>
 </head>
 <body>
-    <script async src="./app.js"></script>
+    <div id="elm-node"></div>
+    <script type="text/javascript">
+
+        console.log(window);
+
+        // Start the Elm application.
+        var app = Elm.Main.init({
+            node : document.getElementById("elm-node")
+        });
+
+        // When a command goes to the `sendMessage` port, we pass the message
+        // along to the WebSocket.
+        app.ports.sendMessage.subscribe(function(message) {
+            socket.send(message);
+        });
+
+        // When a message comes into our WebSocket, we pass the message along
+        // to the `messageReceiver` port.
+        socket.addEventListener("message", function(event) {
+            app.ports.messageReceiver.send(event.data);
+        });
+
+        // If you want to use a JavaScript library to manage your WebSocket
+        // connection, replace the code in JS with the alternate implementation.
+    </script>
+
 </body>
 </html>
