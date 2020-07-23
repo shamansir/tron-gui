@@ -4,34 +4,49 @@ module Main exposing (main)
 import Browser
 import Json.Decode as Decode
 import Json.Encode as Encode
-import Html
-import Html.Attributes as Html
+import Html exposing (Html)
+import Html as Html exposing (map, div)
 
 import Gui.GuiAlt as Gui
 import Gui.GuiAlt exposing (Gui)
 
-import Simple.Gui as Simple
+import Simple.Main as Simple
+import Simple.Model as Simple
+import Simple.Msg as Simple
 
 
-init = Simple.gui
+type Msg
+    = SimpleMsg Simple.Msg
+    | ElmsfeuerMsg
 
 
-view model =
-    Html.textarea
-        [ Html.style "border" "0px"
-        , Html.style "width" "100%"
-        , Html.style "height" "100vh"
-        , Html.style "overflow" "hidden"
-        , Html.style "outline" "none"
-        , Html.style "resize" "none"
-        ]
-        [ Html.text
-            <| Encode.encode 4
-            <| Gui.encode init
-        ]
+type Example
+    = Simple Simple.Model
+    | Elmsfeuer
+    | None
 
 
-update msg model = model
+init : Example
+init = Simple Simple.init
+
+
+view : Example -> Html Msg
+view example =
+    case example of
+        Simple simpleExample ->
+            Simple.view simpleExample |> Html.map SimpleMsg
+        Elmsfeuer -> Html.div [] []
+        None -> Html.div [] []
+
+
+update : Msg -> Example -> Example
+update msg example =
+    case ( msg, example ) of
+        ( SimpleMsg simpleMsg, Simple simpleExample ) ->
+            Simple <| Simple.update simpleMsg simpleExample
+        ( ElmsfeuerMsg, Elmsfeuer ) ->
+            Elmsfeuer
+        _ -> None
 
 
 main =

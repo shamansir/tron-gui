@@ -5,32 +5,8 @@ import Gui.GuiAlt as Gui
 import Gui.GuiAlt exposing (Gui)
 
 
-type Choice = A | B | C | D
-
-
-choices : List Choice
-choices = [ A, B, C, D ]
-
-
-type alias Model =
-    { int : Int
-    , float : Float
-    , string : String
-    , choice : Choice
-    , color : Gui.Color
-    , toggle : Bool
-    , buttonPressed : Choice
-    }
-
-
-type Msg
-    = ChangeInt Int
-    | ChangeFloat Float
-    | ChangeString String
-    | ChangeColor Gui.Color
-    | Choose Choice
-    | Switch Bool
-    | Pressed Choice
+import Simple.Model exposing (..)
+import Simple.Msg exposing (..)
 
 
 gui : Model -> Gui Msg
@@ -83,7 +59,6 @@ nestedButtons curChoice =
         ]
 
 
-
 choiceToLabel : Choice -> Gui.Label
 choiceToLabel c =
     case c of
@@ -91,13 +66,3 @@ choiceToLabel c =
         B -> "The B"
         C -> "The C"
         D -> "The D"
-
-
-compareChoices : Choice -> Choice -> Bool
-compareChoices cA cB =
-    case ( cA, cB ) of
-        ( A, A ) -> True
-        ( B, B ) -> True
-        ( C, C ) -> True
-        ( D, D ) -> True
-        _ -> False
