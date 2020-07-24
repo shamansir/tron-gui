@@ -9,8 +9,8 @@ import Simple.Model exposing (..)
 import Simple.Msg exposing (..)
 
 
-gui : Model -> Gui Msg
-gui model =
+for : Model -> Gui Msg
+for model =
     Gui.make
         [ ( "ghost", Gui.ghost )
         , ( "int",

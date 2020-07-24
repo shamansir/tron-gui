@@ -1,5 +1,6 @@
 module Gui.GuiAlt exposing (..)
 
+import Json.Decode as D
 import Json.Encode as E
 
 import Gui.Util exposing (findMap)
@@ -56,6 +57,13 @@ type Value
 type alias Update =
     { path : Path
     , value : Value
+    }
+
+
+type alias PortUpdate =
+    { path : Path
+    , value : E.Value
+    , type_ : String
     }
 
 
@@ -346,3 +354,26 @@ boolToToggle bool =
 
 select : Path -> Gui msg -> Gui msg
 select selector gui = gui
+
+
+valueDecoder : String -> D.Decoder Value
+valueDecoder type_ =
+    case type_ of
+        "ghost" -> D.succeed Other
+        "slider" -> D.float |> D.map FromSlider
+        "text" -> D.string |> D.map FromInput
+        "color" -> D.string |> D.map FromColor
+        "choice" -> D.int |> D.map FromChoice
+        "toggle" -> D.bool |> D.map boolToToggle |> D.map FromToggle
+        "button" -> D.succeed FromButton
+        _ -> D.succeed Other
+
+
+
+fromPort : PortUpdate -> Update -- FIXME: -> Result
+fromPort portUpdate =
+    { path = portUpdate.path
+    , value =
+        D.decodeValue (valueDecoder portUpdate.type_) portUpdate.value
+            |> Result.withDefault Other
+    }

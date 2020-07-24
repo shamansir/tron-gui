@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 
 import Browser
@@ -13,10 +13,12 @@ import Gui.GuiAlt exposing (Gui)
 import Simple.Main as Simple
 import Simple.Model as Simple
 import Simple.Msg as Simple
+import Simple.Gui as SimpleGui
 
 
 type Msg
-    = SimpleMsg Simple.Msg
+    = GuiUpdate Gui.Update
+    | SimpleMsg Simple.Msg
     | ElmsfeuerMsg
 
 
@@ -26,8 +28,13 @@ type Example
     | None
 
 
-init : Example
-init = Simple Simple.init
+init : ( Example, Cmd Msg )
+init =
+    ( Simple.init |> Simple
+    , SimpleGui.for Simple.init
+        |> Gui.encode
+        |> startGui
+    )
 
 
 view : Example -> Html Msg
@@ -39,19 +46,38 @@ view example =
         None -> Html.div [] []
 
 
-update : Msg -> Example -> Example
+update : Msg -> Example -> ( Example, Cmd Msg )
 update msg example =
     case ( msg, example ) of
+        ( GuiUpdate guiUpdate, Simple simpleExample ) ->
+            SimpleGui.for simpleExample
+                |> Gui.update guiUpdate
+                |> Maybe.map (\simpleMsg -> update (SimpleMsg simpleMsg) <| Simple simpleExample)
+                |> Maybe.withDefault ( Simple simpleExample, Cmd.none )
         ( SimpleMsg simpleMsg, Simple simpleExample ) ->
-            Simple <| Simple.update simpleMsg simpleExample
+            ( Simple <| Simple.update simpleMsg simpleExample, Cmd.none )
         ( ElmsfeuerMsg, Elmsfeuer ) ->
-            Elmsfeuer
-        _ -> example
+            ( Elmsfeuer, Cmd.none )
+        _ -> ( example, Cmd.none )
 
 
+subscriptions : Example -> Sub Msg
+subscriptions example =
+    valueUpdate (GuiUpdate << Gui.fromPort)
+
+
+main : Program () Example Msg
 main =
-    Browser.sandbox
-        { init = init
+    Browser.element
+        { init = always init
         , view = view
+        , subscriptions = subscriptions
         , update = update
         }
+
+
+port valueUpdate : (Gui.PortUpdate -> msg) -> Sub msg
+
+port startGui : Encode.Value -> Cmd msg
+
+port updateGui : Encode.Value -> Cmd msg
