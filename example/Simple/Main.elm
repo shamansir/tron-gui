@@ -8,8 +8,8 @@ import Html
 import Html exposing (Html)
 import Html.Attributes as Html
 
-import Gui.GuiAlt as Gui
-import Gui.GuiAlt exposing (Gui)
+import Gui.Alt as Gui
+import Gui.Alt exposing (Gui)
 
 import Simple.Gui as Simple
 import Simple.Model exposing (..)

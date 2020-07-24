@@ -1,8 +1,8 @@
 module Simple.Gui exposing (..)
 
 
-import Gui.GuiAlt as Gui
-import Gui.GuiAlt exposing (Gui)
+import Gui.Alt as Gui
+import Gui.Alt exposing (Gui)
 
 
 import Simple.Model exposing (..)

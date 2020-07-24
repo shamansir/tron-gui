@@ -8,8 +8,8 @@ import Html exposing (Html)
 import Html as Html exposing (map, div)
 import Html.Events as Html exposing (onClick)
 
-import Gui.GuiAlt as Gui
-import Gui.GuiAlt exposing (Gui)
+import Gui.Alt as Gui
+import Gui.Alt exposing (Gui)
 
 import Simple.Main as Simple
 import Simple.Model as Simple

@@ -1,4 +1,4 @@
-module Gui.GuiAlt exposing (..)
+module Gui.Alt exposing (..)
 
 import Json.Decode as D
 import Json.Encode as E

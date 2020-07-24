@@ -1,7 +1,7 @@
 module Simple.Model exposing (..)
 
 
-import Gui.GuiAlt as Gui exposing (Color)
+import Gui.Alt as Gui exposing (Color)
 
 
 type Choice = A | B | C | D
