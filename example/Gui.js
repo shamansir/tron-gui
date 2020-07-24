@@ -77,14 +77,14 @@ function start(document, definition, origSend) {
     } else if (property.type == 'choice') {
 
       let optionsObj = {};
-      property.options.forEach(({ label, value }) => {
-        optionsObj[label] = value;
+      property.options.forEach(({ label, index }) => {
+        optionsObj[label] = index;
       });
 
       const choice = root.add(config, propName, optionsObj).name(label);
       const sender = send(property);
       choice.onFinishChange((value) => {
-        sender(value);
+        sender(parseInt(value));
       });
 
     } else if (property.type == 'button') {
@@ -96,7 +96,7 @@ function start(document, definition, origSend) {
       const toggle = root.add(config, propName).name(label);
       const sender = send(property);
       toggle.onFinishChange((value) => {
-        sender(value ? 'on' : 'off');
+        sender(value);
       });
 
     } else if (property.type == 'slider') {
@@ -108,7 +108,7 @@ function start(document, definition, origSend) {
         .name(label);
       const sender = send(property);
       slider.onFinishChange((value) => {
-        sender(value + '');
+        sender(value);
       });
 
     } else if (property.type == 'text') {
@@ -145,3 +145,5 @@ function start(document, definition, origSend) {
 }
 
 module.exports = start;
+
+window.startGui = start;

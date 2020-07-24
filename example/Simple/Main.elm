@@ -18,7 +18,15 @@ import Simple.Msg exposing (..)
 
 
 update : Msg -> Model -> Model
-update msg model = model
+update msg model =
+    case msg of
+        ChangeInt int -> { model | int = int }
+        ChangeFloat float -> { model | float = float }
+        ChangeString string -> { model | string = string }
+        ChangeColor color -> { model | color = color }
+        Choose choice -> { model | choice = choice }
+        Switch to -> { model | toggle = to }
+        Pressed choice -> { model | buttonPressed = choice }
 
 
 view : Model -> Html Msg
@@ -29,7 +37,9 @@ view model =
         , Html.li [] [ Html.text <| String.fromFloat model.float ]
         , Html.li [] [ Html.text <| model.string ]
         , Html.li [] [ Html.text <| choiceToString model.choice ]
-        , Html.li [] [ Html.text <| String.fromInt model.int ]
+        , Html.li
+            [ Html.style "background-color" model.color ]
+            [ Html.text model.color ]
         , Html.li [] [ Html.text <| if model.toggle then "On" else "Off" ]
         , Html.li [] [ Html.text <| choiceToString model.buttonPressed ]
         ]

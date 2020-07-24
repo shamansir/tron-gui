@@ -28,7 +28,7 @@ init =
     , float = 0.0
     , string = ""
     , choice = A
-    , color = "none"
+    , color = "#ffc200"
     , toggle = False
     , buttonPressed = C
     }

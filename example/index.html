@@ -7,21 +7,19 @@
     <meta charset="utf-8" />
     <script src="./example/dat.gui.min.js"></script>
     <script src="./example/app.js"></script>
+    <script src="./example/Gui.js"></script>
 </head>
 <body>
     <div id="elm-node"></div>
     <script type="text/javascript">
 
-        console.log(window, dat);
-
-        // Start the Elm application.
         var app = Elm.Main.init({
             node : document.getElementById("elm-node")
         });
 
         let latestGui = null;
 
-        app.ports.startGui.subscribe(function(message) {
+        app.ports.startGui.subscribe(function(definition) {
 
             let latestScrollPosition = 0;
 
@@ -32,8 +30,6 @@
                 }
                 latestGui.gui.destroy();
             }
-
-            // console.log('startGui', model);
 
             const sendFn = app.ports.valueUpdate.send;
 
