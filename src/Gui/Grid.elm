@@ -18,7 +18,7 @@ type alias GridCell umsg =
     { cell: Cell umsg
     , nestPos: NestPos
     -- if it's Choice Item, then we'll call this handler on click:
-    , onSelect : Maybe (String -> umsg)
+    , onSelect : Maybe (String -> Maybe umsg)
      -- if it's Choice item, then it has selection state:
     , isSelected: Maybe SelectionState
     , isFocused: FocusState
@@ -75,7 +75,7 @@ doCellPurpose { cell, nestPos, isSelected, onSelect } =
             case isSelected of
                 Just NotSelected ->
                     onSelect
-                        |> Maybe.map ((|>) label)
+                        |> Maybe.andThen ((|>) label)
                         |> Maybe.map (SelectAndSendToUser nestPos)
                         |> Maybe.withDefault (Select nestPos)
                 _ -> NoOp

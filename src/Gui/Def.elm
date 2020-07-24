@@ -15,7 +15,7 @@ type alias Cells umsg = List (Cell umsg)
 
 type alias Handler umsg = (() -> umsg)
 
-type alias ChoiceHandler umsg = (Int -> String -> umsg)
+type alias ChoiceHandler umsg = (Int -> String -> Maybe umsg)
 
 type alias ToggleHandler umsg = (ToggleState -> umsg)
 

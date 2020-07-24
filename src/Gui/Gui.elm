@@ -12,6 +12,7 @@ import Gui.Nest exposing (..)
 import Gui.Grid exposing (..)
 import Gui.Mouse exposing (..)
 import Gui.Util exposing (..)
+import Gui.Alt as Alt exposing (Gui)
 
 
 type alias Model umsg = ( MouseState, Nest umsg )
@@ -35,6 +36,54 @@ extractMouse = Tuple.first
 build : Nest umsg -> Model umsg
 build nest =
     ( Gui.Mouse.init, nest )
+
+
+fromAlt : Alt.Gui msg -> Model umsg
+fromAlt altGui =
+    let
+        props =
+            altGui
+                |> List.map (\(_, label, prop) ->
+                    case prop of
+                        Alt.Ghost ->
+                            Ghost label
+                        Alt.Slider { min, max, step } current toMsg ->
+                            Knob
+                                label
+                                { min = min, max = max, step = step, roundBy = 2, default = current }
+                                current
+                                toMsg
+                        Alt.Input curent toMsg ->
+                            Ghost label -- TODO
+                        Alt.Color curent toMsg ->
+                            Ghost label -- TODO
+                        Alt.Toggle current toMsg ->
+                            Toggle
+                                label
+                                (case current of
+                                    Alt.On -> TurnedOn
+                                    Alt.Off -> TurnedOff
+                                )
+                                (\next ->
+                                    case next of
+                                        TurnedOff -> toMsg Alt.On
+                                        TurnedOn ->toMsg Alt.Off
+                                )
+                        Alt.Button toMsg ->
+                            Button label toMsg
+                        Alt.Choice options maybeCurrent toMsg ->
+                            Choice label Expanded (maybeCurrent |> Maybe.withDefault 0)
+                                (\idx _ -> toMsg idx)
+                                <| oneLine
+                                    (options
+                                        |> List.map Tuple.second
+                                        |> List.map ChoiceItem)
+                        Alt.Nested expanded gui ->
+                            Ghost label -- TODO:
+
+                )
+    in
+        build noChildren
 
 
 update
