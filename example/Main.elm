@@ -17,56 +17,69 @@ import Simple.Gui as SimpleGui
 
 
 type Msg
-    = GuiUpdate Gui.Update
-    | SimpleMsg Simple.Msg
-    | ElmsfeuerMsg
+    = ChangeMode Mode
+    | DatGuiUpdate Gui.Update
+    | NoOp
 
 
 type Example
     = Simple Simple.Model
     | Elmsfeuer
-    | None
 
 
-init : ( Example, Cmd Msg )
+type Mode
+    = DatGui
+    | Tron
+
+
+type alias Model =
+    ( Mode, Example )
+
+
+init : ( Model, Cmd Msg )
 init =
-    ( Simple.init |> Simple
+    ( ( DatGui, Simple.init |> Simple )
     , SimpleGui.for Simple.init
         |> Gui.encode
-        |> startGui
+        |> startDatGui
     )
 
 
-view : Example -> Html Msg
-view example =
+view : Model -> Html Msg
+view ( mode, example )=
     case example of
         Simple simpleExample ->
-            Simple.view simpleExample |> Html.map SimpleMsg
+            Simple.view simpleExample |> Html.map (always NoOp)
         Elmsfeuer -> Html.div [] []
-        None -> Html.div [] []
 
 
-update : Msg -> Example -> ( Example, Cmd Msg )
-update msg example =
-    case ( msg, example ) of
-        ( GuiUpdate guiUpdate, Simple simpleExample ) ->
-            SimpleGui.for simpleExample
-                |> Gui.update guiUpdate
-                |> Maybe.map (\simpleMsg -> update (SimpleMsg simpleMsg) <| Simple simpleExample)
-                |> Maybe.withDefault ( Simple simpleExample, Cmd.none )
-        ( SimpleMsg simpleMsg, Simple simpleExample ) ->
-            ( Simple <| Simple.update simpleMsg simpleExample, Cmd.none )
-        ( ElmsfeuerMsg, Elmsfeuer ) ->
-            ( Elmsfeuer, Cmd.none )
-        _ -> ( example, Cmd.none )
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg ( mode, example ) =
+    case ( mode, msg, example ) of
+        ( DatGui, DatGuiUpdate guiUpdate, Simple simpleExample ) ->
+            (
+                ( mode
+                , SimpleGui.for simpleExample
+                    |> Gui.update guiUpdate
+                    |> Maybe.map (\simpleMsg ->
+                            Simple.update simpleMsg simpleExample
+                        )
+                    |> Maybe.withDefault simpleExample
+                    |> Simple
+                )
+            , Cmd.none
+            )
+        _ -> ( ( mode, example ), Cmd.none )
 
 
-subscriptions : Example -> Sub Msg
-subscriptions example =
-    valueUpdate (GuiUpdate << Gui.fromPort)
+subscriptions : Model -> Sub Msg
+subscriptions ( mode, _ ) =
+    case mode of
+        DatGui -> updateFromDatGui (DatGuiUpdate << Gui.fromPort)
+        Tron -> Sub.none
 
 
-main : Program () Example Msg
+main : Program () Model Msg
 main =
     Browser.element
         { init = always init
@@ -76,8 +89,10 @@ main =
         }
 
 
-port valueUpdate : (Gui.PortUpdate -> msg) -> Sub msg
+port updateFromDatGui : (Gui.PortUpdate -> msg) -> Sub msg
 
-port startGui : Encode.Value -> Cmd msg
+port startDatGui : Encode.Value -> Cmd msg
 
-port updateGui : Encode.Value -> Cmd msg
+port destroyDatGui : Encode.Value -> Cmd msg
+
+port updateDatGui : Encode.Value -> Cmd msg

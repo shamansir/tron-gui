@@ -19,7 +19,7 @@
 
         let latestGui = null;
 
-        app.ports.startGui.subscribe(function(definition) {
+        app.ports.startDatGui.subscribe((definition) => {
 
             let latestScrollPosition = 0;
 
@@ -31,7 +31,7 @@
                 latestGui.gui.destroy();
             }
 
-            const sendFn = app.ports.valueUpdate.send;
+            const sendFn = app.ports.updateFromDatGui.send;
 
             latestGui = startGui(document, definition, sendFn);
 
@@ -40,6 +40,14 @@
                 scrollAnchorElm.scrollTop = latestScrollPosition;
             }
 
+        });
+
+        app.ports.destroyDatGui.subscribe(() => {
+            if (latestGui) {
+                latestGui.gui.destroy();
+            }
+
+            latestGui = null;
         });
     </script>
 
