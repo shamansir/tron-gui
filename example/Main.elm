@@ -6,6 +6,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Html exposing (Html)
 import Html as Html exposing (map, div)
+import Html.Events as Html exposing (onClick)
 
 import Gui.GuiAlt as Gui
 import Gui.GuiAlt exposing (Gui)
@@ -38,24 +39,47 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( ( DatGui, Simple.init |> Simple )
-    , SimpleGui.for Simple.init
-        |> Gui.encode
-        |> startDatGui
-    )
+    update
+        (ChangeMode DatGui)
+        ( Tron, Simple <| Simple.init )
 
 
 view : Model -> Html Msg
-view ( mode, example )=
-    case example of
-        Simple simpleExample ->
-            Simple.view simpleExample |> Html.map (always NoOp)
-        Elmsfeuer -> Html.div [] []
+view ( mode, example ) =
+    Html.div
+        [ ]
+        [ Html.button
+            [ Html.onClick <| ChangeMode Tron ]
+            [ Html.text "Tron" ]
+        , Html.button
+            [ Html.onClick <| ChangeMode DatGui ]
+            [ Html.text "Dat.gui" ]
+        , case example of
+            Simple simpleExample ->
+                Simple.view simpleExample |> Html.map (always NoOp)
+            Elmsfeuer -> Html.div [] []
+        ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ( mode, example ) =
     case ( mode, msg, example ) of
+        ( _, ChangeMode DatGui, Simple simpleExample ) ->
+            (
+                ( DatGui
+                , example
+                )
+            , SimpleGui.for simpleExample
+                |> Gui.encode
+                |> startDatGui
+            )
+        ( _, ChangeMode Tron, _ ) ->
+            (
+                ( mode
+                , example
+                )
+            , destroyDatGui ()
+            )
         ( DatGui, DatGuiUpdate guiUpdate, Simple simpleExample ) ->
             (
                 ( mode
@@ -93,6 +117,6 @@ port updateFromDatGui : (Gui.PortUpdate -> msg) -> Sub msg
 
 port startDatGui : Encode.Value -> Cmd msg
 
-port destroyDatGui : Encode.Value -> Cmd msg
+port destroyDatGui : () -> Cmd msg
 
 port updateDatGui : Encode.Value -> Cmd msg
