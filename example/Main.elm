@@ -94,6 +94,11 @@ update msg ( mode, example ) =
                 )
             , destroyDatGui ()
             )
+        ( ToSimple smsg, _, Simple smodel ) ->
+            (
+                ( mode, Simple <| Simple.update smsg smodel)
+            , Cmd.none
+            )
         ( TronSUpdate guiUpdate, TronGui, Simple simpleExample ) ->
             let
                 ( ( newModel, commands ), newGui ) =
