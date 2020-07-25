@@ -22,7 +22,7 @@ import Simple.Gui as SimpleGui
 type Msg
     = ChangeMode Mode
     | DatGuiUpdate AGui.Update
-    | TronUpdate (Tron.Msg Msg)
+    | TronSUpdate (Tron.Msg Simple.Msg)
     | ToSimple Simple.Msg
     | NoOp
 
@@ -34,7 +34,7 @@ type Example
 
 type Mode
     = DatGui
-    | Tron
+    | TronGui
 
 
 type alias Model =
@@ -45,7 +45,7 @@ init : ( Model, Cmd Msg )
 init =
     update
         (ChangeMode DatGui)
-        ( Tron, Simple <| Simple.init )
+        ( TronGui, Simple <| Simple.init )
 
 
 view : Model -> Html Msg
@@ -53,21 +53,20 @@ view ( mode, example ) =
     Html.div
         [ ]
         [ Html.button
-            [ Html.onClick <| ChangeMode Tron ]
+            [ Html.onClick <| ChangeMode TronGui ]
             [ Html.text "Tron" ]
         , Html.button
             [ Html.onClick <| ChangeMode DatGui ]
             [ Html.text "Dat.gui" ]
         , case mode of
             DatGui -> Html.div [] []
-            Tron -> case example of
+            TronGui -> case example of
                 Simple simpleExample
                     -> SimpleGui.for simpleExample
                         |> Gui.fromAlt
                         |> Gui.build
-                        |> Gui.map ToSimple
                         |> Gui.view
-                        |> Html.map TronUpdate
+                        |> Html.map TronSUpdate
                 _ -> Html.div [] []
         , case example of
             Simple simpleExample ->
@@ -78,8 +77,8 @@ view ( mode, example ) =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ( mode, example ) =
-    case ( mode, msg, example ) of
-        ( _, ChangeMode DatGui, Simple simpleExample ) ->
+    case ( msg, mode, example ) of
+        ( ChangeMode DatGui, _, Simple simpleExample ) ->
             (
                 ( DatGui
                 , example
@@ -88,16 +87,30 @@ update msg ( mode, example ) =
                 |> AGui.encode
                 |> startDatGui
             )
-        ( _, ChangeMode Tron, _ ) ->
+        ( ChangeMode TronGui, _, _ ) ->
             (
-                ( mode
+                ( TronGui
                 , example
                 )
             , destroyDatGui ()
             )
-        ( DatGui, DatGuiUpdate guiUpdate, Simple simpleExample ) ->
+        ( TronSUpdate guiUpdate, TronGui, Simple simpleExample ) ->
+            let
+                ( ( newModel, commands ), newGui ) =
+                    SimpleGui.for simpleExample
+                        |> Gui.fromAlt
+                        |> Gui.build
+                        |> Gui.update
+                            (\smsg smodel -> ( Simple.update smsg smodel, Cmd.none ) )
+                            simpleExample
+                            guiUpdate
+            in
+                ( ( TronGui, Simple newModel )
+                , commands |> Cmd.map ToSimple
+                )
+        ( DatGuiUpdate guiUpdate, DatGui, Simple simpleExample ) ->
             (
-                ( mode
+                ( DatGui
                 , SimpleGui.for simpleExample
                     |> AGui.update guiUpdate
                     |> Maybe.map (\simpleMsg ->
@@ -115,7 +128,7 @@ subscriptions : Model -> Sub Msg
 subscriptions ( mode, _ ) =
     case mode of
         DatGui -> updateFromDatGui (DatGuiUpdate << AGui.fromPort)
-        Tron -> Sub.none
+        TronGui -> Sub.none
 
 
 main : Program () Model Msg
