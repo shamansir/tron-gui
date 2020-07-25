@@ -8,8 +8,10 @@ import Html exposing (Html)
 import Html as Html exposing (map, div)
 import Html.Events as Html exposing (onClick)
 
-import Gui.Alt as Gui
+import Gui.Alt as AGui
 import Gui.Alt exposing (Gui)
+import Gui.Gui as Gui exposing (view, fromAlt)
+import Gui.Msg as Tron exposing (Msg)
 
 import Simple.Main as Simple
 import Simple.Model as Simple
@@ -19,7 +21,9 @@ import Simple.Gui as SimpleGui
 
 type Msg
     = ChangeMode Mode
-    | DatGuiUpdate Gui.Update
+    | DatGuiUpdate AGui.Update
+    | TronUpdate (Tron.Msg Msg)
+    | ToSimple Simple.Msg
     | NoOp
 
 
@@ -54,6 +58,17 @@ view ( mode, example ) =
         , Html.button
             [ Html.onClick <| ChangeMode DatGui ]
             [ Html.text "Dat.gui" ]
+        , case mode of
+            DatGui -> Html.div [] []
+            Tron -> case example of
+                Simple simpleExample
+                    -> SimpleGui.for simpleExample
+                        |> Gui.fromAlt
+                        |> Gui.build
+                        |> Gui.map ToSimple
+                        |> Gui.view
+                        |> Html.map TronUpdate
+                _ -> Html.div [] []
         , case example of
             Simple simpleExample ->
                 Simple.view simpleExample |> Html.map (always NoOp)
@@ -70,7 +85,7 @@ update msg ( mode, example ) =
                 , example
                 )
             , SimpleGui.for simpleExample
-                |> Gui.encode
+                |> AGui.encode
                 |> startDatGui
             )
         ( _, ChangeMode Tron, _ ) ->
@@ -84,7 +99,7 @@ update msg ( mode, example ) =
             (
                 ( mode
                 , SimpleGui.for simpleExample
-                    |> Gui.update guiUpdate
+                    |> AGui.update guiUpdate
                     |> Maybe.map (\simpleMsg ->
                             Simple.update simpleMsg simpleExample
                         )
@@ -99,7 +114,7 @@ update msg ( mode, example ) =
 subscriptions : Model -> Sub Msg
 subscriptions ( mode, _ ) =
     case mode of
-        DatGui -> updateFromDatGui (DatGuiUpdate << Gui.fromPort)
+        DatGui -> updateFromDatGui (DatGuiUpdate << AGui.fromPort)
         Tron -> Sub.none
 
 
@@ -113,7 +128,7 @@ main =
         }
 
 
-port updateFromDatGui : (Gui.PortUpdate -> msg) -> Sub msg
+port updateFromDatGui : (AGui.PortUpdate -> msg) -> Sub msg
 
 port startDatGui : Encode.Value -> Cmd msg
 

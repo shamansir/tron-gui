@@ -1,8 +1,9 @@
 module Gui.Gui exposing
     ( Msg, Model
-    , view, update, build
+    , view, update, build, map
     , moves, ups, downs
     , extractMouse
+    , fromAlt -- FIXME: temporary
     )
 
 
@@ -38,10 +39,10 @@ build nest =
     ( Gui.Mouse.init, nest )
 
 
-fromAlt : Alt.Gui msg -> Model umsg
+fromAlt : Alt.Gui umsg -> Nest umsg
 fromAlt altGui =
     let
-        props =
+        cells =
             altGui
                 |> List.map (\(_, label, prop) ->
                     case prop of
@@ -79,11 +80,16 @@ fromAlt altGui =
                                         |> List.map Tuple.second
                                         |> List.map ChoiceItem)
                         Alt.Nested expanded gui ->
-                            Ghost label -- TODO:
-
+                            Nested
+                                label
+                                (case expanded of
+                                    Alt.Expanded -> Expanded
+                                    Alt.Collapsed -> Collapsed
+                                )
+                                <| fromAlt gui
                 )
     in
-        build noChildren
+        oneLine cells
 
 
 update
@@ -311,3 +317,41 @@ sequenceUpdate userUpdate userModel msgs ui =
         )
         ( ( userModel, Cmd.none ), ui )
         msgs
+
+
+map : (msgA -> msgB) -> Model msgA -> Model msgB
+map f ( mouse, nest ) =
+    ( mouse
+    , mapNest f nest
+    )
+
+
+mapNest : (msgA -> msgB) -> Nest msgA -> Nest msgB
+mapNest f nest =
+    { shape = nest.shape
+    , focus = nest.focus
+    , cells = nest.cells |> List.map (mapCell f)
+    }
+
+
+mapCell : (msgA -> msgB) -> Cell msgA -> Cell msgB
+mapCell f cell =
+    case cell of
+        Ghost label -> Ghost label
+        ChoiceItem label -> ChoiceItem label
+        Knob label state val handler ->
+            Knob label state val (f << handler)
+        Toggle label state handler ->
+            Toggle label state (f << handler)
+        Button label handler ->
+            Button label (f << handler)
+        Choice label expanded item handler nest ->
+            Choice
+                label
+                expanded
+                item
+                (\i l -> handler i l |> Maybe.map f)
+                (mapNest f nest)
+        Nested label expanded nest ->
+            Nested label expanded <| mapNest f nest
+
