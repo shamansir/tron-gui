@@ -2,7 +2,10 @@ port module Main exposing (main)
 
 
 import Browser
+import Browser.Events as Browser
+import Browser.Dom as Browser
 import Json.Decode as Decode
+import Json.Decode as D
 import Json.Encode as Encode
 import Html exposing (Html)
 import Html as Html exposing (map, div)
@@ -12,6 +15,7 @@ import Gui.Alt as AGui
 import Gui.Alt exposing (Gui)
 import Gui.Gui as Gui exposing (view, fromAlt)
 import Gui.Msg as Tron exposing (Msg)
+import Gui.Mouse exposing (Position)
 
 import Simple.Main as Simple
 import Simple.Model as Simple
@@ -62,9 +66,7 @@ view ( mode, example ) =
             DatGui -> Html.div [] []
             TronGui -> case example of
                 Simple simpleExample
-                    -> SimpleGui.for simpleExample
-                        |> Gui.fromAlt
-                        |> Gui.build
+                    -> tronGuiFor simpleExample
                         |> Gui.view
                         |> Html.map TronSUpdate
                 _ -> Html.div [] []
@@ -102,9 +104,7 @@ update msg ( mode, example ) =
         ( TronSUpdate guiUpdate, TronGui, Simple simpleExample ) ->
             let
                 ( ( newModel, commands ), newGui ) =
-                    SimpleGui.for simpleExample
-                        |> Gui.fromAlt
-                        |> Gui.build
+                    tronGuiFor simpleExample
                         |> Gui.update
                             (\smsg smodel -> ( Simple.update smsg smodel, Cmd.none ) )
                             simpleExample
@@ -129,11 +129,46 @@ update msg ( mode, example ) =
         _ -> ( ( mode, example ), Cmd.none )
 
 
+tronGuiFor : Simple.Model -> Gui.Model Simple.Msg
+tronGuiFor simpleExample =
+    SimpleGui.for simpleExample
+        |> Gui.fromAlt
+        |> Gui.build
+
+
+tellGui f gui =
+    TronSUpdate
+
+
+decodeMousePosition : D.Decoder Position
+decodeMousePosition =
+    D.map2 Position
+        (D.at [ "offsetX"] D.int)
+        (D.at [ "offsetY"] D.int)
+
+
 subscriptions : Model -> Sub Msg
-subscriptions ( mode, _ ) =
+subscriptions ( mode, example ) =
     case mode of
         DatGui -> updateFromDatGui (DatGuiUpdate << AGui.fromPort)
-        TronGui -> Sub.none
+        TronGui ->
+            case example of
+                Simple simpleExample ->
+                    let
+                        gui = tronGuiFor simpleExample
+                    in
+                        Sub.batch
+                            [ Sub.map (Gui.downs gui >> TronSUpdate)
+                                <| Browser.onMouseDown
+                                <| decodeMousePosition
+                            , Sub.map (Gui.ups gui >> TronSUpdate)
+                                <| Browser.onMouseUp
+                                <| decodeMousePosition
+                            , Sub.map (Gui.moves gui >> TronSUpdate)
+                                <| Browser.onMouseMove
+                                <| decodeMousePosition
+                            ]
+                _ -> Sub.none
 
 
 main : Program () Model Msg
