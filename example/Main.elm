@@ -17,6 +17,7 @@ import Gui.Gui as Gui exposing (view, fromAlt)
 import Gui.Gui as Tron exposing (Model)
 import Gui.Msg as Tron exposing (Msg)
 import Gui.Mouse exposing (Position)
+import Gui.Mouse as Tron exposing (MouseState)
 
 import Simple.Main as Simple
 import Simple.Model as Simple
@@ -29,7 +30,7 @@ type Msg
     | DatGuiUpdate AGui.Update
     | TronUpdate Tron.Msg
     | ToSimple Simple.Msg
-    | Joined Tron.Msg Simple.Msg
+    | Joined Tron.Msg Msg
     | NoOp
 
 
@@ -60,6 +61,13 @@ init =
         , gui = Gui.none
         }
 
+joinOrOne : ( Tron.Msg, Maybe Msg ) -> Msg
+joinOrOne (tronMsg, maybeMsg) =
+    case maybeMsg of
+        Just msg ->
+            Joined tronMsg msg
+        Nothing -> TronUpdate tronMsg
+
 
 view : Model -> Html Msg
 view { mode, gui, example } =
@@ -76,14 +84,7 @@ view { mode, gui, example } =
             TronGui ->
                 gui
                     |> Gui.view
-                    |> Html.map
-                        (\(tronMsg, maybeSimpleMsg) ->
-                            case maybeSimpleMsg of
-                                Just (ToSimple simpleMsg) ->
-                                    Joined tronMsg simpleMsg
-                                -- FIXME: the possible messages are not only `toSimple`
-                                _ -> TronUpdate tronMsg
-                        )
+                    |> Html.map joinOrOne
         , case example of
             Simple simpleExample ->
                 Simple.view simpleExample |> Html.map (always NoOp)
@@ -131,23 +132,12 @@ update msg ({ mode, example, gui } as model) =
             , Cmd.none
             )
         ( TronUpdate guiMsg, TronGui, Simple simpleExample ) ->
-            let
-                ( nextGui, maybeUserMsg ) =
-                    gui |> Gui.update guiMsg
-            in
-                -- (\smsg smodel -> ( Simple.update smsg smodel, Cmd.none ) )
-                (
-                    { model
-                    | gui = nextGui
-                    , example =
-                        case maybeUserMsg of
-                            Just (ToSimple simpleMsg) ->
-                                Simple <| Simple.update simpleMsg simpleExample
-                            Just _ -> example -- FIXME
-                            Nothing -> example
-                    }
-                , Cmd.none
-                )
+            (
+                { model
+                | gui = gui |> Gui.update guiMsg
+                }
+            , Cmd.none
+            )
         ( DatGuiUpdate guiUpdate, DatGui, Simple simpleExample ) ->
             (
                 { model
@@ -172,13 +162,6 @@ update msg ({ mode, example, gui } as model) =
 --         |> Gui.build
 
 
-decodeMousePosition : D.Decoder Position
-decodeMousePosition =
-    D.map2 Position
-        (D.at [ "offsetX" ] D.int)
-        (D.at [ "offsetY" ] D.int)
-
-
 subscriptions : Model -> Sub Msg
 subscriptions { mode, example, gui } =
     case mode of
@@ -186,17 +169,7 @@ subscriptions { mode, example, gui } =
         TronGui ->
             case example of
                 Simple simpleExample ->
-                    Sub.batch
-                        [ Sub.map (Gui.downs gui >> TronUpdate)
-                            <| Browser.onMouseDown
-                            <| decodeMousePosition
-                        , Sub.map (Gui.ups gui >> TronUpdate)
-                            <| Browser.onMouseUp
-                            <| decodeMousePosition
-                        , Sub.map (Gui.moves gui >> TronUpdate)
-                            <| Browser.onMouseMove
-                            <| decodeMousePosition
-                        ]
+                    Gui.trackMouse gui |> Sub.map joinOrOne
                 _ -> Sub.none
 
 

@@ -1,6 +1,9 @@
 module Gui.Mouse exposing (..)
 
 
+import Json.Decode as D
+
+
 type alias Position = { x: Int, y : Int }
 
 
@@ -8,6 +11,14 @@ type alias MouseState =
     { pos: Position
     , down : Bool
     , dragFrom : Maybe Position
+    }
+
+
+init : MouseState
+init =
+    { pos = { x=0, y=0 }
+    , down = False
+    , dragFrom = Nothing
     }
 
 
@@ -38,9 +49,22 @@ downs pos prev =
     }
 
 
-init : MouseState
-init =
-    { pos = { x=0, y=0 }
-    , down = False
-    , dragFrom = Nothing
+subPos : Position -> Position -> Position
+subPos toSub prev =
+    { x = prev.x - toSub.x
+    , y = prev.y - toSub.y
     }
+
+
+shift : Position -> MouseState -> MouseState
+shift pos prev =
+    { prev
+    | pos = subPos pos prev.pos
+    }
+
+
+decodePosition : D.Decoder Position
+decodePosition =
+    D.map2 Position
+        (D.at [ "offsetX" ] D.int)
+        (D.at [ "offsetY" ] D.int)

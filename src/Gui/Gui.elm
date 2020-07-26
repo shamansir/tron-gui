@@ -1,10 +1,13 @@
 module Gui.Gui exposing
     ( Model
     , view, update, build, none, map
-    , moves, ups, downs
-    , extractMouse
+    -- , moves, ups, downs
+    , trackMouse
     , fromAlt -- FIXME: temporary
     )
+
+
+import Browser.Events as Browser
 
 
 import Gui.Def exposing (..)
@@ -26,11 +29,11 @@ view = Tuple.second >> Render.view
 
 
 --moves mstate = Gui.Mouse.moves mstate >> TrackMouse
-moves gui pos = extractMouse gui |> Gui.Mouse.moves pos |> TrackMouse
+moves gui pos = extractMouse gui |> Gui.Mouse.moves pos
 --ups mstate = Gui.Mouse.ups mstate >> TrackMouse
-ups gui pos = extractMouse gui |> Gui.Mouse.ups pos |> TrackMouse
+ups gui pos = extractMouse gui |> Gui.Mouse.ups pos
 --downs mstate = Gui.Mouse.downs mstate >> TrackMouse
-downs gui pos = extractMouse gui |> Gui.Mouse.downs pos |> TrackMouse
+downs gui pos = extractMouse gui |> Gui.Mouse.downs pos
 
 
 extractMouse : Model umsg -> MouseState
@@ -103,33 +106,15 @@ fromAlt altGui =
 update
     :  Msg
     -> Model umsg
-    -> ( Model umsg, Maybe umsg )
+    -> Model umsg
 update msg ( ( mouse, ui ) as model ) =
-    case msg of
-
-        TrackMouse newMouse ->
-            case findMessageForMouse model newMouse of
-                Just ( nestPos, alterKnob, maybeUserMsg ) ->
-                    -- FIXME: we know that `Tune` doesn't return the next user message
-                    --        that's why we skip it, but that's totally not right
-                    --        may be exclude handling mouse in a separate function?
-                    ( update (Tune nestPos alterKnob) model |> Tuple.first
-                    , maybeUserMsg
-                    )
-                Nothing ->
-                    ( model
-                    , Nothing
-                    )
+    withMouse mouse <| case msg of
 
         FocusOn pos ->
-            ( ui
-                |> shiftFocusTo pos
-                |> withMouse mouse
-            , Nothing
-            )
+            ui |> shiftFocusTo pos
 
         Tune pos alter ->
-            ( ui
+            ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -140,12 +125,9 @@ update msg ( ( mouse, ui ) as model ) =
                                     handler
                             _ -> cell
                     )
-                |> withMouse mouse
-            , Nothing
-            )
 
         ToggleOn pos ->
-            ( ui
+            ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -154,12 +136,9 @@ update msg ( ( mouse, ui ) as model ) =
                                 Toggle label TurnedOn handler
                             _ -> cell
                     )
-                |> withMouse mouse
-            , Nothing
-            )
 
         ToggleOff pos ->
-            ( ui
+            ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -168,12 +147,9 @@ update msg ( ( mouse, ui ) as model ) =
                                 Toggle label TurnedOff handler
                             _ -> cell
                     )
-                |> withMouse mouse
-            , Nothing
-            )
 
         ExpandNested pos ->
-            ( ui
+            ui
                 |> shiftFocusTo pos
                 |> collapseAllAbove pos
                 |> updateCell pos
@@ -183,12 +159,9 @@ update msg ( ( mouse, ui ) as model ) =
                                 Nested label Expanded cells
                             _ -> cell
                     )
-                |> withMouse mouse
-            , Nothing
-            )
 
         CollapseNested pos ->
-            ( ui
+            ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -197,12 +170,9 @@ update msg ( ( mouse, ui ) as model ) =
                                 Nested label Collapsed cells
                             _ -> cell
                     )
-                |> withMouse mouse
-            , Nothing
-            )
 
         ExpandChoice pos ->
-            ( ui
+            ui
                 |> collapseAllAbove pos
                 |> shiftFocusTo pos
                 |> updateCell pos
@@ -212,12 +182,9 @@ update msg ( ( mouse, ui ) as model ) =
                                 Choice label Expanded selection handler cells
                             _ -> cell
                     )
-                |> withMouse mouse
-            , Nothing
-            )
 
         CollapseChoice pos ->
-            ( ui
+            ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -226,12 +193,9 @@ update msg ( ( mouse, ui ) as model ) =
                                 Choice label Collapsed selection handler cells
                             _ -> cell
                     )
-                |> withMouse mouse
-            , Nothing
-            )
 
         Select pos ->
-            ( let
+            let
                 parentPos = getParentPos pos |> Maybe.withDefault nowhere
                 index = getIndexOf pos |> Maybe.withDefault -1
             in
@@ -244,49 +208,52 @@ update msg ( ( mouse, ui ) as model ) =
                                     Choice label expanded index handler cells
                                 _ -> cell
                         )
-                    |> withMouse mouse
-            , Nothing
-            )
 
         ShiftFocusLeftAt pos ->
-            ( ui |> shiftFocusBy -1 pos |> withMouse mouse
-            , Nothing
-            )
+            ui |> shiftFocusBy -1 pos
 
         ShiftFocusRightAt pos ->
-            ( ui |> shiftFocusBy 1 pos |> withMouse mouse
-            , Nothing
-            )
+            ui |> shiftFocusBy 1 pos
 
         NoOp ->
-            ( ui |> withMouse mouse
-            , Nothing
-            )
+            ui
 
 
 withMouse : MouseState -> Nest umsg -> Model umsg
 withMouse = Tuple.pair
 
 
--- findMessageForMouse : MouseState -> MouseState -> Focus -> Cell umsg -> Msg umsg
--- findMessageForMouse prevMouseState nextMouseState focusedPos focusedCell =
-findMessageForMouse : Model umsg -> MouseState -> Maybe ( NestPos, AlterKnob, Maybe umsg )
-findMessageForMouse ( prevMouseState, ui ) nextMouseState =
+trackMouse : Model umsg -> Sub ( Msg, Maybe umsg )
+trackMouse gui =
+    Sub.batch
+        [ Sub.map (downs gui)
+            <| Browser.onMouseDown
+            <| decodePosition
+        , Sub.map (ups gui)
+            <| Browser.onMouseUp
+            <| decodePosition
+        , Sub.map (moves gui)
+            <| Browser.onMouseMove
+            <| decodePosition
+        ]
+    |> Sub.map (trackMouse_ gui)
+
+
+trackMouse_ : Model umsg -> MouseState -> ( Msg, Maybe umsg )
+trackMouse_ ( prevMouseState, ui ) nextMouseState =
     let (Focus focusedPos) = findFocus ui
     in
         case findCell focusedPos ui of
             Just (Knob _ knobState curValue handler) ->
-                Just <|
-                    let alter = applyMove prevMouseState nextMouseState knobState curValue
-                    in
-                        ( focusedPos
-                        , alter
-                        ,
-                            if (prevMouseState.down == True && nextMouseState.down == False)
-                            then Just <| handler (alterKnob knobState alter curValue)
-                            else Nothing
-                        )
-            _ -> Nothing
+                let alter = applyMove prevMouseState nextMouseState knobState curValue
+                in
+                    ( Tune focusedPos alter
+                    ,
+                        if (prevMouseState.down == True && nextMouseState.down == False)
+                        then Just <| handler (alterKnob knobState alter curValue)
+                        else Nothing
+                    )
+            _ -> ( NoOp, Nothing )
 
 
 map : (msgA -> msgB) -> Model msgA -> Model msgB
@@ -324,4 +291,3 @@ mapCell f cell =
                 (mapNest f nest)
         Nested label expanded nest ->
             Nested label expanded <| mapNest f nest
-
