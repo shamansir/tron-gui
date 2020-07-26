@@ -1,4 +1,4 @@
-module Gui.Grid exposing (..)
+module Gui.Render.Grid exposing (..)
 
 
 import Array exposing (..)
@@ -10,8 +10,8 @@ import Json.Decode as Json
 
 import Gui.Def exposing (..)
 import Gui.Msg exposing (..)
-import Gui.Cell exposing (..)
 import Gui.Nest exposing (..)
+import Gui.Render.Cell exposing (..)
 
 
 type alias GridCell umsg =
@@ -29,6 +29,9 @@ type GridPos = GridPos Int Int
 type alias Row umsg = Array (Maybe (GridCell umsg))
 type alias Rows umsg = Array (Row umsg)
 type Grid umsg = Grid Shape (Rows umsg)
+
+
+type alias GridView umsg = Html ( Msg, Maybe umsg )
 
 
 type Mode
@@ -54,38 +57,41 @@ bottomLeft : GridPos
 bottomLeft = (GridPos 0 0)
 
 
-doCellPurpose : GridCell umsg -> Msg umsg
+doCellPurpose : GridCell umsg -> ( Msg , Maybe umsg )
 doCellPurpose { cell, nestPos, isSelected, onSelect } =
     case cell of
         Knob _ _ _ _ ->
-            FocusOn nestPos -- FIXME: NoOp? We do the same on mousedown
+            ( FocusOn nestPos, Nothing ) -- FIXME: NoOp? We do the same on mousedown
         Toggle _ val handler ->
             -- if val == TurnedOn then ToggleOff nestPos else ToggleOn nestPos
-            if val == TurnedOn then
-                handler TurnedOff |> ToggleOffAndSendToUser nestPos
-            else
-                handler TurnedOn |> ToggleOnAndSendToUser nestPos
+            if val == TurnedOn
+            then ( ToggleOff nestPos, Just <| handler TurnedOff )
+            else ( ToggleOn nestPos, Just <| handler TurnedOn )
         Nested _ state _ ->
-            if state == Expanded then CollapseNested nestPos else ExpandNested nestPos
+            if state == Expanded
+            then ( CollapseNested nestPos, Nothing )
+            else ( ExpandNested nestPos, Nothing )
         Choice _ state _ _ _ ->
-            if state == Expanded then CollapseChoice nestPos else ExpandChoice nestPos
+            if state == Expanded
+            then ( CollapseChoice nestPos, Nothing )
+            else ( ExpandChoice nestPos, Nothing )
         Button _ handler ->
-            handler () |> SendToUser
+            ( NoOp, Just <| handler () )
         ChoiceItem label ->
             case isSelected of
                 Just NotSelected ->
-                    onSelect
+                    ( Select nestPos
+                    , onSelect
                         |> Maybe.andThen ((|>) label)
-                        |> Maybe.map (SelectAndSendToUser nestPos)
-                        |> Maybe.withDefault (Select nestPos)
-                _ -> NoOp
+                    )
+                _ -> ( NoOp, Nothing )
         _ ->
             case isSelected of
-                Just NotSelected -> Select nestPos
-                _ -> NoOp
+                Just NotSelected -> ( Select nestPos, Nothing )
+                _ -> ( NoOp, Nothing )
 
 
-maybeFocus : GridCell umsg -> Msg umsg
+maybeFocus : GridCell umsg -> Msg
 maybeFocus { cell, nestPos } =
     case cell of
         Knob _ _ _ _ ->
@@ -93,7 +99,7 @@ maybeFocus { cell, nestPos } =
         _ -> NoOp
 
 
-viewCellContentDebug : GridPos -> GridCell umsg -> Html (Msg umsg)
+viewCellContentDebug : GridPos -> GridCell umsg -> GridView umsg
 viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected } =
     let
         posStr = showGridPos gridPos ++ " " ++ showNestPos nestPos
@@ -138,7 +144,7 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
                 ]
 
 
-viewCellContent : Focus -> GridPos -> GridCell umsg -> Html (Msg umsg)
+viewCellContent : Focus -> GridPos -> GridCell umsg -> GridView umsg
 viewCellContent focus gridPos gridCell =
     case mode of
         DebugInfo -> viewCellContentDebug gridPos gridCell
@@ -146,9 +152,10 @@ viewCellContent focus gridPos gridCell =
             case gridCell of
                 { cell, nestPos, isSelected }
                     -> renderCell nestPos focus isSelected cell
+                        |> Html.map (\msg -> ( msg, Nothing ))
 
 
-viewCell : Focus -> GridPos -> Maybe (GridCell umsg) -> Html (Msg umsg)
+viewCell : Focus -> GridPos -> Maybe (GridCell umsg) -> GridView umsg
 viewCell focus gridPos maybeGridCell =
     let
         findFocusIntensity cellNestLevel focusNestLevel =
@@ -182,7 +189,7 @@ viewCell focus gridPos maybeGridCell =
                 |> Maybe.map
                     (\gridCell ->
                         [ H.onClick <| doCellPurpose gridCell
-                        , H.onMouseDown <| maybeFocus gridCell
+                        , H.onMouseDown <| ( maybeFocus gridCell, Nothing )
                         ]
                     )
                 |> Maybe.withDefault []
@@ -194,7 +201,7 @@ viewCell focus gridPos maybeGridCell =
         div attributes children
 
 
-viewRow : Focus -> GridPos -> Row umsg -> Html (Msg umsg)
+viewRow : Focus -> GridPos -> Row umsg -> GridView umsg
 viewRow focus (GridPos row col) cols =
     Array.indexedMap
         (\subCol -> viewCell focus (GridPos row (col + subCol)))
@@ -203,7 +210,7 @@ viewRow focus (GridPos row col) cols =
         |> div [ H.class "row" ]
 
 
-viewRows : Focus -> Rows umsg -> Html (Msg umsg)
+viewRows : Focus -> Rows umsg -> GridView umsg
 viewRows focus rows =
     let
         origin  = bottomLeft
@@ -218,7 +225,7 @@ viewRows focus rows =
 
 
 
-viewGrid : Int -> Focus -> Grid umsg -> Html (Msg umsg)
+viewGrid : Int -> Focus -> Grid umsg -> GridView umsg
 viewGrid cellCount focus (Grid _ grid) =
     let
         width = (cellCount * (cellWidth + 2)) + (cellCount * cellMargin * 2)
@@ -395,21 +402,21 @@ findGridCell searchFor (Grid _ rows) =
         ) Nothing
 
 
-keyDownHandler : Nest umsg -> Grid umsg -> Int -> Msg umsg
+keyDownHandler : Nest umsg -> Grid umsg -> Int -> ( Msg, Maybe umsg )
 keyDownHandler nest grid keyCode =
     let
         (Focus currentFocus) = findFocus nest
         maybeCurrentCell = findGridCell currentFocus grid
         executeCell = maybeCurrentCell
             |> Maybe.map doCellPurpose
-            |> Maybe.withDefault NoOp
+            |> Maybe.withDefault ( NoOp, Nothing )
     -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
     in
         case keyCode of
             -- left arrow
-            37 -> ShiftFocusLeftAt currentFocus
+            37 -> ( ShiftFocusLeftAt currentFocus, Nothing )
             -- right arrow
-            39 -> ShiftFocusRightAt currentFocus
+            39 -> ( ShiftFocusRightAt currentFocus, Nothing )
             -- up arrow
             -- 38 -> ShiftFocusUpAt currentFocus
             -- down arrow
@@ -417,15 +424,17 @@ keyDownHandler nest grid keyCode =
             -- up arrow
             38 -> maybeCurrentCell
                 |> Maybe.map (\{ cell } ->
-                        case cell of
+                        ( case cell of
                             Nested _ Collapsed _ -> ExpandNested currentFocus
                             Choice _ Collapsed _ _ _ -> ExpandChoice currentFocus
                             _ -> NoOp
+                        , Nothing
+                        )
                     )
-                |> Maybe.withDefault NoOp -- execute as well?
+                |> Maybe.withDefault ( NoOp, Nothing ) -- execute as well?
             -- down arrow
             40 -> let parentFocus = currentFocus |> shallower in
-                if (isSamePos parentFocus nowhere)
+                ( if (isSamePos parentFocus nowhere)
                     then NoOp
                     else
                         findGridCell parentFocus grid
@@ -436,15 +445,17 @@ keyDownHandler nest grid keyCode =
                                         _ -> NoOp
                                 )
                             |> Maybe.withDefault NoOp
+                , Nothing
+                )
             -- space
             33 -> executeCell
             -- enter
             13 -> executeCell
             -- else
-            _ -> NoOp
+            _ -> ( NoOp, Nothing )
 
 
-view : Nest umsg -> Html (Msg umsg)
+view : Nest umsg -> GridView umsg
 view nest =
     let
         grid = layout nest

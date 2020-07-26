@@ -14,6 +14,7 @@ import Html.Events as Html exposing (onClick)
 import Gui.Alt as AGui
 import Gui.Alt exposing (Gui)
 import Gui.Gui as Gui exposing (view, fromAlt)
+import Gui.Gui as Tron exposing (Model)
 import Gui.Msg as Tron exposing (Msg)
 import Gui.Mouse exposing (Position)
 
@@ -26,8 +27,9 @@ import Simple.Gui as SimpleGui
 type Msg
     = ChangeMode Mode
     | DatGuiUpdate AGui.Update
-    | TronSUpdate (Tron.Msg Simple.Msg)
+    | TronUpdate Tron.Msg
     | ToSimple Simple.Msg
+    | Joined Tron.Msg Simple.Msg
     | NoOp
 
 
@@ -42,18 +44,25 @@ type Mode
 
 
 type alias Model =
-    ( Mode, Example )
+    { mode : Mode
+    , gui : Tron.Model Msg
+    , example : Example
+    }
+    -- ( Mode, Example )
 
 
 init : ( Model, Cmd Msg )
 init =
     update
         (ChangeMode DatGui)
-        ( TronGui, Simple <| Simple.init )
+        { mode = DatGui
+        , example = Simple <| Simple.init
+        , gui = Gui.none
+        }
 
 
 view : Model -> Html Msg
-view ( mode, example ) =
+view { mode, gui, example } =
     Html.div
         [ ]
         [ Html.button
@@ -64,12 +73,17 @@ view ( mode, example ) =
             [ Html.text "Dat.gui" ]
         , case mode of
             DatGui -> Html.div [] []
-            TronGui -> case example of
-                Simple simpleExample
-                    -> tronGuiFor simpleExample
-                        |> Gui.view
-                        |> Html.map TronSUpdate
-                _ -> Html.div [] []
+            TronGui ->
+                gui
+                    |> Gui.view
+                    |> Html.map
+                        (\(tronMsg, maybeSimpleMsg) ->
+                            case maybeSimpleMsg of
+                                Just (ToSimple simpleMsg) ->
+                                    Joined tronMsg simpleMsg
+                                -- FIXME: the possible messages are not only `toSimple`
+                                _ -> TronUpdate tronMsg
+                        )
         , case example of
             Simple simpleExample ->
                 Simple.view simpleExample |> Html.map (always NoOp)
@@ -78,96 +92,111 @@ view ( mode, example ) =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ( mode, example ) =
+update msg ({ mode, example, gui } as model) =
     case ( msg, mode, example ) of
         ( ChangeMode DatGui, _, Simple simpleExample ) ->
             (
-                ( DatGui
-                , example
-                )
+                { model
+                | mode = DatGui
+                -- FIXME: update Gui model as well
+                }
             , SimpleGui.for simpleExample
                 |> AGui.encode
                 |> startDatGui
             )
+        ( ChangeMode TronGui, _, Simple simpleExample ) ->
+            (
+                { model
+                | mode = TronGui
+                , gui = SimpleGui.for simpleExample
+                    |> Gui.fromAlt
+                    |> Gui.build
+                    |> Gui.map ToSimple
+                }
+            , destroyDatGui ()
+            )
         ( ChangeMode TronGui, _, _ ) ->
             (
-                ( TronGui
-                , example
-                )
+                { model
+                | mode = TronGui
+                -- FIXME: build Gui for Elmsfeuer as well
+                }
             , destroyDatGui ()
             )
         ( ToSimple smsg, _, Simple smodel ) ->
             (
-                ( mode, Simple <| Simple.update smsg smodel)
+                { model
+                | example = Simple <| Simple.update smsg smodel
+                }
             , Cmd.none
             )
-        ( TronSUpdate guiUpdate, TronGui, Simple simpleExample ) ->
+        ( TronUpdate guiMsg, TronGui, Simple simpleExample ) ->
             let
-                ( ( newModel, commands ), newGui ) =
-                    tronGuiFor simpleExample
-                        |> Gui.update
-                            (\smsg smodel -> ( Simple.update smsg smodel, Cmd.none ) )
-                            simpleExample
-                            guiUpdate
+                ( nextGui, maybeUserMsg ) =
+                    gui |> Gui.update guiMsg
             in
-                ( ( TronGui, Simple newModel )
-                , commands |> Cmd.map ToSimple
+                -- (\smsg smodel -> ( Simple.update smsg smodel, Cmd.none ) )
+                (
+                    { model
+                    | gui = nextGui
+                    , example =
+                        case maybeUserMsg of
+                            Just (ToSimple simpleMsg) ->
+                                Simple <| Simple.update simpleMsg simpleExample
+                            Just _ -> example -- FIXME
+                            Nothing -> example
+                    }
+                , Cmd.none
                 )
         ( DatGuiUpdate guiUpdate, DatGui, Simple simpleExample ) ->
             (
-                ( DatGui
-                , SimpleGui.for simpleExample
-                    |> AGui.update guiUpdate
-                    |> Maybe.map (\simpleMsg ->
-                            Simple.update simpleMsg simpleExample
-                        )
-                    |> Maybe.withDefault simpleExample
-                    |> Simple
-                )
+                { model
+                | example =
+                    SimpleGui.for simpleExample
+                        |> AGui.update guiUpdate
+                        |> Maybe.map (\simpleMsg ->
+                                Simple.update simpleMsg simpleExample
+                            )
+                        |> Maybe.withDefault simpleExample
+                        |> Simple
+                }
             , Cmd.none
             )
-        _ -> ( ( mode, example ), Cmd.none )
+        _ -> ( model, Cmd.none )
 
 
-tronGuiFor : Simple.Model -> Gui.Model Simple.Msg
-tronGuiFor simpleExample =
-    SimpleGui.for simpleExample
-        |> Gui.fromAlt
-        |> Gui.build
-
-
-tellGui f gui =
-    TronSUpdate
+-- tronGuiFor : Simple.Model -> Gui.Model Simple.Msg
+-- tronGuiFor simpleExample =
+--     SimpleGui.for simpleExample
+--         |> Gui.fromAlt
+--         |> Gui.build
 
 
 decodeMousePosition : D.Decoder Position
 decodeMousePosition =
     D.map2 Position
-        (D.at [ "offsetX"] D.int)
-        (D.at [ "offsetY"] D.int)
+        (D.at [ "offsetX" ] D.int)
+        (D.at [ "offsetY" ] D.int)
 
 
 subscriptions : Model -> Sub Msg
-subscriptions ( mode, example ) =
+subscriptions { mode, example, gui } =
     case mode of
         DatGui -> updateFromDatGui (DatGuiUpdate << AGui.fromPort)
         TronGui ->
             case example of
                 Simple simpleExample ->
-                    let
-                        gui = tronGuiFor simpleExample
-                    in
-                        Sub.batch
-                            [ Sub.map (Gui.downs gui >> TronSUpdate)
-                                <| Browser.onMouseDown
-                                <| decodeMousePosition
-                            , Sub.map (Gui.ups gui >> TronSUpdate)
-                                <| Browser.onMouseUp
-                                <| decodeMousePosition
-                            , Sub.map (Gui.moves gui >> TronSUpdate)
-                                <| Browser.onMouseMove
-                                <| decodeMousePosition
-                            ]
+                    Sub.batch
+                        [ Sub.map (Gui.downs gui >> TronUpdate)
+                            <| Browser.onMouseDown
+                            <| decodeMousePosition
+                        , Sub.map (Gui.ups gui >> TronUpdate)
+                            <| Browser.onMouseUp
+                            <| decodeMousePosition
+                        , Sub.map (Gui.moves gui >> TronUpdate)
+                            <| Browser.onMouseMove
+                            <| decodeMousePosition
+                        ]
                 _ -> Sub.none
 
 

@@ -1,6 +1,6 @@
 module Gui.Gui exposing
-    ( Msg, Model
-    , view, update, build, map
+    ( Model
+    , view, update, build, none, map
     , moves, ups, downs
     , extractMouse
     , fromAlt -- FIXME: temporary
@@ -10,18 +10,21 @@ module Gui.Gui exposing
 import Gui.Def exposing (..)
 import Gui.Msg exposing (..)
 import Gui.Nest exposing (..)
-import Gui.Grid exposing (..)
+import Gui.Render.Grid as Render exposing (..)
 import Gui.Mouse exposing (..)
 import Gui.Util exposing (..)
 import Gui.Alt as Alt exposing (Gui)
 
 
 type alias Model umsg = ( MouseState, Nest umsg )
-type alias View umsg = Grid umsg
-type alias Msg umsg = Gui.Msg.Msg umsg
+-- type alias View umsg = Render.Grid umsg
+-- type alias Msg = Gui.Msg.Msg
 
 
-view = Tuple.second >> Gui.Grid.view
+view : Model umsg -> Render.GridView umsg
+view = Tuple.second >> Render.view
+
+
 --moves mstate = Gui.Mouse.moves mstate >> TrackMouse
 moves gui pos = extractMouse gui |> Gui.Mouse.moves pos |> TrackMouse
 --ups mstate = Gui.Mouse.ups mstate >> TrackMouse
@@ -37,6 +40,11 @@ extractMouse = Tuple.first
 build : Nest umsg -> Model umsg
 build nest =
     ( Gui.Mouse.init, nest )
+
+
+none : Model umsg
+none =
+    ( Gui.Mouse.init, noChildren )
 
 
 fromAlt : Alt.Gui umsg -> Nest umsg
@@ -93,29 +101,35 @@ fromAlt altGui =
 
 
 update
-    : (umsg -> umodel -> ( umodel, Cmd umsg ))
-    -> umodel
-    -> Msg umsg
+    :  Msg
     -> Model umsg
-    -> ( ( umodel, Cmd umsg ), Model umsg )
-update userUpdate userModel msg ( ( mouse, ui ) as model ) =
+    -> ( Model umsg, Maybe umsg )
+update msg ( ( mouse, ui ) as model ) =
     case msg of
 
         TrackMouse newMouse ->
-            update userUpdate userModel
-                (findMessageForMouse model newMouse)
-                ( newMouse, ui )
+            case findMessageForMouse model newMouse of
+                Just ( nestPos, alterKnob, maybeUserMsg ) ->
+                    -- FIXME: we know that `Tune` doesn't return the next user message
+                    --        that's why we skip it, but that's totally not right
+                    --        may be exclude handling mouse in a separate function?
+                    ( update (Tune nestPos alterKnob) model |> Tuple.first
+                    , maybeUserMsg
+                    )
+                Nothing ->
+                    ( model
+                    , Nothing
+                    )
 
         FocusOn pos ->
-            ( ( userModel, Cmd.none )
-            , ui
+            ( ui
                 |> shiftFocusTo pos
                 |> withMouse mouse
+            , Nothing
             )
 
         Tune pos alter ->
-            ( ( userModel, Cmd.none )
-            , ui
+            ( ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -127,11 +141,11 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                             _ -> cell
                     )
                 |> withMouse mouse
+            , Nothing
             )
 
         ToggleOn pos ->
-            ( ( userModel, Cmd.none )
-            , ui
+            ( ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -141,11 +155,11 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                             _ -> cell
                     )
                 |> withMouse mouse
+            , Nothing
             )
 
         ToggleOff pos ->
-            ( ( userModel, Cmd.none )
-            , ui
+            ( ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -155,11 +169,11 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                             _ -> cell
                     )
                 |> withMouse mouse
+            , Nothing
             )
 
         ExpandNested pos ->
-            ( ( userModel, Cmd.none )
-            , ui
+            ( ui
                 |> shiftFocusTo pos
                 |> collapseAllAbove pos
                 |> updateCell pos
@@ -170,11 +184,11 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                             _ -> cell
                     )
                 |> withMouse mouse
+            , Nothing
             )
 
         CollapseNested pos ->
-            ( ( userModel, Cmd.none )
-            , ui
+            ( ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -184,11 +198,11 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                             _ -> cell
                     )
                 |> withMouse mouse
+            , Nothing
             )
 
         ExpandChoice pos ->
-            ( ( userModel, Cmd.none )
-            , ui
+            ( ui
                 |> collapseAllAbove pos
                 |> shiftFocusTo pos
                 |> updateCell pos
@@ -199,11 +213,11 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                             _ -> cell
                     )
                 |> withMouse mouse
+            , Nothing
             )
 
         CollapseChoice pos ->
-            ( ( userModel, Cmd.none )
-            , ui
+            ( ui
                 |> shiftFocusTo pos
                 |> updateCell pos
                     (\cell ->
@@ -213,11 +227,11 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                             _ -> cell
                     )
                 |> withMouse mouse
+            , Nothing
             )
 
         Select pos ->
-            ( ( userModel, Cmd.none )
-            , let
+            ( let
                 parentPos = getParentPos pos |> Maybe.withDefault nowhere
                 index = getIndexOf pos |> Maybe.withDefault -1
             in
@@ -231,46 +245,22 @@ update userUpdate userModel msg ( ( mouse, ui ) as model ) =
                                 _ -> cell
                         )
                     |> withMouse mouse
+            , Nothing
             )
-
-        SendToUser userMsg ->
-            ( userUpdate userMsg userModel
-            , ui |> withMouse mouse
-            )
-
-        SelectAndSendToUser pos userMsg ->
-            sequenceUpdate userUpdate userModel
-                [ Select pos, SendToUser userMsg ]
-                ( ui |> withMouse mouse )
-
-        ToggleOnAndSendToUser pos userMsg ->
-            sequenceUpdate userUpdate userModel
-                [ ToggleOn pos, SendToUser userMsg ]
-                ( ui |> withMouse mouse )
-
-        ToggleOffAndSendToUser pos userMsg ->
-            sequenceUpdate userUpdate userModel
-                [ ToggleOff pos, SendToUser userMsg ]
-                ( ui |> withMouse mouse )
 
         ShiftFocusLeftAt pos ->
-            ( ( userModel, Cmd.none )
-            , ui |> shiftFocusBy -1 pos |> withMouse mouse
+            ( ui |> shiftFocusBy -1 pos |> withMouse mouse
+            , Nothing
             )
 
         ShiftFocusRightAt pos ->
-            ( ( userModel, Cmd.none )
-            , ui |> shiftFocusBy 1 pos |> withMouse mouse
+            ( ui |> shiftFocusBy 1 pos |> withMouse mouse
+            , Nothing
             )
 
-        TuneAndApply pos alter userMsg ->
-            sequenceUpdate userUpdate userModel
-                [ Tune pos alter, SendToUser userMsg ]
-                ( ui |> withMouse mouse )
-
         NoOp ->
-            ( ( userModel, Cmd.none )
-            , ui |> withMouse mouse
+            ( ui |> withMouse mouse
+            , Nothing
             )
 
 
@@ -280,43 +270,23 @@ withMouse = Tuple.pair
 
 -- findMessageForMouse : MouseState -> MouseState -> Focus -> Cell umsg -> Msg umsg
 -- findMessageForMouse prevMouseState nextMouseState focusedPos focusedCell =
-findMessageForMouse : Model umsg -> MouseState -> Msg umsg
+findMessageForMouse : Model umsg -> MouseState -> Maybe ( NestPos, AlterKnob, Maybe umsg )
 findMessageForMouse ( prevMouseState, ui ) nextMouseState =
     let (Focus focusedPos) = findFocus ui
     in
         case findCell focusedPos ui of
             Just (Knob _ knobState curValue handler) ->
-                let alter = applyMove prevMouseState nextMouseState knobState curValue
-                in
-                    if (prevMouseState.down == True && nextMouseState.down == False)
-                    then TuneAndApply focusedPos alter
-                        <| handler (alterKnob knobState alter curValue)
-                    else Tune focusedPos alter
-            _ -> NoOp
-
-
-sequenceUpdate
-    : (umsg -> umodel -> ( umodel, Cmd umsg ))
-    -> umodel
-    -> List (Msg umsg)
-    -> Model umsg
-    -> ( ( umodel, Cmd umsg ), Model umsg )
-sequenceUpdate userUpdate userModel msgs ui =
-    List.foldr
-        (\msg ( ( prevUserModel, prevCommand ), prevUi ) ->
-            let
-                ( ( newUserModel, newUserCommand ), newUi ) =
-                    update userUpdate prevUserModel msg prevUi
-            in
-                (
-                    ( newUserModel
-                    , Cmd.batch [ prevCommand, newUserCommand ]
-                    )
-                , newUi
-                )
-        )
-        ( ( userModel, Cmd.none ), ui )
-        msgs
+                Just <|
+                    let alter = applyMove prevMouseState nextMouseState knobState curValue
+                    in
+                        ( focusedPos
+                        , alter
+                        ,
+                            if (prevMouseState.down == True && nextMouseState.down == False)
+                            then Just <| handler (alterKnob knobState alter curValue)
+                            else Nothing
+                        )
+            _ -> Nothing
 
 
 map : (msgA -> msgB) -> Model msgA -> Model msgB

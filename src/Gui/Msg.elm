@@ -5,7 +5,7 @@ import Gui.Def exposing (..)
 import Gui.Mouse exposing (..)
 
 
-type Msg umsg
+type Msg
     = NoOp
     | TrackMouse MouseState
     | FocusOn NestPos
@@ -20,9 +20,10 @@ type Msg umsg
     -- | Move NestPos Int
     | ShiftFocusLeftAt NestPos
     | ShiftFocusRightAt NestPos
-    | SendToUser umsg
-    | SelectAndSendToUser NestPos umsg
-    | ToggleOnAndSendToUser NestPos umsg
-    | ToggleOffAndSendToUser NestPos umsg
-    | TuneAndApply NestPos AlterKnob umsg
+    -- | SendToUser umsg
+    -- | SelectAndSendToUser NestPos umsg
+    -- | ToggleOnAndSendToUser NestPos umsg
+    -- | ToggleOffAndSendToUser NestPos umsg
+    -- | TuneAndApply NestPos AlterKnob umsg
+
     -- | Color
