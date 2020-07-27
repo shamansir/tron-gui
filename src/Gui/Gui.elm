@@ -241,7 +241,10 @@ trackMouse gui =
 
 trackMouse_ : Model umsg -> MouseState -> ( Msg, Maybe umsg )
 trackMouse_ ( prevMouseState, ui ) nextMouseState =
-    let (Focus focusedPos) = findFocus ui
+    let
+        (Focus focusedPos) = findFocus ui
+        -- prevCell = findCellAtMouse prevMouseState.pos
+        -- nextCell = findCellAtMouse nextMouseState.pos
     in
         case findCell focusedPos ui of
             Just (Knob _ knobState curValue handler) ->
