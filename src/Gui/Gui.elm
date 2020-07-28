@@ -13,6 +13,7 @@ import Browser.Events as Browser
 import Gui.Def exposing (..)
 import Gui.Msg exposing (..)
 import Gui.Nest exposing (..)
+import Gui.Grid as Grid exposing (..)
 import Gui.Render.Grid as Render exposing (..)
 import Gui.Mouse exposing (..)
 import Gui.Util exposing (..)
@@ -243,8 +244,8 @@ trackMouse_ : Model umsg -> MouseState -> ( Msg, Maybe umsg )
 trackMouse_ ( prevMouseState, ui ) nextMouseState =
     let
         (Focus focusedPos) = findFocus ui
-        -- prevCell = findCellAtMouse prevMouseState.pos
-        -- nextCell = findCellAtMouse nextMouseState.pos
+        -- prevCell = Debug.log "prev" <| findCellAt prevMouseState.pos <| layout ui
+        -- nextCell = Debug.log "next" <| findCellAt nextMouseState.pos <| layout ui
     in
         case findCell focusedPos ui of
             Just (Knob _ knobState curValue handler) ->

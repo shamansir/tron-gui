@@ -232,6 +232,26 @@ flip (Grid shape rows) =
         |> Grid shape
 
 
+fold : (GridPos -> GridCell umsg -> a -> a) -> a -> Grid umsg -> a
+fold f init (Grid _ rows) =
+    rows
+        |> Array.indexedMap Tuple.pair
+        |> Array.foldl
+            (\(rowIndex, row) lastAtRow ->
+                row
+                    |> Array.indexedMap Tuple.pair
+                    |> Array.foldl
+                        (\(cellIndex, maybeCell) lastAtCell ->
+                            case maybeCell of
+                                Just cell ->
+                                    f (GridPos rowIndex cellIndex) cell lastAtCell
+                                Nothing -> lastAtCell
+                        )
+                        lastAtRow
+            )
+            init
+
+
 findGridCell : NestPos -> Grid umsg -> Maybe (GridCell umsg)
 findGridCell searchFor (Grid _ rows) =
     rows |> Array.foldl
@@ -248,16 +268,18 @@ findGridCell searchFor (Grid _ rows) =
         ) Nothing
 
 
-{-
-findCellAtPoint : { x : Int, y : Int } -> Nest umsg -> Maybe (Cell umsg)
-findCellAtPoint { x, y } nest =
-    nest |>
-        foldCells (\cell cellPos maybeFound ->
+findCellAt : { x : Int, y : Int } -> Grid umsg -> Maybe (Cell umsg)
+findCellAt { x, y } grid =
+    grid
+        |> fold (\(GridPos row col) gridCell maybeFound ->
             case maybeFound of
                 Just foundCell -> Just foundCell
                 Nothing ->
-                    if isSamePos cellPos pos
-                        then Just cell
+                    if x > ((col - 1) * (cellWidth  + cellMargin))
+                    && y > ((row - 1) * (cellHeight + cellMargin))
+                    && x < ((col + 1) * (cellWidth  + cellMargin))
+                    && y < ((row + 1) * (cellHeight + cellMargin))
+                        then Just gridCell
                         else Nothing
         ) Nothing
--}
+        |> Maybe.map .cell
