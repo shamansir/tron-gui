@@ -29,12 +29,18 @@ view : Model umsg -> Render.GridView umsg
 view = Tuple.second >> Render.view
 
 
---moves mstate = Gui.Mouse.moves mstate >> TrackMouse
-moves gui pos = extractMouse gui |> Gui.Mouse.moves pos
---ups mstate = Gui.Mouse.ups mstate >> TrackMouse
-ups gui pos = extractMouse gui |> Gui.Mouse.ups pos
---downs mstate = Gui.Mouse.downs mstate >> TrackMouse
-downs gui pos = extractMouse gui |> Gui.Mouse.downs pos
+moves size gui pos =
+    extractMouse gui
+        |> Gui.Mouse.moves
+            (Gui.Mouse.subPos (offsetFromSize size gui) pos)
+ups size gui pos =
+    extractMouse gui
+        |> Gui.Mouse.ups
+            (Gui.Mouse.subPos (offsetFromSize size gui) pos)
+downs size gui pos =
+    extractMouse gui
+        |> Gui.Mouse.downs
+            (Gui.Mouse.subPos (offsetFromSize size gui) pos)
 
 
 extractMouse : Model umsg -> MouseState
@@ -224,16 +230,16 @@ withMouse : MouseState -> Nest umsg -> Model umsg
 withMouse = Tuple.pair
 
 
-trackMouse : Model umsg -> Sub ( Msg, Maybe umsg )
-trackMouse gui =
+trackMouse :  { width : Int, height : Int } -> Model umsg -> Sub ( Msg, Maybe umsg )
+trackMouse windowSize gui =
     Sub.batch
-        [ Sub.map (downs gui)
+        [ Sub.map (downs windowSize gui)
             <| Browser.onMouseDown
             <| decodePosition
-        , Sub.map (ups gui)
+        , Sub.map (ups windowSize gui)
             <| Browser.onMouseUp
             <| decodePosition
-        , Sub.map (moves gui)
+        , Sub.map (moves windowSize gui)
             <| Browser.onMouseMove
             <| decodePosition
         ]
@@ -245,7 +251,8 @@ trackMouse_ ( prevMouseState, ui ) nextMouseState =
     let
         (Focus focusedPos) = findFocus ui
         -- prevCell = Debug.log "prev" <| findCellAt prevMouseState.pos <| layout ui
-        -- nextCell = Debug.log "next" <| findCellAt nextMouseState.pos <| layout ui
+        -- _ = Debug.log "pos" nextMouseState.pos
+        nextCell = findCellAt nextMouseState.pos <| layout ui  -- FIXME: store layout in the model
     in
         case findCell focusedPos ui of
             Just (Knob _ knobState curValue handler) ->
@@ -258,6 +265,18 @@ trackMouse_ ( prevMouseState, ui ) nextMouseState =
                         else Nothing
                     )
             _ -> ( NoOp, Nothing )
+
+
+offsetFromSize : { width : Int, height : Int } -> Model msg -> { x : Int, y : Int }
+offsetFromSize { width, height } ( _, nest ) =
+    let
+        ( gridWidthInPx, gridHeightInPx ) =
+            layout nest |> getSizeInPixels -- FIXME: store layout in the model
+    in
+        { x = floor <| (toFloat width / 2) - (toFloat gridWidthInPx / 2)
+        , y = floor <| (toFloat height / 2) - (toFloat gridHeightInPx / 2)
+        }
+
 
 
 map : (msgA -> msgB) -> Model msgA -> Model msgB

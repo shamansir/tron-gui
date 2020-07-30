@@ -152,15 +152,15 @@ viewRows focus rows =
         topRows |> div [ H.class "cells" ]
 
 
-viewGrid : Int -> Focus -> Grid umsg -> GridView umsg
-viewGrid cellCount focus (Grid _ grid) =
+viewGrid : Focus -> Grid umsg -> GridView umsg
+viewGrid focus ((Grid _ rows) as grid) =
     let
-        width = (cellCount * (cellWidth + 2)) + (cellCount * cellMargin * 2)
+        ( width, _ ) = getSizeInPixels grid
     in
         div [ H.class "grid"
             , H.style "width" (String.fromInt width ++ "px")
             ]
-            [ grid |> viewRows focus ]
+            [ rows |> viewRows focus ]
 
 
 
@@ -232,7 +232,7 @@ view nest =
     let
         grid = layout nest
         focus = findFocus nest
-        cellCount = sizeOf nest
+        -- cellCount = sizeOf nest
         --keyDownHandlers = Json.map (\_ -> [ NoOp ]) H.keyCode
         keyDownHandler_ = H.on "keydown" <| Json.map (keyDownHandler nest grid) H.keyCode
     in
@@ -241,4 +241,4 @@ view nest =
             , H.tabindex -1
             , keyDownHandler_
             ]
-            [ grid |> viewGrid cellCount focus ]
+            [ grid |> viewGrid focus ]

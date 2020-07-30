@@ -218,7 +218,7 @@ set (GridPos row col) cell ((Grid shape rows) as grid) =
 
 layout : Nest umsg -> Grid umsg
 layout nest =
-    emptyGrid (10, 6)
+    emptyGrid (sizeOf nest, 6)
         |> putAtRoot (GridPos 0 0) nest
         |> flip
 
@@ -275,11 +275,28 @@ findCellAt { x, y } grid =
             case maybeFound of
                 Just foundCell -> Just foundCell
                 Nothing ->
-                    if x > ((col - 1) * (cellWidth  + cellMargin))
-                    && y > ((row - 1) * (cellHeight + cellMargin))
-                    && x < ((col + 1) * (cellWidth  + cellMargin))
-                    && y < ((row + 1) * (cellHeight + cellMargin))
+                    if x > ((col - 1) * (cellWidth  + cellMargin * 2))
+                    && y > ((row - 1) * (cellHeight + cellMargin * 2))
+                    && x < ((col + 1) * (cellWidth  + cellMargin * 2))
+                    && y < ((row + 1) * (cellHeight + cellMargin * 2))
                         then Just gridCell
                         else Nothing
         ) Nothing
         |> Maybe.map .cell
+
+
+getShape : Grid umsg -> Shape
+getShape (Grid shape _) = shape
+
+
+getSizeInPixels : Grid umsg -> ( Int, Int )
+getSizeInPixels grid =
+    case getShape grid of
+        ( widthInCells, heightInCells ) ->
+            (
+                (widthInCells * cellWidth) +
+                ((widthInCells - 1) * cellMargin * 2)
+            ,
+                (heightInCells * cellHeight) +
+                ((heightInCells - 1) * cellMargin * 2)
+            )

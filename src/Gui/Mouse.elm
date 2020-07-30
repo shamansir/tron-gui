@@ -56,6 +56,13 @@ subPos toSub prev =
     }
 
 
+addPos : Position -> Position -> Position
+addPos toAdd prev =
+    { x = prev.x + toAdd.x
+    , y = prev.y + toAdd.y
+    }
+
+
 shift : Position -> MouseState -> MouseState
 shift pos prev =
     { prev
@@ -66,5 +73,5 @@ shift pos prev =
 decodePosition : D.Decoder Position
 decodePosition =
     D.map2 Position
-        (D.at [ "offsetX" ] D.int)
-        (D.at [ "offsetY" ] D.int)
+        (D.at [ "clientX" ] D.int)
+        (D.at [ "clientY" ] D.int)

@@ -169,7 +169,7 @@ subscriptions { mode, example, gui } =
         TronGui ->
             case example of
                 Simple simpleExample ->
-                    Gui.trackMouse gui |> Sub.map joinOrOne
+                    Gui.trackMouse { width = 1300, height = 720 } gui |> Sub.map joinOrOne
                 _ -> Sub.none
 
 
