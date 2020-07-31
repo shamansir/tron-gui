@@ -85,8 +85,8 @@ fromAlt altGui =
                                 )
                                 (\next ->
                                     case next of
-                                        TurnedOff -> toMsg Alt.On
-                                        TurnedOn ->toMsg Alt.Off
+                                        TurnedOn ->toMsg Alt.On
+                                        TurnedOff -> toMsg Alt.Off
                                 )
                         Alt.Button toMsg ->
                             Button label toMsg
@@ -254,9 +254,11 @@ trackMouse_ ( prevMouseState, ui ) nextMouseState =
         -- _ = Debug.log "pos" nextMouseState.pos
         nextCell = findCellAt nextMouseState.pos <| layout ui  -- FIXME: store layout in the model
     in
+        --case nextCell of
         case findCell focusedPos ui of
             Just (Knob _ knobState curValue handler) ->
-                let alter = applyMove prevMouseState nextMouseState knobState curValue
+                let
+                    alter = applyMove prevMouseState nextMouseState knobState curValue
                 in
                     ( Tune focusedPos alter
                     ,
