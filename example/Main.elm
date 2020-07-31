@@ -152,6 +152,14 @@ update msg ({ mode, example, gui } as model) =
                 }
             , Cmd.none
             )
+        ( Joined guiMsg (ToSimple smsg), _, Simple smodel ) ->
+            (
+                { model
+                | example = Simple <| Simple.update smsg smodel
+                , gui = gui |> Gui.update guiMsg
+                }
+            , Cmd.none
+            )
         _ -> ( model, Cmd.none )
 
 
