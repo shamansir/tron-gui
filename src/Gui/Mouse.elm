@@ -7,6 +7,12 @@ import Json.Decode as D
 type alias Position = { x: Int, y : Int }
 
 
+type MouseAction
+    = Up Position
+    | Down Position
+    | Move Position
+
+
 type alias MouseState =
     { pos: Position
     , down : Bool
@@ -14,38 +20,32 @@ type alias MouseState =
     }
 
 
+apply : MouseAction -> MouseState -> MouseState
+apply action prev =
+    case action of
+        Move pos ->
+            { prev
+            | pos = pos
+            }
+        Up pos ->
+            { prev
+            | pos = pos
+            , down = False
+            , dragFrom = Nothing
+            }
+        Down pos ->
+            { prev
+            | pos = pos
+            , down = True
+            , dragFrom = Just pos
+            }
+
+
 init : MouseState
 init =
     { pos = { x=0, y=0 }
     , down = False
     , dragFrom = Nothing
-    }
-
-
-moves : Position -> MouseState -> MouseState
-moves pos prev =
-    { prev
-    | pos = pos
-    }
-
-
-ups : a -> MouseState -> MouseState
-ups _ prev =
-    { prev
-    | down = False
-    , dragFrom = Nothing
-    }
-
-
-downs : Position -> MouseState -> MouseState
-downs pos prev =
-    { prev
-    | pos = pos
-    , down = True
-    , dragFrom =
-        case prev.dragFrom of
-            Just prevDragPos -> Just prevDragPos
-            Nothing -> Just pos
     }
 
 
