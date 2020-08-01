@@ -7,6 +7,7 @@ module Gui.Gui exposing
     )
 
 
+import Task
 import Browser.Events as Browser
 
 
@@ -20,13 +21,16 @@ import Gui.Util exposing (..)
 import Gui.Alt as Alt exposing (Gui)
 
 
-type alias Model umsg = ( MouseState, Nest umsg )
+type alias Model umsg =
+    { mouse : MouseState
+    , root : Nest umsg
+    }
 -- type alias View umsg = Render.Grid umsg
 -- type alias Msg = Gui.Msg.Msg
 
 
 view : Model umsg -> Render.GridView umsg
-view = Tuple.second >> Render.view
+view = .root >> Render.view
 
 
 moves size gui =
@@ -41,17 +45,17 @@ downs size gui =
 
 
 extractMouse : Model umsg -> MouseState
-extractMouse = Tuple.first
+extractMouse = .mouse
 
 
 build : Nest umsg -> Model umsg
-build nest =
-    ( Gui.Mouse.init, nest )
+build =
+    Model Gui.Mouse.init
 
 
 none : Model umsg
 none =
-    ( Gui.Mouse.init, noChildren )
+    Model Gui.Mouse.init noChildren
 
 
 fromAlt : Alt.Gui umsg -> Nest umsg
@@ -110,124 +114,159 @@ fromAlt altGui =
 update
     :  Msg
     -> Model umsg
-    -> Model umsg
-update msg ( ( mouse, ui ) as model ) =
-    withMouse mouse <| case msg of
-
-        FocusOn pos ->
-            ui |> shiftFocusTo pos
-
-        Tune pos alter ->
-            ui
-                |> shiftFocusTo pos
-                |> updateCell pos
-                    (\cell ->
-                        case cell of
-                            Knob label setup curValue handler ->
-                                Knob label setup
-                                    (alterKnob setup alter curValue)
-                                    handler
-                            _ -> cell
-                    )
-
-        ToggleOn pos ->
-            ui
-                |> shiftFocusTo pos
-                |> updateCell pos
-                    (\cell ->
-                        case cell of
-                            Toggle label _ handler ->
-                                Toggle label TurnedOn handler
-                            _ -> cell
-                    )
-
-        ToggleOff pos ->
-            ui
-                |> shiftFocusTo pos
-                |> updateCell pos
-                    (\cell ->
-                        case cell of
-                            Toggle label _ handler ->
-                                Toggle label TurnedOff handler
-                            _ -> cell
-                    )
-
-        ExpandNested pos ->
-            ui
-                |> shiftFocusTo pos
-                |> collapseAllAbove pos
-                |> updateCell pos
-                    (\cell ->
-                        case cell of
-                            Nested label _ cells ->
-                                Nested label Expanded cells
-                            _ -> cell
-                    )
-
-        CollapseNested pos ->
-            ui
-                |> shiftFocusTo pos
-                |> updateCell pos
-                    (\cell ->
-                        case cell of
-                            Nested label _ cells ->
-                                Nested label Collapsed cells
-                            _ -> cell
-                    )
-
-        ExpandChoice pos ->
-            ui
-                |> collapseAllAbove pos
-                |> shiftFocusTo pos
-                |> updateCell pos
-                    (\cell ->
-                        case cell of
-                            Choice label _ selection handler cells ->
-                                Choice label Expanded selection handler cells
-                            _ -> cell
-                    )
-
-        CollapseChoice pos ->
-            ui
-                |> shiftFocusTo pos
-                |> updateCell pos
-                    (\cell ->
-                        case cell of
-                            Choice label _ selection handler cells ->
-                                Choice label Collapsed selection handler cells
-                            _ -> cell
-                    )
-
-        Select pos ->
+    -> ( Model umsg, Cmd umsg )
+update msg ( { root, mouse } as model ) =
+    case msg of
+        ApplyMouse mouseAction ->
             let
-                parentPos = getParentPos pos |> Maybe.withDefault nowhere
-                index = getIndexOf pos |> Maybe.withDefault -1
+                nextMouseState = mouse |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
+                (Focus focusedPos) = findFocus root
+                -- prevCell = Debug.log "prev" <| findCellAt prevMouseState.pos <| layout ui
+                -- _ = Debug.log "pos" nextMouseState.pos
+                nextCell = findCellAt nextMouseState.pos <| layout root  -- FIXME: store
             in
-                ui
-                    |> shiftFocusTo pos
-                    |> updateCell parentPos
-                        (\cell ->
-                            case cell of
-                                Choice label expanded selection handler cells ->
-                                    Choice label expanded index handler cells
-                                _ -> cell
-                        )
+                -- case Debug.log "nextCell" nextCell of
+                case nextCell of
+                    -- case findCell focusedPos ui of
+                    Just (Knob _ knobState curValue handler) ->
+                        let
+                            alter = applyMove mouse nextMouseState knobState curValue
+                            -- _ = Debug.log "prevMouseState" mouse
+                            -- _ = Debug.log "nextMouseState" nextMouseState
+                        in
+                            update (Tune focusedPos alter) model
+                            |> Tuple.mapSecond
+                                (\cmd ->
+                                    Cmd.batch
+                                        [ cmd
+                                        , if (mouse.down == True && nextMouseState.down == False)
+                                            then
+                                                handler (alterKnob knobState alter curValue)
+                                                    |> Task.succeed
+                                                    |> Task.perform identity
+                                            else Cmd.none
+                                        ]
+                                )
+                    _ -> ( model, Cmd.none )
+        _ -> (
+            { model
+            | root =
+                case msg of
 
-        ShiftFocusLeftAt pos ->
-            ui |> shiftFocusBy -1 pos
+                    ApplyMouse _ -> root
 
-        ShiftFocusRightAt pos ->
-            ui |> shiftFocusBy 1 pos
+                    FocusOn pos ->
+                        root |> shiftFocusTo pos
 
-        NoOp ->
-            ui
+                    Tune pos alter ->
+                        root
+                            |> shiftFocusTo pos
+                            |> updateCell pos
+                                (\cell ->
+                                    case cell of
+                                        Knob label setup curValue handler ->
+                                            Knob label setup
+                                                (alterKnob setup alter curValue)
+                                                handler
+                                        _ -> cell
+                                )
+
+                    ToggleOn pos ->
+                        root
+                            |> shiftFocusTo pos
+                            |> updateCell pos
+                                (\cell ->
+                                    case cell of
+                                        Toggle label _ handler ->
+                                            Toggle label TurnedOn handler
+                                        _ -> cell
+                                )
+
+                    ToggleOff pos ->
+                        root
+                            |> shiftFocusTo pos
+                            |> updateCell pos
+                                (\cell ->
+                                    case cell of
+                                        Toggle label _ handler ->
+                                            Toggle label TurnedOff handler
+                                        _ -> cell
+                                )
+
+                    ExpandNested pos ->
+                        root
+                            |> shiftFocusTo pos
+                            |> collapseAllAbove pos
+                            |> updateCell pos
+                                (\cell ->
+                                    case cell of
+                                        Nested label _ cells ->
+                                            Nested label Expanded cells
+                                        _ -> cell
+                                )
+
+                    CollapseNested pos ->
+                        root
+                            |> shiftFocusTo pos
+                            |> updateCell pos
+                                (\cell ->
+                                    case cell of
+                                        Nested label _ cells ->
+                                            Nested label Collapsed cells
+                                        _ -> cell
+                                )
+
+                    ExpandChoice pos ->
+                        root
+                            |> collapseAllAbove pos
+                            |> shiftFocusTo pos
+                            |> updateCell pos
+                                (\cell ->
+                                    case cell of
+                                        Choice label _ selection handler cells ->
+                                            Choice label Expanded selection handler cells
+                                        _ -> cell
+                                )
+
+                    CollapseChoice pos ->
+                        root
+                            |> shiftFocusTo pos
+                            |> updateCell pos
+                                (\cell ->
+                                    case cell of
+                                        Choice label _ selection handler cells ->
+                                            Choice label Collapsed selection handler cells
+                                        _ -> cell
+                                )
+
+                    Select pos ->
+                        let
+                            parentPos = getParentPos pos |> Maybe.withDefault nowhere
+                            index = getIndexOf pos |> Maybe.withDefault -1
+                        in
+                            root
+                                |> shiftFocusTo pos
+                                |> updateCell parentPos
+                                    (\cell ->
+                                        case cell of
+                                            Choice label expanded selection handler cells ->
+                                                Choice label expanded index handler cells
+                                            _ -> cell
+                                    )
+
+                    ShiftFocusLeftAt pos ->
+                        root |> shiftFocusBy -1 pos
+
+                    ShiftFocusRightAt pos ->
+                        root |> shiftFocusBy 1 pos
+
+                    NoOp ->
+                        root
+
+            }, Cmd.none )
 
 
-withMouse : MouseState -> Nest umsg -> Model umsg
-withMouse = Tuple.pair
-
-
-trackMouse :  { width : Int, height : Int } -> Model umsg -> Sub ( Msg, Maybe umsg )
+trackMouse :  { width : Int, height : Int } -> Model umsg -> Sub Msg
 trackMouse windowSize gui =
     Sub.batch
         [ Sub.map (downs windowSize gui)
@@ -240,13 +279,10 @@ trackMouse windowSize gui =
             <| Browser.onMouseMove
             <| decodePosition
         ]
-    |> Sub.map (\mouseAction ->
-        extractMouse gui
-            |> Gui.Mouse.apply mouseAction
-            |> trackMouse_ gui
-        )
+    |> Sub.map ApplyMouse
 
 
+{-
 trackMouse_ : Model umsg -> MouseState -> ( Msg, Maybe umsg )
 trackMouse_ ( prevMouseState, ui ) nextMouseState =
     let
@@ -255,13 +291,13 @@ trackMouse_ ( prevMouseState, ui ) nextMouseState =
         -- _ = Debug.log "pos" nextMouseState.pos
         nextCell = findCellAt nextMouseState.pos <| layout ui  -- FIXME: store layout in the model
     in
-        case nextCell of
+        case Debug.log "nextCell" nextCell of
         -- case findCell focusedPos ui of
             Just (Knob _ knobState curValue handler) ->
                 let
                     alter = applyMove prevMouseState nextMouseState knobState curValue
-                    -- _ = Debug.log "prevMouseState" prevMouseState
-                    -- _ = Debug.log "nextMouseState" nextMouseState
+                    _ = Debug.log "prevMouseState" prevMouseState
+                    _ = Debug.log "nextMouseState" nextMouseState
                 in
                     ( Tune focusedPos alter
                     ,
@@ -269,14 +305,14 @@ trackMouse_ ( prevMouseState, ui ) nextMouseState =
                         then Just <| handler (alterKnob knobState alter curValue)
                         else Nothing
                     )
-            _ -> ( NoOp, Nothing )
+            _ -> ( NoOp, Nothing ) -}
 
 
 offsetFromSize : { width : Int, height : Int } -> Model msg -> { x : Int, y : Int }
-offsetFromSize { width, height } ( _, nest ) =
+offsetFromSize { width, height } { root } =
     let
         ( gridWidthInPx, gridHeightInPx ) =
-            layout nest |> getSizeInPixels -- FIXME: store layout in the model
+            layout root |> getSizeInPixels -- FIXME: store layout in the model
     in
         { x = floor <| (toFloat width / 2) - (toFloat gridWidthInPx / 2)
         , y = floor <| (toFloat height / 2) - (toFloat gridHeightInPx / 2)
@@ -285,10 +321,9 @@ offsetFromSize { width, height } ( _, nest ) =
 
 
 map : (msgA -> msgB) -> Model msgA -> Model msgB
-map f ( mouse, nest ) =
-    ( mouse
-    , mapNest f nest
-    )
+map f model =
+    Model model.mouse
+        <| mapNest f model.root
 
 
 mapNest : (msgA -> msgB) -> Nest msgA -> Nest msgB

@@ -132,12 +132,14 @@ update msg ({ mode, example, gui } as model) =
             , Cmd.none
             )
         ( TronUpdate guiMsg, TronGui, Simple simpleExample ) ->
-            (
-                { model
-                | gui = gui |> Gui.update guiMsg
-                }
-            , Cmd.none
-            )
+            case gui |> Gui.update guiMsg of
+                ( nextGui, cmds ) ->
+                    (
+                        { model
+                        | gui = nextGui
+                        }
+                    , cmds
+                    )
         ( DatGuiUpdate guiUpdate, DatGui, Simple simpleExample ) ->
             (
                 { model
@@ -153,13 +155,15 @@ update msg ({ mode, example, gui } as model) =
             , Cmd.none
             )
         ( Joined guiMsg (ToSimple smsg), _, Simple smodel ) ->
-            (
-                { model
-                | example = Simple <| Simple.update smsg smodel
-                , gui = gui |> Gui.update guiMsg
-                }
-            , Cmd.none
-            )
+            case gui |> Gui.update guiMsg of
+                ( nextGui, cmds ) ->
+                    (
+                        { model
+                        | example = Simple <| Simple.update smsg smodel
+                        , gui = nextGui
+                        }
+                    , cmds
+                    )
         _ -> ( model, Cmd.none )
 
 
@@ -177,7 +181,7 @@ subscriptions { mode, example, gui } =
         TronGui ->
             case example of
                 Simple simpleExample ->
-                    Gui.trackMouse { width = 1300, height = 720 } gui |> Sub.map joinOrOne
+                    Gui.trackMouse { width = 1300, height = 720 } gui |> Sub.map TronUpdate
                 _ -> Sub.none
 
 

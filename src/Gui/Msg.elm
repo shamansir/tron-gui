@@ -7,6 +7,7 @@ import Gui.Mouse exposing (..)
 
 type Msg
     = NoOp
+    | ApplyMouse MouseAction
     | FocusOn NestPos
     | Tune NestPos AlterKnob
     | ToggleOn NestPos
