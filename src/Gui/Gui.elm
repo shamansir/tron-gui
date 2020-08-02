@@ -280,15 +280,24 @@ trackMouse windowSize gui =
 handleMouse : MouseAction -> Model umsg -> ( Model umsg, Cmd umsg )
 handleMouse mouseAction model =
     let
-        nextMouseState = model.mouse |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
+        curMouseState = model.mouse
+        nextMouseState = curMouseState |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
+        -- _ = Debug.log "mouseAction" mouseAction
+        -- _ = Debug.log "currentState" model.mouse
+        -- _ = Debug.log "nextState" nextMouseState
         -- (Focus focusedPos) = findFocus model.root
         -- prevCell = Debug.log "prev" <| findCellAt prevMouseState.pos <| layout ui
         -- _ = Debug.log "pos" nextMouseState.pos
+        maybeDragPos =
+            if nextMouseState.down then nextMouseState.dragFrom
+            else case mouseAction of
+                Up _ -> if curMouseState.down then curMouseState.dragFrom else Nothing
+                _ -> Nothing
         nextCell =
-            nextMouseState.dragFrom
+            maybeDragPos
                 |> Maybe.andThen
                     (\dragPos ->
-                        layout model.root   -- FIXME: store
+                        layout model.root   -- FIXME: store layout in the Model
                             |> findCellAt dragPos
                             |> Maybe.map (\c -> ( c.cell, c.nestPos ))
                     )
@@ -298,7 +307,7 @@ handleMouse mouseAction model =
             -- case findCell focusedPos ui of
             Just ( (Knob _ knobState curValue handler), cellPos ) ->
                 let
-                    alter = applyMove model.mouse nextMouseState knobState curValue
+                    alter = applyMove curMouseState nextMouseState knobState curValue
                     -- _ = Debug.log "prevMouseState" mouse
                     -- _ = Debug.log "nextMouseState" nextMouseState
                 in
@@ -307,10 +316,14 @@ handleMouse mouseAction model =
                     } |>
                         updateWith
                             ( Tune cellPos alter
-                            , if (model.mouse.down == True && nextMouseState.down == False)
+                            , case mouseAction of
+                                Up _ ->
+                                    if curMouseState.down
+                                    && not nextMouseState.down
                                     then
                                         Just <| handler (alterKnob knobState alter curValue)
                                     else Nothing
+                                _ -> Nothing
                             )
             _ ->
                 (
