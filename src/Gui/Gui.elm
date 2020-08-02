@@ -281,35 +281,44 @@ handleMouse : MouseAction -> Model umsg -> ( Model umsg, Cmd umsg )
 handleMouse mouseAction model =
     let
         nextMouseState = model.mouse |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
-        (Focus focusedPos) = findFocus model.root
+        -- (Focus focusedPos) = findFocus model.root
         -- prevCell = Debug.log "prev" <| findCellAt prevMouseState.pos <| layout ui
         -- _ = Debug.log "pos" nextMouseState.pos
-        nextCell = findCellAt nextMouseState.pos <| layout model.root  -- FIXME: store
+        nextCell =
+            nextMouseState.dragFrom
+                |> Maybe.andThen
+                    (\dragPos ->
+                        layout model.root   -- FIXME: store
+                            |> findCellAt dragPos
+                            |> Maybe.map (\c -> ( c.cell, c.nestPos ))
+                    )
     in
-        -- case Debug.log "nextCell" nextCell of
         case nextCell of
+        --case nextCell of
             -- case findCell focusedPos ui of
-            Just (Knob _ knobState curValue handler) ->
+            Just ( (Knob _ knobState curValue handler), cellPos ) ->
                 let
                     alter = applyMove model.mouse nextMouseState knobState curValue
                     -- _ = Debug.log "prevMouseState" mouse
                     -- _ = Debug.log "nextMouseState" nextMouseState
                 in
-                    update (Tune focusedPos alter) model
-                    |> Tuple.mapSecond
-                        (\cmd ->
-                            Cmd.batch
-                                [ cmd
-                                , if (model.mouse.down == True && nextMouseState.down == False)
+                    { model
+                    | mouse = nextMouseState
+                    } |>
+                        updateWith
+                            ( Tune cellPos alter
+                            , if (model.mouse.down == True && nextMouseState.down == False)
                                     then
-                                        handler (alterKnob knobState alter curValue)
-                                            |> Task.succeed
-                                            |> Task.perform identity
-                                    else Cmd.none
-                                ]
-                        )
-            _ -> ( model, Cmd.none )
-
+                                        Just <| handler (alterKnob knobState alter curValue)
+                                    else Nothing
+                            )
+            _ ->
+                (
+                    { model
+                    | mouse = nextMouseState
+                    }
+                , Cmd.none
+                )
 
 
 handleKeyDown : Focus -> Maybe { current : GridCell umsg, parent : GridCell umsg } -> Int -> ( Msg umsg, Maybe umsg )

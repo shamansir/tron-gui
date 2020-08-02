@@ -234,7 +234,7 @@ findGridCell searchFor (Grid _ rows) =
         ) Nothing
 
 
-findCellAt : { x : Int, y : Int } -> Grid umsg -> Maybe (Cell umsg)
+findCellAt : { x : Int, y : Int } -> Grid umsg -> Maybe (GridCell umsg)
 findCellAt { x, y } grid =
     grid
         |> fold (\(GridPos row col) gridCell maybeFound ->
@@ -248,7 +248,6 @@ findCellAt { x, y } grid =
                         then Just gridCell
                         else Nothing
         ) Nothing
-        |> Maybe.map .cell
 
 
 getShape : Grid umsg -> Shape
