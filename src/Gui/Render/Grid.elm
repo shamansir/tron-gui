@@ -15,7 +15,7 @@ import Gui.Grid exposing (..)
 import Gui.Render.Cell exposing (..)
 
 
-type alias GridView umsg = Html ( Msg, Maybe umsg )
+type alias GridView umsg = Html (Msg umsg)
 
 
 type Mode
@@ -80,7 +80,6 @@ viewCellContent focus gridPos gridCell =
             case gridCell of
                 { cell, nestPos, isSelected }
                     -> renderCell nestPos focus isSelected cell
-                        |> Html.map (\msg -> ( msg, Nothing ))
 
 
 viewCell : Focus -> GridPos -> Maybe (GridCell umsg) -> GridView umsg
@@ -116,8 +115,8 @@ viewCell focus gridPos maybeGridCell =
             maybeGridCell
                 |> Maybe.map
                     (\gridCell ->
-                        [ H.onClick <| doCellPurpose gridCell
-                        , H.onMouseDown <| ( maybeFocus gridCell, Nothing )
+                        [ H.onClick <| Click gridCell
+                        , H.onMouseDown <| MouseDown gridCell
                         ]
                     )
                 |> Maybe.withDefault []
@@ -174,71 +173,22 @@ showNestPos (NestPos path) =
     "<" ++ (path |> List.reverse |> List.map String.fromInt |> String.join ",") ++ ">"
 
 
-keyDownHandler : Nest umsg -> Grid umsg -> Int -> ( Msg, Maybe umsg )
-keyDownHandler nest grid keyCode =
-    let
-        (Focus currentFocus) = findFocus nest
-        maybeCurrentCell = findGridCell currentFocus grid
-        executeCell = maybeCurrentCell
-            |> Maybe.map doCellPurpose
-            |> Maybe.withDefault ( NoOp, Nothing )
-    -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
-    in
-        case keyCode of
-            -- left arrow
-            37 -> ( ShiftFocusLeftAt currentFocus, Nothing )
-            -- right arrow
-            39 -> ( ShiftFocusRightAt currentFocus, Nothing )
-            -- up arrow
-            -- 38 -> ShiftFocusUpAt currentFocus
-            -- down arrow
-            -- 40 -> ShiftFocusDownAt currentFocus
-            -- up arrow
-            38 -> maybeCurrentCell
-                |> Maybe.map (\{ cell } ->
-                        ( case cell of
-                            Nested _ Collapsed _ -> ExpandNested currentFocus
-                            Choice _ Collapsed _ _ _ -> ExpandChoice currentFocus
-                            _ -> NoOp
-                        , Nothing
-                        )
-                    )
-                |> Maybe.withDefault ( NoOp, Nothing ) -- execute as well?
-            -- down arrow
-            40 -> let parentFocus = currentFocus |> shallower in
-                ( if (isSamePos parentFocus nowhere)
-                    then NoOp
-                    else
-                        findGridCell parentFocus grid
-                            |> Maybe.map (\{ cell } ->
-                                    case cell of
-                                        Nested _ Expanded _ -> CollapseNested parentFocus
-                                        Choice _ Expanded _ _ _ -> CollapseChoice parentFocus
-                                        _ -> NoOp
-                                )
-                            |> Maybe.withDefault NoOp
-                , Nothing
-                )
-            -- space
-            33 -> executeCell
-            -- enter
-            13 -> executeCell
-            -- else
-            _ -> ( NoOp, Nothing )
-
-
 view : Nest umsg -> GridView umsg
 view nest =
     let
         grid = layout nest
-        focus = findFocus nest
         -- cellCount = sizeOf nest
         --keyDownHandlers = Json.map (\_ -> [ NoOp ]) H.keyCode
-        keyDownHandler_ = H.on "keydown" <| Json.map (keyDownHandler nest grid) H.keyCode
+        (Focus focus) = findFocus nest
+        maybeCurrentCell =
+            findGridCell focus grid
+
+        keyDownHandler_ = H.on "keydown"
+            <| Json.map (\key -> KeyDown key maybeCurrentCell) H.keyCode
     in
         div [ H.id "grid-gui"
             , H.class "gui noselect"
             , H.tabindex -1
             , keyDownHandler_
             ]
-            [ grid |> viewGrid focus ]
+            [ grid |> viewGrid (Focus focus) ]

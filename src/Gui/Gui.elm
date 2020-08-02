@@ -112,48 +112,50 @@ fromAlt altGui =
 
 
 update
-    :  Msg
+    :  Msg umsg
     -> Model umsg
     -> ( Model umsg, Cmd umsg )
 update msg ( { root, mouse } as model ) =
     case msg of
+
         ApplyMouse mouseAction ->
+            handleMouse mouseAction model
+
+        Click cell ->
             let
-                nextMouseState = mouse |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
-                (Focus focusedPos) = findFocus root
-                -- prevCell = Debug.log "prev" <| findCellAt prevMouseState.pos <| layout ui
-                -- _ = Debug.log "pos" nextMouseState.pos
-                nextCell = findCellAt nextMouseState.pos <| layout root  -- FIXME: store
+                ( nextMsg, maybeUserMsg  )
+                    = executeCell cell
             in
-                -- case Debug.log "nextCell" nextCell of
-                case nextCell of
-                    -- case findCell focusedPos ui of
-                    Just (Knob _ knobState curValue handler) ->
-                        let
-                            alter = applyMove mouse nextMouseState knobState curValue
-                            -- _ = Debug.log "prevMouseState" mouse
-                            -- _ = Debug.log "nextMouseState" nextMouseState
-                        in
-                            update (Tune focusedPos alter) model
-                            |> Tuple.mapSecond
-                                (\cmd ->
-                                    Cmd.batch
-                                        [ cmd
-                                        , if (mouse.down == True && nextMouseState.down == False)
-                                            then
-                                                handler (alterKnob knobState alter curValue)
-                                                    |> Task.succeed
-                                                    |> Task.perform identity
-                                            else Cmd.none
-                                        ]
-                                )
-                    _ -> ( model, Cmd.none )
+                update nextMsg model
+                    |> Tuple.mapSecond
+                        (\cmd ->
+                            Cmd.batch
+                                [ cmd
+                                , maybeUserMsg
+                                    |> Maybe.map Task.succeed
+                                    |> Maybe.map (Task.perform identity)
+                                    |> Maybe.withDefault Cmd.none
+                                ]
+                        )
+
+        MouseDown { cell, nestPos } ->
+            case cell of
+                Knob _ _ _ _ ->
+                    update (FocusOn nestPos) model
+                _ -> ( model, Cmd.none )
+
         _ -> (
             { model
             | root =
                 case msg of
 
                     ApplyMouse _ -> root
+
+                    Click _ -> root
+
+                    MouseDown _ -> root
+
+                    KeyDown _ _ -> root
 
                     FocusOn pos ->
                         root |> shiftFocusTo pos
@@ -266,7 +268,7 @@ update msg ( { root, mouse } as model ) =
             }, Cmd.none )
 
 
-trackMouse :  { width : Int, height : Int } -> Model umsg -> Sub Msg
+trackMouse :  { width : Int, height : Int } -> Model umsg -> Sub (Msg umsg)
 trackMouse windowSize gui =
     Sub.batch
         [ Sub.map (downs windowSize gui)
@@ -280,6 +282,132 @@ trackMouse windowSize gui =
             <| decodePosition
         ]
     |> Sub.map ApplyMouse
+
+
+handleMouse : MouseAction -> Model umsg -> ( Model umsg, Cmd umsg )
+handleMouse mouseAction model =
+    let
+        nextMouseState = model.mouse |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
+        (Focus focusedPos) = findFocus model.root
+        -- prevCell = Debug.log "prev" <| findCellAt prevMouseState.pos <| layout ui
+        -- _ = Debug.log "pos" nextMouseState.pos
+        nextCell = findCellAt nextMouseState.pos <| layout model.root  -- FIXME: store
+    in
+        -- case Debug.log "nextCell" nextCell of
+        case nextCell of
+            -- case findCell focusedPos ui of
+            Just (Knob _ knobState curValue handler) ->
+                let
+                    alter = applyMove model.mouse nextMouseState knobState curValue
+                    -- _ = Debug.log "prevMouseState" mouse
+                    -- _ = Debug.log "nextMouseState" nextMouseState
+                in
+                    update (Tune focusedPos alter) model
+                    |> Tuple.mapSecond
+                        (\cmd ->
+                            Cmd.batch
+                                [ cmd
+                                , if (model.mouse.down == True && nextMouseState.down == False)
+                                    then
+                                        handler (alterKnob knobState alter curValue)
+                                            |> Task.succeed
+                                            |> Task.perform identity
+                                    else Cmd.none
+                                ]
+                        )
+            _ -> ( model, Cmd.none )
+
+
+
+keyDownHandler : Nest umsg -> Grid umsg -> Int -> ( Msg umsg, Maybe umsg )
+keyDownHandler nest grid keyCode =
+    let
+        (Focus currentFocus) = findFocus nest
+        maybeCurrentCell = findGridCell currentFocus grid
+        executeCell_ = maybeCurrentCell
+            |> Maybe.map executeCell
+            |> Maybe.withDefault ( NoOp, Nothing )
+    -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
+    in
+        case keyCode of
+            -- left arrow
+            37 -> ( ShiftFocusLeftAt currentFocus, Nothing )
+            -- right arrow
+            39 -> ( ShiftFocusRightAt currentFocus, Nothing )
+            -- up arrow
+            -- 38 -> ShiftFocusUpAt currentFocus
+            -- down arrow
+            -- 40 -> ShiftFocusDownAt currentFocus
+            -- up arrow
+            38 -> maybeCurrentCell
+                |> Maybe.map (\{ cell } ->
+                        ( case cell of
+                            Nested _ Collapsed _ -> ExpandNested currentFocus
+                            Choice _ Collapsed _ _ _ -> ExpandChoice currentFocus
+                            _ -> NoOp
+                        , Nothing
+                        )
+                    )
+                |> Maybe.withDefault ( NoOp, Nothing ) -- execute as well?
+            -- down arrow
+            40 -> let parentFocus = currentFocus |> shallower in
+                ( if (isSamePos parentFocus nowhere)
+                    then NoOp
+                    else
+                        findGridCell parentFocus grid
+                            |> Maybe.map (\{ cell } ->
+                                    case cell of
+                                        Nested _ Expanded _ -> CollapseNested parentFocus
+                                        Choice _ Expanded _ _ _ -> CollapseChoice parentFocus
+                                        _ -> NoOp
+                                )
+                            |> Maybe.withDefault NoOp
+                , Nothing
+                )
+            -- space
+            33 -> executeCell_
+            -- enter
+            13 -> executeCell_
+            -- else
+            _ -> ( NoOp, Nothing )
+
+
+
+
+-- FIXME: move somewhere else, where it belongs
+executeCell : GridCell umsg -> ( Msg umsg, Maybe umsg )
+executeCell { cell, nestPos, isSelected, onSelect } =
+    case cell of
+        Knob _ _ _ _ ->
+            ( FocusOn nestPos, Nothing ) -- FIXME: NoOp? We do the same on mousedown
+        Toggle _ val handler ->
+            -- if val == TurnedOn then ToggleOff nestPos else ToggleOn nestPos
+            if val == TurnedOn
+            then ( ToggleOff nestPos, Just <| handler TurnedOff )
+            else ( ToggleOn nestPos, Just <| handler TurnedOn )
+        Nested _ state _ ->
+            if state == Expanded
+            then ( CollapseNested nestPos, Nothing )
+            else ( ExpandNested nestPos, Nothing )
+        Choice _ state _ _ _ ->
+            if state == Expanded
+            then ( CollapseChoice nestPos, Nothing )
+            else ( ExpandChoice nestPos, Nothing )
+        Button _ handler ->
+            ( NoOp, Just <| handler () )
+        ChoiceItem label ->
+            case isSelected of
+                Just NotSelected ->
+                    ( Select nestPos
+                    , onSelect
+                        |> Maybe.andThen ((|>) label)
+                    )
+                _ -> ( NoOp, Nothing )
+        _ ->
+            case isSelected of
+                Just NotSelected -> ( Select nestPos, Nothing )
+                _ -> ( NoOp, Nothing )
+
 
 
 {-

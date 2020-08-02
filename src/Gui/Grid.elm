@@ -6,7 +6,6 @@ import Json.Decode as Json
 
 
 import Gui.Def exposing (..)
-import Gui.Msg exposing (..)
 import Gui.Nest exposing (..)
 
 
@@ -50,47 +49,14 @@ bottomLeft : GridPos
 bottomLeft = (GridPos 0 0)
 
 
-doCellPurpose : GridCell umsg -> ( Msg , Maybe umsg )
-doCellPurpose { cell, nestPos, isSelected, onSelect } =
-    case cell of
-        Knob _ _ _ _ ->
-            ( FocusOn nestPos, Nothing ) -- FIXME: NoOp? We do the same on mousedown
-        Toggle _ val handler ->
-            -- if val == TurnedOn then ToggleOff nestPos else ToggleOn nestPos
-            if val == TurnedOn
-            then ( ToggleOff nestPos, Just <| handler TurnedOff )
-            else ( ToggleOn nestPos, Just <| handler TurnedOn )
-        Nested _ state _ ->
-            if state == Expanded
-            then ( CollapseNested nestPos, Nothing )
-            else ( ExpandNested nestPos, Nothing )
-        Choice _ state _ _ _ ->
-            if state == Expanded
-            then ( CollapseChoice nestPos, Nothing )
-            else ( ExpandChoice nestPos, Nothing )
-        Button _ handler ->
-            ( NoOp, Just <| handler () )
-        ChoiceItem label ->
-            case isSelected of
-                Just NotSelected ->
-                    ( Select nestPos
-                    , onSelect
-                        |> Maybe.andThen ((|>) label)
-                    )
-                _ -> ( NoOp, Nothing )
-        _ ->
-            case isSelected of
-                Just NotSelected -> ( Select nestPos, Nothing )
-                _ -> ( NoOp, Nothing )
-
-
-maybeFocus : GridCell umsg -> Msg
+{-
+maybeFocus : GridCell umsg -> Msg umsg
 maybeFocus { cell, nestPos } =
     case cell of
         Knob _ _ _ _ ->
             FocusOn nestPos
         _ -> NoOp
-
+-}
 
 
 putAtRoot : GridPos -> Nest umsg -> Grid umsg -> Grid umsg

@@ -3,11 +3,15 @@ module Gui.Msg exposing (..)
 
 import Gui.Def exposing (..)
 import Gui.Mouse exposing (..)
+import Gui.Grid exposing (..)
 
 
-type Msg
+type Msg umsg
     = NoOp
-    | ApplyMouse MouseAction
+    | ApplyMouse MouseAction -- from the document
+    | Click (GridCell umsg) -- specific cell
+    | MouseDown (GridCell umsg) -- specific cell
+    | KeyDown Int (Maybe (GridCell umsg)) -- specific cell
     | FocusOn NestPos
     | Tune NestPos AlterKnob
     | ToggleOn NestPos

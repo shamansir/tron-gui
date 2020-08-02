@@ -28,9 +28,9 @@ import Simple.Gui as SimpleGui
 type Msg
     = ChangeMode Mode
     | DatGuiUpdate AGui.Update
-    | TronUpdate Tron.Msg
+    | TronUpdate (Tron.Msg Msg)
     | ToSimple Simple.Msg
-    | Joined Tron.Msg Msg
+    | Joined (Tron.Msg Msg) Msg
     | NoOp
 
 
@@ -61,7 +61,7 @@ init =
         , gui = Gui.none
         }
 
-joinOrOne : ( Tron.Msg, Maybe Msg ) -> Msg
+joinOrOne : ( Tron.Msg Msg, Maybe Msg ) -> Msg
 joinOrOne (tronMsg, maybeMsg) =
     case maybeMsg of
         Just msg ->
@@ -84,7 +84,7 @@ view { mode, gui, example } =
             TronGui ->
                 gui
                     |> Gui.view
-                    |> Html.map joinOrOne
+                    |> Html.map TronUpdate
         , case example of
             Simple simpleExample ->
                 Simple.view simpleExample |> Html.map (always NoOp)
