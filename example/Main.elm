@@ -30,7 +30,6 @@ type Msg
     | DatGuiUpdate AGui.Update
     | TronUpdate (Tron.Msg Msg)
     | ToSimple Simple.Msg
-    | Joined (Tron.Msg Msg) Msg
     | NoOp
 
 
@@ -60,13 +59,6 @@ init =
         , example = Simple <| Simple.init
         , gui = Gui.none
         }
-
-joinOrOne : ( Tron.Msg Msg, Maybe Msg ) -> Msg
-joinOrOne (tronMsg, maybeMsg) =
-    case maybeMsg of
-        Just msg ->
-            Joined tronMsg msg
-        Nothing -> TronUpdate tronMsg
 
 
 view : Model -> Html Msg
@@ -154,16 +146,6 @@ update msg ({ mode, example, gui } as model) =
                 }
             , Cmd.none
             )
-        ( Joined guiMsg (ToSimple smsg), _, Simple smodel ) ->
-            case gui |> Gui.update guiMsg of
-                ( nextGui, cmds ) ->
-                    (
-                        { model
-                        | example = Simple <| Simple.update smsg smodel
-                        , gui = nextGui
-                        }
-                    , cmds
-                    )
         _ -> ( model, Cmd.none )
 
 
