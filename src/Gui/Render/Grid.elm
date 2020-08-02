@@ -182,9 +182,18 @@ view nest =
         (Focus focus) = findFocus nest
         maybeCurrentCell =
             findGridCell focus grid
+        parentFocus = focus |> shallower
+        maybeParentCell = findGridCell parentFocus grid
 
         keyDownHandler_ = H.on "keydown"
-            <| Json.map (\key -> KeyDown key maybeCurrentCell) H.keyCode
+            <| Json.map
+                (\key ->
+                    KeyDown key (Focus focus)
+                        <| Maybe.map2
+                            (\cur par -> { current = cur, parent = par })
+                            maybeCurrentCell
+                            maybeParentCell )
+                H.keyCode
     in
         div [ H.id "grid-gui"
             , H.class "gui noselect"

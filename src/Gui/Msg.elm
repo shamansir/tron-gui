@@ -11,7 +11,7 @@ type Msg umsg
     | ApplyMouse MouseAction -- from the document
     | Click (GridCell umsg) -- specific cell
     | MouseDown (GridCell umsg) -- specific cell
-    | KeyDown Int (Maybe (GridCell umsg)) -- specific cell
+    | KeyDown Int Focus (Maybe { current : GridCell umsg, parent : GridCell umsg }) -- specific cell
     | FocusOn NestPos
     | Tune NestPos AlterKnob
     | ToggleOn NestPos

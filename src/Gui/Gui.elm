@@ -122,27 +122,20 @@ update msg ( { root, mouse } as model ) =
             handleMouse mouseAction model
 
         Click cell ->
-            let
-                ( nextMsg, maybeUserMsg  )
-                    = executeCell cell
-            in
-                update nextMsg model
-                    |> Tuple.mapSecond
-                        (\cmd ->
-                            Cmd.batch
-                                [ cmd
-                                , maybeUserMsg
-                                    |> Maybe.map Task.succeed
-                                    |> Maybe.map (Task.perform identity)
-                                    |> Maybe.withDefault Cmd.none
-                                ]
-                        )
+            model
+                |> updateWith
+                    (executeCell cell)
 
         MouseDown { cell, nestPos } ->
             case cell of
                 Knob _ _ _ _ ->
                     update (FocusOn nestPos) model
                 _ -> ( model, Cmd.none )
+
+        KeyDown keyCode focus maybeCells ->
+            model
+                |> updateWith
+                    (handleKeyDown focus maybeCells keyCode)
 
         _ -> (
             { model
@@ -155,7 +148,7 @@ update msg ( { root, mouse } as model ) =
 
                     MouseDown _ -> root
 
-                    KeyDown _ _ -> root
+                    KeyDown _ _ _ -> root
 
                     FocusOn pos ->
                         root |> shiftFocusTo pos
@@ -319,12 +312,12 @@ handleMouse mouseAction model =
 
 
 
-keyDownHandler : Nest umsg -> Grid umsg -> Int -> ( Msg umsg, Maybe umsg )
-keyDownHandler nest grid keyCode =
+handleKeyDown : Focus -> Maybe { current : GridCell umsg, parent : GridCell umsg } -> Int -> ( Msg umsg, Maybe umsg )
+handleKeyDown (Focus currentFocus) maybeCells keyCode =
     let
-        (Focus currentFocus) = findFocus nest
-        maybeCurrentCell = findGridCell currentFocus grid
-        executeCell_ = maybeCurrentCell
+        executeCell_ =
+            maybeCells
+            |> Maybe.map .current
             |> Maybe.map executeCell
             |> Maybe.withDefault ( NoOp, Nothing )
     -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
@@ -339,7 +332,8 @@ keyDownHandler nest grid keyCode =
             -- down arrow
             -- 40 -> ShiftFocusDownAt currentFocus
             -- up arrow
-            38 -> maybeCurrentCell
+            38 -> maybeCells
+                |> Maybe.map .current
                 |> Maybe.map (\{ cell } ->
                         ( case cell of
                             Nested _ Collapsed _ -> ExpandNested currentFocus
@@ -354,7 +348,8 @@ keyDownHandler nest grid keyCode =
                 ( if (isSamePos parentFocus nowhere)
                     then NoOp
                     else
-                        findGridCell parentFocus grid
+                        maybeCells
+                            |> Maybe.map .parent
                             |> Maybe.map (\{ cell } ->
                                     case cell of
                                         Nested _ Expanded _ -> CollapseNested parentFocus
@@ -371,6 +366,21 @@ keyDownHandler nest grid keyCode =
             -- else
             _ -> ( NoOp, Nothing )
 
+
+
+updateWith : ( Msg umsg, Maybe umsg ) -> Model umsg -> ( Model umsg, Cmd umsg  )
+updateWith ( msg, maybeUserMsg ) model =
+    update msg model
+        |> Tuple.mapSecond
+            (\cmd ->
+                Cmd.batch
+                    [ cmd
+                    , maybeUserMsg
+                        |> Maybe.map Task.succeed
+                        |> Maybe.map (Task.perform identity)
+                        |> Maybe.withDefault Cmd.none
+                    ]
+            )
 
 
 
