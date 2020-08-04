@@ -14,6 +14,7 @@ import Browser.Events as Browser
 import Gui.Def exposing (..)
 import Gui.Msg exposing (..)
 import Gui.Nest exposing (..)
+import Gui.Focus exposing (..)
 import Gui.Grid as Grid exposing (..)
 import Gui.Render.Grid as Render exposing (..)
 import Gui.Mouse exposing (..)

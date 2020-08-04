@@ -11,6 +11,7 @@ import Json.Decode as Json
 import Gui.Def exposing (..)
 import Gui.Msg exposing (..)
 import Gui.Nest exposing (..)
+import Gui.Focus exposing (..)
 import Gui.Grid exposing (..)
 import Gui.Render.Cell exposing (..)
 

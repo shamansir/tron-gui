@@ -7,8 +7,6 @@ type alias ItemChosen = Int
 
 type NestPos = NestPos (List Int) -- just path by indices
 
-type Focus = Focus NestPos
-
 type alias Shape = ( Int, Int )
 
 type alias Cells umsg = List (Cell umsg)

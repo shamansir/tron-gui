@@ -3,6 +3,7 @@ module Gui.Msg exposing (..)
 
 import Gui.Def exposing (..)
 import Gui.Mouse exposing (..)
+import Gui.Focus exposing (..)
 import Gui.Grid exposing (..)
 
 

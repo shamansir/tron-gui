@@ -7,6 +7,7 @@ import Svg.Attributes as S exposing (..)
 
 import Gui.Def exposing (..)
 import Gui.Msg exposing (..)
+import Gui.Focus exposing (..)
 
 
 textAttrs : Float -> Float -> String -> List (Attribute (Msg umsg))
