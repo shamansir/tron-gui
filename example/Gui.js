@@ -144,6 +144,6 @@ function start(document, definition, origSend) {
   };
 }
 
-module.exports = start;
+//if (module) module.exports = start;
 
 window.startGui = start;
