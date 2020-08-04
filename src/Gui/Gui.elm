@@ -1,12 +1,12 @@
 module Gui.Gui exposing
     ( Model
     , view, update, build, none, map
-    -- , moves, ups, downs
-    , trackMouse
+    , trackMouse, focus
     , fromAlt -- FIXME: temporary
     )
 
 
+import Browser.Dom as Dom
 import Task
 import Browser.Events as Browser
 
@@ -132,10 +132,10 @@ update msg ( { root, mouse } as model ) =
                     update (FocusOn nestPos) model
                 _ -> ( model, Cmd.none )
 
-        KeyDown keyCode focus maybeCells ->
+        KeyDown keyCode focus_ maybeCells ->
             model
                 |> updateWith
-                    (handleKeyDown focus maybeCells keyCode)
+                    (handleKeyDown focus_ maybeCells keyCode)
 
         _ -> (
             { model
@@ -334,7 +334,11 @@ handleMouse mouseAction model =
                 )
 
 
-handleKeyDown : Focus -> Maybe { current : GridCell umsg, parent : GridCell umsg } -> Int -> ( Msg umsg, Maybe umsg )
+handleKeyDown
+    :  Focus
+    -> Maybe { current : GridCell umsg, parent : GridCell umsg }
+    -> Int
+    -> ( Msg umsg, Maybe umsg )
 handleKeyDown (Focus currentFocus) maybeCells keyCode =
     let
         executeCell_ =
@@ -342,9 +346,10 @@ handleKeyDown (Focus currentFocus) maybeCells keyCode =
             |> Maybe.map .current
             |> Maybe.map executeCell
             |> Maybe.withDefault ( NoOp, Nothing )
+        --_ = Debug.log "currentFocus" currentFocus
     -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
     in
-        case keyCode of
+        case {-Debug.log "key here"-} keyCode of
             -- left arrow
             37 -> ( ShiftFocusLeftAt currentFocus, Nothing )
             -- right arrow
@@ -404,6 +409,11 @@ updateWith ( msg, maybeUserMsg ) model =
                     ]
             )
 
+
+focus : msg -> Cmd msg
+focus noOp =
+    Dom.focus Render.rootId
+        |> Task.attempt (always noOp)
 
 
 -- FIXME: move somewhere else, where it belongs

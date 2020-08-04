@@ -18,6 +18,10 @@ import Gui.Render.Cell exposing (..)
 type alias GridView umsg = Html (Msg umsg)
 
 
+rootId : String
+rootId = "grid-gui"
+
+
 type Mode
     = DebugInfo
     | Fancy
@@ -176,10 +180,12 @@ showNestPos (NestPos path) =
 view : Nest umsg -> GridView umsg
 view nest =
     let
+        (Focus focus) = findFocus nest
+        -- _ = Debug.log "nest" nest
+        -- _ = Debug.log "focus" focus
         grid = layout nest
         -- cellCount = sizeOf nest
         --keyDownHandlers = Json.map (\_ -> [ NoOp ]) H.keyCode
-        (Focus focus) = findFocus nest
         maybeCurrentCell =
             findGridCell focus grid
         parentFocus = focus |> shallower
@@ -188,16 +194,16 @@ view nest =
         keyDownHandler_ = H.on "keydown"
             <| Json.map
                 (\key ->
-                    KeyDown key (Focus focus)
+                    KeyDown ({- Debug.log "key" -} key) (Focus focus)
                         <| Maybe.map2
                             (\cur par -> { current = cur, parent = par })
                             maybeCurrentCell
                             maybeParentCell )
                 H.keyCode
     in
-        div [ H.id "grid-gui"
+        div [ H.id rootId
             , H.class "gui noselect"
-            , H.tabindex -1
+            , H.tabindex 0
             , keyDownHandler_
             ]
             [ grid |> viewGrid (Focus focus) ]

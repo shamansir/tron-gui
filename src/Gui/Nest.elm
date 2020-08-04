@@ -20,7 +20,7 @@ noChildren =
 
 oneLine : Cells umsg -> Nest umsg
 oneLine cells =
-    { focus = 0
+    { focus = -1
     , shape = ( List.length cells, 1 )
     , cells = cells
     }
@@ -28,7 +28,7 @@ oneLine cells =
 
 nestWithin : Shape -> Cells umsg -> Nest umsg
 nestWithin shape cells =
-    { focus = 0
+    { focus = -1
     , shape = shape
     , cells = cells
     }

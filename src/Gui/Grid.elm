@@ -49,16 +49,6 @@ bottomLeft : GridPos
 bottomLeft = (GridPos 0 0)
 
 
-{-
-maybeFocus : GridCell umsg -> Msg umsg
-maybeFocus { cell, nestPos } =
-    case cell of
-        Knob _ _ _ _ ->
-            FocusOn nestPos
-        _ -> NoOp
--}
-
-
 putAtRoot : GridPos -> Nest umsg -> Grid umsg -> Grid umsg
 putAtRoot gridPos nest grid =
     put gridPos Nothing Nothing Nothing nest grid

@@ -14,7 +14,7 @@ import Html.Events as Html exposing (onClick)
 import Gui.Alt as AGui
 import Gui.Alt exposing (Gui)
 import Gui.Gui as Gui exposing (view, fromAlt)
-import Gui.Gui as Tron exposing (Model)
+import Gui.Gui as Tron exposing (Model, focus)
 import Gui.Msg as Tron exposing (Msg)
 import Gui.Mouse exposing (Position)
 import Gui.Mouse as Tron exposing (MouseState)
@@ -106,7 +106,10 @@ update msg ({ mode, example, gui } as model) =
                     |> Gui.build
                     |> Gui.map ToSimple
                 }
-            , destroyDatGui ()
+            , Cmd.batch
+                [ destroyDatGui ()
+                , Tron.focus NoOp
+                ]
             )
         ( ChangeMode TronGui, _, _ ) ->
             (
@@ -114,7 +117,10 @@ update msg ({ mode, example, gui } as model) =
                 | mode = TronGui
                 -- FIXME: build Gui for Elmsfeuer as well
                 }
-            , destroyDatGui ()
+            , Cmd.batch
+                [ destroyDatGui ()
+                , Tron.focus NoOp
+                ]
             )
         ( ToSimple smsg, _, Simple smodel ) ->
             (
