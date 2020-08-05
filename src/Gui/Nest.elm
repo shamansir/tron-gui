@@ -79,19 +79,22 @@ traverseCells f cells =
 
 traverseAllNests : (Nest umsg -> NestPos -> Nest umsg) -> Nest umsg -> Nest umsg
 traverseAllNests f nest =
-    { nest
-    | cells = f nest nowhere |> .cells |> traverseCells
-        (\cell cellPosition ->
-            case cell of
-                Nested label state innerNest ->
-                    f innerNest cellPosition
-                        |> Nested label state
-                Choice label state selected handler innerNest ->
-                    f innerNest cellPosition
-                        |> Choice label state selected handler
-                _ -> cell
+    f nest nowhere |>
+        (\modNest ->
+            { modNest
+            | cells = f nest nowhere |> .cells |> traverseCells
+                (\cell cellPosition ->
+                    case cell of
+                        Nested label state innerNest ->
+                            f innerNest cellPosition
+                                |> Nested label state
+                        Choice label state selected handler innerNest ->
+                            f innerNest cellPosition
+                                |> Choice label state selected handler
+                        _ -> cell
+                )
+            }
         )
-    }
 
 
 foldCells : (Cell umsg -> NestPos -> a -> a) -> a -> Nest umsg -> a

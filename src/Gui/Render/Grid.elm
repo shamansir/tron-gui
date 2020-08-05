@@ -12,6 +12,7 @@ import Gui.Def exposing (..)
 import Gui.Msg exposing (..)
 import Gui.Nest exposing (..)
 import Gui.Focus exposing (..)
+import Gui.Focus as Focus exposing (..)
 import Gui.Grid exposing (..)
 import Gui.Render.Cell exposing (..)
 
@@ -181,7 +182,7 @@ showNestPos (NestPos path) =
 view : Nest umsg -> GridView umsg
 view nest =
     let
-        (Focus focus) = findFocus nest
+        (Focus focus) = Focus.get nest
         -- _ = Debug.log "nest" nest
         -- _ = Debug.log "focus" focus
         grid = layout nest

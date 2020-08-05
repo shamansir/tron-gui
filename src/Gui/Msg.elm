@@ -23,8 +23,7 @@ type Msg umsg
     | CollapseChoice NestPos
     | Select NestPos
     -- | Move NestPos Int
-    | ShiftFocusLeftAt NestPos
-    | ShiftFocusRightAt NestPos
+    | ShiftFocus Direction
     -- | SendToUser umsg
     -- | SelectAndSendToUser NestPos umsg
     -- | ToggleOnAndSendToUser NestPos umsg

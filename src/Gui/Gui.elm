@@ -15,9 +15,11 @@ import Gui.Def exposing (..)
 import Gui.Msg exposing (..)
 import Gui.Nest exposing (..)
 import Gui.Focus exposing (..)
+import Gui.Focus as Focus exposing (..)
 import Gui.Grid as Grid exposing (..)
 import Gui.Render.Grid as Render exposing (..)
 import Gui.Mouse exposing (..)
+import Gui.Mouse as Mouse exposing (..)
 import Gui.Util exposing (..)
 import Gui.Alt as Alt exposing (Gui)
 
@@ -152,11 +154,11 @@ update msg ( { root, mouse } as model ) =
                     KeyDown _ _ _ -> root
 
                     FocusOn pos ->
-                        root |> shiftFocusTo pos
+                        root |> Focus.on (Focus pos)
 
                     Tune pos alter ->
                         root
-                            |> shiftFocusTo pos
+                            |> Focus.on (Focus pos)
                             |> updateCell pos
                                 (\cell ->
                                     case cell of
@@ -169,7 +171,7 @@ update msg ( { root, mouse } as model ) =
 
                     ToggleOn pos ->
                         root
-                            |> shiftFocusTo pos
+                            |> Focus.on (Focus pos)
                             |> updateCell pos
                                 (\cell ->
                                     case cell of
@@ -180,7 +182,7 @@ update msg ( { root, mouse } as model ) =
 
                     ToggleOff pos ->
                         root
-                            |> shiftFocusTo pos
+                            |> Focus.on (Focus pos)
                             |> updateCell pos
                                 (\cell ->
                                     case cell of
@@ -191,7 +193,7 @@ update msg ( { root, mouse } as model ) =
 
                     ExpandNested pos ->
                         root
-                            |> shiftFocusTo pos
+                            |> Focus.on (Focus pos)
                             |> collapseAllAbove pos
                             |> updateCell pos
                                 (\cell ->
@@ -203,7 +205,7 @@ update msg ( { root, mouse } as model ) =
 
                     CollapseNested pos ->
                         root
-                            |> shiftFocusTo pos
+                            |> Focus.on (Focus pos)
                             |> updateCell pos
                                 (\cell ->
                                     case cell of
@@ -215,7 +217,7 @@ update msg ( { root, mouse } as model ) =
                     ExpandChoice pos ->
                         root
                             |> collapseAllAbove pos
-                            |> shiftFocusTo pos
+                            |> Focus.on (Focus pos)
                             |> updateCell pos
                                 (\cell ->
                                     case cell of
@@ -226,7 +228,7 @@ update msg ( { root, mouse } as model ) =
 
                     CollapseChoice pos ->
                         root
-                            |> shiftFocusTo pos
+                            |> Focus.on (Focus pos)
                             |> updateCell pos
                                 (\cell ->
                                     case cell of
@@ -241,7 +243,7 @@ update msg ( { root, mouse } as model ) =
                             index = getIndexOf pos |> Maybe.withDefault -1
                         in
                             root
-                                |> shiftFocusTo pos
+                                |> Focus.on (Focus pos)
                                 |> updateCell parentPos
                                     (\cell ->
                                         case cell of
@@ -250,11 +252,8 @@ update msg ( { root, mouse } as model ) =
                                             _ -> cell
                                     )
 
-                    ShiftFocusLeftAt pos ->
-                        root |> shiftFocusBy -1 pos
-
-                    ShiftFocusRightAt pos ->
-                        root |> shiftFocusBy 1 pos
+                    ShiftFocus direction ->
+                        root |> Focus.on (Focus.get root |> Focus.shift direction)
 
                     NoOp ->
                         root
@@ -292,7 +291,7 @@ handleMouse mouseAction model =
         maybeDragPos =
             if nextMouseState.down then nextMouseState.dragFrom
             else case mouseAction of
-                Up _ -> if curMouseState.down then curMouseState.dragFrom else Nothing
+                Mouse.Up _ -> if curMouseState.down then curMouseState.dragFrom else Nothing
                 _ -> Nothing
         nextCell =
             maybeDragPos
@@ -318,7 +317,7 @@ handleMouse mouseAction model =
                         updateWith
                             ( Tune cellPos alter
                             , case mouseAction of
-                                Up _ ->
+                                Mouse.Up _ ->
                                     if curMouseState.down
                                     && not nextMouseState.down
                                     then
@@ -352,41 +351,12 @@ handleKeyDown (Focus currentFocus) maybeCells keyCode =
     in
         case {-Debug.log "key here"-} keyCode of
             -- left arrow
-            37 -> ( ShiftFocusLeftAt currentFocus, Nothing )
+            37 -> ( ShiftFocus Focus.Left, Nothing )
             -- right arrow
-            39 -> ( ShiftFocusRightAt currentFocus, Nothing )
             -- up arrow
-            -- 38 -> ShiftFocusUpAt currentFocus
+            38 -> ( ShiftFocus Focus.Up, Nothing )
             -- down arrow
-            -- 40 -> ShiftFocusDownAt currentFocus
-            -- up arrow
-            38 -> maybeCells
-                |> Maybe.map .current
-                |> Maybe.map (\{ cell } ->
-                        ( case cell of
-                            Nested _ Collapsed _ -> ExpandNested currentFocus
-                            Choice _ Collapsed _ _ _ -> ExpandChoice currentFocus
-                            _ -> NoOp
-                        , Nothing
-                        )
-                    )
-                |> Maybe.withDefault ( NoOp, Nothing ) -- execute as well?
-            -- down arrow
-            40 -> let parentFocus = currentFocus |> shallower in
-                ( if (isSamePos parentFocus nowhere)
-                    then NoOp
-                    else
-                        maybeCells
-                            |> Maybe.map .parent
-                            |> Maybe.map (\{ cell } ->
-                                    case cell of
-                                        Nested _ Expanded _ -> CollapseNested parentFocus
-                                        Choice _ Expanded _ _ _ -> CollapseChoice parentFocus
-                                        _ -> NoOp
-                                )
-                            |> Maybe.withDefault NoOp
-                , Nothing
-                )
+            40 -> ( ShiftFocus Focus.Down, Nothing )
             -- space
             33 -> executeCell_
             -- enter
