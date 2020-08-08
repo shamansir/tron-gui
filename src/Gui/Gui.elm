@@ -1,7 +1,7 @@
 module Gui.Gui exposing
     ( Model
     , view, update, build, none, map
-    , trackMouse, focus
+    , trackMouse, focus, fromWindow
     , fromAlt -- FIXME: temporary
     )
 
@@ -385,6 +385,16 @@ focus : msg -> Cmd msg
 focus noOp =
     Dom.focus Render.rootId
         |> Task.attempt (always noOp)
+
+
+fromWindow : (Int -> Int -> msg) -> Cmd msg
+fromWindow passSize =
+    Dom.getViewport
+        |> Task.perform
+            (\d -> passSize
+                (floor d.viewport.width)
+                (floor d.viewport.height)
+            )
 
 
 -- FIXME: move somewhere else, where it belongs

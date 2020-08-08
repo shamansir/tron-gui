@@ -10,6 +10,7 @@ import Json.Encode as Encode
 import Html exposing (Html)
 import Html as Html exposing (map, div)
 import Html.Events as Html exposing (onClick)
+import Task as Task
 
 import Gui.Alt as AGui
 import Gui.Alt exposing (Gui)
@@ -23,6 +24,7 @@ import Simple.Main as Simple
 import Simple.Model as Simple
 import Simple.Msg as Simple
 import Simple.Gui as SimpleGui
+import Dict exposing (size)
 
 
 type Msg
@@ -30,6 +32,7 @@ type Msg
     | DatGuiUpdate AGui.Update
     | TronUpdate (Tron.Msg Msg)
     | ToSimple Simple.Msg
+    | Resize Int Int
     | NoOp
 
 
@@ -47,8 +50,8 @@ type alias Model =
     { mode : Mode
     , gui : Tron.Model Msg
     , example : Example
+    , size : ( Int, Int )
     }
-    -- ( Mode, Example )
 
 
 init : ( Model, Cmd Msg )
@@ -58,6 +61,7 @@ init =
         { mode = DatGui
         , example = Simple <| Simple.init
         , gui = Gui.none
+        , size = ( 0, 0 )
         }
 
 
@@ -87,6 +91,7 @@ view { mode, gui, example } =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({ mode, example, gui } as model) =
     case ( msg, mode, example ) of
+
         ( ChangeMode DatGui, _, Simple simpleExample ) ->
             (
                 { model
@@ -97,6 +102,7 @@ update msg ({ mode, example, gui } as model) =
                 |> AGui.encode
                 |> startDatGui
             )
+
         ( ChangeMode TronGui, _, Simple simpleExample ) ->
             (
                 { model
@@ -109,8 +115,10 @@ update msg ({ mode, example, gui } as model) =
             , Cmd.batch
                 [ destroyDatGui ()
                 , Tron.focus NoOp
+                , Tron.fromWindow Resize
                 ]
             )
+
         ( ChangeMode TronGui, _, _ ) ->
             (
                 { model
@@ -120,8 +128,10 @@ update msg ({ mode, example, gui } as model) =
             , Cmd.batch
                 [ destroyDatGui ()
                 , Tron.focus NoOp
+                , Tron.fromWindow Resize
                 ]
             )
+
         ( ToSimple smsg, _, Simple smodel ) ->
             (
                 { model
@@ -129,6 +139,7 @@ update msg ({ mode, example, gui } as model) =
                 }
             , Cmd.none
             )
+
         ( TronUpdate guiMsg, TronGui, Simple simpleExample ) ->
             case gui |> Gui.update guiMsg of
                 ( nextGui, cmds ) ->
@@ -138,6 +149,7 @@ update msg ({ mode, example, gui } as model) =
                         }
                     , cmds
                     )
+
         ( DatGuiUpdate guiUpdate, DatGui, Simple simpleExample ) ->
             (
                 { model
@@ -152,6 +164,15 @@ update msg ({ mode, example, gui } as model) =
                 }
             , Cmd.none
             )
+
+        ( Resize width height, _, _ ) ->
+            (
+                { model
+                | size = ( width, height )
+                }
+            , Cmd.none
+            )
+
         _ -> ( model, Cmd.none )
 
 
@@ -163,13 +184,22 @@ update msg ({ mode, example, gui } as model) =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions { mode, example, gui } =
+subscriptions { mode, example, gui, size } =
     case mode of
         DatGui -> updateFromDatGui (DatGuiUpdate << AGui.fromPort)
         TronGui ->
             case example of
                 Simple simpleExample ->
-                    Gui.trackMouse { width = 1300, height = 720 } gui |> Sub.map TronUpdate
+                    Sub.batch
+                        [ Gui.trackMouse
+                            (Debug.log "size" <|
+                                { width = Tuple.first size
+                                , height = Tuple.second size
+                                })
+                            gui
+                                |> Sub.map TronUpdate
+                        , Browser.onResize Resize
+                        ]
                 _ -> Sub.none
 
 
