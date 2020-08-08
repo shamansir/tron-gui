@@ -492,6 +492,8 @@ mapCell f cell =
         ChoiceItem label -> ChoiceItem label
         Knob label state val handler ->
             Knob label state val (f << handler)
+        XY label state val handler ->
+            XY label state val (f << handler)
         Toggle label state handler ->
             Toggle label state (f << handler)
         Button label handler ->

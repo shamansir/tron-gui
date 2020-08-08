@@ -48,6 +48,17 @@ viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected 
                     ++ String.fromFloat step ++ "/"
                     ++ String.fromFloat max
                     ++ " " ++ String.fromFloat val ]
+        XY label ( xConf, yConf ) ( valX, valY ) _ ->
+            span []
+                [ text <| posStr ++ " xy: " ++ label
+                    ++ " " ++ String.fromFloat xConf.min ++ "/"
+                    ++ String.fromFloat xConf.step ++ "/"
+                    ++ String.fromFloat xConf.max
+                    ++ " " ++ String.fromFloat valX
+                    ++ " " ++ String.fromFloat yConf.min ++ "/"
+                    ++ String.fromFloat yConf.step ++ "/"
+                    ++ String.fromFloat yConf.max
+                    ++ " " ++ String.fromFloat valY ]
         Toggle label val _ ->
             span []
                 [ text <| posStr ++ " toggle: " ++ label ++ " "

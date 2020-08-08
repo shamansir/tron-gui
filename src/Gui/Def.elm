@@ -19,6 +19,8 @@ type alias ToggleHandler umsg = (ToggleState -> umsg)
 
 type alias KnobHandler umsg = (Float -> umsg)
 
+type alias XYHandler umsg = ((Float, Float) -> umsg)
+
 
 type alias KnobState =
     { min : Float
@@ -67,9 +69,15 @@ type AlterKnob
     | Alter Float -- from -0.5 to 0.5
 
 
+type AlterXY
+    = Stay_
+    | Alter_ ( Float, Float ) -- both from -0.5 to 0.5
+
+
 type Cell umsg
     = Ghost Label
     | Knob Label KnobState Float (KnobHandler umsg)
+    | XY Label ( KnobState, KnobState ) ( Float, Float ) (XYHandler umsg)
     | Toggle Label ToggleState (ToggleHandler umsg)
     | Button Label (Handler umsg)
     | Nested Label ExpandState (Nest umsg)

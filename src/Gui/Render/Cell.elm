@@ -45,6 +45,29 @@ knobRectAttrs color rotation =
     ]
 
 
+xyRectAttrs : String -> List (Attribute (Msg umsg))
+xyRectAttrs color =
+    [ width <| String.fromInt (cellWidth - 5)
+    , height <| String.fromInt (cellHeight - 5)
+    , x <| String.fromFloat 2.5
+    , y <| String.fromFloat 2.5
+    , fill color
+    , stroke "none"
+    ]
+
+
+xySmallRectAttrs : Float -> Float -> String -> List (Attribute (Msg umsg))
+xySmallRectAttrs xPos yPos color =
+    [ width "5"
+    , height "5"
+    , x <| String.fromFloat xPos
+    , y <| String.fromFloat yPos
+    , fill color
+    , stroke "none"
+    ]
+
+
+
 upArrow : Float -> Float -> String -> Svg (Msg umsg)
 upArrow xPos yPos color =
     g
@@ -117,6 +140,36 @@ renderCell position (Focus focus) isSelected cell =
                                     []
                                 ]
                             ]
+                XY _ ( xConf, yConf ) ( valueX, valueY ) _ ->
+                    let
+                        friendlyValue value roundBy =
+                            toFloat (round (value * toFloat roundBy)) / toFloat roundBy
+                        normalizedValue { min, max } value = (value - min) / (max - min)
+                        normalizedDefault { min, max, default } = (default - min) / (max - min)
+                        ( xRelPos, yRelPos ) =
+                            ( (0.5 + valueX) * (cellWidth - 5)
+                            , (0.5 + valueY) * (cellHeight - 5)
+                            )
+                    in
+                        g [ class "gui-xy" ]
+                            [ rect
+                                (xyRectAttrs baseColor)
+                                []
+                            , rect
+                                (xySmallRectAttrs xRelPos yRelPos "rgba(0,255,0,0.4)" )
+                                []
+                            , text_
+                                (textAttrs
+                                    xRelPos
+                                    yRelPos
+                                    baseColor)
+                                [ Svg.text <| "("
+                                    ++ (String.fromFloat <| friendlyValue valueX xConf.roundBy)
+                                    ++ ","
+                                    ++ (String.fromFloat <| friendlyValue valueY yConf.roundBy)
+                                    ++ ")"
+                                ]
+                            ]
                 Toggle _ state _ ->
                     g [ class "gui-toggle" ]
                         [ text_
@@ -172,6 +225,7 @@ renderCell position (Focus focus) isSelected cell =
             case labeledCell of
                 Ghost label -> label
                 Knob label _ _ _ -> label
+                XY label _ _ _ -> label
                 Toggle label _ _ -> label
                 Button label _ -> label
                 Nested label _ _ -> label
