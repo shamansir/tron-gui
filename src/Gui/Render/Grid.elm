@@ -8,16 +8,13 @@ import Html.Events as H
 import Json.Decode as Json
 
 
-import Gui.Def exposing (..)
+import Gui.Control exposing (..)
 import Gui.Msg exposing (..)
-import Gui.Nest exposing (..)
-import Gui.Focus exposing (..)
-import Gui.Focus as Focus exposing (..)
-import Gui.Grid exposing (..)
+import Gui.Layout exposing (..)
 import Gui.Render.Cell exposing (..)
 
 
-type alias GridView umsg = Html (Msg umsg)
+type alias GridView = Html Msg
 
 
 rootId : String
@@ -32,7 +29,7 @@ type Mode
 mode : Mode
 mode = Fancy
 
-
+{- }
 viewCellContentDebug : GridPos -> GridCell umsg -> GridView umsg
 viewCellContentDebug ((GridPos row col) as gridPos) { cell, nestPos, isSelected } =
     let
@@ -220,3 +217,4 @@ view nest =
             , keyDownHandler_
             ]
             [ grid |> viewGrid (Focus focus) ]
+-}

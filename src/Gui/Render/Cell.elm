@@ -5,12 +5,11 @@ import Html exposing (Html, text, div, span, input)
 import Svg exposing (..)
 import Svg.Attributes as S exposing (..)
 
-import Gui.Def exposing (..)
+import Gui.Control exposing (..)
 import Gui.Msg exposing (..)
-import Gui.Focus exposing (..)
 
 
-textAttrs : Float -> Float -> String -> List (Attribute (Msg umsg))
+textAttrs : Float -> Float -> String -> List (Attribute Msg)
 textAttrs xPos yPos color =
     [ fill color
     , x <| String.fromFloat xPos
@@ -22,7 +21,7 @@ textAttrs xPos yPos color =
     ]
 
 
-circleAttrs : Float -> Float -> String -> List (Attribute (Msg umsg))
+circleAttrs : Float -> Float -> String -> List (Attribute Msg)
 circleAttrs xPos yPos color =
     [ cx <| String.fromFloat <| xPos
     , cy <| String.fromFloat <| yPos
@@ -32,7 +31,7 @@ circleAttrs xPos yPos color =
     ]
 
 
-knobRectAttrs : String -> Float -> List (Attribute (Msg umsg))
+knobRectAttrs : String -> Float -> List (Attribute Msg)
 knobRectAttrs color rotation =
     [ width "5"
     , height "5"
@@ -45,7 +44,7 @@ knobRectAttrs color rotation =
     ]
 
 
-xyRectAttrs : String -> List (Attribute (Msg umsg))
+xyRectAttrs : String -> List (Attribute Msg)
 xyRectAttrs color =
     [ width <| String.fromInt (cellWidth - 5)
     , height <| String.fromInt (cellHeight - 5)
@@ -58,7 +57,7 @@ xyRectAttrs color =
     ]
 
 
-xySmallRectAttrs : Float -> Float -> String -> List (Attribute (Msg umsg))
+xySmallRectAttrs : Float -> Float -> String -> List (Attribute Msg)
 xySmallRectAttrs xPos yPos color =
     [ width "5"
     , height "5"
@@ -70,7 +69,7 @@ xySmallRectAttrs xPos yPos color =
 
 
 
-upArrow : Float -> Float -> String -> Svg (Msg umsg)
+upArrow : Float -> Float -> String -> Svg Msg
 upArrow xPos yPos color =
     g
         [ class "gui-arrow"
@@ -88,7 +87,7 @@ upArrow xPos yPos color =
         ]
 
 
-downArrow : Float -> Float -> String -> Svg (Msg umsg)
+downArrow : Float -> Float -> String -> Svg Msg
 downArrow xPos yPos color =
     g
         [ class "gui-arrow"
@@ -105,7 +104,7 @@ downArrow xPos yPos color =
                 []
         ]
 
-
+{-
 renderCell : NestPos -> Focus -> Maybe SelectionState -> Cell umsg -> Html (Msg umsg)
 renderCell position (Focus focus) isSelected cell =
     let cellBody =
@@ -252,3 +251,4 @@ renderCell position (Focus focus) isSelected cell =
             (textAttrs (cellWidth / 2) (cellHeight - 10) "white")
             [ Svg.text <| cellLabel cell ]
         ]
+-}

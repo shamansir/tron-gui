@@ -10,13 +10,11 @@ import Browser.Dom as Dom
 import Task
 import Browser.Events as Browser
 
+import BinPack exposing (..)
 
-import Gui.Def exposing (..)
+import Gui.Control exposing (..)
+import Gui.Layout exposing (..)
 import Gui.Msg exposing (..)
-import Gui.Nest exposing (..)
-import Gui.Focus exposing (..)
-import Gui.Focus as Focus exposing (..)
-import Gui.Grid as Grid exposing (..)
 import Gui.Render.Grid as Render exposing (..)
 import Gui.Mouse exposing (..)
 import Gui.Mouse as Mouse exposing (..)
@@ -26,14 +24,9 @@ import Gui.Alt as Alt exposing (Gui)
 
 type alias Model umsg =
     { mouse : MouseState
-    , root : Nest umsg
+    , tree : Over umsg
+    , layout : Layout
     }
--- type alias View umsg = Render.Grid umsg
--- type alias Msg = Gui.Msg.Msg
-
-
-view : Model umsg -> Render.GridView umsg
-view = .root >> Render.view
 
 
 moves size gui =
@@ -51,76 +44,9 @@ extractMouse : Model umsg -> MouseState
 extractMouse = .mouse
 
 
-build : Nest umsg -> Model umsg
-build =
-    Model Gui.Mouse.init
-
-
 none : Model umsg
 none =
-    Model Gui.Mouse.init noChildren
-
-
-fromAlt : Alt.Gui umsg -> Nest umsg
-fromAlt altGui =
-    let
-        convertAxis { min, max, step } current =
-            { min = min, max = max, step = step, roundBy = 2, default = current }
-        cells =
-            altGui
-                |> List.map (\(_, label, prop) ->
-                    case prop of
-                        Alt.Ghost ->
-                            Ghost label
-                        Alt.Slider spec current toMsg ->
-                            Knob
-                                label
-                                (convertAxis spec current)
-                                current
-                                toMsg
-                        Alt.XY ( xSpec, ySpec ) ( curX, curY ) toMsg ->
-                            XY
-                                label
-                                ( convertAxis xSpec curX
-                                , convertAxis ySpec curY )
-                                ( curX, curY )
-                                toMsg
-                        Alt.Input curent toMsg ->
-                            Ghost label -- TODO
-                        Alt.Color curent toMsg ->
-                            Ghost label -- TODO
-                        Alt.Toggle current toMsg ->
-                            Toggle
-                                label
-                                (case current of
-                                    Alt.On -> TurnedOn
-                                    Alt.Off -> TurnedOff
-                                )
-                                (\next ->
-                                    case next of
-                                        TurnedOn ->toMsg Alt.On
-                                        TurnedOff -> toMsg Alt.Off
-                                )
-                        Alt.Button toMsg ->
-                            Button label toMsg
-                        Alt.Choice options maybeCurrent toMsg ->
-                            Choice label Expanded (maybeCurrent |> Maybe.withDefault 0)
-                                (\idx _ -> toMsg idx)
-                                <| oneLine
-                                    (options
-                                        |> List.map Tuple.second
-                                        |> List.map ChoiceItem)
-                        Alt.Nested expanded gui ->
-                            Nested
-                                label
-                                (case expanded of
-                                    Alt.Expanded -> Expanded
-                                    Alt.Collapsed -> Collapsed
-                                )
-                                <| fromAlt gui
-                )
-    in
-        oneLine cells
+    Model Gui.Mouse.init Anything <| BinPack.container 0 0
 
 
 update
@@ -283,7 +209,7 @@ update msg ( { root, mouse } as model ) =
             }, Cmd.none )
 
 
-trackMouse :  { width : Int, height : Int } -> Model umsg -> Sub (Msg umsg)
+trackMouse :  { width : Int, height : Int } -> Model umsg -> Sub Msg
 trackMouse windowSize gui =
     Sub.batch
         [ Sub.map (downs windowSize gui)
@@ -369,12 +295,12 @@ handleMouse mouseAction model =
                 , Cmd.none
                 )
 
-
+{-
 handleKeyDown
     :  Focus
     -> Maybe { current : GridCell umsg, parent : GridCell umsg }
     -> Int
-    -> ( Msg umsg, Maybe umsg )
+    -> ( Msg, Maybe umsg )
 handleKeyDown (Focus currentFocus) maybeCells keyCode =
     let
         executeCell_ =
@@ -382,10 +308,9 @@ handleKeyDown (Focus currentFocus) maybeCells keyCode =
             |> Maybe.map .current
             |> Maybe.map executeCell
             |> Maybe.withDefault ( NoOp, Nothing )
-        --_ = Debug.log "currentFocus" currentFocus
     -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
     in
-        case {-Debug.log "key here"-} keyCode of
+        case keyCode of
             -- left arrow
             37 -> ( ShiftFocus Focus.Left, Nothing )
             -- right arrow
@@ -399,10 +324,11 @@ handleKeyDown (Focus currentFocus) maybeCells keyCode =
             13 -> executeCell_
             -- else
             _ -> ( NoOp, Nothing )
+-}
 
 
 
-updateWith : ( Msg umsg, Maybe umsg ) -> Model umsg -> ( Model umsg, Cmd umsg  )
+updateWith : ( Msg, Maybe umsg ) -> Model umsg -> ( Model umsg, Cmd umsg  )
 updateWith ( msg, maybeUserMsg ) model =
     update msg model
         |> Tuple.mapSecond
@@ -432,7 +358,7 @@ fromWindow passSize =
                 (floor d.viewport.height)
             )
 
-
+{-
 -- FIXME: move somewhere else, where it belongs
 executeCell : GridCell umsg -> ( Msg umsg, Maybe umsg )
 executeCell { cell, nestPos, isSelected, onSelect } =
@@ -466,53 +392,16 @@ executeCell { cell, nestPos, isSelected, onSelect } =
             case isSelected of
                 Just NotSelected -> ( Select nestPos, Nothing )
                 _ -> ( NoOp, Nothing )
+-}
 
 
-offsetFromSize : { width : Int, height : Int } -> Model msg -> { x : Int, y : Int }
-offsetFromSize { width, height } { root } =
+offsetFromSize : { width : Int, height : Int } -> Layout -> { x : Int, y : Int }
+offsetFromSize { width, height } { layout } =
     let
+        ( gridWidthInCells, gridHeightInCells ) = getSize layout
         ( gridWidthInPx, gridHeightInPx ) =
-            layout root |> getSizeInPixels -- FIXME: store layout in the model
+            cellWidth * gridWidthInCells + cellHeight * gridHeightInCells
     in
         { x = floor <| (toFloat width / 2) - (toFloat gridWidthInPx / 2)
         , y = floor <| (toFloat height / 2) - (toFloat gridHeightInPx / 2)
         }
-
-
-
-map : (msgA -> msgB) -> Model msgA -> Model msgB
-map f model =
-    Model model.mouse
-        <| mapNest f model.root
-
-
-mapNest : (msgA -> msgB) -> Nest msgA -> Nest msgB
-mapNest f nest =
-    { shape = nest.shape
-    , focus = nest.focus
-    , cells = nest.cells |> List.map (mapCell f)
-    }
-
-
-mapCell : (msgA -> msgB) -> Cell msgA -> Cell msgB
-mapCell f cell =
-    case cell of
-        Ghost label -> Ghost label
-        ChoiceItem label -> ChoiceItem label
-        Knob label state val handler ->
-            Knob label state val (f << handler)
-        XY label state val handler ->
-            XY label state val (f << handler)
-        Toggle label state handler ->
-            Toggle label state (f << handler)
-        Button label handler ->
-            Button label (f << handler)
-        Choice label expanded item handler nest ->
-            Choice
-                label
-                expanded
-                item
-                (\i l -> handler i l |> Maybe.map f)
-                (mapNest f nest)
-        Nested label expanded nest ->
-            Nested label expanded <| mapNest f nest

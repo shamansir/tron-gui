@@ -1,34 +1,18 @@
 module Gui.Msg exposing (..)
 
 
-import Gui.Def exposing (..)
+import Gui.Control exposing (..)
 import Gui.Mouse exposing (..)
 import Gui.Focus exposing (..)
-import Gui.Grid exposing (..)
 
 
-type Msg umsg
+type Msg
     = NoOp
     | ApplyMouse MouseAction -- from the document
-    | Click (GridCell umsg) -- specific cell
-    | MouseDown (GridCell umsg) -- specific cell
-    | KeyDown Int Focus (Maybe { current : GridCell umsg, parent : GridCell umsg }) -- specific cell
-    | FocusOn NestPos
-    | Tune NestPos AlterKnob
-    | TuneXY NestPos AlterXY
-    | ToggleOn NestPos
-    | ToggleOff NestPos
-    | ExpandNested NestPos
-    | CollapseNested NestPos
-    | ExpandChoice NestPos
-    | CollapseChoice NestPos
-    | Select NestPos
-    -- | Move NestPos Int
+    | Click Path
+    | MouseDown Path
+    | KeyDown Int Path
+    | FocusOn Path
+    | Tune Path AlterKnob
+    | TuneXY Path AlterXY
     | ShiftFocus Direction
-    -- | SendToUser umsg
-    -- | SelectAndSendToUser NestPos umsg
-    -- | ToggleOnAndSendToUser NestPos umsg
-    -- | ToggleOffAndSendToUser NestPos umsg
-    -- | TuneAndApply NestPos AlterKnob umsg
-
-    -- | Color

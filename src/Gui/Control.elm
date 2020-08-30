@@ -9,11 +9,6 @@ type alias Label = String
 
 type Icon = Icon String
 
-type alias ItemChosen = ( Int, Label )
-
-type NestPos = NestPos (List Int) -- just path by indices
-
-
 type alias Shape = ( Int, Int )
 
 
@@ -31,20 +26,9 @@ type ExpandState
     | Collapsed
 
 
--- type ExpandDirection
---     = Up
---     | Down
-
-
 type ToggleState
     = TurnedOn
     | TurnedOff
-
-
--- type AlterKnob
---     = Up
---     | Down
---     | Stay
 
 
 type AlterKnob
@@ -57,6 +41,26 @@ type AlterXY
     | Alter_ ( Float, Float ) -- both from -0.5 to 0.5
 
 
+type Path = Path (List Int)
+
+
+type alias GroupControl msg =
+    Control
+        { shape : Shape
+        , items : List ( Label, Over msg )
+        }
+        { expanded : ExpandState
+        , focus :
+            Maybe
+                { index : Int
+                , position : ( Int, Int )
+                , label : Label
+                , at : Over msg
+                }
+        }
+        msg
+
+
 type Over msg
     = Anything
     | Number (Control Axis Float msg)
@@ -64,22 +68,7 @@ type Over msg
     | Text (Control () String msg)
     | Toggle (Control () ToggleState msg)
     | Action (Control (Maybe Icon) () msg)
-    | Group
-        (Control
-            { shape : Shape
-            , items : List ( Label, Over msg )
-            }
-            { expanded : ExpandState
-            , focus :
-                Maybe
-                    { index : Int
-                    , position : ( Int, Int )
-                    , label : Label
-                    , at : Over msg
-                    }
-            }
-            msg
-        )
+    | Group (GroupControl msg)
 
 
 cellWidth = 70
