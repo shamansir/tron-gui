@@ -468,33 +468,6 @@ executeCell { cell, nestPos, isSelected, onSelect } =
                 _ -> ( NoOp, Nothing )
 
 
-
-{-
-trackMouse_ : Model umsg -> MouseState -> ( Msg, Maybe umsg )
-trackMouse_ ( prevMouseState, ui ) nextMouseState =
-    let
-        (Focus focusedPos) = findFocus ui
-        -- prevCell = Debug.log "prev" <| findCellAt prevMouseState.pos <| layout ui
-        -- _ = Debug.log "pos" nextMouseState.pos
-        nextCell = findCellAt nextMouseState.pos <| layout ui  -- FIXME: store layout in the model
-    in
-        case Debug.log "nextCell" nextCell of
-        -- case findCell focusedPos ui of
-            Just (Knob _ knobState curValue handler) ->
-                let
-                    alter = applyMove prevMouseState nextMouseState knobState curValue
-                    _ = Debug.log "prevMouseState" prevMouseState
-                    _ = Debug.log "nextMouseState" nextMouseState
-                in
-                    ( Tune focusedPos alter
-                    ,
-                        if (prevMouseState.down == True && nextMouseState.down == False)
-                        then Just <| handler (alterKnob knobState alter curValue)
-                        else Nothing
-                    )
-            _ -> ( NoOp, Nothing ) -}
-
-
 offsetFromSize : { width : Int, height : Int } -> Model msg -> { x : Int, y : Int }
 offsetFromSize { width, height } { root } =
     let

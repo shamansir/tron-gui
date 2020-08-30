@@ -1,7 +1,7 @@
 module Gui.Util exposing (..)
 
 
-import Gui.Def exposing (..)
+import Gui.Control exposing (..)
 import Gui.Mouse exposing (..)
 
 
@@ -12,8 +12,8 @@ align v =
         else v
 
 
-applyKnobMove : MouseState -> MouseState -> KnobState -> Float -> AlterKnob
-applyKnobMove prev next curState curValue =
+applyKnobMove : MouseState -> MouseState -> Float -> AlterKnob
+applyKnobMove prev next curValue =
     case next.dragFrom of
         Just dragFrom ->
             if next.pos /= dragFrom then
@@ -28,8 +28,8 @@ applyKnobMove prev next curState curValue =
         _ -> Stay
 
 
-applyXYMove : MouseState -> MouseState -> ( KnobState, KnobState ) -> ( Float, Float ) -> AlterXY
-applyXYMove prev next curState curValue =
+applyXYMove : MouseState -> MouseState -> ( Float, Float ) -> AlterXY
+applyXYMove prev next curValue =
     case next.dragFrom of
         Just dragFrom ->
             if next.pos /= dragFrom then
@@ -63,7 +63,7 @@ findMap toValue =  -- TODO: re-use in code where such `foldl` is used
         Nothing
 
 
-alterKnob : KnobState -> AlterKnob -> Float -> Float
+alterKnob : Axis -> AlterKnob -> Float -> Float
 alterKnob { min, max, step } alter curValue =
     case alter of
         Alter amount ->
@@ -72,7 +72,7 @@ alterKnob { min, max, step } alter curValue =
         Stay -> curValue
 
 
-alterXY : ( KnobState, KnobState ) -> AlterXY -> ( Float, Float ) -> ( Float, Float )
+alterXY : ( Axis, Axis ) -> AlterXY -> ( Float, Float ) -> ( Float, Float )
 alterXY ( xSpec, ySpec ) alter ( curX, curY ) =
     case alter of
         Alter_ ( amountX, amountY ) ->

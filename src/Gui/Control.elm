@@ -1,4 +1,8 @@
-module Gui.Def exposing (..)
+module Gui.Control exposing (..)
+
+
+type Control setup value msg =
+    Control setup value (value -> msg)
 
 
 type alias Label = String
@@ -10,10 +14,6 @@ type alias ItemChosen = ( Int, Label )
 type NestPos = NestPos (List Int) -- just path by indices
 
 
-type Control setup value msg =
-    Control setup value (value -> msg)
-
-
 type alias Shape = ( Int, Int )
 
 
@@ -23,13 +23,6 @@ type alias Axis =
     , step : Float
     , roundBy : Int
     , default : Float
-    }
-
-
-type alias Nest umsg =
-    { focus: Int
-    , shape: Shape
-    , cells: Cells umsg
     }
 
 
@@ -46,11 +39,6 @@ type ExpandState
 type ToggleState
     = TurnedOn
     | TurnedOff
-
-
-type SelectionState
-    = Selected
-    | NotSelected
 
 
 -- type AlterKnob
@@ -76,10 +64,20 @@ type Over msg
     | Text (Control () String msg)
     | Toggle (Control () ToggleState msg)
     | Action (Control (Maybe Icon) () msg)
-    | Nested
+    | Group
         (Control
-            ( Shape, List ( Label, Over msg ) )
-            ( ( Int, Label ), Over msg )
+            { shape : Shape
+            , items : List ( Label, Over msg )
+            }
+            { expanded : ExpandState
+            , focus :
+                Maybe
+                    { index : Int
+                    , position : ( Int, Int )
+                    , label : Label
+                    , at : Over msg
+                    }
+            }
             msg
         )
 

@@ -5,7 +5,7 @@ import Array exposing (..)
 import Json.Decode as Json
 
 
-import Gui.Def exposing (..)
+import Gui.Control exposing (..)
 import Gui.Nest exposing (..)
 
 
