@@ -51,6 +51,8 @@ xyRectAttrs color =
     , height <| String.fromInt (cellHeight - 5)
     , x <| String.fromFloat 2.5
     , y <| String.fromFloat 2.5
+    , rx <| String.fromFloat 10
+    , ry <| String.fromFloat 10
     , fill color
     , stroke "none"
     ]
@@ -146,17 +148,19 @@ renderCell position (Focus focus) isSelected cell =
                             toFloat (round (value * toFloat roundBy)) / toFloat roundBy
                         normalizedValue { min, max } value = (value - min) / (max - min)
                         normalizedDefault { min, max, default } = (default - min) / (max - min)
+                        normalizedX = normalizedValue xConf valueX
+                        normalizedY = normalizedValue yConf valueY
                         ( xRelPos, yRelPos ) =
-                            ( (0.5 + valueX) * (cellWidth - 5)
-                            , (0.5 + valueY) * (cellHeight - 5)
+                            ( normalizedX * (cellWidth - 5)
+                            , normalizedY * (cellHeight - 5)
                             )
                     in
                         g [ class "gui-xy" ]
                             [ rect
-                                (xyRectAttrs baseColor)
+                                (xyRectAttrs nothingColor)
                                 []
                             , rect
-                                (xySmallRectAttrs xRelPos yRelPos "rgba(0,255,0,0.4)" )
+                                (xySmallRectAttrs xRelPos yRelPos "rgba(0,255,0,0.4)")
                                 []
                             , text_
                                 (textAttrs

@@ -192,10 +192,9 @@ subscriptions { mode, example, gui, size } =
                 Simple simpleExample ->
                     Sub.batch
                         [ Gui.trackMouse
-                            (Debug.log "size" <|
-                                { width = Tuple.first size
-                                , height = Tuple.second size
-                                })
+                            { width = Tuple.first size
+                            , height = Tuple.second size
+                            }
                             gui
                                 |> Sub.map TronUpdate
                         , Browser.onResize Resize

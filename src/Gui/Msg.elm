@@ -15,6 +15,7 @@ type Msg umsg
     | KeyDown Int Focus (Maybe { current : GridCell umsg, parent : GridCell umsg }) -- specific cell
     | FocusOn NestPos
     | Tune NestPos AlterKnob
+    | TuneXY NestPos AlterXY
     | ToggleOn NestPos
     | ToggleOff NestPos
     | ExpandNested NestPos

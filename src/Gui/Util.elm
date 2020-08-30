@@ -5,34 +5,51 @@ import Gui.Def exposing (..)
 import Gui.Mouse exposing (..)
 
 
-applyMove : MouseState -> MouseState -> KnobState -> Float -> AlterKnob
-applyMove prev next curState curValue =
+align : Float -> Float
+align v =
+    if v > 1 then 1.0
+    else if v < 0 then 0.0
+        else v
+
+
+applyKnobMove : MouseState -> MouseState -> KnobState -> Float -> AlterKnob
+applyKnobMove prev next curState curValue =
     case next.dragFrom of
         Just dragFrom ->
             if next.pos /= dragFrom then
                 let
                     originY = dragFrom.y
                     curY = next.pos.y
-                    bottomY = toFloat originY - (knobDistance / 2)
                     topY = toFloat originY + (knobDistance / 2)
-                    -- Y is going from top to bottom
-                    -- diffY = (toFloat curY - bottomY) / knobDistance
                     diffY = (topY - toFloat curY) / knobDistance
                 in
-                    Alter
-                        <| if diffY > 1 then 1.0
-                            else if diffY < 0 then 0.0
-                                else diffY
+                    Alter <| align diffY
             else Stay
         _ -> Stay
-    -- let
-    --     ( prevX, prevY ) = prev.vec
-    --     ( nextX, nextY ) = next.vec
-    -- in
-    --     if (nextY == 0.0) then Stay
-    --         else if (nextY < 0.0) then Down
-    --             else if (nextY > 0.0) then Up
-    --                 else Stay
+
+
+applyXYMove : MouseState -> MouseState -> ( KnobState, KnobState ) -> ( Float, Float ) -> AlterXY
+applyXYMove prev next curState curValue =
+    case next.dragFrom of
+        Just dragFrom ->
+            if next.pos /= dragFrom then
+                let
+                    originX = dragFrom.x
+                    originY = dragFrom.y
+                    curX = next.pos.x
+                    curY = next.pos.y
+                    leftX = toFloat originX - (knobDistance / 2)
+                    -- Y is going from top to bottom
+                    topY = toFloat originY + (knobDistance / 2)
+                    diffX = (toFloat curX - leftX) / knobDistance
+                    diffY = (topY - toFloat curY) / knobDistance
+                in
+                    Alter_
+                        ( align diffX
+                        , align (1 - diffY)
+                        )
+            else Stay_
+        _ -> Stay_
 
 
 findMap : (a -> Maybe x) -> List a -> Maybe x
@@ -53,3 +70,14 @@ alterKnob { min, max, step } alter curValue =
             -- amount is a (0 <= value <= 1)
             min + (amount * (max - min)) -- TODO: apply step
         Stay -> curValue
+
+
+alterXY : ( KnobState, KnobState ) -> AlterXY -> ( Float, Float ) -> ( Float, Float )
+alterXY ( xSpec, ySpec ) alter ( curX, curY ) =
+    case alter of
+        Alter_ ( amountX, amountY ) ->
+            -- amount is a (0 <= value <= 1)
+            ( xSpec.min + (amountX * (xSpec.max - xSpec.min)) -- TODO: apply step
+            , ySpec.min + (amountY * (ySpec.max - ySpec.min))
+            )
+        Stay_ -> ( curX, curY )

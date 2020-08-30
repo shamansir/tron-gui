@@ -207,7 +207,7 @@ view nest =
         keyDownHandler_ = H.on "keydown"
             <| Json.map
                 (\key ->
-                    KeyDown ({- Debug.log "key" -} key) (Focus focus)
+                    KeyDown key (Focus focus)
                         <| Maybe.map2
                             (\cur par -> { current = cur, parent = par })
                             maybeCurrentCell

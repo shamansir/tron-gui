@@ -178,6 +178,19 @@ update msg ( { root, mouse } as model ) =
                                         _ -> cell
                                 )
 
+                    TuneXY pos alter ->
+                        root
+                            |> Focus.on (Focus pos)
+                            |> updateCell pos
+                                (\cell ->
+                                    case cell of
+                                        XY label setup curValue handler ->
+                                            XY label setup
+                                                (alterXY setup alter curValue)
+                                                handler
+                                        _ -> cell
+                                )
+
                     ToggleOn pos ->
                         root
                             |> Focus.on (Focus pos)
@@ -291,12 +304,6 @@ handleMouse mouseAction model =
     let
         curMouseState = model.mouse
         nextMouseState = curMouseState |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
-        -- _ = Debug.log "mouseAction" mouseAction
-        -- _ = Debug.log "currentState" model.mouse
-        -- _ = Debug.log "nextState" nextMouseState
-        -- (Focus focusedPos) = findFocus model.root
-        -- prevCell = Debug.log "prev" <| findCellAt prevMouseState.pos <| layout ui
-        -- _ = Debug.log "pos" nextMouseState.pos
         maybeDragPos =
             if nextMouseState.down then nextMouseState.dragFrom
             else case mouseAction of
@@ -312,13 +319,12 @@ handleMouse mouseAction model =
                     )
     in
         case nextCell of
-        --case nextCell of
             -- case findCell focusedPos ui of
+
             Just ( (Knob _ knobState curValue handler), cellPos ) ->
                 let
-                    alter = applyMove curMouseState nextMouseState knobState curValue
-                    -- _ = Debug.log "prevMouseState" mouse
-                    -- _ = Debug.log "nextMouseState" nextMouseState
+                    alter = applyKnobMove curMouseState nextMouseState knobState curValue
+
                 in
                     { model
                     | mouse = nextMouseState
@@ -334,6 +340,27 @@ handleMouse mouseAction model =
                                     else Nothing
                                 _ -> Nothing
                             )
+
+            Just ( (XY _ xyState curValue handler), cellPos ) ->
+                let
+                    alter = applyXYMove curMouseState nextMouseState xyState curValue
+
+                in
+                    { model
+                    | mouse = nextMouseState
+                    } |>
+                        updateWith
+                            ( TuneXY cellPos alter
+                            , case mouseAction of
+                                Mouse.Up _ ->
+                                    if curMouseState.down
+                                    && not nextMouseState.down
+                                    then
+                                        Just <| handler (alterXY xyState alter curValue)
+                                    else Nothing
+                                _ -> Nothing
+                            )
+
             _ ->
                 (
                     { model
