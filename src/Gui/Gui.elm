@@ -64,17 +64,26 @@ none =
 fromAlt : Alt.Gui umsg -> Nest umsg
 fromAlt altGui =
     let
+        convertAxis { min, max, step } current =
+            { min = min, max = max, step = step, roundBy = 2, default = current }
         cells =
             altGui
                 |> List.map (\(_, label, prop) ->
                     case prop of
                         Alt.Ghost ->
                             Ghost label
-                        Alt.Slider { min, max, step } current toMsg ->
+                        Alt.Slider spec current toMsg ->
                             Knob
                                 label
-                                { min = min, max = max, step = step, roundBy = 2, default = current }
+                                (convertAxis spec current)
                                 current
+                                toMsg
+                        Alt.XY ( xSpec, ySpec ) ( curX, curY ) toMsg ->
+                            XY
+                                label
+                                ( convertAxis xSpec curX
+                                , convertAxis ySpec curY )
+                                ( curX, curY )
                                 toMsg
                         Alt.Input curent toMsg ->
                             Ghost label -- TODO

@@ -23,6 +23,13 @@ for model =
                     { min = -10.5, max = 10.5, step = 0.5 }
                     model.float
                     ChangeFloat )
+        , ( "xy",
+                Gui.xy
+                    ( { min = -20, max = 20, step = 5 }
+                    , { min = -20, max = 20, step = 5 }
+                    )
+                    model.xy
+                    ChangeXY )
         , ( "text",
                 Gui.text
                     model.string

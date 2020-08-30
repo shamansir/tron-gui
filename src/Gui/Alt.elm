@@ -29,9 +29,17 @@ type ExpandState
     | Expanded
 
 
+type alias Axis =
+    { min: Float
+    , max : Float
+    , step : Float
+    }
+
+
 type Property msg
     = Ghost
-    | Slider { min: Float, max : Float, step : Float } Float ( Float -> msg )
+    | Slider Axis Float ( Float -> msg )
+    | XY ( Axis, Axis ) ( Float, Float ) ( ( Float, Float ) -> msg )
     | Input String ( String -> msg )
     | Choice ( List ( Id, Label ) ) ( Maybe Id ) ( Id -> Maybe msg )
     | Color Color ( Color -> msg )
@@ -135,6 +143,23 @@ encodePropertyAt path property =
                 , ( "max", E.float max )
                 , ( "step", E.float step )
                 ]
+        XY ( xSpec, ySpec ) ( x, y ) _ ->
+            E.object
+                [ ( "type", E.string "xy"  )
+                , ( "path", encodePath path )
+                , ( "current",
+                    E.object
+                        [ ( "x", E.float x )
+                        , ( "y", E.float y )
+                        ]
+                  )
+                , ( "minX", E.float xSpec.min )
+                , ( "maxX", E.float xSpec.max )
+                , ( "stepX", E.float xSpec.step )
+                , ( "minY", E.float ySpec.min )
+                , ( "maxY", E.float ySpec.max )
+                , ( "stepY", E.float ySpec.step )
+                ]
         Input val _ ->
             E.object
                 [ ( "type", E.string "text" )
@@ -222,7 +247,7 @@ ghost : Property msg
 ghost = Ghost
 
 
-float : { min: Float, max : Float, step : Float } -> Float -> ( Float -> msg ) -> Property msg
+float : Axis -> Float -> ( Float -> msg ) -> Property msg
 float = Slider
 
 
@@ -232,6 +257,10 @@ int { min, max, step } default toMsg =
         { min = toFloat min, max = toFloat max, step = toFloat step }
         (toFloat default)
         (round >> toMsg)
+
+
+xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Property msg
+xy = XY
 
 
 input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Property msg
@@ -330,6 +359,7 @@ mapProperty f prop =
     case prop of
         Ghost -> Ghost
         Slider opts val toMsg -> Slider opts val (f << toMsg)
+        XY opts val toMsg -> XY opts val (f << toMsg)
         Input val toMsg -> Input val (f << toMsg)
         Color val toMsg -> Color val (f << toMsg)
         Toggle val toMsg -> Toggle val (f << toMsg)

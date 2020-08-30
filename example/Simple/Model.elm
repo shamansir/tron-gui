@@ -18,6 +18,7 @@ type alias Model =
     , choice : Choice
     , color : Gui.Color
     , toggle : Bool
+    , xy : ( Float, Float )
     , buttonPressed : Choice
     }
 
@@ -30,6 +31,7 @@ init =
     , choice = A
     , color = "#ffc200"
     , toggle = False
+    , xy = ( 0, 0 )
     , buttonPressed = C
     }
 

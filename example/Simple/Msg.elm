@@ -8,6 +8,7 @@ import Simple.Model exposing (..)
 type Msg
     = ChangeInt Int
     | ChangeFloat Float
+    | ChangeXY ( Float, Float )
     | ChangeString String
     | ChangeColor Gui.Color
     | Choose Choice

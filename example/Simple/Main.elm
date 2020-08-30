@@ -24,6 +24,7 @@ update msg model =
         ChangeFloat float -> { model | float = float }
         ChangeString string -> { model | string = string }
         ChangeColor color -> { model | color = color }
+        ChangeXY xy -> { model | xy = xy }
         Choose choice -> { model | choice = choice }
         Switch to -> { model | toggle = to }
         Pressed choice -> { model | buttonPressed = choice }
@@ -35,6 +36,10 @@ view model =
         []
         [ Html.li [] [ Html.text <| String.fromInt model.int ]
         , Html.li [] [ Html.text <| String.fromFloat model.float ]
+        , Html.li [] [ Html.text <|
+                ( String.fromFloat <| Tuple.first model.xy ) ++ ":" ++
+                ( String.fromFloat <| Tuple.second model.xy )
+            ]
         , Html.li [] [ Html.text <| model.string ]
         , Html.li [] [ Html.text <| choiceToString model.choice ]
         , Html.li
