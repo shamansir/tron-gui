@@ -13,7 +13,8 @@ import Browser.Events as Browser
 import BinPack exposing (..)
 
 import Gui.Control exposing (..)
-import Gui.Layout exposing (..)
+import Gui.Layout exposing (Layout)
+import Gui.Layout as Layout exposing (..)
 import Gui.Msg exposing (..)
 import Gui.Render.Grid as Render exposing (..)
 import Gui.Mouse exposing (..)
@@ -22,9 +23,9 @@ import Gui.Util exposing (..)
 import Gui.Alt as Alt exposing (Gui)
 
 
-type alias Model umsg =
+type alias Model msg =
     { mouse : MouseState
-    , tree : Over umsg
+    , tree : Over msg
     , layout : Layout
     }
 
@@ -46,11 +47,12 @@ extractMouse = .mouse
 
 none : Model umsg
 none =
-    Model Gui.Mouse.init Anything <| BinPack.container 0 0
+    Model Gui.Mouse.init Anything
+        <| BinPack.container Layout.maxCellsByX Layout.maxCellsByY
 
 
 update
-    :  Msg umsg
+    :  Msg
     -> Model umsg
     -> ( Model umsg, Cmd umsg )
 update msg ( { root, mouse } as model ) =
@@ -59,10 +61,10 @@ update msg ( { root, mouse } as model ) =
         ApplyMouse mouseAction ->
             handleMouse mouseAction model
 
-        Click cell ->
-            model
+        Click path ->
+            model.root
+                |> executeAt path
                 |> updateWith
-                    (executeCell cell)
 
         MouseDown { cell, nestPos } ->
             case cell of
@@ -328,7 +330,7 @@ handleKeyDown (Focus currentFocus) maybeCells keyCode =
 
 
 
-updateWith : ( Msg, Maybe umsg ) -> Model umsg -> ( Model umsg, Cmd umsg  )
+updateWith : ( Msg, Maybe msg ) -> Model msg -> ( Model msg, Cmd msg  )
 updateWith ( msg, maybeUserMsg ) model =
     update msg model
         |> Tuple.mapSecond
@@ -357,6 +359,12 @@ fromWindow passSize =
                 (floor d.viewport.width)
                 (floor d.viewport.height)
             )
+
+
+executeAt : Path -> Over msg -> ( Msg, Maybe msg )
+executeAt path root =
+    ( NoOp, Cmd.none )
+
 
 {-
 -- FIXME: move somewhere else, where it belongs
