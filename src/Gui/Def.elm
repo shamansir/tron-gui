@@ -3,26 +3,21 @@ module Gui.Def exposing (..)
 
 type alias Label = String
 
-type alias ItemChosen = Int
+type Icon = Icon String
+
+type alias ItemChosen = ( Int, Label )
 
 type NestPos = NestPos (List Int) -- just path by indices
 
+
+type Control setup value msg =
+    Control setup value (value -> msg)
+
+
 type alias Shape = ( Int, Int )
 
-type alias Cells umsg = List (Cell umsg)
 
-type alias Handler umsg = (() -> umsg)
-
-type alias ChoiceHandler umsg = (Int -> String -> Maybe umsg)
-
-type alias ToggleHandler umsg = (ToggleState -> umsg)
-
-type alias KnobHandler umsg = (Float -> umsg)
-
-type alias XYHandler umsg = ((Float, Float) -> umsg)
-
-
-type alias KnobState =
+type alias Axis =
     { min : Float
     , max : Float
     , step : Float
@@ -74,16 +69,19 @@ type AlterXY
     | Alter_ ( Float, Float ) -- both from -0.5 to 0.5
 
 
-type Cell umsg
-    = Ghost Label
-    | Knob Label KnobState Float (KnobHandler umsg)
-    | XY Label ( KnobState, KnobState ) ( Float, Float ) (XYHandler umsg)
-    | Toggle Label ToggleState (ToggleHandler umsg)
-    | Button Label (Handler umsg)
-    | Nested Label ExpandState (Nest umsg)
-    | Choice Label ExpandState ItemChosen (ChoiceHandler umsg) (Nest umsg)
-    | ChoiceItem Label
-    -- | ChoiceItem Int Label
+type Over msg
+    = Anything
+    | Number (Control Axis Float msg)
+    | Coordinate (Control ( Axis, Axis ) ( Float, Float ) msg)
+    | Text (Control () String msg)
+    | Toggle (Control () ToggleState msg)
+    | Action (Control (Maybe Icon) () msg)
+    | Nested
+        (Control
+            ( Shape, List ( Label, Over msg ) )
+            ( ( Int, Label ), Over msg )
+            msg
+        )
 
 
 cellWidth = 70
