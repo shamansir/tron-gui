@@ -149,7 +149,6 @@ updateAt (Path path) f =
             if otherPath == path then f item else item
 
 
-
 doToggle : Control state ToggleState msg -> Control state ToggleState msg
 doToggle =
     update
@@ -193,35 +192,6 @@ execute item =
                 , callHandler nextGroup
                 )
         _ -> ( item, Cmd.none )
-
-
-focusOn : Path -> Over msg -> Over msg
-focusOn (Path path) root =
-    case ( path, root ) of
-        ( [], _ ) -> root
-        ( x::xs, Group (Control config current handler) ) ->
-            Group
-                (Control
-                    { config
-                    | items =
-
-                        config.items |>
-                                    Array.indexedMap
-                                    (\index ( label, innerItem ) ->
-                                        ( label
-                                        , if index == x
-                                            then focusOn (Path xs) innerItem
-                                            else innerItem
-
-                                        )
-                                    )
-
-                    }
-                    current
-                    handler
-                )
-        ( _, _ ) -> root
-
 
 
 executeAt : Path -> Over msg -> ( Over msg, Cmd msg )

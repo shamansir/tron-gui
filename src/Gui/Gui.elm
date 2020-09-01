@@ -21,6 +21,7 @@ import Gui.Mouse exposing (..)
 import Gui.Mouse as Mouse exposing (..)
 import Gui.Util exposing (..)
 import Gui.Alt as Alt exposing (Gui)
+import Gui.Focus as Focus exposing (..)
 
 
 type alias Model msg =
@@ -74,7 +75,7 @@ update msg ( { root, mouse } as model ) =
                 )
 
         MouseDown path ->
-            ( model.root |> focusOn path
+            ( model.root |> Focus.on path
             , Cmd.none
             )
 
