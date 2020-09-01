@@ -41,11 +41,11 @@ downs size gui =
         >> Gui.Mouse.Down
 
 
-extractMouse : Model umsg -> MouseState
+extractMouse : Model msg -> MouseState
 extractMouse = .mouse
 
 
-none : Model umsg
+none : Model msg
 none =
     Model Gui.Mouse.init Anything
         <| BinPack.container Layout.maxCellsByX Layout.maxCellsByY
@@ -62,15 +62,21 @@ update msg ( { root, mouse } as model ) =
             handleMouse mouseAction model
 
         Click path ->
-            model.root
-                |> executeAt path
-                |> updateWith
+            let
+                (nextRoot, cmds) =
+                    model.root |> executeAt path
+            in
+                (
+                    { model
+                    | root = nextRoot
+                    }
+                , cmds
+                )
 
-        MouseDown { cell, nestPos } ->
-            case cell of
-                Knob _ _ _ _ ->
-                    update (FocusOn nestPos) model
-                _ -> ( model, Cmd.none )
+        MouseDown path ->
+            ( model.root |> focusOn path
+            , Cmd.none
+            )
 
         KeyDown keyCode focus_ maybeCells ->
             model

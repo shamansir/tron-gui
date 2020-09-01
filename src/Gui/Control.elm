@@ -49,17 +49,16 @@ type AlterXY
 type Path = Path (List Int)
 
 
+type Focus = Focus Int
+
+
 type alias GroupControl msg =
     Control
         { shape : Shape
         , items : Array ( Label, Over msg )
         }
         { expanded : ExpandState
-        , focus :
-            Maybe
-                { index : Int
-                , position : ( Int, Int )
-                }
+        , focus : Maybe Focus
         }
         msg
 
@@ -94,8 +93,8 @@ lineWidth = "2"
 -- Recursively try to find the control in the tree, following the given path.
 -- When found and the path is valid, respond with the inner control.
 -- When the path is invalid (no controls located following these indices), return `Nothing`.
-follow : Path -> Over msg -> Maybe (Over msg)
-follow (Path path) root =
+find : Path -> Over msg -> Maybe (Over msg)
+find (Path path) root =
     case path of
         [] -> Just root
         index::pathTail ->
@@ -104,7 +103,7 @@ follow (Path path) root =
                     items
                         |> Array.get index
                         |> Maybe.map Tuple.second
-                        |> Maybe.andThen (follow <| Path pathTail)
+                        |> Maybe.andThen (find <| Path pathTail)
                 _ -> Nothing
 
 
@@ -150,17 +149,24 @@ updateAt (Path path) f =
             if otherPath == path then f item else item
 
 
--- for mouse click or enter key handling
+
+doToggle : Control state ToggleState msg -> Control state ToggleState msg
+doToggle =
+    update
+        <| \current ->
+            case current of
+                TurnedOff -> TurnedOn
+                TurnedOn -> TurnedOff
+
+
+-- for mouse click or enter key handling, does not change the tree
+-- only updates the controls itself
 execute : Over msg -> ( Over msg, Cmd msg )
 execute item =
     case item of
-        Toggle (Control _ current handler) ->
+        Toggle toggleControl ->
             let
-                nextState =
-                    case current of
-                        TurnedOff -> TurnedOn
-                        TurnedOn -> TurnedOff
-                nextToggle = Control () nextState handler
+                nextToggle = doToggle toggleControl
             in
                 ( Toggle nextToggle
                 , callHandler nextToggle
@@ -189,10 +195,39 @@ execute item =
         _ -> ( item, Cmd.none )
 
 
+focusOn : Path -> Over msg -> Over msg
+focusOn (Path path) root =
+    case ( path, root ) of
+        ( [], _ ) -> root
+        ( x::xs, Group (Control config current handler) ) ->
+            Group
+                (Control
+                    { config
+                    | items =
+
+                        config.items |>
+                                    Array.indexedMap
+                                    (\index ( label, innerItem ) ->
+                                        ( label
+                                        , if index == x
+                                            then focusOn (Path xs) innerItem
+                                            else innerItem
+
+                                        )
+                                    )
+
+                    }
+                    current
+                    handler
+                )
+        ( _, _ ) -> root
+
+
+
 executeAt : Path -> Over msg -> ( Over msg, Cmd msg )
 executeAt path root =
     case root
-        |> follow path
+        |> find path
         |> Maybe.map execute of
         Just ( newCell, cmd ) ->
             ( root |> updateAt path (always newCell)
@@ -202,6 +237,11 @@ executeAt path root =
             ( root
             , Cmd.none
             )
+
+
+update : (v -> v) -> Control s v msg -> Control s v msg
+update f (Control state current handler) =
+    Control state (f current) handler
 
 
 -- call control handler with its current value

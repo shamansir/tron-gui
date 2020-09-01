@@ -12,7 +12,7 @@ type Msg
     | Click Path
     | MouseDown Path
     | KeyDown Int Path
-    | FocusOn Path
-    | Tune Path AlterKnob
-    | TuneXY Path AlterXY
-    | ShiftFocus Direction
+    -- | FocusOn Path
+    -- | Tune Path AlterKnob
+    -- | TuneXY Path AlterXY
+    -- | ShiftFocus Direction
