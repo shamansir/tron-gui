@@ -98,7 +98,28 @@ find (Path path) root =
 
 
 
--- map : TODO
+mapControl : (msgA -> msgB) -> Control setup value msgA -> Control setup value msgB
+mapControl f (Control setup val handler) =
+    Control setup val (f << handler)
+
+
+map : (msgA -> msgB) -> Over msgA -> Over msgB
+map f over =
+    case over of
+        Anything -> Anything
+        Number control -> Number <| mapControl f control
+        Coordinate control -> Coordinate <| mapControl f control
+        Text control -> Text <| mapControl f control
+        Toggle control -> Toggle <| mapControl f control
+        Action control -> Action <| mapControl f control
+        Group (Control setup state handler) -> Group <|
+            Control
+                { shape = setup.shape
+                , items = setup.items
+                    |> Array.map (Tuple.mapSecond <| map f)
+                }
+                state
+                (f << handler)
 
 
 -- fold : TODO

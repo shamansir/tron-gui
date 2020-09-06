@@ -1,8 +1,7 @@
 module Gui.Gui exposing
     ( Model
-    , view, update, build, none, map
+    , view, update, none, map
     , trackMouse, focus, fromWindow
-    , fromAlt -- FIXME: temporary
     )
 
 
@@ -44,6 +43,14 @@ downs size gui =
 
 extractMouse : Model msg -> MouseState
 extractMouse = .mouse
+
+
+map : (msgA -> msgB) -> Model msgA -> Model msgB
+map f model =
+    { mouse = model.mouse
+    , tree = Gui.Control.map f model.tree
+    , layout = model.layout
+    }
 
 
 none : Model msg
@@ -117,7 +124,10 @@ handleMouse mouseAction model =
         maybeDragFromPos =
             if nextMouseState.down then nextMouseState.dragFrom
             else case mouseAction of
-                Mouse.Up _ -> if curMouseState.down then curMouseState.dragFrom else Nothing
+                Mouse.Up _ ->
+                    if curMouseState.down
+                        then curMouseState.dragFrom
+                        else Nothing
                 _ -> Nothing
         dragFromCell =
             maybeDragFromPos
@@ -136,15 +146,23 @@ handleMouse mouseAction model =
 
                     )
     in
+
+        {- FIMXE:
+        dragFromPath
+            = maybeDragFromPos |> Maybe.andThen (model.layout >> BinPack.find dragFromPos)
+
+        case dragFromPath of
+            Just path ->
+                { model
+                | mouse = nextMouseState
+                , root =
+                    updateAt
+                        path
+                        (\curControl -> case curControl of  )
+                }
+        -}
+
         case dragFromCell of
-            -- Just ( path, control ) ->
-            --     { model
-            --     | mouse = nextMouseState
-            --     , root =
-            --         updateAt
-            --             path
-            --             (\curControl -> case curControl of  )
-            --     }
 
             Just ( path, Number ( Control axis curValue handler ) ) ->
                 let
