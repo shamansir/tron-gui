@@ -18,9 +18,9 @@ on : Path -> Over msg -> Over msg
 on (Path path) root =
     case ( path, root ) of
         ( [], _ ) -> root
-        ( x::xs, Group (Control config current handler) ) ->
+        ( x::xs, Group (Control ( shape, items ) ( expanded, _ ) handler) ) ->
             let
-                itemsCount = Array.length config.items
+                itemsCount = Array.length items
                 normalizedX =
                     if x < 0 then 0
                     else if x >= itemsCount then itemsCount - 1
@@ -29,10 +29,9 @@ on (Path path) root =
             in
             Group
                 (Control
-                    { config
-                    | items = -- FIXME: items turn out to be a subject to change
-
-                        config.items |>
+                    ( shape
+                    ,
+                        items |>
                             Array.indexedMap
                             (\index ( label, innerItem ) ->
                                 ( label
@@ -43,10 +42,10 @@ on (Path path) root =
                                 )
                             )
 
-                    }
-                    { current
-                    | focus = Just <| Focus normalizedX
-                    }
+                    )
+                    ( expanded
+                    , Just <| Focus normalizedX
+                    )
                     handler
                 )
         ( _, _ ) -> root
@@ -57,17 +56,17 @@ find root =
     let
         helper control =
             case control of
-                Group (Control config current handler) ->
-                    current.focus
+                Group (Control ( _, items ) ( _, focus ) handler) ->
+                    focus
                         |> Maybe.andThen
-                            (\(Focus focus) ->
-                                config.items
-                                    |> Array.get focus
-                                    |> Maybe.map (Tuple.pair focus)
+                            (\(Focus theFocus) ->
+                                items
+                                    |> Array.get theFocus
+                                    |> Maybe.map (Tuple.pair theFocus)
                             )
                         |> Maybe.map
-                            (\( focus, ( _, focusedItem ) ) ->
-                                focus :: helper focusedItem
+                            (\( theFocus, ( _, focusedItem ) ) ->
+                                theFocus :: helper focusedItem
                             )
                         |> Maybe.withDefault []
                 _ -> []

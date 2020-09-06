@@ -32,4 +32,9 @@ callHandler handler current =
         |> Task.perform handler
 
 
+callWith : Control s v msg -> v -> Cmd msg
+callWith (Control _ _ handler) val =
+    callHandler handler val
+
+
 -- updateAndExecute : (v -> v) -> Control s v msg -> ( Control s v msg, msg )

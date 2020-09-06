@@ -21,7 +21,7 @@ import Gui.Render.Layout as Layout exposing (..)
 import Gui.Mouse exposing (..)
 import Gui.Mouse as Mouse exposing (..)
 import Gui.Util exposing (..)
-import Gui.Alt as Alt exposing (Gui)
+-- import Gui.Alt as Alt exposing (Gui)
 import Gui.Focus as Focus exposing (..)
 
 
@@ -57,7 +57,7 @@ map f model =
 
 none : Gui msg
 none =
-    Gui Gui.Mouse.init Anything
+    Gui Gui.Mouse.init Nil
         <| BinPack.container Layout.maxCellsByX Layout.maxCellsByY
 
 

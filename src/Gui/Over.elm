@@ -62,14 +62,12 @@ type Over msg
     | Text (Control () String msg)
     | Color (Control () Color msg)
     | Toggle (Control () ToggleState msg)
-    | Action (Control (Maybe Icon) () msg)
+    | Action (Control ( Maybe Icon ) () msg)
+    | Choice (Control ( Array ( Maybe Icon, Label ) ) Int msg)
     | Group
         (Control
-            Shape
-            { items : Array ( Label, Over msg )
-            , expanded : ExpandState
-            , focus : Maybe Focus
-            }
+            ( Shape, Array ( Label, Over msg ) )
+            ( ExpandState, Maybe Focus )
             msg
         )
 
@@ -100,7 +98,7 @@ find (Path path) root =
         [] -> Just root
         index::pathTail ->
             case root of
-                Group (Control _ { items } _) ->
+                Group (Control ( _, items ) _ _) ->
                     items
                         |> Array.get index
                         |> Maybe.map Tuple.second
@@ -119,23 +117,17 @@ map f over =
         Color control -> Color <| Control.map f control
         Toggle control -> Toggle <| Control.map f control
         Action control -> Action <| Control.map f control
-        Group (Control setup current handler) ->
+        Choice control -> Choice <| Control.map f control
+        Group (Control ( shape, items ) state handler) ->
             Group <|
                 Control
-                    setup
-                    { expanded = current.expanded
-                    , focus = current.focus
-                    , items =
-                        current.items
-                            |> Array.map (Tuple.mapSecond <| map f)
-                    }
-                    (\next ->
-                        f
-                            { expanded = next.expanded
-                            , focus = next.focus
-                            , items = next.items |> Array.map (Tuple.mapSecond <| map f)
-                            }
+                    ( shape
+                    , items
+                        |> Array.map
+                            (Tuple.mapSecond <| map f)
                     )
+                    state
+                    (f << handler)
 
 
 -- fold : TODO
@@ -146,22 +138,19 @@ mapReplace f root =
     let
         helper (Path curPath) item =
             case item of
-                Group (Control setup current handler) ->
+                Group (Control ( shape, items ) state handler) ->
                     Group
                         (Control
-                            setup
-                            { current
-                            | items =
-
-                                current.items |>
-                                    Array.indexedMap
-                                    (\index ( label, innerItem ) ->
-                                        ( label
-                                        , helper (Path <| curPath ++ [ index ]) innerItem
-                                        )
+                            ( shape
+                            , items |>
+                                Array.indexedMap
+                                (\index ( label, innerItem ) ->
+                                    ( label
+                                    , helper (Path <| curPath ++ [ index ]) innerItem
                                     )
-
-                            }
+                                )
+                            )
+                            state
                             handler
                         )
                 _ -> f (Path curPath) item
@@ -192,18 +181,18 @@ execute item =
             ( Action control
             , call control
             )
-        Group (Control config current handler) ->
+        Group (Control setup ( expanded, focus ) handler) ->
             let
                 nextState =
-                    case current.expanded of
+                    case expanded of
                         Collapsed -> Expanded
                         Expanded -> Collapsed
                 nextGroup =
                     Control
-                        config
-                        { current
-                        | expanded = nextState
-                        }
+                        setup
+                        ( nextState
+                        , focus
+                        )
                         handler
             in
                 ( Group nextGroup
@@ -237,3 +226,17 @@ doToggle =
 
 
 -- updateAndExecute : (v -> v) -> Control s v msg -> ( Control s v msg, msg )
+
+
+toggleToBool : ToggleState -> Bool
+toggleToBool state =
+    case state of
+        TurnedOn -> True
+        TurnedOff -> False
+
+
+boolToToggle : Bool -> ToggleState
+boolToToggle bool =
+    case bool of
+        True -> TurnedOn
+        False -> TurnedOff

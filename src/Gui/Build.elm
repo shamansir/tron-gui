@@ -6,6 +6,7 @@ import Array
 import Gui.Control exposing (..)
 import Gui.Over exposing (..)
 import Gui.Control exposing (Control(..))
+import Gui.Util exposing (findMap)
 
 
 none : Over msg
@@ -75,16 +76,73 @@ toggle default =
 
 -- FIXME: get rid of the handler having almost no sense
 nest : List (Label, Over msg) -> (ExpandState -> msg) -> Over msg
-nest items handler =
+nest = nestIn ( 3, 3 )
+
+
+nestIn : Shape -> List (Label, Over msg) -> (ExpandState -> msg) -> Over msg
+nestIn shape items handler =
     Group
         <| Control
-            { shape = (3, 3)
-            , items = Array.fromList items
-            }
-            { expanded = Collapsed
-            , focus = Nothing
-            }
-            (.expanded >> handler)
+            ( shape
+            , Array.fromList items
+            )
+            ( Collapsed
+            , Nothing
+            )
+            (Tuple.first >> handler)
+
+
+choice
+     : ( a -> Label )
+    -> List a
+    -> a
+    -> ( a -> a -> Bool )
+    -> ( a -> msg )
+    -> Over msg
+choice toLabel options current compare toMsg =
+    let
+        indexedOptions = options |> List.indexedMap Tuple.pair
+    in
+        Choice
+            <| Control
+                (options
+                    |> List.map toLabel
+                    |> List.map (Tuple.pair Nothing)
+                    |> Array.fromList)
+                (indexedOptions
+                    |> findMap
+                        (\(index, option) ->
+                            if compare option current
+                                then Just index
+                                else Nothing
+                        )
+                    |> Maybe.withDefault 0
+                )
+                (\selectedIndex ->
+                    indexedOptions
+                        |> findMap
+                            (\(index, option) ->
+                                if selectedIndex == index
+                                    then Just option
+                                    else Nothing
+                            )
+                        |> Maybe.map toMsg
+                        |> Maybe.withDefault (toMsg current)
+                )
+
+
+strings
+     : List String
+    -> String
+    -> ( String -> msg )
+    -> Over msg
+strings options current toMsg =
+    choice
+        identity
+        options
+        current
+        ((==))
+        toMsg
 
 
 -- TODO:

@@ -12,7 +12,7 @@ align v =
 
 
 findMap : (a -> Maybe x) -> List a -> Maybe x
-findMap toValue =  -- TODO: re-use in code where such `foldl` is used
+findMap toValue =
     List.foldl
         (\item maybeResult ->
             case maybeResult of
