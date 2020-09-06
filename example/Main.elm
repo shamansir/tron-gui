@@ -14,8 +14,8 @@ import Task as Task
 
 import Gui.Alt as AGui
 import Gui.Alt exposing (Gui)
-import Gui.Gui as Gui exposing (view, fromAlt)
-import Gui.Gui as Tron exposing (Model, focus)
+import Gui.Gui as Gui exposing (view)
+import Gui.Gui as Tron exposing (Gui, focus)
 import Gui.Msg as Tron exposing (Msg)
 import Gui.Mouse exposing (Position)
 import Gui.Mouse as Tron exposing (MouseState)
@@ -30,7 +30,7 @@ import Dict exposing (size)
 type Msg
     = ChangeMode Mode
     | DatGuiUpdate AGui.Update
-    | TronUpdate (Tron.Msg Msg)
+    | TronUpdate Tron.Msg
     | ToSimple Simple.Msg
     | Resize Int Int
     | NoOp
@@ -48,7 +48,7 @@ type Mode
 
 type alias Model =
     { mode : Mode
-    , gui : Tron.Model Msg
+    , gui : Tron.Gui Msg
     , example : Example
     , size : ( Int, Int )
     }

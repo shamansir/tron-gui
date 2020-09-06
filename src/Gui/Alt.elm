@@ -243,44 +243,6 @@ make : List ( Label, Property msg ) -> Gui msg
 make = List.indexedMap (\index ( label, prop ) -> (index, label, prop))
 
 
-ghost : Property msg
-ghost = Ghost
-
-
-float : Axis -> Float -> ( Float -> msg ) -> Property msg
-float = Slider
-
-
-int : { min: Int, max : Int, step : Int } -> Int -> ( Int -> msg ) -> Property msg
-int { min, max, step } default toMsg =
-    float
-        { min = toFloat min, max = toFloat max, step = toFloat step }
-        (toFloat default)
-        (round >> toMsg)
-
-
-xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Property msg
-xy = XY
-
-
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Property msg
-input toString fromString default toMsg =
-    Input
-        (toString default)
-        (fromString >> Maybe.withDefault default >> toMsg)
-
-
-text : String -> (String -> msg) -> Property msg
-text = Input
-
-
--- numberInput : Float -> (Float -> msg) -> Property msg
--- numberInput = input String.fromFloat String.toFloat
-
-
-color : Color -> (Color -> msg) -> Property msg
-color = Color
-
 
 choice
      : ( a -> Label )
@@ -330,14 +292,6 @@ strings options maybeCurrent toMsg =
         maybeCurrent
         ((==))
         toMsg
-
-
-toggle : ToggleState -> (ToggleState -> msg) -> Property msg
-toggle = Toggle
-
-
-button : (() -> msg) -> Property msg
-button = Button
 
 
 nest : ExpandState -> Gui msg -> Property msg

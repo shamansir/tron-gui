@@ -9,6 +9,9 @@ import Gui.Control exposing (..)
 import Gui.Control as Control exposing (..)
 
 
+type alias Color = String
+
+
 type alias Label = String
 
 type Icon = Icon String
@@ -20,8 +23,8 @@ type alias Axis =
     { min : Float
     , max : Float
     , step : Float
-    , roundBy : Int
-    , default : Float
+    -- , roundBy : Int
+    -- , default : Float
     }
 
 
@@ -53,13 +56,22 @@ type alias GroupControl msg =
 
 
 type Over msg
-    = Anything
+    = Nil
     | Number (Control Axis Float msg)
     | Coordinate (Control ( Axis, Axis ) ( Float, Float ) msg)
     | Text (Control () String msg)
+    | Color (Control () Color msg)
     | Toggle (Control () ToggleState msg)
     | Action (Control (Maybe Icon) () msg)
-    | Group (GroupControl msg)
+    | Group
+        (Control
+            Shape
+            { items : Array ( Label, Over msg )
+            , expanded : ExpandState
+            , focus : Maybe Focus
+            }
+            msg
+        )
 
 
 cellWidth = 70
@@ -88,7 +100,7 @@ find (Path path) root =
         [] -> Just root
         index::pathTail ->
             case root of
-                Group (Control { items } _ _) ->
+                Group (Control _ { items } _) ->
                     items
                         |> Array.get index
                         |> Maybe.map Tuple.second
@@ -100,20 +112,30 @@ find (Path path) root =
 map : (msgA -> msgB) -> Over msgA -> Over msgB
 map f over =
     case over of
-        Anything -> Anything
+        Nil -> Nil
         Number control -> Number <| Control.map f control
         Coordinate control -> Coordinate <| Control.map f control
         Text control -> Text <| Control.map f control
+        Color control -> Color <| Control.map f control
         Toggle control -> Toggle <| Control.map f control
         Action control -> Action <| Control.map f control
-        Group (Control setup state handler) -> Group <|
-            Control
-                { shape = setup.shape
-                , items = setup.items
-                    |> Array.map (Tuple.mapSecond <| map f)
-                }
-                state
-                (f << handler)
+        Group (Control setup current handler) ->
+            Group <|
+                Control
+                    setup
+                    { expanded = current.expanded
+                    , focus = current.focus
+                    , items =
+                        current.items
+                            |> Array.map (Tuple.mapSecond <| map f)
+                    }
+                    (\next ->
+                        f
+                            { expanded = next.expanded
+                            , focus = next.focus
+                            , items = next.items |> Array.map (Tuple.mapSecond <| map f)
+                            }
+                    )
 
 
 -- fold : TODO
@@ -124,13 +146,14 @@ mapReplace f root =
     let
         helper (Path curPath) item =
             case item of
-                Group (Control config current handler) ->
+                Group (Control setup current handler) ->
                     Group
                         (Control
-                            { config
+                            setup
+                            { current
                             | items =
 
-                                config.items |>
+                                current.items |>
                                     Array.indexedMap
                                     (\index ( label, innerItem ) ->
                                         ( label
@@ -139,7 +162,6 @@ mapReplace f root =
                                     )
 
                             }
-                            current
                             handler
                         )
                 _ -> f (Path curPath) item
