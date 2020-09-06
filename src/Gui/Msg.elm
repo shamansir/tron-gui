@@ -11,8 +11,4 @@ type Msg
     | ApplyMouse MouseAction -- from the document
     | Click Path
     | MouseDown Path
-    | KeyDown Int Path
-    -- | FocusOn Path
-    -- | Tune Path AlterKnob
-    -- | TuneXY Path AlterXY
-    -- | ShiftFocus Direction
+    | KeyDown Int

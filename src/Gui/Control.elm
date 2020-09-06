@@ -36,16 +36,6 @@ type ToggleState
     | TurnedOff
 
 
-type AlterKnob
-    = Stay
-    | Alter Float -- from -0.5 to 0.5
-
-
-type AlterXY
-    = Stay_
-    | Alter_ ( Float, Float ) -- both from -0.5 to 0.5
-
-
 type Path = Path (List Int)
 
 

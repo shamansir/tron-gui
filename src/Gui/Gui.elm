@@ -79,146 +79,21 @@ update msg ( { root, mouse } as model ) =
             , Cmd.none
             )
 
-        KeyDown keyCode focus_ maybeCells ->
-            model
-                |> updateWith
-                    (handleKeyDown focus_ maybeCells keyCode)
-
-        _ -> (
-            { model
-            | root =
-                case msg of
-
-                    ApplyMouse _ -> root
-
-                    Click _ -> root
-
-                    MouseDown _ -> root
-
-                    KeyDown _ _ _ -> root
-
-                    FocusOn pos ->
-                        root |> Focus.on (Focus pos)
-
-                    Tune pos alter ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Knob label setup curValue handler ->
-                                            Knob label setup
-                                                (alterKnob setup alter curValue)
-                                                handler
-                                        _ -> cell
-                                )
-
-                    TuneXY pos alter ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        XY label setup curValue handler ->
-                                            XY label setup
-                                                (alterXY setup alter curValue)
-                                                handler
-                                        _ -> cell
-                                )
-
-                    ToggleOn pos ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Toggle label _ handler ->
-                                            Toggle label TurnedOn handler
-                                        _ -> cell
-                                )
-
-                    ToggleOff pos ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Toggle label _ handler ->
-                                            Toggle label TurnedOff handler
-                                        _ -> cell
-                                )
-
-                    ExpandNested pos ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> collapseAllAbove pos
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Nested label _ cells ->
-                                            Nested label Expanded cells
-                                        _ -> cell
-                                )
-
-                    CollapseNested pos ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Nested label _ cells ->
-                                            Nested label Collapsed cells
-                                        _ -> cell
-                                )
-
-                    ExpandChoice pos ->
-                        root
-                            |> collapseAllAbove pos
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Choice label _ selection handler cells ->
-                                            Choice label Expanded selection handler cells
-                                        _ -> cell
-                                )
-
-                    CollapseChoice pos ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Choice label _ selection handler cells ->
-                                            Choice label Collapsed selection handler cells
-                                        _ -> cell
-                                )
-
-                    Select pos ->
-                        let
-                            parentPos = getParentPos pos |> Maybe.withDefault nowhere
-                            index = getIndexOf pos |> Maybe.withDefault -1
-                        in
-                            root
-                                |> Focus.on (Focus pos)
-                                |> updateCell parentPos
-                                    (\cell ->
-                                        case cell of
-                                            Choice label expanded selection handler cells ->
-                                                Choice label expanded index handler cells
-                                            _ -> cell
-                                    )
-
-                    ShiftFocus direction ->
-                        root |> Focus.on (Focus.get root |> Focus.shift direction)
-
-                    NoOp ->
-                        root
-
-            }, Cmd.none )
+        KeyDown keyCode ->
+           let
+                curFocus = Focus.find model.root
+                (nextRoot, cmds) =
+                    model.root |> handleKeyDown keyCode curFocus
+            in
+                (
+                    { model
+                    | root = nextRoot
+                    }
+                , cmds
+                )
 
 
-trackMouse :  { width : Int, height : Int } -> Model umsg -> Sub Msg
+trackMouse :  { width : Int, height : Int } -> Layout -> Sub Msg
 trackMouse windowSize gui =
     Sub.batch
         [ Sub.map (downs windowSize gui)
@@ -234,67 +109,99 @@ trackMouse windowSize gui =
     |> Sub.map ApplyMouse
 
 
-handleMouse : MouseAction -> Model umsg -> ( Model umsg, Cmd umsg )
+handleMouse : MouseAction -> Model msg -> ( Model msg, Cmd msg )
 handleMouse mouseAction model =
     let
         curMouseState = model.mouse
         nextMouseState = curMouseState |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
-        maybeDragPos =
+        maybeDragFromPos =
             if nextMouseState.down then nextMouseState.dragFrom
             else case mouseAction of
                 Mouse.Up _ -> if curMouseState.down then curMouseState.dragFrom else Nothing
                 _ -> Nothing
-        nextCell =
-            maybeDragPos
+        dragFromCell =
+            maybeDragFromPos
                 |> Maybe.andThen
-                    (\dragPos ->
-                        layout model.root   -- FIXME: store layout in the Model
-                            |> findCellAt dragPos
-                            |> Maybe.map (\c -> ( c.cell, c.nestPos ))
+                    (\dragFromPos ->
+
+                        model.layout
+                            |> BinPack.find dragFromPos
+                            -- |> Maybe.andThen Gui.Control.find
+                            |> Maybe.andThen
+                                (\path ->
+                                    path
+                                        |> Gui.Control.find
+                                        |> Maybe.map (Tuple.pair path)
+                                )
+
                     )
     in
-        case nextCell of
-            -- case findCell focusedPos ui of
+        case dragFromCell of
+            -- Just ( path, control ) ->
+            --     { model
+            --     | mouse = nextMouseState
+            --     , root =
+            --         updateAt
+            --             path
+            --             (\curControl -> case curControl of  )
+            --     }
 
-            Just ( (Knob _ knobState curValue handler), cellPos ) ->
+            Just ( path, Number ( Control axis curValue handler ) ) ->
                 let
-                    alter = applyKnobMove curMouseState nextMouseState knobState curValue
-
+                    dY = distanceY knobDistance nextMouseState
+                    nextVal = alter axis dY
+                    nextControl =
+                        Number <| Control axis nextVal handler
                 in
-                    { model
-                    | mouse = nextMouseState
-                    } |>
-                        updateWith
-                            ( Tune cellPos alter
-                            , case mouseAction of
-                                Mouse.Up _ ->
-                                    if curMouseState.down
-                                    && not nextMouseState.down
-                                    then
-                                        Just <| handler (alterKnob knobState alter curValue)
-                                    else Nothing
-                                _ -> Nothing
-                            )
+                    (
+                        { model
+                        | mouse = nextMouseState
+                        , root =
+                            updateAt
+                                path
+                                (always nextControl)
+                                model.root
+                        }
+                    ,
+                        case mouseAction of
+                            Mouse.Up _ ->
+                                if curMouseState.down
+                                && not nextMouseState.down
+                                then
+                                    Just <| handler nextVal
+                                else Nothing
+                            _ -> Nothing
+                    )
 
-            Just ( (XY _ xyState curValue handler), cellPos ) ->
+            Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
                 let
-                    alter = applyXYMove curMouseState nextMouseState xyState curValue
-
+                    ( dX, dY ) = distanceXY knobDistance nextMouseState
+                    ( nextX, nextY ) =
+                        ( alter xAxis dX
+                        , alter yAxis dY
+                        )
+                    nextControl =
+                        Number <| Control ( xAxis, yAxis ) ( nextX, nextY ) handler
                 in
-                    { model
-                    | mouse = nextMouseState
-                    } |>
-                        updateWith
-                            ( TuneXY cellPos alter
-                            , case mouseAction of
-                                Mouse.Up _ ->
-                                    if curMouseState.down
-                                    && not nextMouseState.down
-                                    then
-                                        Just <| handler (alterXY xyState alter curValue)
-                                    else Nothing
-                                _ -> Nothing
-                            )
+                    (
+                        { model
+                        | mouse = nextMouseState
+                        , root =
+                            updateAt
+                                path
+                                (always nextControl)
+                                model.root
+                        }
+                    ,
+                        case mouseAction of
+                            Mouse.Up _ ->
+                                if curMouseState.down
+                                && not nextMouseState.down
+                                then
+                                    Just <| handler ( nextX, nextY )
+                                else Nothing
+                            _ -> Nothing
+                    )
 
             _ ->
                 (
@@ -304,36 +211,27 @@ handleMouse mouseAction model =
                 , Cmd.none
                 )
 
-{-
 handleKeyDown
-    :  Focus
-    -> Maybe { current : GridCell umsg, parent : GridCell umsg }
-    -> Int
-    -> ( Msg, Maybe umsg )
-handleKeyDown (Focus currentFocus) maybeCells keyCode =
-    let
-        executeCell_ =
-            maybeCells
-            |> Maybe.map .current
-            |> Maybe.map executeCell
-            |> Maybe.withDefault ( NoOp, Nothing )
-    -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
-    in
-        case keyCode of
-            -- left arrow
-            37 -> ( ShiftFocus Focus.Left, Nothing )
-            -- right arrow
-            -- up arrow
-            38 -> ( ShiftFocus Focus.Up, Nothing )
-            -- down arrow
-            40 -> ( ShiftFocus Focus.Down, Nothing )
-            -- space
-            33 -> executeCell_
-            -- enter
-            13 -> executeCell_
-            -- else
-            _ -> ( NoOp, Nothing )
--}
+    :  Int
+    -> Path
+    -> Over msg
+    -> ( Over msg, Cmd msg )
+handleKeyDown keyCode path root =
+    case keyCode of
+        -- left arrow
+        37 -> ( root |> Focus.shift Focus.Left, Cmd.none )
+        -- right arrow
+        39 -> ( root |> Focus.shift Focus.Right, Cmd.none )
+        -- up arrow
+        38 -> ( root |> Focus.shift Focus.Up, Nothing )
+        -- down arrow
+        40 -> ( root |> Focus.shift Focus.Down, Nothing )
+        -- space
+        33 -> root |> executeAt path
+        -- enter
+        13 -> root |> executeAt path
+        -- else
+        _ -> ( NoOp, Nothing )
 
 
 

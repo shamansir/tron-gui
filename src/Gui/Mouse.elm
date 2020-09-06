@@ -1,5 +1,6 @@
 module Gui.Mouse exposing (..)
 
+import Gui.Util exposing (align)
 
 import Json.Decode as D
 
@@ -75,3 +76,43 @@ decodePosition =
     D.map2 Position
         (D.at [ "clientX" ] D.int)
         (D.at [ "clientY" ] D.int)
+
+
+distanceY : Float -> MouseState -> Float
+distanceY howFar mstate  =
+    case mstate.dragFrom of
+        Just dragFrom ->
+            if mstate.pos /= dragFrom then
+                let
+                    originY = dragFrom.y
+                    curY = mstate.pos.y
+                    topY = toFloat originY + (howFar / 2)
+                    diffY = (topY - toFloat curY) / howFar
+                in
+                    align diffY
+            else 0
+        _ -> 0
+
+
+distanceXY : Float -> MouseState -> ( Float, Float )
+distanceXY howFar mstate  =
+    case mstate.dragFrom of
+        Just dragFrom ->
+            if mstate.pos /= dragFrom then
+                let
+                    originX = dragFrom.x
+                    originY = dragFrom.y
+                    curX = mstate.pos.x
+                    curY = mstate.pos.y
+                    leftX = toFloat originX - (howFar / 2)
+                    -- Y is going from top to bottom
+                    topY = toFloat originY + (howFar / 2)
+                    diffX = (toFloat curX - leftX) / howFar
+                    diffY = (topY - toFloat curY) / howFar
+                in
+                    ( align diffX
+                    , align (1 - diffY)
+                    )
+            else ( 0, 0 )
+        _ -> ( 0, 0 )
+
