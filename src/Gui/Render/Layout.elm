@@ -1,4 +1,4 @@
-module Gui.Render.Grid exposing (..)
+module Gui.Render.Layout exposing (..)
 
 
 import Array exposing (..)
@@ -9,6 +9,7 @@ import Json.Decode as Json
 
 
 import Gui.Control exposing (..)
+import Gui.Over exposing (..)
 import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
 import Gui.Render.Cell exposing (..)
@@ -218,3 +219,18 @@ view nest =
             ]
             [ grid |> viewGrid (Focus focus) ]
 -}
+
+
+view : Over msg -> Layout -> Html Msg
+view over layout =
+    let
+        keyDownHandler_ =
+            H.on "keydown"
+                <| Json.map KeyDown H.keyCode
+    in
+        div [ H.id rootId
+            , H.class "gui noselect"
+            , H.tabindex 0
+            , keyDownHandler_
+            ]
+            [ ]

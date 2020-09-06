@@ -5,7 +5,7 @@ import Array exposing (..)
 import Json.Decode as Json
 
 
-import Gui.Control exposing (..)
+import Gui.Over exposing (Path)
 import BinPack exposing (..)
 
 

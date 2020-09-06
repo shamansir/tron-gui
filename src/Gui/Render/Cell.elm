@@ -6,6 +6,7 @@ import Svg exposing (..)
 import Svg.Attributes as S exposing (..)
 
 import Gui.Control exposing (..)
+import Gui.Over exposing (..)
 import Gui.Msg exposing (..)
 
 

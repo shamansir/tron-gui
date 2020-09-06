@@ -5,7 +5,7 @@ import Gui.Util exposing (align)
 import Json.Decode as D
 
 
-type alias Position = { x: Int, y : Int }
+type alias Position = { x: Float, y : Float }
 
 
 type MouseAction
@@ -74,8 +74,8 @@ shift pos prev =
 decodePosition : D.Decoder Position
 decodePosition =
     D.map2 Position
-        (D.at [ "clientX" ] D.int)
-        (D.at [ "clientY" ] D.int)
+        (D.at [ "clientX" ] D.float)
+        (D.at [ "clientY" ] D.float)
 
 
 distanceY : Float -> MouseState -> Float
@@ -86,8 +86,8 @@ distanceY howFar mstate  =
                 let
                     originY = dragFrom.y
                     curY = mstate.pos.y
-                    topY = toFloat originY + (howFar / 2)
-                    diffY = (topY - toFloat curY) / howFar
+                    topY = originY + (howFar / 2)
+                    diffY = (topY - curY) / howFar
                 in
                     align diffY
             else 0
@@ -104,11 +104,11 @@ distanceXY howFar mstate  =
                     originY = dragFrom.y
                     curX = mstate.pos.x
                     curY = mstate.pos.y
-                    leftX = toFloat originX - (howFar / 2)
+                    leftX = originX - (howFar / 2)
                     -- Y is going from top to bottom
-                    topY = toFloat originY + (howFar / 2)
-                    diffX = (toFloat curX - leftX) / howFar
-                    diffY = (topY - toFloat curY) / howFar
+                    topY = originY + (howFar / 2)
+                    diffX = (curX - leftX) / howFar
+                    diffY = (topY - curY) / howFar
                 in
                     ( align diffX
                     , align (1 - diffY)

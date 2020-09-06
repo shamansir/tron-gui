@@ -1,9 +1,8 @@
 module Gui.Msg exposing (..)
 
 
-import Gui.Control exposing (..)
-import Gui.Mouse exposing (..)
-import Gui.Focus exposing (..)
+import Gui.Over exposing (Path)
+import Gui.Mouse exposing (MouseAction)
 
 
 type Msg

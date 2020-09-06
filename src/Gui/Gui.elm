@@ -1,5 +1,5 @@
 module Gui.Gui exposing
-    ( Model
+    ( Gui
     , view, update, none, map
     , trackMouse, focus, fromWindow
     )
@@ -8,14 +8,16 @@ module Gui.Gui exposing
 import Browser.Dom as Dom
 import Task
 import Browser.Events as Browser
+import Html exposing (Html)
 
 import BinPack exposing (..)
 
 import Gui.Control exposing (..)
+import Gui.Over exposing (..)
 import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (..)
 import Gui.Msg exposing (..)
-import Gui.Render.Grid as Render exposing (..)
+import Gui.Render.Layout as Layout exposing (..)
 import Gui.Mouse exposing (..)
 import Gui.Mouse as Mouse exposing (..)
 import Gui.Util exposing (..)
@@ -23,7 +25,7 @@ import Gui.Alt as Alt exposing (Gui)
 import Gui.Focus as Focus exposing (..)
 
 
-type alias Model msg =
+type alias Gui msg =
     { mouse : MouseState
     , tree : Over msg
     , layout : Layout
@@ -41,60 +43,65 @@ downs size gui =
         >> Gui.Mouse.Down
 
 
-extractMouse : Model msg -> MouseState
+extractMouse : Gui msg -> MouseState
 extractMouse = .mouse
 
 
-map : (msgA -> msgB) -> Model msgA -> Model msgB
+map : (msgA -> msgB) -> Gui msgA -> Gui msgB
 map f model =
     { mouse = model.mouse
-    , tree = Gui.Control.map f model.tree
+    , tree = Gui.Over.map f model.tree
     , layout = model.layout
     }
 
 
-none : Model msg
+none : Gui msg
 none =
-    Model Gui.Mouse.init Anything
+    Gui Gui.Mouse.init Anything
         <| BinPack.container Layout.maxCellsByX Layout.maxCellsByY
 
 
 update
     :  Msg
-    -> Model umsg
-    -> ( Model umsg, Cmd umsg )
-update msg ( { root, mouse } as model ) =
+    -> Gui umsg
+    -> ( Gui umsg, Cmd umsg )
+update msg gui =
     case msg of
+        NoOp ->
+            ( gui, Cmd.none )
 
         ApplyMouse mouseAction ->
-            handleMouse mouseAction model
+            handleMouse mouseAction gui
 
         Click path ->
             let
                 (nextRoot, cmds) =
-                    model.root |> executeAt path
+                    gui.tree |> executeAt path
             in
                 (
-                    { model
-                    | root = nextRoot
+                    { gui
+                    | tree = nextRoot
                     }
                 , cmds
                 )
 
         MouseDown path ->
-            ( model.root |> Focus.on path
+            (
+                { gui
+                | tree = gui.tree |> Focus.on path
+                }
             , Cmd.none
             )
 
         KeyDown keyCode ->
            let
-                curFocus = Focus.find model.root
+                curFocus = Focus.find gui.tree
                 (nextRoot, cmds) =
-                    model.root |> handleKeyDown keyCode curFocus
+                    gui.tree |> handleKeyDown keyCode curFocus
             in
                 (
-                    { model
-                    | root = nextRoot
+                    { gui
+                    | tree = nextRoot
                     }
                 , cmds
                 )
@@ -116,10 +123,10 @@ trackMouse windowSize gui =
     |> Sub.map ApplyMouse
 
 
-handleMouse : MouseAction -> Model msg -> ( Model msg, Cmd msg )
-handleMouse mouseAction model =
+handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd msg )
+handleMouse mouseAction gui =
     let
-        curMouseState = model.mouse
+        curMouseState = gui.mouse
         nextMouseState = curMouseState |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
         maybeDragFromPos =
             if nextMouseState.down then nextMouseState.dragFrom
@@ -134,13 +141,12 @@ handleMouse mouseAction model =
                 |> Maybe.andThen
                     (\dragFromPos ->
 
-                        model.layout
+                        gui.layout
                             |> BinPack.find dragFromPos
-                            -- |> Maybe.andThen Gui.Control.find
+                            -- |> Maybe.andThen Gui.Over.find
                             |> Maybe.andThen
                                 (\path ->
-                                    path
-                                        |> Gui.Control.find
+                                    Gui.Over.find path gui.tree
                                         |> Maybe.map (Tuple.pair path)
                                 )
 
@@ -167,67 +173,66 @@ handleMouse mouseAction model =
             Just ( path, Number ( Control axis curValue handler ) ) ->
                 let
                     dY = distanceY knobDistance nextMouseState
-                    nextVal = alter axis dY
+                    nextVal = alter axis dY curValue
                     nextControl =
-                        Number <| Control axis nextVal handler
+                        Control axis nextVal handler
                 in
                     (
-                        { model
+                        { gui
                         | mouse = nextMouseState
-                        , root =
+                        , tree =
                             updateAt
                                 path
-                                (always nextControl)
-                                model.root
+                                (always <| Number nextControl)
+                                gui.tree
                         }
                     ,
                         case mouseAction of
                             Mouse.Up _ ->
                                 if curMouseState.down
                                 && not nextMouseState.down
-                                then
-                                    Just <| handler nextVal
-                                else Nothing
-                            _ -> Nothing
+                                then call nextControl
+                                else Cmd.none
+                            _ -> Cmd.none
                     )
 
             Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
                 let
                     ( dX, dY ) = distanceXY knobDistance nextMouseState
                     ( nextX, nextY ) =
-                        ( alter xAxis dX
-                        , alter yAxis dY
+                        ( alter xAxis dX curX
+                        , alter yAxis dY curY
                         )
                     nextControl =
-                        Number <| Control ( xAxis, yAxis ) ( nextX, nextY ) handler
+                        Control ( xAxis, yAxis ) ( nextX, nextY ) handler
                 in
                     (
-                        { model
+                        { gui
                         | mouse = nextMouseState
-                        , root =
+                        , tree =
                             updateAt
                                 path
-                                (always nextControl)
-                                model.root
+                                (always <| Coordinate nextControl)
+                                gui.tree
                         }
                     ,
                         case mouseAction of
                             Mouse.Up _ ->
                                 if curMouseState.down
                                 && not nextMouseState.down
-                                then
-                                    Just <| handler ( nextX, nextY )
-                                else Nothing
-                            _ -> Nothing
+                                then call nextControl
+                                else Cmd.none
+                            _ -> Cmd.none
                     )
 
             _ ->
                 (
-                    { model
+                    { gui
                     | mouse = nextMouseState
                     }
                 , Cmd.none
                 )
+
 
 handleKeyDown
     :  Int
@@ -241,19 +246,19 @@ handleKeyDown keyCode path root =
         -- right arrow
         39 -> ( root |> Focus.shift Focus.Right, Cmd.none )
         -- up arrow
-        38 -> ( root |> Focus.shift Focus.Up, Nothing )
+        38 -> ( root |> Focus.shift Focus.Up, Cmd.none )
         -- down arrow
-        40 -> ( root |> Focus.shift Focus.Down, Nothing )
+        40 -> ( root |> Focus.shift Focus.Down, Cmd.none )
         -- space
         33 -> root |> executeAt path
         -- enter
         13 -> root |> executeAt path
         -- else
-        _ -> ( NoOp, Nothing )
+        _ -> ( root, Cmd.none )
 
 
 
-updateWith : ( Msg, Maybe msg ) -> Model msg -> ( Model msg, Cmd msg  )
+updateWith : ( Msg, Maybe msg ) -> Gui msg -> ( Gui msg, Cmd msg  )
 updateWith ( msg, maybeUserMsg ) model =
     update msg model
         |> Tuple.mapSecond
@@ -270,7 +275,7 @@ updateWith ( msg, maybeUserMsg ) model =
 
 focus : msg -> Cmd msg
 focus noOp =
-    Dom.focus Render.rootId
+    Dom.focus Layout.rootId
         |> Task.attempt (always noOp)
 
 
@@ -282,11 +287,6 @@ fromWindow passSize =
                 (floor d.viewport.width)
                 (floor d.viewport.height)
             )
-
-
-executeAt : Path -> Over msg -> ( Msg, Maybe msg )
-executeAt path root =
-    ( NoOp, Cmd.none )
 
 
 {-
@@ -326,13 +326,19 @@ executeCell { cell, nestPos, isSelected, onSelect } =
 -}
 
 
-offsetFromSize : { width : Int, height : Int } -> Layout -> { x : Int, y : Int }
-offsetFromSize { width, height } { layout } =
+offsetFromSize : { width : Int, height : Int } -> Layout -> { x : Float, y : Float }
+offsetFromSize { width, height } layout =
     let
         ( gridWidthInCells, gridHeightInCells ) = getSize layout
         ( gridWidthInPx, gridHeightInPx ) =
-            cellWidth * gridWidthInCells + cellHeight * gridHeightInCells
+            ( cellWidth * gridWidthInCells
+            , cellHeight * gridHeightInCells
+            )
     in
-        { x = floor <| (toFloat width / 2) - (toFloat gridWidthInPx / 2)
-        , y = floor <| (toFloat height / 2) - (toFloat gridHeightInPx / 2)
+        { x = (toFloat width / 2) - (toFloat gridWidthInPx / 2)
+        , y = (toFloat height / 2) - (toFloat gridHeightInPx / 2)
         }
+
+
+view : Gui msg -> Html Msg
+view gui = Layout.view gui.tree gui.layout

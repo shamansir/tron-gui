@@ -22,6 +22,6 @@ findMap toValue =  -- TODO: re-use in code where such `foldl` is used
         Nothing
 
 
-alter : { min : Float, max : Float } -> Float -> Float -> Float
+alter : { a | min : Float, max : Float } -> Float -> Float -> Float
 alter { min, max } amount curValue =
     min + (amount * (max - min)) -- TODO: apply step
