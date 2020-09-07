@@ -6,7 +6,9 @@ import Json.Decode as Json
 
 
 import Gui.Property exposing (Property, Path)
+import Gui.Property as Property exposing (fold)
 import BinPack exposing (..)
+import BinPack as Layout exposing (..)
 
 
 maxCellsByX = 10
@@ -25,4 +27,11 @@ init = container maxCellsByX maxCellsByY
 
 
 pack : Property msg -> Layout
-pack prop = container 0 0
+pack =
+    Property.fold
+        (\path prop layout ->
+            layout
+                |> Layout.pack ( { width = 1, height = 1 }, path )
+                |> Maybe.withDefault layout
+        )
+        init

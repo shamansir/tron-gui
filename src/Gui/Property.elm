@@ -144,30 +144,73 @@ map f prop =
                     (f << handler)
 
 
--- fold : TODO
+fold : (Path -> Property msg -> a -> a) -> a -> Property msg -> a
+fold f from root =
+    let
+
+        foldItems : Path -> Array ( Label, Property msg ) -> a -> a
+        foldItems (Path curPath) items val =
+            items
+                |> Array.map Tuple.second
+                |> Array.indexedMap Tuple.pair
+                |> Array.foldl
+                    (\(index, innerItem) prev ->
+                        helper (Path <| curPath ++ [ index ]) innerItem prev
+                    )
+                    val
+
+        helper : Path -> Property msg -> a -> a
+        helper curPath item val =
+            case item of
+                Choice (Control ( _, items ) _ _) ->
+                    f curPath item
+                        <| foldItems curPath items val
+                Group (Control ( _, items ) _ _) ->
+                    f curPath item
+                        <| foldItems curPath items val
+                _ -> f curPath item val
+
+    in
+        helper (Path []) root from
 
 
 mapReplace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
 mapReplace f root =
     let
-        helper (Path curPath) item =
+
+        replaceItems : Path -> Array ( Label, Property msg ) -> Array ( Label, Property msg )
+        replaceItems (Path curPath) items =
+            items |>
+                Array.indexedMap
+                (\index ( label, innerItem ) ->
+                    ( label
+                    , helper (Path <| curPath ++ [ index ]) innerItem
+                    )
+                )
+
+        helper : Path -> Property msg -> Property msg
+        helper curPath item =
             case item of
-                Group (Control ( shape, items ) state handler) ->
-                    Group
+                Choice (Control ( shape, items ) state handler) ->
+                    Choice
                         (Control
                             ( shape
-                            , items |>
-                                Array.indexedMap
-                                (\index ( label, innerItem ) ->
-                                    ( label
-                                    , helper (Path <| curPath ++ [ index ]) innerItem
-                                    )
-                                )
+                            , replaceItems curPath items
                             )
                             state
                             handler
                         )
-                _ -> f (Path curPath) item
+                Group (Control ( shape, items ) state handler) ->
+                    Group
+                        (Control
+                            ( shape
+                            , replaceItems curPath items
+                            )
+                            state
+                            handler
+                        )
+                _ -> f curPath item
+
     in
         helper (Path []) root
 
