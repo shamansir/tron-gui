@@ -12,10 +12,10 @@ import Html as Html exposing (map, div)
 import Html.Events as Html exposing (onClick)
 import Task as Task
 
-import Gui.Alt as AGui
-import Gui.Alt exposing (Gui)
+import Gui.Gui exposing (Gui)
 import Gui.Gui as Gui exposing (view)
-import Gui.Gui as Tron exposing (Gui, focus)
+import Gui.Expose as Exp exposing (Update)
+import Gui.Gui as Tron exposing (Gui, focus, over)
 import Gui.Msg as Tron exposing (Msg)
 import Gui.Mouse exposing (Position)
 import Gui.Mouse as Tron exposing (MouseState)
@@ -29,7 +29,7 @@ import Dict exposing (size)
 
 type Msg
     = ChangeMode Mode
-    | DatGuiUpdate AGui.Update
+    | DatGuiUpdate Exp.Update
     | TronUpdate Tron.Msg
     | ToSimple Simple.Msg
     | Resize Int Int
@@ -99,7 +99,7 @@ update msg ({ mode, example, gui } as model) =
                 -- FIXME: update Gui model as well
                 }
             , SimpleGui.for simpleExample
-                |> AGui.encode
+                |> Exp.encode
                 |> startDatGui
             )
 
@@ -108,8 +108,7 @@ update msg ({ mode, example, gui } as model) =
                 { model
                 | mode = TronGui
                 , gui = SimpleGui.for simpleExample
-                    |> Gui.fromAlt
-                    |> Gui.build
+                    |> Gui.over
                     |> Gui.map ToSimple
                 }
             , Cmd.batch
@@ -155,7 +154,7 @@ update msg ({ mode, example, gui } as model) =
                 { model
                 | example =
                     SimpleGui.for simpleExample
-                        |> AGui.update guiUpdate
+                        |> Exp.update guiUpdate
                         |> Maybe.map (\simpleMsg ->
                                 Simple.update simpleMsg simpleExample
                             )
@@ -186,7 +185,7 @@ update msg ({ mode, example, gui } as model) =
 subscriptions : Model -> Sub Msg
 subscriptions { mode, example, gui, size } =
     case mode of
-        DatGui -> updateFromDatGui (DatGuiUpdate << AGui.fromPort)
+        DatGui -> updateFromDatGui (DatGuiUpdate << Exp.fromPort)
         TronGui ->
             case example of
                 Simple simpleExample ->
@@ -212,7 +211,7 @@ main =
         }
 
 
-port updateFromDatGui : (AGui.PortUpdate -> msg) -> Sub msg
+port updateFromDatGui : (Exp.PortUpdate -> msg) -> Sub msg
 
 port startDatGui : Encode.Value -> Cmd msg
 

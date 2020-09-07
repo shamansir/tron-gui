@@ -1,18 +1,20 @@
 module Simple.Gui exposing (..)
 
 
-import Gui.Alt as Gui
-import Gui.Alt exposing (Gui)
+import Gui.Build as Gui
+import Gui.Gui exposing (Gui)
+import Gui.Over  exposing (Over)
+import Gui.Over as Gui exposing (Label)
 
 
 import Simple.Model exposing (..)
 import Simple.Msg exposing (..)
 
 
-for : Model -> Gui Msg
+for : Model -> Over Msg
 for model =
-    Gui.make
-        [ ( "ghost", Gui.ghost )
+    Gui.nest
+        [ ( "ghost", Gui.none )
         , ( "int",
                 Gui.int
                     { min = -20, max = 20, step = 5 }
@@ -42,28 +44,28 @@ for model =
                 Gui.choice
                     choiceToLabel
                     choices
-                    (Just model.choice)
+                    model.choice
                     compareChoices
                     Choose )
         , ( "nest",
-                Gui.nest
-                    Gui.Expanded
-                    <| nestedButtons model.buttonPressed )
+                nestedButtons model.buttonPressed )
         , ( "toggle",
                 Gui.toggle
                     (Gui.boolToToggle model.toggle)
                     (Gui.toggleToBool >> Switch) )
         ]
+        (always NoOp)
 
 
-nestedButtons : Choice -> Gui Msg
+nestedButtons : Choice -> Over Msg
 nestedButtons curChoice =
-    Gui.make
+    Gui.nest
         [ ( "a", Gui.button <| always <| Pressed A )
         , ( "b", Gui.button <| always <| Pressed B )
         , ( "c", Gui.button <| always <| Pressed C )
         , ( "d", Gui.button <| always <| Pressed D )
         ]
+        (always NoOp)
 
 
 choiceToLabel : Choice -> Gui.Label

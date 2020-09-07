@@ -29,23 +29,24 @@ type BinPack a
 
 fold : (a -> b -> b) -> b -> BinPack a -> b
 fold f =
-  fold1 (\bp prev ->
-    case bp of
-      Node _ _ v -> f v prev
-      Free _ -> prev
-  )
+    fold1
+        (\bp prev ->
+            case bp of
+                Node _ _ v -> f v prev
+                Free _ -> prev
+        )
 
 
 fold1 : (BinPack a -> b -> b) -> b -> BinPack a -> b
 fold1 f i bp =
-  case bp of
-    Node _ { right, below } _ ->
-      let
-        current = f bp i
-        fromRight = fold1 f current right
-        fromBelow = fold1 f fromRight below
-      in fromBelow
-    Free _ -> f bp i
+    case bp of
+        Node _ { right, below } _ ->
+            let
+                current = f bp i
+                fromRight = fold1 f current right
+                fromBelow = fold1 f fromRight below
+            in fromBelow
+        Free _ -> f bp i
 
 
 type alias Bounds =

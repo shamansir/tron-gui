@@ -1,12 +1,13 @@
 module Simple.Msg exposing (..)
 
 
-import Gui.Expose as Gui exposing (Color)
+import Gui.Over as Gui exposing (Color)
 import Simple.Model exposing (..)
 
 
 type Msg
-    = ChangeInt Int
+    = NoOp
+    | ChangeInt Int
     | ChangeFloat Float
     | ChangeXY ( Float, Float )
     | ChangeString String

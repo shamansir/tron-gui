@@ -8,8 +8,8 @@ import Html
 import Html exposing (Html)
 import Html.Attributes as Html
 
-import Gui.Alt as Gui
-import Gui.Alt exposing (Gui)
+import Gui.Build as Gui
+import Gui.Gui exposing (Gui)
 
 import Simple.Gui as Simple
 import Simple.Model exposing (..)
@@ -20,6 +20,7 @@ import Simple.Msg exposing (..)
 update : Msg -> Model -> Model
 update msg model =
     case msg of
+        NoOp -> model
         ChangeInt int -> { model | int = int }
         ChangeFloat float -> { model | float = float }
         ChangeString string -> { model | string = string }

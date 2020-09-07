@@ -79,6 +79,7 @@ nest : List (Label, Over msg) -> (ExpandState -> msg) -> Over msg
 nest = nestIn ( 3, 3 )
 
 
+-- FIXME: get rid of the handler having almost no sense
 nestIn : Shape -> List (Label, Over msg) -> (ExpandState -> msg) -> Over msg
 nestIn shape items handler =
     Group
@@ -145,19 +146,41 @@ strings options current toMsg =
         toMsg
 
 
--- TODO:
+expand : Over msg -> Over msg
+expand over =
+    case over of
+        Group ( Control setup ( _, focus ) handler ) ->
+            Group ( Control setup ( Expanded, focus ) handler )
+        _ -> over
 
 
--- expand : Over msg -> Over msg
+collapse : Over msg -> Over msg
+collapse over =
+    case over of
+        Group ( Control setup ( _, focus ) handler ) ->
+            Group ( Control setup ( Collapsed, focus ) handler )
+        _ -> over
 
 
--- collapse : Over msg -> Over msg
+toggleOn : Over msg -> Over msg
+toggleOn over =
+    case over of
+        Toggle ( Control setup _ handler ) ->
+            Toggle ( Control setup TurnedOn handler )
+        _ -> over
 
 
--- toggleOn : Over msg -> Over msg
+toggleOff : Over msg -> Over msg
+toggleOff over =
+    case over of
+        Toggle ( Control setup _ handler ) ->
+            Toggle ( Control setup TurnedOff handler )
+        _ -> over
 
 
--- toggleOff : Over msg -> Over msg
-
-
--- reshape : Shape -> Over msg -> Over msg
+reshape : Shape -> Over msg -> Over msg
+reshape shape over =
+    case over of
+        Group ( Control ( _, items ) ( expanded, focus ) handler ) ->
+            Group ( Control ( shape, items ) ( expanded, focus ) handler )
+        _ -> over

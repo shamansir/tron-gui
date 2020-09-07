@@ -1,5 +1,5 @@
 module Gui.Gui exposing
-    ( Gui
+    ( Gui, over
     , view, update, none, map
     , trackMouse, focus, fromWindow
     )
@@ -57,8 +57,12 @@ map f model =
 
 none : Gui msg
 none =
-    Gui Gui.Mouse.init Nil
-        <| BinPack.container Layout.maxCellsByX Layout.maxCellsByY
+    Gui Gui.Mouse.init Nil Layout.init
+
+
+over : Over msg -> Gui msg
+over =
+    Gui Gui.Mouse.init Nil << Layout.pack
 
 
 update
