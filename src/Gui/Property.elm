@@ -1,4 +1,4 @@
-module Gui.Over exposing (..)
+module Gui.Property exposing (..)
 
 
 import Array exposing (Array)
@@ -47,7 +47,7 @@ type Focus = Focus Int
 type alias GroupControl msg =
     Control
         { shape : Shape
-        , items : Array ( Label, Over msg )
+        , items : Array ( Label, Property msg )
         }
         { expanded : ExpandState
         , focus : Maybe Focus
@@ -55,7 +55,7 @@ type alias GroupControl msg =
         msg
 
 
-type Over msg
+type Property msg
     = Nil
     | Number (Control Axis Float msg)
     | Coordinate (Control ( Axis, Axis ) ( Float, Float ) msg)
@@ -63,10 +63,15 @@ type Over msg
     | Color (Control () Color msg)
     | Toggle (Control () ToggleState msg)
     | Action (Control ( Maybe Icon ) () msg)
-    | Choice (Control ( Array ( Maybe Icon, Label ) ) Int msg)
+    | Choice
+        (Control
+            ( Shape, Array ( Label, Property msg ) )
+            ( ExpandState, Int )
+            msg
+        )
     | Group
         (Control
-            ( Shape, Array ( Label, Over msg ) )
+            ( Shape, Array ( Label, Property msg ) )
             ( ExpandState, Maybe Focus )
             msg
         )
@@ -92,7 +97,7 @@ lineWidth = "2"
 -- Recursively try to find the control in the tree, following the given path.
 -- When found and the path is valid, respond with the inner control.
 -- When the path is invalid (no controls located following these indices), return `Nothing`.
-find : Path -> Over msg -> Maybe (Over msg)
+find : Path -> Property msg -> Maybe (Property msg)
 find (Path path) root =
     case path of
         [] -> Just root
@@ -107,9 +112,9 @@ find (Path path) root =
 
 
 
-map : (msgA -> msgB) -> Over msgA -> Over msgB
-map f over =
-    case over of
+map : (msgA -> msgB) -> Property msgA -> Property msgB
+map f prop =
+    case prop of
         Nil -> Nil
         Number control -> Number <| Control.map f control
         Coordinate control -> Coordinate <| Control.map f control
@@ -117,7 +122,16 @@ map f over =
         Color control -> Color <| Control.map f control
         Toggle control -> Toggle <| Control.map f control
         Action control -> Action <| Control.map f control
-        Choice control -> Choice <| Control.map f control
+        Choice (Control ( shape, items ) state handler) ->
+            Choice <|
+                Control
+                    ( shape
+                    , items
+                        |> Array.map
+                            (Tuple.mapSecond <| map f)
+                    )
+                    state
+                    (f << handler)
         Group (Control ( shape, items ) state handler) ->
             Group <|
                 Control
@@ -133,7 +147,7 @@ map f over =
 -- fold : TODO
 
 
-mapReplace : (Path -> Over msg -> Over msg) -> Over msg -> Over msg
+mapReplace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
 mapReplace f root =
     let
         helper (Path curPath) item =
@@ -158,7 +172,7 @@ mapReplace f root =
         helper (Path []) root
 
 
-updateAt : Path -> (Over msg -> Over msg) -> Over msg -> Over msg
+updateAt : Path -> (Property msg -> Property msg) -> Property msg -> Property msg
 updateAt (Path path) f =
     mapReplace
         <| \(Path otherPath) item ->
@@ -167,7 +181,7 @@ updateAt (Path path) f =
 
 -- for mouse click or enter key handling, does not change the tree
 -- only updates the controls itself
-execute : Over msg -> ( Over msg, Cmd msg )
+execute : Property msg -> ( Property msg, Cmd msg )
 execute item =
     case item of
         Toggle toggleControl ->
@@ -201,7 +215,7 @@ execute item =
         _ -> ( item, Cmd.none )
 
 
-executeAt : Path -> Over msg -> ( Over msg, Cmd msg )
+executeAt : Path -> Property msg -> ( Property msg, Cmd msg )
 executeAt path root =
     case root
         |> find path

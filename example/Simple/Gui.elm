@@ -3,15 +3,15 @@ module Simple.Gui exposing (..)
 
 import Gui.Build as Gui
 import Gui.Gui exposing (Gui)
-import Gui.Over  exposing (Over)
-import Gui.Over as Gui exposing (Label)
+import Gui.Property  exposing (Property)
+import Gui.Property as Gui exposing (Label)
 
 
 import Simple.Model exposing (..)
 import Simple.Msg exposing (..)
 
 
-for : Model -> Over Msg
+for : Model -> Property Msg
 for model =
     Gui.nest
         [ ( "ghost", Gui.none )
@@ -57,7 +57,7 @@ for model =
         (always NoOp)
 
 
-nestedButtons : Choice -> Over Msg
+nestedButtons : Choice -> Property Msg
 nestedButtons curChoice =
     Gui.nest
         [ ( "a", Gui.button <| always <| Pressed A )

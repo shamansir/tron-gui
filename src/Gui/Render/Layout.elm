@@ -9,7 +9,7 @@ import Json.Decode as Json
 
 
 import Gui.Control exposing (..)
-import Gui.Over exposing (..)
+import Gui.Property exposing (..)
 import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
 import Gui.Render.Control as Control exposing (..)
@@ -221,8 +221,8 @@ view nest =
 -}
 
 
-view : Over msg -> Layout -> Html Msg
-view over layout =
+view : Property msg -> Layout -> Html Msg
+view prop layout =
     let
         keyDownHandler_ =
             H.on "keydown"

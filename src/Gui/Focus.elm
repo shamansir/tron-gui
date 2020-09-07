@@ -2,7 +2,7 @@ module Gui.Focus exposing (..)
 
 
 import Gui.Control exposing (..)
-import Gui.Over exposing (..)
+import Gui.Property exposing (..)
 
 import Array
 
@@ -14,7 +14,7 @@ type Direction
     | Left
 
 
-on : Path -> Over msg -> Over msg
+on : Path -> Property msg -> Property msg
 on (Path path) root =
     case ( path, root ) of
         ( [], _ ) -> root
@@ -51,7 +51,7 @@ on (Path path) root =
         ( _, _ ) -> root
 
 
-find : Over msg -> Path
+find : Property msg -> Path
 find root =
     let
         helper control =
@@ -73,7 +73,7 @@ find root =
     in Path <| helper root
 
 
-shift : Direction -> Over msg -> Over msg
+shift : Direction -> Property msg -> Property msg
 shift direction root =
     let
         (Path currentFocus) = find root

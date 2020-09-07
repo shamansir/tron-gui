@@ -1,7 +1,7 @@
 module Simple.Model exposing (..)
 
 
-import Gui.Over as Gui exposing (Color)
+import Gui.Property as Gui exposing (Color)
 
 
 type Choice = A | B | C | D

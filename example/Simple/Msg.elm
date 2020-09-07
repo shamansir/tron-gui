@@ -1,7 +1,7 @@
 module Simple.Msg exposing (..)
 
 
-import Gui.Over as Gui exposing (Color)
+import Gui.Property as Gui exposing (Color)
 import Simple.Model exposing (..)
 
 

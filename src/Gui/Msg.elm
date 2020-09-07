@@ -1,7 +1,7 @@
 module Gui.Msg exposing (..)
 
 
-import Gui.Over exposing (Path)
+import Gui.Property exposing (Path)
 import Gui.Mouse exposing (MouseAction)
 
 

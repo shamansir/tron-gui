@@ -8,7 +8,7 @@ import Array exposing (Array)
 
 import Gui.Util exposing (findMap)
 import Gui.Control exposing (..)
-import Gui.Over exposing (..)
+import Gui.Property exposing (..)
 
 
 type alias Path = List Id
@@ -40,7 +40,7 @@ type alias PortUpdate =
     }
 
 
-updateProperty : Value -> Over msg -> Cmd msg
+updateProperty : Value -> Property msg -> Cmd msg
 updateProperty value property
     = case ( property, value ) of
         ( Nil, _ ) ->
@@ -49,20 +49,20 @@ updateProperty value property
             f |> callWith control
         ( Text control, FromInput s ) ->
             s |> callWith control
-        ( Choice control, FromChoice i ) ->
-            i |> callWith control
         ( Color control, FromColor c ) ->
             c |> callWith control
         ( Toggle control, FromToggle t ) ->
             t |> callWith control
         ( Action control, FromButton ) ->
             () |> callWith control
+        ( Choice ( Control _ ( expanded, _ ) _ as control), FromChoice i ) ->
+            ( expanded, i ) |> callWith control
         ( Group _, _ ) ->
             Cmd.none
         _ -> Cmd.none
 
 
-update : Update -> Over msg -> Cmd msg
+update : Update -> Property msg -> Cmd msg
 update { path, value } gui =
     case path of
         [] -> updateProperty value gui
@@ -83,7 +83,7 @@ encodePath=
     E.list E.int
 
 
-encodePropertyAt : Path -> Over msg -> E.Value
+encodePropertyAt : Path -> Property msg -> E.Value
 encodePropertyAt path property =
     case property of
         Nil ->
@@ -144,20 +144,15 @@ encodePropertyAt path property =
                 , ( "path", encodePath path )
                 ]
 
-        Choice ( Control options current _) ->
+        Choice ( Control ( _, items ) ( expanded, current ) _) ->
             E.object
                 [ ( "type", E.string "choice" )
                 , ( "path", encodePath path )
                 , ( "current", E.int current )
-                , ( "options", E.list
-                        (\(index, (_, label)) ->
-                            E.object
-                                [ ( "index", E.int index )
-                                , ( "label", E.string label )
-                                ]
-                        )
-                        <| Array.toIndexedList
-                        <| options )
+                , ( "expanded", E.bool <| case expanded of
+                    Expanded -> True
+                    Collapsed -> False )
+                , ( "options", encodeNested path items )
                 ]
         Group (Control ( _, items ) ( expanded, _ ) _ ) ->
             E.object
@@ -166,34 +161,36 @@ encodePropertyAt path property =
                 , ( "expanded", E.bool <| case expanded of
                     Expanded -> True
                     Collapsed -> False )
-                , ( "nest", encodeNested path items )
+                , ( "nest",
+                        E.object
+                            [
+                                ( "gui"
+                                , encodeNested path items
+                                )
+
+                            ] )
                 ]
 
 
-encodeNested : Path -> Array ( Label, Over msg ) -> E.Value
+encodeNested : Path -> Array ( Label, Property msg ) -> E.Value
 encodeNested path items =
-    E.object
-        [
-            ( "gui"
-            , E.list
-                (\(id, (label, property)) ->
-                    E.object
-                        [ ( "index", E.int id )
-                        , ( "label", E.string label )
-                        , ( "property"
-                            , encodePropertyAt
-                                    ( path ++ [ id ] )
-                                    property
-                            )
-                        ]
+    E.list
+        (\(id, (label, property)) ->
+            E.object
+                [ ( "index", E.int id )
+                , ( "label", E.string label )
+                , ( "property"
+                    , encodePropertyAt
+                            ( path ++ [ id ] )
+                            property
                     )
-                <| Array.toIndexedList
-                <| items
+                ]
             )
-        ]
+        <| Array.toIndexedList
+        <| items
 
 
-encode : Over msg -> E.Value
+encode : Property msg -> E.Value
 encode = encodePropertyAt []
 
 

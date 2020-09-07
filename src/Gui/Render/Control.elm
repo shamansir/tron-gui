@@ -8,7 +8,7 @@ import Svg exposing (..)
 import Svg.Attributes as S exposing (..)
 
 import Gui.Control exposing (..)
-import Gui.Over exposing (..)
+import Gui.Property exposing (..)
 import Gui.Msg exposing (..)
 
 
@@ -202,7 +202,7 @@ button _ =
         ]
 
 
-nest : Control ( Shape, Array ( Label, Over msg ) ) ( ExpandState, Maybe Focus ) msg -> Svg msg
+nest : Control ( Shape, Array ( Label, Property msg ) ) ( ExpandState, Maybe Focus ) msg -> Svg msg
 nest (Control ( _, _ ) ( state, _ ) _) =
     g [ class "gui-nested" ]
         [ g
@@ -211,7 +211,8 @@ nest (Control ( _, _ ) ( state, _ ) _) =
                     ++ (String.fromFloat <| cellWidth / 2 - 10) ++ ",10)" ]
             [ if state == Expanded
                 then downArrow (cellWidth / 2) 10 baseColor
-                else upArrow (cellWidth / 2) 10 baseColor  ]
+                else upArrow (cellWidth / 2) 10 baseColor
+            ]
         ]
 
 {-

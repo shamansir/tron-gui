@@ -5,7 +5,7 @@ import Array exposing (..)
 import Json.Decode as Json
 
 
-import Gui.Over exposing (Over, Path)
+import Gui.Property exposing (Property, Path)
 import BinPack exposing (..)
 
 
@@ -24,5 +24,5 @@ init : Layout
 init = container maxCellsByX maxCellsByY
 
 
-pack : Over msg -> Layout
-pack over = container 0 0
+pack : Property msg -> Layout
+pack prop = container 0 0

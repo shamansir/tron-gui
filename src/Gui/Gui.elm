@@ -13,7 +13,7 @@ import Html exposing (Html)
 import BinPack exposing (..)
 
 import Gui.Control exposing (..)
-import Gui.Over exposing (..)
+import Gui.Property exposing (..)
 import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (..)
 import Gui.Msg exposing (..)
@@ -27,7 +27,7 @@ import Gui.Focus as Focus exposing (..)
 
 type alias Gui msg =
     { mouse : MouseState
-    , tree : Over msg
+    , tree : Property msg
     , layout : Layout
     }
 
@@ -50,7 +50,7 @@ extractMouse = .mouse
 map : (msgA -> msgB) -> Gui msgA -> Gui msgB
 map f model =
     { mouse = model.mouse
-    , tree = Gui.Over.map f model.tree
+    , tree = Gui.Property.map f model.tree
     , layout = model.layout
     }
 
@@ -60,7 +60,7 @@ none =
     Gui Gui.Mouse.init Nil Layout.init
 
 
-over : Over msg -> Gui msg
+over : Property msg -> Gui msg
 over =
     Gui Gui.Mouse.init Nil << Layout.pack
 
@@ -147,10 +147,10 @@ handleMouse mouseAction gui =
 
                         gui.layout
                             |> BinPack.find dragFromPos
-                            -- |> Maybe.andThen Gui.Over.find
+                            -- |> Maybe.andThen Gui.Property.find
                             |> Maybe.andThen
                                 (\path ->
-                                    Gui.Over.find path gui.tree
+                                    Gui.Property.find path gui.tree
                                         |> Maybe.map (Tuple.pair path)
                                 )
 
@@ -241,8 +241,8 @@ handleMouse mouseAction gui =
 handleKeyDown
     :  Int
     -> Path
-    -> Over msg
-    -> ( Over msg, Cmd msg )
+    -> Property msg
+    -> ( Property msg, Cmd msg )
 handleKeyDown keyCode path root =
     case keyCode of
         -- left arrow

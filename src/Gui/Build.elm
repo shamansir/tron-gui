@@ -4,22 +4,22 @@ module Gui.Build exposing (..)
 import Array
 
 import Gui.Control exposing (..)
-import Gui.Over exposing (..)
+import Gui.Property exposing (..)
 import Gui.Control exposing (Control(..))
 import Gui.Util exposing (findMap)
 
 
-none : Over msg
+none : Property msg
 none = Nil
 
 
-float : Axis -> Float -> ( Float -> msg ) -> Over msg
+float : Axis -> Float -> ( Float -> msg ) -> Property msg
 float axis default =
     Number
         << Control axis default -- RoundBy 2
 
 
-int : { min: Int, max : Int, step : Int } -> Int -> ( Int -> msg ) -> Over msg
+int : { min: Int, max : Int, step : Int } -> Int -> ( Int -> msg ) -> Property msg
 int { min, max, step } default toMsg =
     float
         { min = toFloat min, max = toFloat max, step = toFloat step } -- RoundBy 0
@@ -27,13 +27,13 @@ int { min, max, step } default toMsg =
         (round >> toMsg)
 
 
-xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Over msg
+xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Property msg
 xy axes default =
     Coordinate
         << Control axes default
 
 
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Over msg
+input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Property msg
 input toString fromString default toMsg =
     Text
         <| Control
@@ -42,7 +42,7 @@ input toString fromString default toMsg =
             (fromString >> Maybe.withDefault default >> toMsg)
 
 
-text : String -> (String -> msg) -> Over msg
+text : String -> (String -> msg) -> Property msg
 text default =
     Text
         << Control
@@ -50,7 +50,7 @@ text default =
             default
 
 
-color : Color -> (Color -> msg) -> Over msg
+color : Color -> (Color -> msg) -> Property msg
 color default =
     Color
         << Control
@@ -58,7 +58,7 @@ color default =
             default
 
 
-button : (() -> msg) -> Over msg
+button : (() -> msg) -> Property msg
 button =
     Action
         << Control
@@ -66,7 +66,7 @@ button =
             ()
 
 
-toggle : ToggleState -> (ToggleState -> msg) -> Over msg
+toggle : ToggleState -> (ToggleState -> msg) -> Property msg
 toggle default =
     Toggle
         << Control
@@ -75,12 +75,12 @@ toggle default =
 
 
 -- FIXME: get rid of the handler having almost no sense
-nest : List (Label, Over msg) -> (ExpandState -> msg) -> Over msg
+nest : List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
 nest = nestIn ( 3, 3 )
 
 
 -- FIXME: get rid of the handler having almost no sense
-nestIn : Shape -> List (Label, Over msg) -> (ExpandState -> msg) -> Over msg
+nestIn : Shape -> List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
 nestIn shape items handler =
     Group
         <| Control
@@ -99,18 +99,48 @@ choice
     -> a
     -> ( a -> a -> Bool )
     -> ( a -> msg )
-    -> Over msg
-choice toLabel options current compare toMsg =
+    -> Property msg
+choice =
+    choiceIn (3, 3)
+
+
+choiceIn
+     : Shape
+    -> ( a -> Label )
+    -> List a
+    -> a
+    -> ( a -> a -> Bool )
+    -> ( a -> msg )
+    -> Property msg
+choiceIn shape toLabel options current compare toMsg =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
+        callByIndex indexToCall =
+            indexedOptions
+                |> findMap
+                    (\(index, option) ->
+                        if indexToCall == index
+                            then Just option
+                            else Nothing
+                    )
+                |> Maybe.map toMsg
+                |> Maybe.withDefault (toMsg current)
     in
         Choice
             <| Control
-                (options
+                ( shape
+                , options
                     |> List.map toLabel
-                    |> List.map (Tuple.pair Nothing)
-                    |> Array.fromList)
-                (indexedOptions
+                    |> List.indexedMap
+                        (\index label ->
+                            ( label
+                            , button <| always <| callByIndex index
+                            )
+                        )
+                    |> Array.fromList
+                )
+                ( Collapsed
+                , indexedOptions
                     |> findMap
                         (\(index, option) ->
                             if compare option current
@@ -119,24 +149,14 @@ choice toLabel options current compare toMsg =
                         )
                     |> Maybe.withDefault 0
                 )
-                (\selectedIndex ->
-                    indexedOptions
-                        |> findMap
-                            (\(index, option) ->
-                                if selectedIndex == index
-                                    then Just option
-                                    else Nothing
-                            )
-                        |> Maybe.map toMsg
-                        |> Maybe.withDefault (toMsg current)
-                )
+                (Tuple.second >> callByIndex)
 
 
 strings
      : List String
     -> String
     -> ( String -> msg )
-    -> Over msg
+    -> Property msg
 strings options current toMsg =
     choice
         identity
@@ -146,41 +166,45 @@ strings options current toMsg =
         toMsg
 
 
-expand : Over msg -> Over msg
-expand over =
-    case over of
+expand : Property msg -> Property msg
+expand prop =
+    case prop of
         Group ( Control setup ( _, focus ) handler ) ->
             Group ( Control setup ( Expanded, focus ) handler )
-        _ -> over
+        Choice ( Control setup ( _, selection ) handler ) ->
+            Choice ( Control setup ( Expanded, selection ) handler )
+        _ -> prop
 
 
-collapse : Over msg -> Over msg
-collapse over =
-    case over of
+collapse : Property msg -> Property msg
+collapse prop =
+    case prop of
         Group ( Control setup ( _, focus ) handler ) ->
             Group ( Control setup ( Collapsed, focus ) handler )
-        _ -> over
+        Choice ( Control setup ( _, selection ) handler ) ->
+            Choice ( Control setup ( Collapsed, selection ) handler )
+        _ -> prop
 
 
-toggleOn : Over msg -> Over msg
-toggleOn over =
-    case over of
+toggleOn : Property msg -> Property msg
+toggleOn prop =
+    case prop of
         Toggle ( Control setup _ handler ) ->
             Toggle ( Control setup TurnedOn handler )
-        _ -> over
+        _ -> prop
 
 
-toggleOff : Over msg -> Over msg
-toggleOff over =
-    case over of
+toggleOff : Property msg -> Property msg
+toggleOff prop =
+    case prop of
         Toggle ( Control setup _ handler ) ->
             Toggle ( Control setup TurnedOff handler )
-        _ -> over
+        _ -> prop
 
 
-reshape : Shape -> Over msg -> Over msg
-reshape shape over =
-    case over of
+reshape : Shape -> Property msg -> Property msg
+reshape shape prop =
+    case prop of
         Group ( Control ( _, items ) ( expanded, focus ) handler ) ->
             Group ( Control ( shape, items ) ( expanded, focus ) handler )
-        _ -> over
+        _ -> prop
