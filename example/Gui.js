@@ -28,8 +28,8 @@ const applyDefinition = (config, definition, send) => {
   function setProperty(label, property) {
     const propName = propNameFromPath(property.path);
 
-    if (property.type == 'gui') {
-      property.nest.gui.forEach((component) => {
+    if (property.type == 'nest') {
+      property.nest.forEach((component) => {
         setProperty(component.label, component.property);
       });
     } else if (property.type == 'button') {
@@ -42,7 +42,7 @@ const applyDefinition = (config, definition, send) => {
     }
   }
 
-  definition.gui.forEach((component) => {
+  definition.nest.forEach((component) => {
     setProperty(component.label, component.property);
   });
 
@@ -63,10 +63,10 @@ function start(document, definition, origSend) {
 
     const propName = propNameFromPath(property.path);
 
-    if (property.type == 'gui') {
+    if (property.type == 'nest') {
       const nestedGui = root.addFolder(label);
 
-      property.nest.gui.forEach((component) => {
+      property.nest.forEach((component) => {
         addControl(nestedGui, component.label, component.property);
       });
 
@@ -131,7 +131,7 @@ function start(document, definition, origSend) {
 
   }
 
-  definition.gui.forEach((component) => {
+  definition.nest.forEach((component) => {
     addControl(gui, component.label, component.property);
   });
 

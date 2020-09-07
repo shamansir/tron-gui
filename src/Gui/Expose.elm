@@ -156,19 +156,12 @@ encodePropertyAt path property =
                 ]
         Group (Control ( _, items ) ( expanded, _ ) _ ) ->
             E.object
-                [ ( "type", E.string "gui" )
+                [ ( "type", E.string "nest" )
                 , ( "path", encodePath path )
                 , ( "expanded", E.bool <| case expanded of
                     Expanded -> True
                     Collapsed -> False )
-                , ( "nest",
-                        E.object
-                            [
-                                ( "gui"
-                                , encodeNested path items
-                                )
-
-                            ] )
+                , ( "nest", encodeNested path items )
                 ]
 
 
