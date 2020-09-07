@@ -146,7 +146,7 @@ handleMouse mouseAction gui =
                     (\dragFromPos ->
 
                         gui.layout
-                            |> BinPack.find dragFromPos
+                            |> Layout.find dragFromPos
                             -- |> Maybe.andThen Gui.Property.find
                             |> Maybe.andThen
                                 (\path ->

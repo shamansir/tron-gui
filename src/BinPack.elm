@@ -120,7 +120,7 @@ pack1 ( rect, value ) model =
     pack ( rect, value ) model |> Maybe.withDefault model
 
 
-find : { x : Float, y : Float } -> BinPack a -> Maybe a
+find : { x : Float, y : Float } -> BinPack a -> Maybe ( a, Bounds )
 find pos =
     unfold
         (\ ( v, bounds ) foundBefore ->
@@ -131,7 +131,7 @@ find pos =
                     && (bounds.y >= pos.y)
                     && (pos.x < bounds.x + bounds.width)
                     && (pos.x < bounds.y + bounds.height)
-                        then Just v
+                        then Just ( v, bounds )
                         else Nothing
         )
         Nothing
