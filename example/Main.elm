@@ -96,7 +96,9 @@ update msg ({ mode, example, gui } as model) =
             (
                 { model
                 | mode = DatGui
-                -- FIXME: update Gui model as well
+                , gui = SimpleGui.for simpleExample
+                            |> Gui.over
+                            |> Gui.map ToSimple
                 }
             , SimpleGui.for simpleExample
                 |> Exp.encode

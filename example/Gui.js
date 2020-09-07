@@ -54,6 +54,8 @@ const Config = function(definition, send) {
 
 function start(document, definition, origSend) {
 
+  console.log(definition);
+
   const send = sendProxy(origSend);
 
   const gui = new dat.GUI(/*{ load: JSON }*/);

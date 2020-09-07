@@ -61,8 +61,8 @@ none =
 
 
 over : Property msg -> Gui msg
-over =
-    Gui Gui.Mouse.init Nil << Layout.pack
+over prop =
+    Gui Gui.Mouse.init prop <| Layout.pack prop
 
 
 update
