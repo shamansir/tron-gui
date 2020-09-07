@@ -12,7 +12,7 @@ import Gui.Control exposing (..)
 import Gui.Over exposing (..)
 import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
-import Gui.Render.Cell exposing (..)
+import Gui.Render.Control as Control exposing (..)
 
 
 type alias GridView = Html Msg
