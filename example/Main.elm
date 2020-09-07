@@ -108,8 +108,8 @@ update msg ({ mode, example, gui } as model) =
                 { model
                 | mode = TronGui
                 , gui = SimpleGui.for simpleExample
-                    |> Gui.over
-                    |> Gui.map ToSimple
+                            |> Gui.over
+                            |> Gui.map ToSimple
                 }
             , Cmd.batch
                 [ destroyDatGui ()
@@ -150,18 +150,10 @@ update msg ({ mode, example, gui } as model) =
                     )
 
         ( DatGuiUpdate guiUpdate, DatGui, Simple simpleExample ) ->
-            (
-                { model
-                | example =
-                    SimpleGui.for simpleExample
-                        |> Exp.update guiUpdate
-                        |> Maybe.map (\simpleMsg ->
-                                Simple.update simpleMsg simpleExample
-                            )
-                        |> Maybe.withDefault simpleExample
-                        |> Simple
-                }
-            , Cmd.none
+            ( model
+            , model.gui
+                |> .tree -- FIXME
+                |> Exp.update guiUpdate
             )
 
         ( Resize width height, _, _ ) ->
@@ -194,7 +186,7 @@ subscriptions { mode, example, gui, size } =
                             { width = Tuple.first size
                             , height = Tuple.second size
                             }
-                            gui
+                            gui.layout -- FIXME
                                 |> Sub.map TronUpdate
                         , Browser.onResize Resize
                         ]
