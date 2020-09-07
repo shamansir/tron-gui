@@ -7,9 +7,11 @@ import Html.Attributes as H
 import Html.Events as H
 import Json.Decode as Json
 
+import BinPack exposing (Bounds)
 
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)
+import Gui.Property as Property exposing (find)
 import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
 import Gui.Render.Control as Control exposing (..)
@@ -220,17 +222,67 @@ view nest =
             [ grid |> viewGrid (Focus focus) ]
 -}
 
+boundsDebug : Bounds -> Html Msg
+boundsDebug b =
+    span []
+        [ text "x: ", text <| String.fromFloat b.x
+        , text "y: ", text <| String.fromFloat b.y
+        , text "w: ", text <| String.fromFloat b.width
+        , text "h: ", text <| String.fromFloat b.height
+        ]
+
+
+propertyDebug : Property msg -> Html Msg
+propertyDebug _ = div [] []
+
 
 view : Property msg -> Layout -> Html Msg
-view prop layout =
+view root layout =
     let
         keyDownHandler_ =
             H.on "keydown"
                 <| Json.map KeyDown H.keyCode
+        renderProp bounds prop =
+            div
+                []
+                [ boundsDebug bounds
+                , propertyDebug prop
+                ]
+        renderPlate bounds plateCells =
+            div
+                []
+                <| boundsDebug bounds :: plateCells
+        cells =
+            BinPack.unfold
+                (\ ( c, bounds ) prevCells ->
+                    case c of
+                        One path ->
+                            case root |> Property.find path of
+                                Just prop ->
+                                    renderProp bounds prop :: prevCells
+                                Nothing ->
+                                    prevCells
+                        Plate plateLayout ->
+                            [
+                                renderPlate bounds
+                                    <| BinPack.unfold
+                                        (\ ( path, pBounds ) pPrevCells ->
+                                            case root |> Property.find path of
+                                                Just prop ->
+                                                    renderProp bounds prop :: pPrevCells
+                                                Nothing ->
+                                                    pPrevCells
+                                        )
+                                        prevCells
+                                        plateLayout
+                            ]
+                )
+                []
+                layout
     in
         div [ H.id rootId
             , H.class "gui noselect"
             , H.tabindex 0
             , keyDownHandler_
             ]
-            [ ]
+            cells
