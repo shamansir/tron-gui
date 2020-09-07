@@ -232,8 +232,59 @@ boundsDebug b =
         ]
 
 
-propertyDebug : Property msg -> Html Msg
-propertyDebug _ = div [] []
+propertyDebug : ( Label, Property msg ) -> Html Msg
+propertyDebug ( label, prop )  =
+    case prop of
+        Nil  ->
+            span []
+                [ text <| label ++ " ghost" ]
+        Number (Control { min, step, max } val _) ->
+            span []
+                [ text <| label ++ " knob: "
+                    ++ " " ++ String.fromFloat min ++ "/"
+                    ++ String.fromFloat step ++ "/"
+                    ++ String.fromFloat max
+                    ++ " " ++ String.fromFloat val ]
+        Coordinate (Control ( xConf, yConf ) ( valX, valY ) _) ->
+            span []
+                [ text <| "xy: " ++ label
+                    ++ " " ++ String.fromFloat xConf.min ++ "/"
+                    ++ String.fromFloat xConf.step ++ "/"
+                    ++ String.fromFloat xConf.max
+                    ++ " " ++ String.fromFloat valX
+                    ++ " " ++ String.fromFloat yConf.min ++ "/"
+                    ++ String.fromFloat yConf.step ++ "/"
+                    ++ String.fromFloat yConf.max
+                    ++ " " ++ String.fromFloat valY ]
+        Toggle (Control _ val _) ->
+            span []
+                [ text <| label ++ " toggle: "
+                    ++ (if val == TurnedOn then "on" else "off")
+                ]
+        Color (Control _ color _) ->
+            span []
+                [ text <| label ++ " color: " ++ color
+                ]
+        Text (Control _ value _) ->
+            span []
+                [ text <| label ++ " text: " ++ value
+                ]
+        Action _ ->
+            span []
+                [ text <| label ++ " button" ]
+        Group (Control _ ( state, maybeFocus ) _) ->
+            span []
+                [ text <| label ++ " nested: "
+                    ++ (if state == Expanded then "expanded" else "collapsed")
+                    ++ " focus: " ++ (case maybeFocus of
+                        Just (Focus focus) -> String.fromInt focus
+                        _ -> "none")
+                ]
+        Choice (Control _ ( state, selected ) _ ) ->
+            span []
+                [ text <| label ++ " choice: "
+                    ++ String.fromInt selected
+                ]
 
 
 view : Property msg -> Layout -> Html Msg
@@ -242,11 +293,11 @@ view root layout =
         keyDownHandler_ =
             H.on "keydown"
                 <| Json.map KeyDown H.keyCode
-        renderProp bounds prop =
+        renderProp path bounds ( label, prop ) =
             div
-                []
+                [ H.onClick <| Click path ]
                 [ boundsDebug bounds
-                , propertyDebug prop
+                , propertyDebug ( label, prop )
                 ]
         renderPlate bounds plateCells =
             div
@@ -257,9 +308,10 @@ view root layout =
                 (\ ( c, bounds ) prevCells ->
                     case c of
                         One path ->
-                            case root |> Property.find path of
+                            case root |> Property.find1 path of
                                 Just prop ->
-                                    renderProp bounds prop :: prevCells
+                                    renderProp path bounds prop
+                                        :: prevCells
                                 Nothing ->
                                     prevCells
                         Plate plateLayout ->
@@ -267,9 +319,10 @@ view root layout =
                                 renderPlate bounds
                                     <| BinPack.unfold
                                         (\ ( path, pBounds ) pPrevCells ->
-                                            case root |> Property.find path of
+                                            case root |> Property.find1 path of
                                                 Just prop ->
-                                                    renderProp bounds prop :: pPrevCells
+                                                    renderProp path bounds prop
+                                                        :: pPrevCells
                                                 Nothing ->
                                                     pPrevCells
                                         )

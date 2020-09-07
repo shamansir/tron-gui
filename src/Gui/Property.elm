@@ -98,17 +98,26 @@ lineWidth = "2"
 -- When found and the path is valid, respond with the inner control.
 -- When the path is invalid (no controls located following these indices), return `Nothing`.
 find : Path -> Property msg -> Maybe (Property msg)
-find (Path path) root =
-    case path of
-        [] -> Just root
-        index::pathTail ->
-            case root of
-                Group (Control ( _, items ) _ _) ->
-                    items
-                        |> Array.get index
-                        |> Maybe.map Tuple.second
-                        |> Maybe.andThen (find <| Path pathTail)
-                _ -> Nothing
+find path =
+    find1 path
+        >> Maybe.map Tuple.second
+
+
+find1 : Path -> Property msg -> Maybe (Label, Property msg)
+find1 (Path path) root =
+    let
+        helper ipath ( label, prop ) =
+            case ipath of
+                [] -> Just ( label, prop )
+                index::pathTail ->
+                    case root of
+                        Group (Control ( _, items ) _ _) ->
+                            items
+                                |> Array.get index
+                                |> Maybe.andThen (helper pathTail)
+                        _ -> Nothing
+    in
+        helper path ( "", root )
 
 
 
