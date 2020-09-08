@@ -6,7 +6,7 @@ import Json.Decode as Json
 
 
 import Gui.Control exposing (Control(..))
-import Gui.Property exposing (Property(..), Path(..), ExpandState(..))
+import Gui.Property exposing (..)
 import Gui.Property as Property exposing (fold)
 import BinPack exposing (..)
 
@@ -52,6 +52,7 @@ pack prop =
     case prop of
         Group (Control (shape, items) _ _) ->
             let
+
                 firstLevel =
                     items
                         |> Array.indexedMap Tuple.pair
@@ -60,39 +61,57 @@ pack prop =
                                 layout |> packOne [index]
                             )
                             init
-                packOne path layout =
-                    layout
-                        |> BinPack.pack1
-                            ( { width = 1, height = 1 }
-                            , One <| Path path
-                            )
-                packOne1 path layout =
-                    layout
-                        |> BinPack.pack1
-                            ( { width = 1, height = 1 }
-                            , Path path
-                            )
-                packPlate path (w, h) plateItems layout =
-                    let
-                        platePacked =
-                            layout
-                                |> BinPack.pack1
-                                    (
-                                        { width = toFloat w
-                                        , height = toFloat h
-                                        }
-                                    , Plate
-                                        <| Array.foldl
-                                            (\(index, ( _, innerProp)) plateLayout ->
-                                                packOne1 (path ++ [index]) plateLayout
-                                            )
-                                            (BinPack.container (toFloat w) (toFloat h))
-                                        <| Array.indexedMap Tuple.pair
-                                        <| plateItems
-                                    )
-                    in
-                        platePacked
-                        -- plateItems |> packPlatesOf path platePacked
+
+                packOne path =
+                    BinPack.pack1
+                        ( { width = 1, height = 1 }
+                        , One <| Path path
+                        )
+
+                packOne1 path =
+                    BinPack.pack1
+                        ( { width = 1, height = 1 }
+                        , Path path
+                        )
+
+                packPlate path (w, h) plateItems =
+                    BinPack.pack1
+                        (
+                            { width = toFloat w
+                            , height = toFloat h
+                            }
+                        , Plate
+                            <| Array.foldl
+                                (\(index, ( _, innerProp)) plateLayout ->
+                                    packOne1 (path ++ [index]) plateLayout
+                                )
+                                (BinPack.container (toFloat w) (toFloat h))
+                            <| Array.indexedMap Tuple.pair
+                            <| plateItems
+                        )
+
+                packGroupControl
+                     : List Int
+                    -> Layout
+                    -> Control
+                            ( Shape, Array ( Label, Property msg ) )
+                            ( ExpandState, a )
+                            msg
+                    -> Layout
+                packGroupControl path layout (Control ( innerShape, innerItems ) (expanded, _) _) =
+                    case expanded of
+                        Expanded ->
+                            let
+                                withPlate
+                                    = layout
+                                        |> packPlate
+                                            path
+                                            innerShape
+                                            innerItems
+                            in
+                                packPlatesOf path withPlate innerItems
+                        Collapsed -> layout
+
                 packPlatesOf path layout =
                     Array.indexedMap Tuple.pair
                         >> Array.foldl
@@ -101,38 +120,17 @@ pack prop =
                                     nextPath = path ++ [index]
                                 in
                                 case innerProp of
-                                    Choice (Control ( innerShape, innerItems ) (expanded, _) _) ->
-                                        case expanded of
-                                            Expanded ->
-                                                let
-                                                    withPlate
-                                                        = prevLayout
-                                                            |> packPlate
-                                                                nextPath
-                                                                innerShape
-                                                                innerItems
-                                                in
-                                                    packPlatesOf nextPath withPlate innerItems
-                                            Collapsed -> prevLayout
-                                    Group (Control ( innerShape, innerItems ) (expanded, _) _) ->
-                                        case expanded of
-                                            Expanded ->
-                                                let
-                                                    withPlate
-                                                        = prevLayout
-                                                            |> packPlate
-                                                                nextPath
-                                                                innerShape
-                                                                innerItems
-                                                in
-                                                    packPlatesOf nextPath withPlate innerItems
-                                            Collapsed -> prevLayout
+                                    Choice control ->
+                                        control |> packGroupControl nextPath prevLayout
+                                    Group control ->
+                                        control |> packGroupControl nextPath prevLayout
                                     _ ->
                                         prevLayout
                             )
                             layout
+
             in
-                items |> packPlatesOf [] firstLevel |> Debug.log "layout"
+                items |> packPlatesOf [] firstLevel
         _ ->
             init
                 |> BinPack.pack ( { width = 1, height = 1 }, One <| Path [] )

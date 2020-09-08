@@ -110,7 +110,11 @@ find1 (Path path) root =
             case ipath of
                 [] -> Just ( label, prop )
                 index::pathTail ->
-                    case root of
+                    case prop of
+                        Choice (Control ( _, items ) _ _) ->
+                            items
+                                |> Array.get index
+                                |> Maybe.andThen (helper pathTail)
                         Group (Control ( _, items ) _ _) ->
                             items
                                 |> Array.get index

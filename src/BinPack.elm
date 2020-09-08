@@ -2,6 +2,7 @@ module BinPack exposing (..)
 
 
 import Random
+import Bounds exposing (Bounds)
 
 
 {- Based on: https://github.com/bflyblue/binpack/blob/master/Data/BinPack/R2.hs -}
@@ -47,14 +48,6 @@ fold1 f i bp =
                 fromBelow = fold1 f fromRight below
             in fromBelow
         Free _ -> f bp i
-
-
-type alias Bounds =
-    { x : Float
-    , y : Float
-    , width : Float
-    , height : Float
-    }
 
 
 unfold : ( ( a, Bounds ) -> k -> k) -> k -> BinPack a -> k

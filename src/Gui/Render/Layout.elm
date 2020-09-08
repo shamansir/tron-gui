@@ -7,7 +7,9 @@ import Html.Attributes as H
 import Html.Events as H
 import Json.Decode as Json
 
-import BinPack exposing (Bounds)
+import BinPack
+import Bounds exposing (..)
+import Bounds as B exposing (..)
 
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)
@@ -304,7 +306,7 @@ view root layout =
                     , H.style "border" "1px solid black"
                     , H.style "background" "white"
                     ]
-                    ++ (boundsAttrs <| multiplyBoundsBy debugSideInPx <| bounds)
+                    ++ (boundsAttrs <| B.multiplyBy debugSideInPx <| bounds)
                 )
                 [ boundsDebug bounds
                 , propertyDebug ( label, prop )
@@ -316,13 +318,13 @@ view root layout =
                     , H.style "border" "1px solid gray"
                     , H.style "background" "beige"
                     ]
-                    ++ (boundsAttrs <| multiplyBoundsBy debugSideInPx <| bounds)
+                    ++ (boundsAttrs <| B.multiplyBy debugSideInPx <| bounds)
                 )
                 <| boundsDebug bounds :: plateCells
         cells =
             BinPack.unfold
-                (\ ( c, bounds ) prevCells ->
-                    case c of
+                (\ ( cell, bounds ) prevCells ->
+                    case cell of
                         One path ->
                             case root |> Property.find1 path of
                                 Just prop ->
@@ -337,7 +339,7 @@ view root layout =
                                         (\ ( path, pBounds ) pPrevCells ->
                                             case root |> Property.find1 path of
                                                 Just prop ->
-                                                    renderProp path bounds prop
+                                                    renderProp path (B.shift bounds pBounds) prop
                                                         :: pPrevCells
                                                 Nothing ->
                                                     pPrevCells

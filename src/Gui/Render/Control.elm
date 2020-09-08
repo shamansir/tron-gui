@@ -13,30 +13,18 @@ import Gui.Property exposing (..)
 import Gui.Msg exposing (..)
 
 
-import BinPack exposing (Bounds)
-
-
-multiplyBounds : { x : Float, y : Float } -> Bounds -> Bounds
-multiplyBounds mult bounds =
-    { x = mult.x * bounds.x
-    , y = mult.y * bounds.y
-    , width = mult.x * bounds.width
-    , height = mult.y * bounds.height
-    }
-
-
-multiplyBoundsBy : Float -> Bounds -> Bounds
-multiplyBoundsBy n =
-    multiplyBounds { x = n, y = n }
+import Bounds exposing (Bounds)
 
 
 boundsAttrs : Bounds -> List (Attribute msg)
 boundsAttrs bounds =
-    [ H.style "transform"
-        <| "translate("
-            ++ String.fromFloat bounds.x ++ "px, "
-            ++ String.fromFloat bounds.y ++ "px"
-        ++ ")"
+    [ H.style "top" <| String.fromFloat bounds.y ++ "px"
+    , H.style "left" <| String.fromFloat bounds.x ++ "px"
+    -- [ H.style "transform"
+    --     <| "translate("
+    --         ++ String.fromFloat bounds.x ++ "px, "
+    --         ++ String.fromFloat bounds.y ++ "px"
+    --     ++ ")"
     , H.style "width" <| String.fromFloat bounds.width ++ "px"
     , H.style "height" <| String.fromFloat bounds.height ++ "px"
     ]
