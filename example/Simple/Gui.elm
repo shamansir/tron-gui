@@ -59,13 +59,33 @@ for model =
 
 nestedButtons : Choice -> Property Msg
 nestedButtons curChoice =
-    Gui.nest
+    Gui.nestIn
+        ( 2, 3 )
         [ ( "a", Gui.button <| always <| Pressed A )
         , ( "b", Gui.button <| always <| Pressed B )
         , ( "c", Gui.button <| always <| Pressed C )
         , ( "d", Gui.button <| always <| Pressed D )
+        , ( "color", colorNest )
         ]
         (always NoOp)
+
+
+colorNest : Property Msg
+colorNest =
+    let
+        colorCompKnob =
+            Gui.float
+                { min = 0, max = 255, step = 1 }
+                0
+                (always NoOp)
+    in
+        Gui.nestIn
+            ( 1, 3 )
+            [ ( "red", colorCompKnob )
+            , ( "green", colorCompKnob )
+            , ( "blue", colorCompKnob )
+            ]
+            (always NoOp)
 
 
 choiceToLabel : Choice -> Gui.Label
