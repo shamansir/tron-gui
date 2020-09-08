@@ -201,23 +201,25 @@ mapReplace f root =
         helper curPath item =
             case item of
                 Choice (Control ( shape, items ) state handler) ->
-                    Choice
-                        (Control
-                            ( shape
-                            , replaceItems curPath items
+                    f curPath
+                        <| Choice
+                            (Control
+                                ( shape
+                                , replaceItems curPath items
+                                )
+                                state
+                                handler
                             )
-                            state
-                            handler
-                        )
                 Group (Control ( shape, items ) state handler) ->
-                    Group
-                        (Control
-                            ( shape
-                            , replaceItems curPath items
+                    f curPath
+                        <| Group
+                            (Control
+                                ( shape
+                                , replaceItems curPath items
+                                )
+                                state
+                                handler
                             )
-                            state
-                            handler
-                        )
                 _ -> f curPath item
 
     in
@@ -247,6 +249,23 @@ execute item =
             ( Action control
             , call control
             )
+        Choice (Control setup ( expanded, selected ) handler) ->
+            let
+                nextState =
+                    case expanded of
+                        Collapsed -> Expanded
+                        Expanded -> Collapsed
+                nextChoice =
+                    Control
+                        setup
+                        ( nextState
+                        , selected
+                        )
+                        handler
+            in
+                ( Choice nextChoice
+                , call nextChoice
+                )
         Group (Control setup ( expanded, focus ) handler) ->
             let
                 nextState =
@@ -273,6 +292,7 @@ executeAt path root =
         |> find path
         |> Maybe.map execute of
         Just ( newCell, cmd ) ->
+            -- TODO: we search for it second time here, fix it
             ( root |> updateAt path (always newCell)
             , cmd
             )

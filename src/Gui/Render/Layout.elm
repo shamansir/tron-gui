@@ -283,7 +283,8 @@ propertyDebug ( label, prop )  =
         Choice (Control _ ( state, selected ) _ ) ->
             span []
                 [ text <| label ++ " choice: "
-                    ++ String.fromInt selected
+                    ++ (if state == Expanded then "expanded" else "collapsed")
+                    ++ " selected: " ++ String.fromInt selected
                 ]
 
 
@@ -295,7 +296,9 @@ view root layout =
                 <| Json.map KeyDown H.keyCode
         renderProp path bounds ( label, prop ) =
             div
-                [ H.onClick <| Click path ]
+                [ H.style "pointer-events" "all"
+                , H.onClick <| Click path
+                ]
                 [ boundsDebug bounds
                 , propertyDebug ( label, prop )
                 ]
