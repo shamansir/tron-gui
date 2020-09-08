@@ -10,7 +10,9 @@ import Json.Encode as Encode
 import Html exposing (Html)
 import Html as Html exposing (map, div)
 import Html.Events as Html exposing (onClick)
+import Dict exposing (size)
 import Task as Task
+import Random
 
 import Gui.Gui exposing (Gui)
 import Gui.Gui as Gui exposing (view)
@@ -24,16 +26,19 @@ import Simple.Main as Simple
 import Simple.Model as Simple
 import Simple.Msg as Simple
 import Simple.Gui as SimpleGui
-import Dict exposing (size)
 
+import RandomGui as Gui exposing (generator)
 
 type Msg
-    = ChangeMode Mode
+    = NoOp
+    | ChangeMode Mode
+    | Resize Int Int
     | DatGuiUpdate Exp.Update
     | TronUpdate Tron.Msg
     | ToSimple Simple.Msg
-    | Resize Int Int
-    | NoOp
+    | Randomize (Tron.Gui Msg)
+    | TriggerRandom
+    | TriggerDefault
 
 
 type alias Example
@@ -55,13 +60,19 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    update
-        (ChangeMode DatGui)
-        { mode = DatGui
+    (
+        { mode = TronGui
         , example = Simple.init
-        , gui = Gui.none
+        , gui = SimpleGui.for Simple.init
+                            |> Gui.over
+                            |> Gui.map ToSimple
         , size = ( 0, 0 )
         }
+    , Cmd.batch
+        [ Tron.focus NoOp
+        , Tron.fromWindow Resize
+        ]
+    )
 
 
 view : Model -> Html Msg
@@ -74,6 +85,12 @@ view { mode, gui, example } =
         , Html.button
             [ Html.onClick <| ChangeMode DatGui ]
             [ Html.text "Dat.gui" ]
+        , Html.button
+            [ Html.onClick TriggerRandom ]
+            [ Html.text "Random" ]
+        , Html.button
+            [ Html.onClick TriggerDefault ]
+            [ Html.text "Default" ]
         , case mode of
             DatGui -> Html.div [] []
             TronGui ->
@@ -86,18 +103,16 @@ view { mode, gui, example } =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ mode, example, gui } as model) =
-    case ( msg, mode ) of
+update msg model =
+    case ( msg, model.mode ) of
 
         ( ChangeMode DatGui, _ ) ->
             (
                 { model
                 | mode = DatGui
-                , gui = SimpleGui.for example
-                            |> Gui.over
-                            |> Gui.map ToSimple
                 }
-            , SimpleGui.for example
+            , model.gui
+                |> .tree
                 |> Exp.encode
                 |> startDatGui
             )
@@ -106,9 +121,6 @@ update msg ({ mode, example, gui } as model) =
             (
                 { model
                 | mode = TronGui
-                , gui = SimpleGui.for example
-                            |> Gui.over
-                            |> Gui.map ToSimple
                 }
             , Cmd.batch
                 [ destroyDatGui ()
@@ -121,13 +133,13 @@ update msg ({ mode, example, gui } as model) =
             (
                 { model
                 | example =
-                    Simple.update smsg example
+                    Simple.update smsg model.example
                 }
             , Cmd.none
             )
 
         ( TronUpdate guiMsg, TronGui ) ->
-            case gui |> Gui.update guiMsg of
+            case model.gui |> Gui.update guiMsg of
                 ( nextGui, cmds ) ->
                     (
                         { model
@@ -150,6 +162,35 @@ update msg ({ mode, example, gui } as model) =
                 }
             , Cmd.none
             )
+
+        ( TriggerRandom, _ ) ->
+            ( model
+            , Cmd.batch
+                [ destroyDatGui ()
+                , Random.generate Randomize
+                    <| Random.map (Gui.map <| always NoOp)
+                    <| Random.map Gui.over
+                    <| Gui.generator
+                ]
+            )
+
+        ( Randomize newGui, _ ) ->
+            (
+                { model
+                | gui = newGui
+                }
+            , case model.mode of
+                DatGui ->
+                    newGui
+                        |> .tree
+                        |> Exp.encode
+                        |> startDatGui
+                TronGui ->
+                    Cmd.none
+            )
+
+        ( TriggerDefault, _ ) ->
+            init
 
         _ -> ( model, Cmd.none )
 

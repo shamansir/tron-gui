@@ -42,9 +42,11 @@ const applyDefinition = (config, definition, send) => {
     }
   }
 
-  definition.nest.forEach((component) => {
-    setProperty(component.label, component.property);
-  });
+  if (definition.nest) {
+    definition.nest.forEach((component) => {
+      setProperty(component.label, component.property);
+    });
+  }
 
 }
 
@@ -133,9 +135,11 @@ function start(document, definition, origSend) {
 
   }
 
-  definition.nest.forEach((component) => {
-    addControl(gui, component.label, component.property);
-  });
+  if (definition.nest) {
+    definition.nest.forEach((component) => {
+      addControl(gui, component.label, component.property);
+    });
+  }
 
   document.querySelector('.dg.ac').classList.add('hide-on-space');
 
