@@ -85,6 +85,7 @@ update msg gui =
                 (
                     { gui
                     | tree = nextRoot
+                    , layout = Layout.pack nextRoot
                     }
                 , cmds
                 )
@@ -106,6 +107,7 @@ update msg gui =
                 (
                     { gui
                     | tree = nextRoot
+                    , layout = Layout.pack nextRoot
                     }
                 , cmds
                 )

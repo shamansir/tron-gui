@@ -146,4 +146,8 @@
           -ms-user-select: none; /* Internet Explorer/Edge */
               user-select: none; /* Non-prefixed version, currently
                                     supported by Chrome and Opera */
-  }
+}
+
+.gui--debug {
+    transform: translate(70px, 350px);
+}

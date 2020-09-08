@@ -224,10 +224,10 @@ view nest =
 
 boundsDebug : Bounds -> Html Msg
 boundsDebug b =
-    span []
-        [ text "x: ", text <| String.fromFloat b.x
-        , text "y: ", text <| String.fromFloat b.y
-        , text "w: ", text <| String.fromFloat b.width
+    div []
+        [ text "x: ", text <| String.fromFloat b.x, text ", "
+        , text "y: ", text <| String.fromFloat b.y, text ", "
+        , text "w: ", text <| String.fromFloat b.width, text ", "
         , text "h: ", text <| String.fromFloat b.height
         ]
 
@@ -294,17 +294,30 @@ view root layout =
         keyDownHandler_ =
             H.on "keydown"
                 <| Json.map KeyDown H.keyCode
+        debugSideInPx = 90
         renderProp path bounds ( label, prop ) =
             div
-                [ H.style "pointer-events" "all"
-                , H.onClick <| Click path
-                ]
+                (
+                    [ H.style "pointer-events" "all"
+                    , H.onClick <| Click path
+                    , H.style "position" "fixed"
+                    , H.style "border" "1px solid black"
+                    , H.style "background" "white"
+                    ]
+                    ++ (boundsAttrs <| multiplyBoundsBy debugSideInPx <| bounds)
+                )
                 [ boundsDebug bounds
                 , propertyDebug ( label, prop )
                 ]
         renderPlate bounds plateCells =
             div
-                []
+                (
+                    [ H.style "position" "fixed"
+                    , H.style "border" "1px solid gray"
+                    , H.style "background" "beige"
+                    ]
+                    ++ (boundsAttrs <| multiplyBoundsBy debugSideInPx <| bounds)
+                )
                 <| boundsDebug bounds :: plateCells
         cells =
             BinPack.unfold
@@ -337,7 +350,7 @@ view root layout =
                 layout
     in
         div [ H.id rootId
-            , H.class "gui noselect"
+            , H.class "gui gui--debug noselect"
             , H.tabindex 0
             , keyDownHandler_
             ]

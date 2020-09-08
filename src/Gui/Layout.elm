@@ -91,7 +91,8 @@ pack prop =
                                         <| plateItems
                                     )
                     in
-                        plateItems |> packPlatesOf path platePacked
+                        platePacked
+                        -- plateItems |> packPlatesOf path platePacked
                 packPlatesOf path layout =
                     Array.indexedMap Tuple.pair
                         >> Array.foldl
@@ -131,7 +132,7 @@ pack prop =
                             )
                             layout
             in
-                items |> packPlatesOf [] firstLevel
+                items |> packPlatesOf [] firstLevel |> Debug.log "layout"
         _ ->
             init
                 |> BinPack.pack ( { width = 1, height = 1 }, One <| Path [] )

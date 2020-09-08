@@ -4,6 +4,7 @@ import Array
 import Array exposing (Array)
 
 import Html exposing (Html, text, div, span, input)
+import Html.Attributes as H exposing (style)
 import Svg exposing (..)
 import Svg.Attributes as S exposing (..)
 
@@ -13,6 +14,32 @@ import Gui.Msg exposing (..)
 
 
 import BinPack exposing (Bounds)
+
+
+multiplyBounds : { x : Float, y : Float } -> Bounds -> Bounds
+multiplyBounds mult bounds =
+    { x = mult.x * bounds.x
+    , y = mult.y * bounds.y
+    , width = mult.x * bounds.width
+    , height = mult.y * bounds.height
+    }
+
+
+multiplyBoundsBy : Float -> Bounds -> Bounds
+multiplyBoundsBy n =
+    multiplyBounds { x = n, y = n }
+
+
+boundsAttrs : Bounds -> List (Attribute msg)
+boundsAttrs bounds =
+    [ H.style "transform"
+        <| "translate("
+            ++ String.fromFloat bounds.x ++ "px, "
+            ++ String.fromFloat bounds.y ++ "px"
+        ++ ")"
+    , H.style "width" <| String.fromFloat bounds.width ++ "px"
+    , H.style "height" <| String.fromFloat bounds.height ++ "px"
+    ]
 
 
 textAttrs : Float -> Float -> String -> List (Attribute msg)
