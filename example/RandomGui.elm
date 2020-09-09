@@ -10,8 +10,16 @@ import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl)
 import Gui.Property as Gui exposing (Label, ToggleState(..), ExpandState(..))
 
 
+
+type DeepLevel = DeepLevel Int
+
+
 generator : Random.Generator (Property ())
-generator =
+generator = group (DeepLevel 0) |> Random.map Group
+
+
+property : DeepLevel -> Random.Generator (Property ())
+property (DeepLevel deep) =
     Random.int 0 8
         |> Random.andThen
             (\n ->
@@ -23,13 +31,21 @@ generator =
                     4 -> text |> Random.map Text -- TODO: color
                     5 -> toggle |> Random.map Toggle
                     6 -> button |> Random.map Action
-                    7 -> choice |> Random.map Choice
-                    8 -> group |> Random.map Group
+                    7 ->
+                        if deep < 7 then
+                            choice (DeepLevel <| deep + 1)
+                                |> Random.map Choice
+                        else button |> Random.map Action
+                    8 ->
+                        if deep < 7 then
+                            group (DeepLevel <| deep + 1)
+                                |> Random.map Group
+                        else button |> Random.map Action
                     _ -> Random.constant Nil
             )
 
 
-handler : Random.Generator (a -> ())
+handler : Random.Generator ( a -> () )
 handler =
     Random.constant <| always ()
 
@@ -47,7 +63,7 @@ axis =
             )
 
 
-number : Random.Generator (Control Axis Float ())
+number : Random.Generator ( Control Axis Float () )
 number =
     axis
         |> Random.andThen
@@ -60,7 +76,7 @@ number =
             )
 
 
-coordinate : Random.Generator (Control ( Axis, Axis ) ( Float, Float ) ())
+coordinate : Random.Generator ( Control ( Axis, Axis ) ( Float, Float ) () )
 coordinate =
     Random.map2 Tuple.pair axis axis
         |> Random.andThen
@@ -77,38 +93,51 @@ coordinate =
             )
 
 
-text : Random.Generator (Control () String ())
+text : Random.Generator ( Control () String () )
 text =
     Random.constant
         <| Control () "" <| always ()
 
 
-button : Random.Generator (Control ( Maybe a ) () ())
+button : Random.Generator ( Control ( Maybe a ) () () )
 button =
     Random.constant
         <| Control Nothing () <| always ()
 
 
-controls : Random.Generator (Array ( Label, Property () ) )
-controls =
+controls : DeepLevel -> Random.Generator ( Array ( Label, Property () ) )
+controls deep =
     let
+        labelFor prop =
+            case prop of
+                Nil -> "ghost"
+                Number _ -> "num"
+                Coordinate _ -> "coord"
+                Text _ -> "text"
+                Color _ -> "color"
+                Toggle _ -> "toggle"
+                Action _ -> "button"
+                Choice _ -> "choice"
+                Group _ -> "group"
         addLabel : Property () -> Random.Generator ( Label, Property () )
         addLabel prop =
-            -- TODO: case prop of
-            Random.constant ( "foo", prop )
+            Random.int 0 10000
+                |> Random.map String.fromInt
+                |> Random.map (\n -> labelFor prop ++ "-" ++ n)
+                |> Random.map (\label -> ( label, prop ))
     in
         Random.int 2 10
             |> Random.andThen
                 (\count ->
                     Random.list count
-                        (Random.lazy <| always <| Random.andThen addLabel <| generator)
+                        (Random.andThen addLabel <| Random.lazy (\_ -> property deep))
                         |> Random.map Array.fromList
                 )
 
 
-choice : Random.Generator (ChoiceControl ())
-choice =
-    controls
+choice : DeepLevel -> Random.Generator ( ChoiceControl () )
+choice deep =
+    controls deep
         |> Random.andThen
             (\cs ->
                 Random.map3
@@ -127,9 +156,9 @@ choice =
             )
 
 
-group : Random.Generator (GroupControl ())
-group =
-    controls
+group : DeepLevel -> Random.Generator ( GroupControl () )
+group deep =
+    controls deep
         |> Random.andThen
             (\cs ->
                 Random.map3
