@@ -16,6 +16,7 @@ import Gui.Property exposing (..)
 import Gui.Property as Property exposing (find)
 import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
+import Gui.Focus exposing (Focused(..), focused)
 import Gui.Render.Control as Control exposing (..)
 
 
@@ -309,6 +310,10 @@ view root layout =
                     ++ (boundsAttrs <| B.multiplyBy debugSideInPx <| bounds)
                 )
                 [ boundsDebug bounds
+                , case focused root path of
+                    -- FIXME: unfolds all the structure from root for every prop
+                    FocusedBy level -> text <| "focused " ++ String.fromInt level
+                    NotFocused -> text ""
                 , propertyDebug ( label, prop )
                 ]
         renderPlate bounds plateCells =

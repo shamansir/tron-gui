@@ -186,7 +186,10 @@ update msg model =
                         |> Exp.encode
                         |> startDatGui
                 TronGui ->
-                    Cmd.none
+                    Cmd.batch
+                        [ Tron.focus NoOp
+                        , Tron.fromWindow Resize
+                        ]
             )
 
         ( TriggerDefault, _ ) ->

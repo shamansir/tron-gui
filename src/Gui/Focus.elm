@@ -7,6 +7,11 @@ import Gui.Property exposing (..)
 import Array
 
 
+type Focused
+    = FocusedBy Int
+    | NotFocused
+
+
 type Direction
     = Up
     | Down
@@ -79,6 +84,7 @@ shift direction root =
         (Path currentFocus) = find root
         curFocusArr = currentFocus |> Array.fromList
         indexOfLast = Array.length curFocusArr - 1
+        focusedOnSmth = Array.length curFocusArr > 0
         nextFocus =
             Path <| Array.toList <|
                 case direction of
@@ -87,17 +93,41 @@ shift direction root =
                     Down ->
                         curFocusArr |> Array.slice 0 -1
                     Left ->
-                        curFocusArr
-                            |> Array.indexedMap
-                                (\idx item ->
-                                    if idx /= indexOfLast then item
-                                    else item - 1
-                                )
+                        if focusedOnSmth then
+                            curFocusArr
+                                |> Array.indexedMap
+                                    (\idx item ->
+                                        if idx /= indexOfLast then item
+                                        else item - 1
+                                    )
+                        else Array.fromList [ 0 ] -- FIXME: causes a lot of conversions
                     Right ->
-                        curFocusArr
-                            |> Array.indexedMap
-                                (\idx item ->
-                                    if idx /= indexOfLast then item
-                                    else item + 1
-                                )
+                        if focusedOnSmth then
+                            curFocusArr
+                                |> Array.indexedMap
+                                    (\idx item ->
+                                        if idx /= indexOfLast then item
+                                        else item + 1
+                                    )
+                        else Array.fromList [ 0 ] -- FIXME: causes a lot of conversions
     in root |> on nextFocus
+
+
+focused : Property msg -> Path -> Focused
+focused root (Path path) =
+    let
+        helper iPath flevel prop =
+            case ( iPath, prop ) of
+                ( [], _ ) ->
+                    if flevel < 0
+                        then NotFocused
+                        else FocusedBy flevel
+                ( x::xs, Group (Control ( _, items ) ( _, Just (Focus focus) ) handler) ) ->
+                    if focus == x then
+                        case items |> Array.get focus  of
+                            Just ( _, item ) -> helper xs (flevel + 1) item
+                            Nothing -> NotFocused
+                    else NotFocused
+                _ -> NotFocused
+    in
+        helper path -1 root
