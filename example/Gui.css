@@ -151,3 +151,24 @@
 .gui--debug {
     transform: translate(70px, 350px);
 }
+
+
+.cell--debug {
+    pointer-events: all;
+    position: fixed;
+    border: 1px solid black;
+    background: white;
+    margin: 7px;
+    max-width: 72px;
+    max-height: 72px;
+    font-size: 10px;
+    padding: 3px;
+}
+
+
+.plate--debug {
+    position: fixed;
+    border: 3px double gray;
+    background: beige;
+    box-sizing: border-box;
+}

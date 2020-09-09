@@ -2,7 +2,7 @@ module Gui.Render.Layout exposing (..)
 
 
 import Array exposing (..)
-import Html exposing (Html, text, div, span, input)
+import Html exposing (Html, text, div, span, input, br)
 import Html.Attributes as H
 import Html.Events as H
 import Json.Decode as Json
@@ -228,10 +228,10 @@ view nest =
 boundsDebug : Bounds -> Html Msg
 boundsDebug b =
     div []
-        [ text "x: ", text <| String.fromFloat b.x, text ", "
-        , text "y: ", text <| String.fromFloat b.y, text ", "
-        , text "w: ", text <| String.fromFloat b.width, text ", "
-        , text "h: ", text <| String.fromFloat b.height
+        [ text "(", text <| String.fromFloat b.x, text ","
+        , text <| String.fromFloat b.y, text ") "
+        , text <| String.fromFloat b.width, text "x"
+        , text <| String.fromFloat b.height
         ]
 
 
@@ -244,14 +244,16 @@ propertyDebug ( label, prop )  =
         Number (Control { min, step, max } val _) ->
             span []
                 [ text <| label ++ " knob: "
-                    ++ " " ++ String.fromFloat min ++ "/"
+                , br [] []
+                , text <| String.fromFloat min ++ "/"
                     ++ String.fromFloat step ++ "/"
                     ++ String.fromFloat max
                     ++ " " ++ String.fromFloat val ]
         Coordinate (Control ( xConf, yConf ) ( valX, valY ) _) ->
             span []
                 [ text <| "xy: " ++ label
-                    ++ " " ++ String.fromFloat xConf.min ++ "/"
+                , br [] []
+                , text <| String.fromFloat xConf.min ++ "/"
                     ++ String.fromFloat xConf.step ++ "/"
                     ++ String.fromFloat xConf.max
                     ++ " " ++ String.fromFloat valX
@@ -262,7 +264,8 @@ propertyDebug ( label, prop )  =
         Toggle (Control _ val _) ->
             span []
                 [ text <| label ++ " toggle: "
-                    ++ (if val == TurnedOn then "on" else "off")
+                , br [] []
+                , text <| if val == TurnedOn then "on" else "off"
                 ]
         Color (Control _ color _) ->
             span []
@@ -278,16 +281,20 @@ propertyDebug ( label, prop )  =
         Group (Control _ ( state, maybeFocus ) _) ->
             span []
                 [ text <| label ++ " nested: "
-                    ++ (if state == Expanded then "expanded" else "collapsed")
-                    ++ " focus: " ++ (case maybeFocus of
+                , br [] []
+                , text <| if state == Expanded then "expanded" else "collapsed"
+                , br [] []
+                , text <| " focus: " ++
+                    case maybeFocus of
                         Just (Focus focus) -> String.fromInt focus
-                        _ -> "none")
+                        _ -> "none"
                 ]
         Choice (Control _ ( state, selected ) _ ) ->
             span []
-                [ text <| label ++ " choice: "
-                    ++ (if state == Expanded then "expanded" else "collapsed")
-                    ++ " selected: " ++ String.fromInt selected
+                [ br [] []
+                , text <| if state == Expanded then "expanded" else "collapsed"
+                , br [] []
+                , text <| " selected: " ++ String.fromInt selected
                 ]
 
 
@@ -301,11 +308,8 @@ view root layout =
         renderProp path bounds ( label, prop ) =
             div
                 (
-                    [ H.style "pointer-events" "all"
+                    [ H.class "cell--debug"
                     , H.onClick <| Click path
-                    , H.style "position" "fixed"
-                    , H.style "border" "1px solid black"
-                    , H.style "background" "white"
                     ]
                     ++ (boundsAttrs <| B.multiplyBy debugSideInPx <| bounds)
                 )
@@ -314,15 +318,13 @@ view root layout =
                     -- FIXME: unfolds all the structure from root for every prop
                     FocusedBy level -> text <| "focused " ++ String.fromInt level
                     NotFocused -> text ""
+                , br [] []
                 , propertyDebug ( label, prop )
                 ]
         renderPlate bounds plateCells =
             div
                 (
-                    [ H.style "position" "fixed"
-                    , H.style "border" "1px solid gray"
-                    , H.style "background" "beige"
-                    ]
+                    [ H.class "plate--debug" ]
                     ++ (boundsAttrs <| B.multiplyBy debugSideInPx <| bounds)
                 )
                 <| boundsDebug bounds :: plateCells
