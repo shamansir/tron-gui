@@ -46,13 +46,17 @@ type Focus = Focus Int
 
 type alias GroupControl msg =
     Control
-        { shape : Shape
-        , items : Array ( Label, Property msg )
-        }
-        { expanded : ExpandState
-        , focus : Maybe Focus
-        }
+        ( Shape, Array ( Label, Property msg ) )
+        ( ExpandState, Maybe Focus )
         msg
+
+
+type alias ChoiceControl msg =
+    Control
+        ( Shape, Array ( Label, Property msg ) )
+        ( ExpandState, Int )
+        msg
+
 
 
 type Property msg
@@ -63,18 +67,8 @@ type Property msg
     | Color (Control () Color msg)
     | Toggle (Control () ToggleState msg)
     | Action (Control ( Maybe Icon ) () msg)
-    | Choice
-        (Control
-            ( Shape, Array ( Label, Property msg ) )
-            ( ExpandState, Int )
-            msg
-        )
-    | Group
-        (Control
-            ( Shape, Array ( Label, Property msg ) )
-            ( ExpandState, Maybe Focus )
-            msg
-        )
+    | Choice (ChoiceControl msg)
+    | Group (GroupControl msg)
 
 
 cellWidth = 70
