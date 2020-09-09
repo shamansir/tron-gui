@@ -79,6 +79,12 @@ nest : List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
 nest = nestIn ( 3, 3 )
 
 
+root : List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
+root props =
+    nestIn ( 1, List.length props ) props
+        >> expand
+
+
 -- FIXME: get rid of the handler having almost no sense
 nestIn : Shape -> List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
 nestIn shape items handler =
@@ -164,47 +170,3 @@ strings options current toMsg =
         current
         ((==))
         toMsg
-
-
-expand : Property msg -> Property msg
-expand prop =
-    case prop of
-        Group ( Control setup ( _, focus ) handler ) ->
-            Group ( Control setup ( Expanded, focus ) handler )
-        Choice ( Control setup ( _, selection ) handler ) ->
-            Choice ( Control setup ( Expanded, selection ) handler )
-        _ -> prop
-
-
-collapse : Property msg -> Property msg
-collapse prop =
-    case prop of
-        Group ( Control setup ( _, focus ) handler ) ->
-            Group ( Control setup ( Collapsed, focus ) handler )
-        Choice ( Control setup ( _, selection ) handler ) ->
-            Choice ( Control setup ( Collapsed, selection ) handler )
-        _ -> prop
-
-
-toggleOn : Property msg -> Property msg
-toggleOn prop =
-    case prop of
-        Toggle ( Control setup _ handler ) ->
-            Toggle ( Control setup TurnedOn handler )
-        _ -> prop
-
-
-toggleOff : Property msg -> Property msg
-toggleOff prop =
-    case prop of
-        Toggle ( Control setup _ handler ) ->
-            Toggle ( Control setup TurnedOff handler )
-        _ -> prop
-
-
-reshape : Shape -> Property msg -> Property msg
-reshape shape prop =
-    case prop of
-        Group ( Control ( _, items ) ( expanded, focus ) handler ) ->
-            Group ( Control ( shape, items ) ( expanded, focus ) handler )
-        _ -> prop

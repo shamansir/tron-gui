@@ -6,7 +6,7 @@ import Array exposing (Array)
 
 import Gui.Gui exposing (Gui)
 import Gui.Control exposing (Control(..))
-import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl)
+import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, expand)
 import Gui.Property as Gui exposing (Label, ToggleState(..), ExpandState(..))
 
 
@@ -15,7 +15,10 @@ type DeepLevel = DeepLevel Int
 
 
 generator : Random.Generator (Property ())
-generator = group (DeepLevel 0) |> Random.map Group
+generator =
+    group (DeepLevel 0)
+        |> Random.map Group
+        |> Random.map expand
 
 
 property : DeepLevel -> Random.Generator (Property ())

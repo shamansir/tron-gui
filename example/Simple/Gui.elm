@@ -13,7 +13,7 @@ import Simple.Msg exposing (..)
 
 for : Model -> Property Msg
 for model =
-    Gui.nest
+    Gui.root
         [ ( "ghost", Gui.none )
         , ( "int",
                 Gui.int

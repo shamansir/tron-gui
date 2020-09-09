@@ -19,11 +19,23 @@ type Direction
     | Left
 
 
+clear : Property msg -> Property msg
+clear =
+    mapReplace
+        (\_ prop ->
+            case prop of
+                Group (Control setup ( expanded, _ ) handler) ->
+                    Group (Control setup ( expanded, Nothing ) handler)
+                _ -> prop
+        )
+
+
+
 on : Path -> Property msg -> Property msg
 on (Path path) root =
     case ( path, root ) of
         ( [], _ ) -> root
-        ( x::xs, Group (Control ( shape, items ) ( expanded, _ ) handler) ) ->
+        ( x::xs, Group (Control ( shape, items ) ( Expanded, _ ) handler) ) ->
             let
                 itemsCount = Array.length items
                 normalizedX =
@@ -48,7 +60,7 @@ on (Path path) root =
                             )
 
                     )
-                    ( expanded
+                    ( Expanded
                     , Just <| Focus normalizedX
                     )
                     handler
@@ -110,7 +122,7 @@ shift direction root =
                                         else item + 1
                                     )
                         else Array.fromList [ 0 ] -- FIXME: causes a lot of conversions
-    in root |> on nextFocus
+    in root |> clear |> on nextFocus
 
 
 focused : Property msg -> Path -> Focused
