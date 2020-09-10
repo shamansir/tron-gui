@@ -3,7 +3,10 @@ module Gui.Render.Layout exposing (..)
 
 import Array exposing (..)
 import Html exposing (Html, text, div, span, input, br)
-import Html.Attributes as H
+import Html.Attributes as HA
+import Svg exposing (Svg)
+import Svg as S exposing (..)
+import Svg.Attributes as SA exposing (..)
 import Html.Events as H
 import Json.Decode as Json
 
@@ -225,35 +228,71 @@ view nest =
             [ grid |> viewGrid (Focus focus) ]
 -}
 
-boundsDebug : Bounds -> Html Msg
+
+positionAt : Float -> Float -> Svg Msg -> Svg Msg
+positionAt x y s =
+    Svg.g
+        [ SA.style <| "transform: translate("
+            ++ String.fromFloat x ++ "px,"
+            ++ String.fromFloat y ++ "px)"
+        ]
+        [ s ]
+
+
+positionAt_ : { a | x : Float, y : Float } -> Svg Msg -> Svg Msg
+positionAt_ pos =
+    positionAt pos.x pos.y
+
+
+textAt : Float -> Float -> String -> Svg Msg
+textAt x y string =
+    positionAt x y
+        <| S.text_ []
+        <| List.singleton
+        <| S.text string
+
+
+rect_ : String -> { a | width : Float, height : Float } -> Svg Msg
+rect_ fill b =
+    Svg.rect
+        [ SA.fill fill
+        -- , S.x <| String.fromFloat b.x ++ "px"
+        -- , S.y <| String.fromFloat b.y ++ "px"
+        , SA.width <| String.fromFloat b.width ++ "px"
+        , SA.height <| String.fromFloat b.height ++ "px"
+        , SA.stroke "black"
+        , SA.strokeWidth "1"
+        ]
+        []
+
+
+boundsDebug : Bounds -> Svg Msg
 boundsDebug b =
-    div []
-        [ text "(", text <| String.fromFloat b.x, text ","
-        , text <| String.fromFloat b.y, text ") "
-        , text <| String.fromFloat b.width, text "x"
-        , text <| String.fromFloat b.height
+    S.g []
+        [ textAt 5 5 <| "(" ++ String.fromFloat b.x ++ "," ++ String.fromFloat b.y ++ ")"
+        , textAt 5 20 <| String.fromFloat b.width ++ "x" ++ String.fromFloat b.height
         ]
 
 
-propertyDebug : ( Label, Property msg ) -> Html Msg
+propertyDebug : ( Label, Property msg ) -> Svg Msg
 propertyDebug ( label, prop )  =
     case prop of
         Nil  ->
-            span []
-                [ text <| label ++ " ghost" ]
+            S.g []
+                [ textAt 5 5 <| label ++ " ghost" ]
         Number (Control { min, step, max } val _) ->
-            span []
-                [ text <| label ++ " knob: "
-                , br [] []
-                , text <| String.fromFloat min ++ "/"
+            S.g []
+                [ textAt 5 5 <| label ++ " knob: "
+                , textAt 5 20
+                    <| String.fromFloat min ++ "/"
                     ++ String.fromFloat step ++ "/"
                     ++ String.fromFloat max
                     ++ " " ++ String.fromFloat val ]
         Coordinate (Control ( xConf, yConf ) ( valX, valY ) _) ->
-            span []
-                [ text <| "xy: " ++ label
-                , br [] []
-                , text <| String.fromFloat xConf.min ++ "/"
+            S.g []
+                [ textAt 5 5 <| "xy: " ++ label
+                , textAt 5 20
+                    <| String.fromFloat xConf.min ++ "/"
                     ++ String.fromFloat xConf.step ++ "/"
                     ++ String.fromFloat xConf.max
                     ++ " " ++ String.fromFloat valX
@@ -262,40 +301,40 @@ propertyDebug ( label, prop )  =
                     ++ String.fromFloat yConf.max
                     ++ " " ++ String.fromFloat valY ]
         Toggle (Control _ val _) ->
-            span []
-                [ text <| label ++ " toggle: "
-                , br [] []
-                , text <| if val == TurnedOn then "on" else "off"
+            S.g []
+                [ textAt 5 5 <| label ++ " toggle: "
+                , textAt 5 20
+                    <| if val == TurnedOn then "on" else "off"
                 ]
         Color (Control _ color _) ->
-            span []
-                [ text <| label ++ " color: " ++ color
+            S.g []
+                [ textAt 5 5 <| label ++ " color: " ++ color
                 ]
         Text (Control _ value _) ->
-            span []
-                [ text <| label ++ " text: " ++ value
+            S.g []
+                [ textAt 5 5 <| label ++ " text: " ++ value
                 ]
         Action _ ->
-            span []
-                [ text <| label ++ " button" ]
+            S.g []
+                [ textAt 5 5 <| label ++ " button" ]
         Group (Control _ ( state, maybeFocus ) _) ->
-            span []
-                [ text <| label ++ " nested: "
-                , br [] []
-                , text <| if state == Expanded then "expanded" else "collapsed"
-                , br [] []
-                , text <| " focus: " ++
+            S.g []
+                [ textAt 5 5 <| label ++ " nested: "
+                , textAt 5 20
+                    <| if state == Expanded then "expanded" else "collapsed"
+                , textAt 5 35
+                    <| "focus: " ++
                     case maybeFocus of
                         Just (Focus focus) -> String.fromInt focus
                         _ -> "none"
                 ]
         Choice (Control _ ( state, selected ) _ ) ->
-            span []
-                [ text <| label ++ " choice: "
-                , br [] []
-                , text <| if state == Expanded then "expanded" else "collapsed"
-                , br [] []
-                , text <| " selected: " ++ String.fromInt selected
+            S.g []
+                [ textAt 5 5 <| label ++ " choice: "
+                , textAt 5 20
+                    <| if state == Expanded then "expanded" else "collapsed"
+                , textAt 5 35
+                    <| " selected: " ++ String.fromInt selected
                 ]
 
 
@@ -307,65 +346,72 @@ view root layout =
                 <| Json.map KeyDown H.keyCode
         debugSideInPx = 90
         renderProp path bounds ( label, prop ) =
-            div
-                (
-                    [ H.class "cell--debug"
+            positionAt_ (B.multiplyBy debugSideInPx <| bounds)
+                <| S.g
+                    [ SA.class "cell--debug"
                     , H.onClick <| Click path
                     ]
-                    ++ (boundsAttrs <| B.multiplyBy debugSideInPx <| bounds)
-                )
-                [ boundsDebug bounds
-                , case focused root path of
-                    -- FIXME: unfolds all the structure from root for every prop
-                    FocusedBy level -> text <| "focused " ++ String.fromInt level
-                    NotFocused -> text ""
-                , br [] []
-                , propertyDebug ( label, prop )
-                ]
-        renderPlate bounds plateCells =
-            div
-                (
-                    [ H.class "plate--debug" ]
-                    ++ (boundsAttrs <| B.multiplyBy debugSideInPx <| bounds)
-                )
-                <| boundsDebug bounds :: plateCells
-        cells =
+                    [ rect_ "white"
+                        <| B.multiplyBy debugSideInPx
+                        <| bounds
+                    , boundsDebug bounds
+                    , textAt 0 30
+                        <|  case focused root path of
+                        -- FIXME: unfolds all the structure from root for every prop
+                        FocusedBy level -> "focused " ++ String.fromInt level
+                        NotFocused -> ""
+                    , positionAt 0 60
+                        <| propertyDebug ( label, prop )
+                    ]
+        renderPlate bounds =
+            positionAt_ (B.multiplyBy debugSideInPx <| bounds)
+                <| S.g [ SA.class "plate--debug" ]
+                    [ rect_ "beige" <| B.multiplyBy debugSideInPx <| bounds
+                    , boundsDebug <| B.multiplyBy debugSideInPx <| bounds
+                    ]
+        ( plates, cells ) =
             BinPack.unfold
-                (\ ( cell, bounds ) prevCells ->
+                (\( cell, bounds ) ( prevPlates, prevCells ) ->
                     case cell of
                         One path ->
-                            case root |> Property.find1 path of
+                            ( prevPlates
+                            , case root |> Property.find1 path of
                                 Just prop ->
                                     renderProp path bounds prop
                                         :: prevCells
                                 Nothing ->
                                     prevCells
+                            )
                         Plate plateLayout ->
-                            [
-                                renderPlate bounds
-                                    <| BinPack.unfold
-                                        (\ ( path, pBounds ) pPrevCells ->
-                                            case root |> Property.find1 path of
-                                                Just prop ->
-                                                    renderProp path (B.shift bounds pBounds) prop
-                                                        :: pPrevCells
-                                                Nothing ->
-                                                    pPrevCells
-                                        )
-                                        prevCells
-                                        plateLayout
-                            ]
+                            ( renderPlate bounds :: prevPlates
+                            , BinPack.unfold
+                                (\ ( path, pBounds ) pPrevCells ->
+                                    case root |> Property.find1 path of
+                                        Just prop ->
+                                            renderProp path (B.shift bounds pBounds) prop
+                                                :: pPrevCells
+                                        Nothing ->
+                                            pPrevCells
+                                )
+                                prevCells
+                                plateLayout
+                            )
                 )
-                []
+                ( [], [] )
                 layout
     in
-        div [ H.id rootId
-            , H.class "gui gui--debug noselect"
-            , H.tabindex 0
+        div [ HA.id rootId
+            , HA.class "gui gui--debug noselect"
+            , HA.tabindex 0
             , keyDownHandler_
             ]
-            [ div
-                [ H.class "grid"]
-                cells
+            [ Svg.svg
+                [ SA.width "100px"
+                , SA.height "100px"
+                , SA.class "grid"
+                ]
+                [ Svg.g [] plates
+                , Svg.g [] cells
+                ]
             ]
 

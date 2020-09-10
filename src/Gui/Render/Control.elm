@@ -16,20 +16,6 @@ import Gui.Msg exposing (..)
 import Bounds exposing (Bounds)
 
 
-boundsAttrs : Bounds -> List (Attribute msg)
-boundsAttrs bounds =
-    [ H.style "top" <| String.fromFloat bounds.y ++ "px"
-    , H.style "left" <| String.fromFloat bounds.x ++ "px"
-    -- [ H.style "transform"
-    --     <| "translate("
-    --         ++ String.fromFloat bounds.x ++ "px, "
-    --         ++ String.fromFloat bounds.y ++ "px"
-    --     ++ ")"
-    , H.style "width" <| String.fromFloat bounds.width ++ "px"
-    , H.style "height" <| String.fromFloat bounds.height ++ "px"
-    ]
-
-
 textAttrs : Float -> Float -> String -> List (Attribute msg)
 textAttrs xPos yPos color =
     [ fill color

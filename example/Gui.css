@@ -151,6 +151,7 @@
     max-height: 72px;
     font-size: 10px;
     padding: 3px;
+    dominant-baseline: hanging;
 }
 
 
@@ -159,4 +160,6 @@
     border: 3px double gray;
     background: beige;
     box-sizing: border-box;
+    font-size: 10px;
+    dominant-baseline: hanging;
 }
