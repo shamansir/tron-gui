@@ -11,24 +11,16 @@
 .grid {
     margin: 0 auto;
     pointer-events: none;
-    display: flex;
+    position: relative;
+    display: block;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    width: 60%;
 }
 
 .gui:focus {
     outline: none;
-}
-
-.cells {
-    display: flex;
-    flex-direction: column;
-}
-
-.row {
-    display: flex;
-    flex-direction: row;
 }
 
 .cell {
@@ -148,14 +140,10 @@
                                     supported by Chrome and Opera */
 }
 
-.gui--debug {
-    transform: translate(70px, 350px);
-}
-
 
 .cell--debug {
     pointer-events: all;
-    position: fixed;
+    position: absolute;
     border: 1px solid black;
     background: white;
     margin: 7px;

@@ -25,21 +25,43 @@ import Gui.Util exposing (..)
 import Gui.Focus as Focus exposing (..)
 
 
+
+type Flow
+    = TopToBottom
+    | BottomToTop
+    | LeftToRight
+    | RightToLeft
+
+
 type alias Gui msg =
-    { mouse : MouseState
+    { flow : Flow
+    , mouse : MouseState
     , tree : Property msg
     , layout : Layout
     }
 
 
+type alias MouseTransform msg
+    = { width : Int, height : Int } -> Gui msg -> Position -> MouseAction
+
+
+moves : MouseTransform msg
 moves size gui =
-    Gui.Mouse.subPos (offsetFromSize size gui)
+    Gui.Mouse.subPos (offsetFromSize size gui.layout)
+        >> Debug.log "withOffset"
+        >> flowTransformer gui.flow
         >> Gui.Mouse.Move
+ups : MouseTransform msg
 ups size gui =
-    Gui.Mouse.subPos (offsetFromSize size gui)
+    Gui.Mouse.subPos (offsetFromSize size gui.layout)
+        >> Debug.log "withOffset"
+        >> flowTransformer gui.flow
         >> Gui.Mouse.Up
+downs : MouseTransform msg
 downs size gui =
-    Gui.Mouse.subPos (offsetFromSize size gui)
+    Gui.Mouse.subPos (offsetFromSize size gui.layout)
+        >> Debug.log "withOffset"
+        >> flowTransformer gui.flow
         >> Gui.Mouse.Down
 
 
@@ -49,7 +71,8 @@ extractMouse = .mouse
 
 map : (msgA -> msgB) -> Gui msgA -> Gui msgB
 map f model =
-    { mouse = model.mouse
+    { flow = model.flow
+    , mouse = model.mouse
     , tree = Gui.Property.map f model.tree
     , layout = model.layout
     }
@@ -57,12 +80,12 @@ map f model =
 
 none : Gui msg
 none =
-    Gui Gui.Mouse.init Nil Layout.init
+    Gui TopToBottom Gui.Mouse.init Nil Layout.init
 
 
 over : Property msg -> Gui msg
 over prop =
-    Gui Gui.Mouse.init prop <| Layout.pack prop
+    Gui TopToBottom Gui.Mouse.init prop <| Layout.pack prop
 
 
 update
@@ -113,7 +136,7 @@ update msg gui =
                 )
 
 
-trackMouse :  { width : Int, height : Int } -> Layout -> Sub Msg
+trackMouse :  { width : Int, height : Int } -> Gui msg -> Sub Msg
 trackMouse windowSize gui =
     Sub.batch
         [ Sub.map (downs windowSize gui)
@@ -144,6 +167,7 @@ handleMouse mouseAction gui =
                 _ -> Nothing
         dragFromCell =
             maybeDragFromPos
+                |> Maybe.map (Debug.log "drag from")
                 |> Maybe.andThen
                     (\dragFromPos ->
 
@@ -344,6 +368,15 @@ offsetFromSize { width, height } layout =
         { x = (toFloat width / 2) - (toFloat gridWidthInPx / 2)
         , y = (toFloat height / 2) - (toFloat gridHeightInPx / 2)
         }
+
+
+flowTransformer : Flow -> Position -> Position
+flowTransformer flow pos =
+    case flow of
+        TopToBottom -> { x = pos.x, y = pos.y * -1 }
+        BottomToTop -> { x = pos.x, y = pos.y }
+        RightToLeft -> { x = pos.y * -1, y = pos.x }
+        LeftToRight -> { x = pos.y, y = pos.x }
 
 
 view : Gui msg -> Html Msg

@@ -291,7 +291,8 @@ propertyDebug ( label, prop )  =
                 ]
         Choice (Control _ ( state, selected ) _ ) ->
             span []
-                [ br [] []
+                [ text <| label ++ " choice: "
+                , br [] []
                 , text <| if state == Expanded then "expanded" else "collapsed"
                 , br [] []
                 , text <| " selected: " ++ String.fromInt selected
@@ -363,4 +364,8 @@ view root layout =
             , H.tabindex 0
             , keyDownHandler_
             ]
-            cells
+            [ div
+                [ H.class "grid"]
+                cells
+            ]
+

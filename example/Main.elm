@@ -216,7 +216,7 @@ subscriptions { mode, example, gui, size } =
                     { width = Tuple.first size
                     , height = Tuple.second size
                     }
-                    gui.layout -- FIXME
+                    gui
                         |> Sub.map TronUpdate
                 , Browser.onResize Resize
                 ]
