@@ -53,6 +53,11 @@ handler =
     Random.constant <| always ()
 
 
+roundBy : Int -> Float -> Float
+roundBy _ f =
+    toFloat (floor (f * 100)) / 100
+
+
 axis : Random.Generator Axis
 axis =
     Random.float -100 100
@@ -60,9 +65,12 @@ axis =
             (\min ->
                 Random.map3
                     Axis
-                    (Random.constant min)
-                    (Random.float min 100)
-                    (Random.float 0 5)
+                    (Random.constant min
+                        |> Random.map (roundBy 2))
+                    (Random.float min 100
+                        |> Random.map (roundBy 2))
+                    (Random.float 0 5
+                        |> Random.map (roundBy 2))
             )
 
 

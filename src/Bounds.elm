@@ -9,6 +9,15 @@ type alias Bounds =
     }
 
 
+zero : Bounds
+zero =
+    { x = 0
+    , y = 0
+    , width = 0
+    , height = 0
+    }
+
+
 multiply : { x : Float, y : Float } -> Bounds -> Bounds
 multiply mult bounds =
     { x = mult.x * bounds.x

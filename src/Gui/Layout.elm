@@ -11,8 +11,8 @@ import Gui.Property as Property exposing (fold)
 import BinPack exposing (..)
 
 
-maxCellsByX = 10
-maxCellsByY = 10
+maxCellsByX = 9
+maxCellsByY = 5
 
 
 type Cell

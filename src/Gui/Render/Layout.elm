@@ -338,57 +338,56 @@ propertyDebug ( label, prop )  =
                 ]
 
 
-view : Property msg -> Layout -> Html Msg
-view root layout =
+view : Bounds -> Property msg -> Layout -> Html Msg
+view bounds root layout =
     let
         keyDownHandler_ =
             H.on "keydown"
                 <| Json.map KeyDown H.keyCode
-        debugSideInPx = 90
-        renderProp path bounds ( label, prop ) =
-            positionAt_ (B.multiplyBy debugSideInPx <| bounds)
+        renderProp path propBounds ( label, prop ) =
+            positionAt_ (B.multiplyBy cellWidth <| propBounds)
                 <| S.g
                     [ SA.class "cell--debug"
                     , H.onClick <| Click path
                     ]
                     [ rect_ "white"
-                        <| B.multiplyBy debugSideInPx
-                        <| bounds
-                    , boundsDebug bounds
-                    , textAt 0 30
+                        <| B.multiplyBy cellWidth
+                        <| propBounds
+                    , boundsDebug propBounds
+                    , textAt 5 35
                         <|  case focused root path of
                         -- FIXME: unfolds all the structure from root for every prop
                         FocusedBy level -> "focused " ++ String.fromInt level
                         NotFocused -> ""
-                    , positionAt 0 60
+                    , positionAt 0 45
                         <| propertyDebug ( label, prop )
                     ]
-        renderPlate bounds =
-            positionAt_ (B.multiplyBy debugSideInPx <| bounds)
+        renderPlate plateBounds =
+            positionAt_ (B.multiplyBy cellWidth <| plateBounds)
                 <| S.g [ SA.class "plate--debug" ]
-                    [ rect_ "beige" <| B.multiplyBy debugSideInPx <| bounds
-                    , boundsDebug <| B.multiplyBy debugSideInPx <| bounds
+                    [ rect_ "beige" <| B.multiplyBy cellWidth <| plateBounds
+                    , boundsDebug <| B.multiplyBy cellWidth <| plateBounds
                     ]
         ( plates, cells ) =
             BinPack.unfold
-                (\( cell, bounds ) ( prevPlates, prevCells ) ->
+                (\( cell, cellBounds ) ( prevPlates, prevCells ) ->
                     case cell of
                         One path ->
                             ( prevPlates
                             , case root |> Property.find1 path of
                                 Just prop ->
-                                    renderProp path bounds prop
+                                    renderProp path cellBounds prop
                                         :: prevCells
                                 Nothing ->
                                     prevCells
                             )
                         Plate plateLayout ->
-                            ( renderPlate bounds :: prevPlates
+                            ( renderPlate cellBounds :: prevPlates
                             , BinPack.unfold
-                                (\ ( path, pBounds ) pPrevCells ->
+                                (\ ( path, propBounds ) pPrevCells ->
                                     case root |> Property.find1 path of
                                         Just prop ->
-                                            renderProp path (B.shift bounds pBounds) prop
+                                            renderProp path (B.shift cellBounds propBounds) prop
                                                 :: pPrevCells
                                         Nothing ->
                                             pPrevCells
@@ -406,12 +405,19 @@ view root layout =
             , keyDownHandler_
             ]
             [ Svg.svg
-                [ SA.width "100px"
-                , SA.height "100px"
+                [ SA.width <| String.fromFloat bounds.width ++ "px"
+                , SA.height <| String.fromFloat bounds.height ++ "px"
+                , SA.style <| "transform: translate("
+                    ++ String.fromFloat bounds.x ++ "px,"
+                    ++ String.fromFloat bounds.y ++ "px)"
                 , SA.class "grid"
                 ]
-                [ Svg.g [] plates
-                , Svg.g [] cells
+                [ Svg.g
+                    []
+                    [ Svg.g [] plates
+                    , Svg.g [] cells
+                    ]
                 ]
+
             ]
 

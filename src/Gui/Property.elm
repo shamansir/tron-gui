@@ -71,12 +71,17 @@ type Property msg
     | Group (GroupControl msg)
 
 
-cellWidth = 70
-cellHeight = 70
+cellWidth : Float
+cellWidth = 90
+cellHeight : Float
+cellHeight = 90
+
+
+cellMargin : Float
 cellMargin = 5
 
 
-knobDistance = cellHeight * 4
+knobDistance = 90 * 4
 
 
 labelColor = "white"

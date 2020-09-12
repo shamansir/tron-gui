@@ -53,8 +53,8 @@ knobRectAttrs color rotation =
 
 xyRectAttrs : String -> List (Attribute msg)
 xyRectAttrs color =
-    [ width <| String.fromInt (cellWidth - 5)
-    , height <| String.fromInt (cellHeight - 5)
+    [ width <| String.fromFloat (cellWidth - 5)
+    , height <| String.fromFloat (cellHeight - 5)
     , x <| String.fromFloat 2.5
     , y <| String.fromFloat 2.5
     , rx <| String.fromFloat 10

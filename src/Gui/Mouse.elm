@@ -50,6 +50,15 @@ init =
     }
 
 
+adapt : (Position -> Position) -> MouseState -> MouseState
+adapt f mstate =
+    { pos = f mstate.pos
+    , down = mstate.down
+    , dragFrom = mstate.dragFrom |> Maybe.map f
+    }
+
+
+{-
 subPos : Position -> Position -> Position
 subPos toSub prev =
     { x = prev.x - toSub.x
@@ -69,6 +78,7 @@ shift pos prev =
     { prev
     | pos = subPos pos prev.pos
     }
+-}
 
 
 decodePosition : D.Decoder Position

@@ -29,6 +29,7 @@ import Simple.Gui as SimpleGui
 
 import RandomGui as Gui exposing (generator)
 
+
 type Msg
     = NoOp
     | ChangeMode Mode
@@ -54,7 +55,6 @@ type alias Model =
     { mode : Mode
     , gui : Tron.Gui Msg
     , example : Example
-    , size : ( Int, Int )
     }
 
 
@@ -64,13 +64,12 @@ init =
         { mode = TronGui
         , example = Simple.init
         , gui = SimpleGui.for Simple.init
-                            |> Gui.over
-                            |> Gui.map ToSimple
-        , size = ( 0, 0 )
+                    |> Gui.over
+                    |> Gui.map ToSimple
         }
-    , Cmd.batch
+    , Cmd.batch -- FIXME: Gui.init
         [ Tron.focus NoOp
-        , Tron.fromWindow Resize
+        , Tron.fromWindow Resize -- FIXME: subscribe to resizes along with the mouse
         ]
     )
 
@@ -158,7 +157,7 @@ update msg model =
         ( Resize width height, _ ) ->
             (
                 { model
-                | size = ( width, height )
+                | gui = model.gui |> Gui.reflow ( width, height )
                 }
             , Cmd.none
             )
@@ -182,13 +181,13 @@ update msg model =
             , case model.mode of
                 DatGui ->
                     newGui
-                        |> .tree
+                        |> .tree -- FIXME
                         |> Exp.encode
                         |> startDatGui
                 TronGui ->
                     Cmd.batch
                         [ Tron.focus NoOp
-                        , Tron.fromWindow Resize
+                        , Tron.fromWindow Resize -- FIXME: subscribe to resizes along with the mouse
                         ]
             )
 
@@ -206,18 +205,13 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions { mode, example, gui, size } =
+subscriptions { mode } =
     case mode of
         DatGui ->
             updateFromDatGui (DatGuiUpdate << Exp.fromPort)
         TronGui ->
             Sub.batch
-                [ Gui.trackMouse
-                    { width = Tuple.first size
-                    , height = Tuple.second size
-                    }
-                    gui
-                        |> Sub.map TronUpdate
+                [ Gui.trackMouse |> Sub.map TronUpdate
                 , Browser.onResize Resize
                 ]
 

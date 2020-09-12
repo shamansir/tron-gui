@@ -1,7 +1,7 @@
 module Gui.Gui exposing
     ( Gui, over
     , view, update, none, map
-    , trackMouse, focus, fromWindow
+    , trackMouse, focus, reflow, fromWindow
     )
 
 
@@ -11,6 +11,7 @@ import Browser.Events as Browser
 import Html exposing (Html)
 
 import BinPack exposing (..)
+import Bounds exposing (Bounds)
 
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)
@@ -25,7 +26,6 @@ import Gui.Util exposing (..)
 import Gui.Focus as Focus exposing (..)
 
 
-
 type Flow
     = TopToBottom
     | BottomToTop
@@ -35,34 +35,19 @@ type Flow
 
 type alias Gui msg =
     { flow : Flow
+    , bounds : Bounds
     , mouse : MouseState
     , tree : Property msg
     , layout : Layout
     }
 
 
-type alias MouseTransform msg
-    = { width : Int, height : Int } -> Gui msg -> Position -> MouseAction
-
-
-moves : MouseTransform msg
-moves size gui =
-    Gui.Mouse.subPos (offsetFromSize size gui.layout)
-        >> Debug.log "withOffset"
-        >> flowTransformer gui.flow
-        >> Gui.Mouse.Move
-ups : MouseTransform msg
-ups size gui =
-    Gui.Mouse.subPos (offsetFromSize size gui.layout)
-        >> Debug.log "withOffset"
-        >> flowTransformer gui.flow
-        >> Gui.Mouse.Up
-downs : MouseTransform msg
-downs size gui =
-    Gui.Mouse.subPos (offsetFromSize size gui.layout)
-        >> Debug.log "withOffset"
-        >> flowTransformer gui.flow
-        >> Gui.Mouse.Down
+moves : Position -> MouseAction
+moves = Gui.Mouse.Move
+ups : Position -> MouseAction
+ups = Gui.Mouse.Up
+downs : Position -> MouseAction
+downs = Gui.Mouse.Down
 
 
 extractMouse : Gui msg -> MouseState
@@ -72,6 +57,7 @@ extractMouse = .mouse
 map : (msgA -> msgB) -> Gui msgA -> Gui msgB
 map f model =
     { flow = model.flow
+    , bounds = model.bounds
     , mouse = model.mouse
     , tree = Gui.Property.map f model.tree
     , layout = model.layout
@@ -80,12 +66,12 @@ map f model =
 
 none : Gui msg
 none =
-    Gui TopToBottom Gui.Mouse.init Nil Layout.init
+    Gui TopToBottom Bounds.zero Gui.Mouse.init Nil Layout.init
 
 
 over : Property msg -> Gui msg
 over prop =
-    Gui TopToBottom Gui.Mouse.init prop <| Layout.pack prop
+    Gui TopToBottom Bounds.zero Gui.Mouse.init prop <| Layout.pack prop
 
 
 update
@@ -136,27 +122,52 @@ update msg gui =
                 )
 
 
-trackMouse :  { width : Int, height : Int } -> Gui msg -> Sub Msg
-trackMouse windowSize gui =
+trackMouse : Sub Msg
+trackMouse =
     Sub.batch
-        [ Sub.map (downs windowSize gui)
+        [ Sub.map downs
             <| Browser.onMouseDown
             <| decodePosition
-        , Sub.map (ups windowSize gui)
+        , Sub.map ups
             <| Browser.onMouseUp
             <| decodePosition
-        , Sub.map (moves windowSize gui)
+        , Sub.map moves
             <| Browser.onMouseMove
             <| decodePosition
         ]
     |> Sub.map ApplyMouse
 
 
+
+reflow : ( Int, Int ) -> Gui msg -> Gui msg
+reflow ( w, h ) gui =
+    { gui
+    | bounds =
+        gui.layout |>
+            boundsFromSize
+                { width = toFloat w, height = toFloat h }
+    }
+
+
+-- TODO: make bounds to be bounded to pariticular units
+toGridCoords : Bounds -> Flow -> Layout -> Position -> Position
+toGridCoords bounds flow layout pos =
+    let
+        ( gridWidthInCells, gridHeightInCells ) = getSize layout
+    in
+        { x = (pos.x - bounds.x) / cellWidth
+        , y = (pos.y - bounds.y) / cellHeight
+        }
+
+
 handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd msg )
 handleMouse mouseAction gui =
     let
-        curMouseState = gui.mouse
-        nextMouseState = curMouseState |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
+        curMouseState =
+            gui.mouse
+        nextMouseState =
+            gui.mouse
+                |> Gui.Mouse.apply mouseAction
         maybeDragFromPos =
             if nextMouseState.down then nextMouseState.dragFrom
             else case mouseAction of
@@ -167,7 +178,7 @@ handleMouse mouseAction gui =
                 _ -> Nothing
         dragFromCell =
             maybeDragFromPos
-                |> Maybe.map (Debug.log "drag from")
+                |> Maybe.map (toGridCoords gui.bounds gui.flow gui.layout)
                 |> Maybe.andThen
                     (\dragFromPos ->
 
@@ -309,7 +320,7 @@ focus noOp =
         |> Task.attempt (always noOp)
 
 
-fromWindow : (Int -> Int -> msg) -> Cmd msg
+fromWindow : (Int -> Int -> msg) -> Cmd msg -- FIXME: get rid of
 fromWindow passSize =
     Dom.getViewport
         |> Task.perform
@@ -356,28 +367,22 @@ executeCell { cell, nestPos, isSelected, onSelect } =
 -}
 
 
-offsetFromSize : { width : Int, height : Int } -> Layout -> { x : Float, y : Float }
-offsetFromSize { width, height } layout =
+boundsFromSize : { width : Float, height : Float } -> Layout -> Bounds
+boundsFromSize { width, height } layout =
     let
         ( gridWidthInCells, gridHeightInCells ) = getSize layout
         ( gridWidthInPx, gridHeightInPx ) =
-            ( cellWidth * gridWidthInCells
-            , cellHeight * gridHeightInCells
+            ( cellWidth * toFloat gridWidthInCells
+            , cellHeight * toFloat gridHeightInCells
             )
     in
-        { x = (toFloat width / 2) - (toFloat gridWidthInPx / 2)
-        , y = (toFloat height / 2) - (toFloat gridHeightInPx / 2)
+        { x = (width / 2) - (gridWidthInPx / 2)
+        , y = (height / 2) - (gridHeightInPx / 2)
+        , width = gridWidthInPx
+        , height = gridHeightInPx
         }
 
 
-flowTransformer : Flow -> Position -> Position
-flowTransformer flow pos =
-    case flow of
-        TopToBottom -> { x = pos.x, y = pos.y * -1 }
-        BottomToTop -> { x = pos.x, y = pos.y }
-        RightToLeft -> { x = pos.y * -1, y = pos.x }
-        LeftToRight -> { x = pos.y, y = pos.x }
-
-
 view : Gui msg -> Html Msg
-view gui = Layout.view gui.tree gui.layout
+view gui =
+    Layout.view gui.bounds gui.tree gui.layout
