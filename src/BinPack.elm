@@ -120,10 +120,10 @@ find pos =
             case foundBefore of
                 Just _ -> foundBefore
                 Nothing ->
-                    if (bounds.x >= pos.x)
-                    && (bounds.y >= pos.y)
+                    if (pos.x >= bounds.x)
+                    && (pos.y >= bounds.y)
                     && (pos.x < bounds.x + bounds.width)
-                    && (pos.x < bounds.y + bounds.height)
+                    && (pos.y < bounds.y + bounds.height)
                         then Just ( v, bounds )
                         else Nothing
         )

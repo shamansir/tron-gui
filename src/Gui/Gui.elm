@@ -150,14 +150,11 @@ reflow ( w, h ) gui =
 
 
 -- TODO: make bounds to be bounded to pariticular units
-toGridCoords : Bounds -> Flow -> Layout -> Position -> Position
-toGridCoords bounds flow layout pos =
-    let
-        ( gridWidthInCells, gridHeightInCells ) = getSize layout
-    in
-        { x = (pos.x - bounds.x) / cellWidth
-        , y = (pos.y - bounds.y) / cellHeight
-        }
+toGridCoords : Bounds -> Flow -> Position -> Position
+toGridCoords bounds flow pos =
+    { x = (pos.x - bounds.x) / cellWidth
+    , y = (pos.y - bounds.y) / cellHeight
+    }
 
 
 handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd msg )
@@ -168,6 +165,7 @@ handleMouse mouseAction gui =
         nextMouseState =
             gui.mouse
                 |> Gui.Mouse.apply mouseAction
+
         maybeDragFromPos =
             if nextMouseState.down then nextMouseState.dragFrom
             else case mouseAction of
@@ -176,15 +174,15 @@ handleMouse mouseAction gui =
                         then curMouseState.dragFrom
                         else Nothing
                 _ -> Nothing
+
         dragFromCell =
             maybeDragFromPos
-                |> Maybe.map (toGridCoords gui.bounds gui.flow gui.layout)
+                |> Maybe.map (toGridCoords gui.bounds gui.flow)
                 |> Maybe.andThen
                     (\dragFromPos ->
 
                         gui.layout
                             |> Layout.find dragFromPos
-                            -- |> Maybe.andThen Gui.Property.find
                             |> Maybe.andThen
                                 (\path ->
                                     Gui.Property.find path gui.tree
@@ -192,22 +190,8 @@ handleMouse mouseAction gui =
                                 )
 
                     )
+
     in
-
-        {- FIMXE:
-        dragFromPath
-            = maybeDragFromPos |> Maybe.andThen (model.layout >> BinPack.find dragFromPos)
-
-        case dragFromPath of
-            Just path ->
-                { model
-                | mouse = nextMouseState
-                , root =
-                    updateAt
-                        path
-                        (\curControl -> case curControl of  )
-                }
-        -}
 
         case dragFromCell of
 
