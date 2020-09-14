@@ -31,7 +31,7 @@ rootId = "grid-gui"
 
 
 type Mode
-    = DebugInfo
+    = Debug
     | Fancy
 
 

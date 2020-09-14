@@ -31,8 +31,8 @@ init : Layout
 init = container maxCellsByX maxCellsByY
 
 
-find : { x : Float, y : Float } -> Layout -> Maybe Path
-find pos layout =
+find : Layout -> { x : Float, y : Float } -> Maybe Path
+find layout pos =
     case BinPack.find pos layout of
         Just ( One path, _ ) ->
             Just path

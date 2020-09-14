@@ -31,8 +31,8 @@ clear =
 
 
 
-on : Path -> Property msg -> Property msg
-on (Path path) root =
+on : Property msg -> Path -> Property msg
+on root (Path path) =
     case ( path, root ) of
         ( [], _ ) -> root
         ( x::xs, Group (Control ( shape, items ) ( Expanded, _ ) handler) ) ->
@@ -54,8 +54,9 @@ on (Path path) root =
                                 ( label
                                 ,
                                     if index == normalizedX then
-                                        on (Path xs) innerItem
+                                        on innerItem (Path xs)
                                     else innerItem
+
                                 )
                             )
 
@@ -122,7 +123,7 @@ shift direction root =
                                         else item + 1
                                     )
                         else Array.fromList [ 0 ] -- FIXME: causes a lot of conversions
-    in root |> clear |> on nextFocus
+    in on (clear root) nextFocus
 
 
 focused : Property msg -> Path -> Focused

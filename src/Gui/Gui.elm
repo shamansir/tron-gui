@@ -102,7 +102,7 @@ update msg gui =
         MouseDown path ->
             (
                 { gui
-                | tree = gui.tree |> Focus.on path
+                | tree = Focus.on gui.tree path
                 }
             , Cmd.none
             )
@@ -166,34 +166,18 @@ handleMouse mouseAction gui =
             gui.mouse
                 |> Gui.Mouse.apply mouseAction
 
-        findCellAt pos =
+        findPathAt pos =
             pos
                 |> toGridCoords gui.bounds gui.flow
-                |> (\gridPos ->
+                |> Layout.find gui.layout
 
-                        gui.layout
-                            |> Layout.find gridPos
-                            |> Maybe.andThen
-                                (\path ->
-                                    Gui.Property.find path gui.tree
-                                        |> Maybe.map (Tuple.pair path)
-                                )
-                   )
-
-        dragFromCell =
-            nextMouseState.dragFrom
-                |> Maybe.map (toGridCoords gui.bounds gui.flow)
+        findCellAt pos =
+            pos
+                |> findPathAt
                 |> Maybe.andThen
-                    (\dragFromPos ->
-
-                        gui.layout
-                            |> Layout.find dragFromPos
-                            |> Maybe.andThen
-                                (\path ->
-                                    Gui.Property.find path gui.tree
-                                        |> Maybe.map (Tuple.pair path)
-                                )
-
+                    (\path ->
+                        Gui.Property.find path gui.tree
+                            |> Maybe.map (Tuple.pair path)
                     )
 
     in
@@ -203,37 +187,46 @@ handleMouse mouseAction gui =
             | mouse = nextMouseState
             , tree =
 
-                case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
+                if curMouseState.down then
 
-                    Just ( path, Number ( Control axis curValue handler ) ) ->
-                        let
-                            dY = distanceY knobDistance nextMouseState
-                            nextVal = alter axis dY curValue
-                            nextControl =
-                                Control axis nextVal handler
-                        in
-                            updateAt
-                                path
-                                (always <| Number nextControl)
-                                gui.tree
+                    case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
 
-                    Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
-                        let
-                            ( dX, dY ) = distanceXY knobDistance nextMouseState
-                            ( nextX, nextY ) =
-                                ( alter xAxis dX curX
-                                , alter yAxis dY curY
-                                )
-                            nextControl =
-                                Control ( xAxis, yAxis ) ( nextX, nextY ) handler
-                        in
-                            updateAt
-                                path
-                                (always <| Coordinate nextControl)
-                                gui.tree
+                        Just ( path, Number ( Control axis curValue handler ) ) ->
+                            let
+                                dY = distanceY knobDistance nextMouseState
+                                nextVal = alter axis dY curValue
+                                nextControl =
+                                    Control axis nextVal handler
+                            in
+                                updateAt
+                                    path
+                                    (always <| Number nextControl)
+                                    gui.tree
 
-                    _ ->
-                        gui.tree
+                        Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
+                            let
+                                ( dX, dY ) = distanceXY knobDistance nextMouseState
+                                ( nextX, nextY ) =
+                                    ( alter xAxis dX curX
+                                    , alter yAxis dY curY
+                                    )
+                                nextControl =
+                                    Control ( xAxis, yAxis ) ( nextX, nextY ) handler
+                            in
+                                updateAt
+                                    path
+                                    (always <| Coordinate nextControl)
+                                    gui.tree
+
+                        _ ->
+                            gui.tree
+
+                else
+
+                    nextMouseState.dragFrom
+                        |> Maybe.andThen findPathAt
+                        |> Maybe.map (Focus.on gui.tree)
+                        |> Maybe.withDefault gui.tree
 
             }
 
@@ -314,43 +307,6 @@ fromWindow passSize =
                 (floor d.viewport.width)
                 (floor d.viewport.height)
             )
-
-
-{-
--- FIXME: move somewhere else, where it belongs
-executeCell : GridCell umsg -> ( Msg umsg, Maybe umsg )
-executeCell { cell, nestPos, isSelected, onSelect } =
-    case cell of
-        Knob _ _ _ _ ->
-            ( FocusOn nestPos, Nothing ) -- FIXME: NoOp? We do the same on mousedown
-        Toggle _ val handler ->
-            -- if val == TurnedOn then ToggleOff nestPos else ToggleOn nestPos
-            if val == TurnedOn
-            then ( ToggleOff nestPos, Just <| handler TurnedOff )
-            else ( ToggleOn nestPos, Just <| handler TurnedOn )
-        Nested _ state _ ->
-            if state == Expanded
-            then ( CollapseNested nestPos, Nothing )
-            else ( ExpandNested nestPos, Nothing )
-        Choice _ state _ _ _ ->
-            if state == Expanded
-            then ( CollapseChoice nestPos, Nothing )
-            else ( ExpandChoice nestPos, Nothing )
-        Button _ handler ->
-            ( NoOp, Just <| handler () )
-        ChoiceItem label ->
-            case isSelected of
-                Just NotSelected ->
-                    ( Select nestPos
-                    , onSelect
-                        |> Maybe.andThen ((|>) label)
-                    )
-                _ -> ( NoOp, Nothing )
-        _ ->
-            case isSelected of
-                Just NotSelected -> ( Select nestPos, Nothing )
-                _ -> ( NoOp, Nothing )
--}
 
 
 boundsFromSize : { width : Float, height : Float } -> Layout -> Bounds
