@@ -166,17 +166,31 @@ handleMouse mouseAction gui =
             gui.mouse
                 |> Gui.Mouse.apply mouseAction
 
-        maybeDragFromPos =
+        {- maybeDragFromPos =
             if nextMouseState.down then nextMouseState.dragFrom
             else case mouseAction of
                 Mouse.Up _ ->
                     if curMouseState.down
                         then curMouseState.dragFrom
                         else Nothing
-                _ -> Nothing
+                _ -> Nothing -}
+
+        findCellAt pos =
+            pos
+                |> toGridCoords gui.bounds gui.flow
+                |> (\gridPos ->
+
+                        gui.layout
+                            |> Layout.find gridPos
+                            |> Maybe.andThen
+                                (\path ->
+                                    Gui.Property.find path gui.tree
+                                        |> Maybe.map (Tuple.pair path)
+                                )
+                   )
 
         dragFromCell =
-            maybeDragFromPos
+            nextMouseState.dragFrom
                 |> Maybe.map (toGridCoords gui.bounds gui.flow)
                 |> Maybe.andThen
                     (\dragFromPos ->
@@ -193,70 +207,66 @@ handleMouse mouseAction gui =
 
     in
 
-        case dragFromCell of
+        (
+            { gui
+            | mouse = nextMouseState
+            , tree =
 
-            Just ( path, Number ( Control axis curValue handler ) ) ->
-                let
-                    dY = distanceY knobDistance nextMouseState
-                    nextVal = alter axis dY curValue
-                    nextControl =
-                        Control axis nextVal handler
-                in
-                    (
-                        { gui
-                        | mouse = nextMouseState
-                        , tree =
+                case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
+
+                    Just ( path, Number ( Control axis curValue handler ) ) ->
+                        let
+                            dY = distanceY knobDistance nextMouseState
+                            nextVal = alter axis dY curValue
+                            nextControl =
+                                Control axis nextVal handler
+                        in
                             updateAt
                                 path
                                 (always <| Number nextControl)
                                 gui.tree
-                        }
-                    ,
-                        case mouseAction of
-                            Mouse.Up _ ->
-                                if curMouseState.down
-                                && not nextMouseState.down
-                                then call nextControl
-                                else Cmd.none
-                            _ -> Cmd.none
-                    )
 
-            Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
-                let
-                    ( dX, dY ) = distanceXY knobDistance nextMouseState
-                    ( nextX, nextY ) =
-                        ( alter xAxis dX curX
-                        , alter yAxis dY curY
-                        )
-                    nextControl =
-                        Control ( xAxis, yAxis ) ( nextX, nextY ) handler
-                in
-                    (
-                        { gui
-                        | mouse = nextMouseState
-                        , tree =
+                    Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
+                        let
+                            ( dX, dY ) = distanceXY knobDistance nextMouseState
+                            ( nextX, nextY ) =
+                                ( alter xAxis dX curX
+                                , alter yAxis dY curY
+                                )
+                            nextControl =
+                                Control ( xAxis, yAxis ) ( nextX, nextY ) handler
+                        in
                             updateAt
                                 path
                                 (always <| Coordinate nextControl)
                                 gui.tree
-                        }
-                    ,
-                        case mouseAction of
-                            Mouse.Up _ ->
-                                if curMouseState.down
-                                && not nextMouseState.down
-                                then call nextControl
-                                else Cmd.none
-                            _ -> Cmd.none
-                    )
 
-            _ ->
-                (
-                    { gui
-                    | mouse = nextMouseState
-                    }
-                , Cmd.none
-                )
+                    _ ->
+                        gui.tree
+
+            }
+
+        ,
+            case mouseAction of
+
+                Mouse.Up _ ->
+                    if curMouseState.down
+                    && not nextMouseState.down
+                    then
+
+                        case curMouseState.dragFrom |> Maybe.andThen findCellAt of
+
+                            Just ( _, Number control ) ->
+                                call control
+                            Just ( _, Coordinate control ) ->
+                                call control
+                            Just (_, _) -> Cmd.none
+                            Nothing -> Cmd.none
+
+                    else Cmd.none
+                _ -> Cmd.none
+
+        )
 
 
 handleKeyDown
