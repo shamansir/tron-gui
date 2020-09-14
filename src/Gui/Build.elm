@@ -146,16 +146,19 @@ choiceIn shape toLabel options current compare toMsg =
                     |> Array.fromList
                 )
                 ( Collapsed
-                , indexedOptions
-                    |> findMap
-                        (\(index, option) ->
-                            if compare option current
-                                then Just index
-                                else Nothing
-                        )
-                    |> Maybe.withDefault 0
+                ,
+                    ( Nothing
+                    , indexedOptions
+                        |> findMap
+                            (\(index, option) ->
+                                if compare option current
+                                    then Just index
+                                    else Nothing
+                            )
+                        |> Maybe.withDefault 0
+                    )
                 )
-                (Tuple.second >> callByIndex)
+                (Tuple.second >> Tuple.second >> callByIndex)
 
 
 strings

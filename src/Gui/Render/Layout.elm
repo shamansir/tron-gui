@@ -296,10 +296,10 @@ propertyDebug ( label, prop )  =
                     ++ String.fromFloat xConf.step ++ "/"
                     ++ String.fromFloat xConf.max
                     ++ " " ++ String.fromFloat valX
+                    ++ " " ++ String.fromFloat valY
                     ++ " " ++ String.fromFloat yConf.min ++ "/"
                     ++ String.fromFloat yConf.step ++ "/"
-                    ++ String.fromFloat yConf.max
-                    ++ " " ++ String.fromFloat valY ]
+                    ++ String.fromFloat yConf.max ]
         Toggle (Control _ val _) ->
             S.g []
                 [ textAt 5 5 <| label ++ " toggle: "
@@ -328,12 +328,17 @@ propertyDebug ( label, prop )  =
                         Just (Focus focus) -> String.fromInt focus
                         _ -> "none"
                 ]
-        Choice (Control _ ( state, selected ) _ ) ->
+        Choice (Control _ ( state, ( maybeFocus, selected ) ) _ ) ->
             S.g []
                 [ textAt 5 5 <| label ++ " choice: "
                 , textAt 5 20
                     <| if state == Expanded then "expanded" else "collapsed"
                 , textAt 5 35
+                    <| "focus: " ++
+                    case maybeFocus of
+                        Just (Focus focus) -> String.fromInt focus
+                        _ -> "none"
+                , textAt 5 50
                     <| " selected: " ++ String.fromInt selected
                 ]
 

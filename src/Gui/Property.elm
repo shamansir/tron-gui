@@ -54,7 +54,7 @@ type alias GroupControl msg =
 type alias ChoiceControl msg =
     Control
         ( Shape, Array ( Label, Property msg ) )
-        ( ExpandState, Int )
+        ( ExpandState, ( Maybe Focus, Int ) )
         msg
 
 

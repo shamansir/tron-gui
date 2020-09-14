@@ -5,6 +5,7 @@ import Gui.Control exposing (..)
 import Gui.Property exposing (..)
 
 import Array
+import Array exposing (Array)
 
 
 type Focused
@@ -26,6 +27,8 @@ clear =
             case prop of
                 Group (Control setup ( expanded, _ ) handler) ->
                     Group (Control setup ( expanded, Nothing ) handler)
+                Choice (Control setup ( expanded, ( _, selection ) ) handler) ->
+                    Choice (Control setup ( expanded, ( Nothing, selection ) ) handler)
                 _ -> prop
         )
 
@@ -33,9 +36,9 @@ clear =
 
 on : Property msg -> Path -> Property msg
 on root (Path path) =
-    case ( path, root ) of
-        ( [], _ ) -> root
-        ( x::xs, Group (Control ( shape, items ) ( Expanded, _ ) handler) ) ->
+    let
+
+        goDeeper items x xs =
             let
                 itemsCount = Array.length items
                 normalizedX =
@@ -44,49 +47,80 @@ on root (Path path) =
                     else x
 
             in
-            Group
-                (Control
-                    ( shape
-                    ,
-                        items |>
-                            Array.indexedMap
-                            (\index ( label, innerItem ) ->
-                                ( label
-                                ,
-                                    if index == normalizedX then
-                                        on innerItem (Path xs)
-                                    else innerItem
+                ( items |>
+                    Array.indexedMap
+                    (\index ( label, innerItem ) ->
+                        ( label
+                        ,
+                            if index == normalizedX then
+                                on innerItem (Path xs)
+                            else innerItem
 
-                                )
-                            )
+                        )
+                    )
 
-                    )
-                    ( Expanded
-                    , Just <| Focus normalizedX
-                    )
-                    handler
+                , Focus normalizedX
                 )
-        ( _, _ ) -> root
+
+    in
+        case ( path, root ) of
+            ( [], _ ) -> root
+            ( x::xs, Group (Control ( shape, items ) ( Expanded, _ ) handler) ) ->
+                let
+                    ( nextItems, nextFocus )
+                        = goDeeper items x xs
+                in
+                Group
+                    (Control
+                        ( shape
+                        , nextItems
+                        )
+                        ( Expanded
+                        , Just nextFocus
+                        )
+                        handler
+                    )
+            ( x::xs, Choice (Control ( shape, items ) ( Expanded, ( _, selection ) ) handler) ) ->
+                let
+                    ( nextItems, nextFocus )
+                        = goDeeper items x xs
+                in
+                Choice
+                    (Control
+                        ( shape
+                        , nextItems
+                        )
+                        ( Expanded
+                        , ( Just nextFocus, selection )
+                        )
+                        handler
+                    )
+            ( _, _ ) -> root
 
 
 find : Property msg -> Path
 find root =
     let
+        findDeeper : Maybe Focus -> Array ( a, Property msg ) -> List Int
+        findDeeper focus items =
+            focus
+                |> Maybe.andThen
+                    (\(Focus theFocus) ->
+                        items
+                            |> Array.get theFocus
+                            |> Maybe.map (Tuple.pair theFocus)
+                    )
+                |> Maybe.map
+                    (\( theFocus, ( _, focusedItem ) ) ->
+                        theFocus :: helper focusedItem
+                    )
+                |> Maybe.withDefault []
         helper control =
             case control of
                 Group (Control ( _, items ) ( _, focus ) handler) ->
-                    focus
-                        |> Maybe.andThen
-                            (\(Focus theFocus) ->
-                                items
-                                    |> Array.get theFocus
-                                    |> Maybe.map (Tuple.pair theFocus)
-                            )
-                        |> Maybe.map
-                            (\( theFocus, ( _, focusedItem ) ) ->
-                                theFocus :: helper focusedItem
-                            )
-                        |> Maybe.withDefault []
+                    findDeeper focus items
+                Choice (Control ( _, items ) ( _, ( focus, _ ) ) handler) ->
+                    findDeeper focus items
                 _ -> []
     in Path <| helper root
 
@@ -136,6 +170,12 @@ focused root (Path path) =
                         then NotFocused
                         else FocusedBy flevel
                 ( x::xs, Group (Control ( _, items ) ( _, Just (Focus focus) ) handler) ) ->
+                    if focus == x then
+                        case items |> Array.get focus  of
+                            Just ( _, item ) -> helper xs (flevel + 1) item
+                            Nothing -> NotFocused
+                    else NotFocused
+                ( x::xs, Choice (Control ( _, items ) ( _, ( Just (Focus focus), _ ) ) handler) ) ->
                     if focus == x then
                         case items |> Array.get focus  of
                             Just ( _, item ) -> helper xs (flevel + 1) item

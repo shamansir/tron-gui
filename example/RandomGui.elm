@@ -161,7 +161,8 @@ choice deep =
                     (Random.map2
                         Tuple.pair
                         expandState
-                        (Random.int 0 <| Array.length cs - 1)
+                        (Random.map (Tuple.pair Nothing)
+                            <| Random.int 0 <| Array.length cs - 1)
                     )
                     handler
             )

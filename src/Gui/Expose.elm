@@ -55,8 +55,9 @@ updateProperty value property
             t |> callWith control
         ( Action control, FromButton ) ->
             () |> callWith control
-        ( Choice ( Control _ ( expanded, _ ) _ as control), FromChoice i ) ->
-            ( expanded, i ) |> callWith control
+        ( Choice ( Control _ ( expanded, ( focus, _ ) ) _ as control), FromChoice i ) ->
+            ( expanded, ( focus, i ) )
+                |> callWith control
         ( Group _, _ ) ->
             Cmd.none
         _ -> Cmd.none
@@ -144,7 +145,7 @@ encodePropertyAt path property =
                 , ( "path", encodePath path )
                 ]
 
-        Choice ( Control ( _, items ) ( expanded, current ) _) ->
+        Choice ( Control ( _, items ) ( expanded, ( _, current ) ) _) ->
             E.object
                 [ ( "type", E.string "choice" )
                 , ( "path", encodePath path )
