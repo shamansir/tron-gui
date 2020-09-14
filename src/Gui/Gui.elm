@@ -166,15 +166,6 @@ handleMouse mouseAction gui =
             gui.mouse
                 |> Gui.Mouse.apply mouseAction
 
-        {- maybeDragFromPos =
-            if nextMouseState.down then nextMouseState.dragFrom
-            else case mouseAction of
-                Mouse.Up _ ->
-                    if curMouseState.down
-                        then curMouseState.dragFrom
-                        else Nothing
-                _ -> Nothing -}
-
         findCellAt pos =
             pos
                 |> toGridCoords gui.bounds gui.flow
@@ -247,6 +238,7 @@ handleMouse mouseAction gui =
             }
 
         ,
+
             case mouseAction of
 
                 Mouse.Up _ ->

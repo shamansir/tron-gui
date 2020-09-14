@@ -22,6 +22,9 @@ findMap toValue =
         Nothing
 
 
-alter : { a | min : Float, max : Float } -> Float -> Float -> Float
-alter { min, max } amount curValue =
-    min + (amount * (max - min)) -- TODO: apply step
+alter : { a | min : Float, max : Float, step : Float } -> Float -> Float -> Float
+alter { min, max, step } amount curValue =
+    let
+        toAdd = amount * (max - min)
+        alignedByStep = toFloat (floor (toAdd / step)) * step
+    in min + alignedByStep
