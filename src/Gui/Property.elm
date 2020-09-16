@@ -5,6 +5,8 @@ import Array exposing (Array)
 
 import Task
 
+import Gui.Path exposing (Path)
+import Gui.Path as Path
 import Gui.Control exposing (..)
 import Gui.Control as Control exposing (..)
 
@@ -38,10 +40,10 @@ type ToggleState
     | TurnedOff
 
 
-type Path = Path (List Int)
-
-
 type Focus = Focus Int
+
+
+type Selected = Selected Int
 
 
 type alias GroupControl msg =
@@ -53,7 +55,7 @@ type alias GroupControl msg =
 
 type alias ChoiceControl msg =
     Control
-        ( Shape, Array ( Label, Property msg ) )
+        ( Shape, Array ( Label, Property msg ) ) -- FIXME: Control ( Maybe Icon ) () msg
         ( ExpandState, ( Maybe Focus, Int ) )
         msg
 
@@ -68,6 +70,7 @@ type Property msg
     | Toggle (Control () ToggleState msg)
     | Action (Control ( Maybe Icon ) () msg)
     | Choice (ChoiceControl msg)
+    -- | ChoiceItem (Control ( Maybe Icon ) () msg)
     | Group (GroupControl msg)
 
 
@@ -103,7 +106,7 @@ find path =
 
 
 find1 : Path -> Property msg -> Maybe (Label, Property msg)
-find1 (Path path) root =
+find1 path root = -- TODO: reuse `fildAll` + `tail`?
     let
         helper ipath ( label, prop ) =
             case ipath of
@@ -120,8 +123,46 @@ find1 (Path path) root =
                                 |> Maybe.andThen (helper pathTail)
                         _ -> Nothing
     in
-        helper path ( "", root )
+        helper (Path.toList path) ( "", root )
 
+
+findWithParent : Path -> Property msg -> Maybe ( Property msg, Property msg )
+findWithParent path =
+    findWithParent1 path >> Maybe.map (Tuple.mapBoth Tuple.second Tuple.second)
+
+
+findWithParent1 : Path -> Property msg -> Maybe ( (Label, Property msg), (Label, Property msg) )
+findWithParent1 path root =
+    let
+        allArray = findAll path root |> Array.fromList
+    in
+        Maybe.map2
+            Tuple.pair
+            (allArray |> Array.get (Array.length allArray - 2))
+            (allArray |> Array.get (Array.length allArray - 1))
+
+
+findAll : Path -> Property msg -> List (Label, Property msg)
+findAll path root =
+    let
+        helper ipath ( label, prop ) =
+            ( label, prop ) :: case ipath of
+                [] -> []
+                index::pathTail ->
+                    case prop of
+                        Choice (Control ( _, items ) _ _) ->
+                            items
+                                |> Array.get index
+                                |> Maybe.map (helper pathTail)
+                                |> Maybe.withDefault []
+                        Group (Control ( _, items ) _ _) ->
+                            items
+                                |> Array.get index
+                                |> Maybe.map (helper pathTail)
+                                |> Maybe.withDefault []
+                        _ -> [ ]
+    in
+        helper (Path.toList path) ( "", root )
 
 
 map : (msgA -> msgB) -> Property msgA -> Property msgB
@@ -161,13 +202,13 @@ fold f from root =
     let
 
         foldItems : Path -> Array ( Label, Property msg ) -> a -> a
-        foldItems (Path curPath) items val =
+        foldItems curPath items val =
             items
                 |> Array.map Tuple.second
                 |> Array.indexedMap Tuple.pair
                 |> Array.foldl
                     (\(index, innerItem) prev ->
-                        helper (Path <| curPath ++ [ index ]) innerItem prev
+                        helper (curPath |> Path.advance index) innerItem prev
                     )
                     val
 
@@ -183,7 +224,7 @@ fold f from root =
                 _ -> f curPath item val
 
     in
-        helper (Path []) root from
+        helper Path.start root from
 
 
 mapReplace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
@@ -191,12 +232,12 @@ mapReplace f root =
     let
 
         replaceItems : Path -> Array ( Label, Property msg ) -> Array ( Label, Property msg )
-        replaceItems (Path curPath) items =
+        replaceItems curPath items =
             items |>
                 Array.indexedMap
                 (\index ( label, innerItem ) ->
                     ( label
-                    , helper (Path <| curPath ++ [ index ]) innerItem
+                    , helper (curPath |> Path.advance index) innerItem
                     )
                 )
 
@@ -226,14 +267,14 @@ mapReplace f root =
                 _ -> f curPath item
 
     in
-        helper (Path []) root
+        helper Path.start root
 
 
 updateAt : Path -> (Property msg -> Property msg) -> Property msg -> Property msg
-updateAt (Path path) f =
+updateAt path f =
     mapReplace
-        <| \(Path otherPath) item ->
-            if otherPath == path then f item else item
+        <| \otherPath item ->
+            if Path.equal otherPath path then f item else item
 
 
 -- for mouse click or enter key handling, does not change the tree
@@ -292,17 +333,41 @@ execute item =
 executeAt : Path -> Property msg -> ( Property msg, Cmd msg )
 executeAt path root =
     case root
-        |> find path
-        |> Maybe.map execute of
-        Just ( newCell, cmd ) ->
-            -- TODO: we search for it second time here, fix it
-            ( root |> updateAt path (always newCell)
-            , cmd
-            )
+        |> findWithParent path of
+        Just ( parent, item ) ->
+            case ( parent, item ) of
+                ( Choice control, Action _ ) ->
+
+                    case Path.pop path of
+                        Just ( toParent, selectedIndex ) ->
+                            let
+                                newParent =
+                                    select selectedIndex control
+
+                                ( newCell, cmd ) = execute item
+                            in
+                                ( root
+                                    |> updateAt toParent (always <| Choice newParent)
+                                    |> updateAt path (always newCell)
+                                , Cmd.batch
+                                    [ cmd
+                                    , call newParent
+                                    ]
+                                )
+                        Nothing ->
+                            ( root, Cmd.none )
+
+                ( _, _ ) ->
+
+                    let
+                        ( newCell, cmd ) = execute item
+                    in
+                        ( root |> updateAt path (always newCell)
+                        , cmd
+                        )
+
         Nothing ->
-            ( root
-            , Cmd.none
-            )
+            ( root, Cmd.none )
 
 
 doToggle : Control state ToggleState msg -> Control state ToggleState msg
@@ -312,6 +377,11 @@ doToggle =
             case current of
                 TurnedOff -> TurnedOn
                 TurnedOn -> TurnedOff
+
+
+select : Int -> ChoiceControl msg -> ChoiceControl msg
+select index (Control (shape, items) ( expanded, ( focus, _ ) ) handler) =
+    Control (shape, items) ( expanded, ( focus, index ) ) handler
 
 
 -- updateAndExecute : (v -> v) -> Control s v msg -> ( Control s v msg, msg )

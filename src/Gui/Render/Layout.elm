@@ -270,7 +270,7 @@ boundsDebug : Bounds -> Svg Msg
 boundsDebug b =
     S.g []
         [ textAt 5 5 <| "(" ++ String.fromFloat b.x ++ "," ++ String.fromFloat b.y ++ ")"
-        , textAt 5 20 <| String.fromFloat b.width ++ "x" ++ String.fromFloat b.height
+        , textAt 40 5 <| String.fromFloat b.width ++ "x" ++ String.fromFloat b.height
         ]
 
 
@@ -359,12 +359,12 @@ view bounds root layout =
                         <| B.multiplyBy cellWidth
                         <| propBounds
                     , boundsDebug propBounds
-                    , textAt 5 35
+                    , textAt 5 20
                         <|  case focused root path of
                         -- FIXME: unfolds all the structure from root for every prop
                         FocusedBy level -> "focused " ++ String.fromInt level
                         NotFocused -> ""
-                    , positionAt 0 45
+                    , positionAt 0 30
                         <| propertyDebug ( label, prop )
                     ]
         renderPlate plateBounds =

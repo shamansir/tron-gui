@@ -13,6 +13,7 @@ import Html exposing (Html)
 import BinPack exposing (..)
 import Bounds exposing (Bounds)
 
+import Gui.Path exposing (Path)
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)
 import Gui.Layout exposing (Layout)

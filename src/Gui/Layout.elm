@@ -6,6 +6,7 @@ import Json.Decode as Json
 
 
 import Gui.Control exposing (Control(..))
+import Gui.Path as Path exposing (Path)
 import Gui.Property exposing (..)
 import Gui.Property as Property exposing (fold)
 import BinPack exposing (..)
@@ -65,13 +66,13 @@ pack prop =
                 packOne path =
                     BinPack.pack1
                         ( { width = 1, height = 1 }
-                        , One <| Path path
+                        , One <| Path.fromList path
                         )
 
                 packOne1 path =
                     BinPack.pack1
                         ( { width = 1, height = 1 }
-                        , Path path
+                        , Path.fromList path
                         )
 
                 packPlate path (w, h) plateItems =
@@ -133,5 +134,5 @@ pack prop =
                 items |> packPlatesOf [] firstLevel
         _ ->
             init
-                |> BinPack.pack ( { width = 1, height = 1 }, One <| Path [] )
+                |> BinPack.pack ( { width = 1, height = 1 }, One <| Path.start )
                 |> Maybe.withDefault init

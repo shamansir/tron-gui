@@ -11,7 +11,7 @@ import Gui.Control exposing (..)
 import Gui.Property exposing (..)
 
 
-type alias Path = List Id
+type alias JsPath = List Id
 
 
 type alias Id = Int
@@ -28,13 +28,13 @@ type Value
 
 
 type alias Update =
-    { path : Path
+    { path : JsPath
     , value : Value
     }
 
 
 type alias PortUpdate =
-    { path : Path
+    { path : JsPath
     , value : E.Value
     , type_ : String
     }
@@ -79,12 +79,12 @@ update { path, value } gui =
                 _ -> Cmd.none
 
 
-encodePath : Path -> E.Value
+encodePath : JsPath -> E.Value
 encodePath=
     E.list E.int
 
 
-encodePropertyAt : Path -> Property msg -> E.Value
+encodePropertyAt : JsPath -> Property msg -> E.Value
 encodePropertyAt path property =
     case property of
         Nil ->
@@ -166,7 +166,7 @@ encodePropertyAt path property =
                 ]
 
 
-encodeNested : Path -> Array ( Label, Property msg ) -> E.Value
+encodeNested : JsPath -> Array ( Label, Property msg ) -> E.Value
 encodeNested path items =
     E.list
         (\(id, (label, property)) ->

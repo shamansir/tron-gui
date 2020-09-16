@@ -1,6 +1,7 @@
 module Gui.Focus exposing (..)
 
 
+import Gui.Path as Path exposing (Path)
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)
 
@@ -35,7 +36,7 @@ clear =
 
 
 on : Property msg -> Path -> Property msg
-on root (Path path) =
+on root path =
     let
 
         goDeeper items x xs =
@@ -53,7 +54,7 @@ on root (Path path) =
                         ( label
                         ,
                             if index == normalizedX then
-                                on innerItem (Path xs)
+                                on innerItem (Path.fromList xs)
                             else innerItem
 
                         )
@@ -63,7 +64,7 @@ on root (Path path) =
                 )
 
     in
-        case ( path, root ) of
+        case ( Path.toList path, root ) of
             ( [], _ ) -> root
             ( x::xs, Group (Control ( shape, items ) ( Expanded, _ ) handler) ) ->
                 let
@@ -122,18 +123,18 @@ find root =
                 Choice (Control ( _, items ) ( _, ( focus, _ ) ) handler) ->
                     findDeeper focus items
                 _ -> []
-    in Path <| helper root
+    in Path.fromList <| helper root
 
 
 shift : Direction -> Property msg -> Property msg
 shift direction root =
     let
-        (Path currentFocus) = find root
-        curFocusArr = currentFocus |> Array.fromList
+        currentFocus = find root
+        curFocusArr = currentFocus |> Path.toList |> Array.fromList
         indexOfLast = Array.length curFocusArr - 1
         focusedOnSmth = Array.length curFocusArr > 0
         nextFocus =
-            Path <| Array.toList <|
+            Path.fromList <| Array.toList <| -- FIXME: causes a lot of conversio
                 case direction of
                     Up ->
                         curFocusArr |> Array.push 0
@@ -161,7 +162,7 @@ shift direction root =
 
 
 focused : Property msg -> Path -> Focused
-focused root (Path path) =
+focused root path =
     let
         helper iPath flevel prop =
             case ( iPath, prop ) of
@@ -183,4 +184,4 @@ focused root (Path path) =
                     else NotFocused
                 _ -> NotFocused
     in
-        helper path -1 root
+        helper (Path.toList path) -1 root
