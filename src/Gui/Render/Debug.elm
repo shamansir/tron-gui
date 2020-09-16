@@ -22,7 +22,7 @@ boundsDebug b =
 propertyDebug : ( Label, Property msg ) -> Svg msg
 propertyDebug ( label, prop )  =
     case prop of
-        Nil  ->
+        Nil ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " ghost" ]
         Number (Control { min, step, max } val _) ->
