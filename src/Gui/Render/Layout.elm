@@ -325,10 +325,10 @@ propertyDebug ( label, prop )  =
                 , textAt 5 35
                     <| "focus: " ++
                     case maybeFocus of
-                        Just (Focus focus) -> String.fromInt focus
+                        Just (FocusAt focus) -> String.fromInt focus
                         _ -> "none"
                 ]
-        Choice (Control _ ( state, ( maybeFocus, selected ) ) _ ) ->
+        Choice (Control _ ( state, ( maybeFocus, Selected selected ) ) _ ) ->
             S.g []
                 [ textAt 5 5 <| label ++ " choice: "
                 , textAt 5 20
@@ -336,7 +336,7 @@ propertyDebug ( label, prop )  =
                 , textAt 5 35
                     <| "focus: " ++
                     case maybeFocus of
-                        Just (Focus focus) -> String.fromInt focus
+                        Just (FocusAt focus) -> String.fromInt focus
                         _ -> "none"
                 , textAt 5 50
                     <| " selected: " ++ String.fromInt selected

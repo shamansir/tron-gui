@@ -40,7 +40,7 @@ type ToggleState
     | TurnedOff
 
 
-type Focus = Focus Int
+type FocusAt = FocusAt Int
 
 
 type Selected = Selected Int
@@ -49,14 +49,14 @@ type Selected = Selected Int
 type alias GroupControl msg =
     Control
         ( Shape, Array ( Label, Property msg ) )
-        ( ExpandState, Maybe Focus )
+        ( ExpandState, Maybe FocusAt )
         msg
 
 
 type alias ChoiceControl msg =
     Control
         ( Shape, Array ( Label, Property msg ) ) -- FIXME: Control ( Maybe Icon ) () msg
-        ( ExpandState, ( Maybe Focus, Int ) )
+        ( ExpandState, ( Maybe FocusAt, Selected ) )
         msg
 
 
@@ -381,7 +381,7 @@ doToggle =
 
 select : Int -> ChoiceControl msg -> ChoiceControl msg
 select index (Control (shape, items) ( expanded, ( focus, _ ) ) handler) =
-    Control (shape, items) ( expanded, ( focus, index ) ) handler
+    Control (shape, items) ( expanded, ( focus, Selected index ) ) handler
 
 
 -- updateAndExecute : (v -> v) -> Control s v msg -> ( Control s v msg, msg )

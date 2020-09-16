@@ -76,7 +76,8 @@ toggle default =
 
 -- FIXME: get rid of the handler having almost no sense
 nest : List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
-nest = nestIn ( 3, 3 )
+nest items =
+    nestIn (findShape items) items
 
 
 root : List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
@@ -106,8 +107,8 @@ choice
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Property msg
-choice =
-    choiceIn (3, 3)
+choice f items =
+    choiceIn (findShape items) f items
 
 
 choiceIn
@@ -121,7 +122,7 @@ choiceIn
 choiceIn shape toLabel options current compare toMsg =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
-        callByIndex indexToCall =
+        callByIndex (Selected indexToCall) =
             indexedOptions
                 |> findMap
                     (\(index, option) ->
@@ -140,7 +141,7 @@ choiceIn shape toLabel options current compare toMsg =
                     |> List.indexedMap
                         (\index label ->
                             ( label
-                            , button <| always <| callByIndex index
+                            , button <| always <| callByIndex <| Selected index
                             )
                         )
                     |> Array.fromList
@@ -156,6 +157,7 @@ choiceIn shape toLabel options current compare toMsg =
                                     else Nothing
                             )
                         |> Maybe.withDefault 0
+                        |> Selected
                     )
                 )
                 (Tuple.second >> Tuple.second >> callByIndex)
@@ -173,3 +175,8 @@ strings options current toMsg =
         current
         ((==))
         toMsg
+
+
+findShape : List a -> ( Int, Int )
+findShape items =
+    ( 1, List.length items )

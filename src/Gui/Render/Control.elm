@@ -203,7 +203,7 @@ button _ =
         ]
 
 
-nest : Control ( Shape, Array ( Label, Property msg ) ) ( ExpandState, Maybe Focus ) msg -> Svg msg
+nest : Control ( Shape, Array ( Label, Property msg ) ) ( ExpandState, Maybe FocusAt ) msg -> Svg msg
 nest (Control ( _, _ ) ( state, _ ) _) =
     g [ class "gui-nested" ]
         [ g

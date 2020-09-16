@@ -9,8 +9,11 @@ import Array
 import Array exposing (Array)
 
 
+type alias Level = Int
+
+
 type Focused
-    = FocusedBy Int
+    = FocusedBy Level
     | NotFocused
 
 
@@ -60,7 +63,7 @@ on root path =
                         )
                     )
 
-                , Focus normalizedX
+                , FocusAt normalizedX
                 )
 
     in
@@ -102,11 +105,11 @@ on root path =
 find : Property msg -> Path
 find root =
     let
-        findDeeper : Maybe Focus -> Array ( a, Property msg ) -> List Int
+        findDeeper : Maybe FocusAt -> Array ( a, Property msg ) -> List Int
         findDeeper focus items =
             focus
                 |> Maybe.andThen
-                    (\(Focus theFocus) ->
+                    (\(FocusAt theFocus) ->
                         items
                             |> Array.get theFocus
                             |> Maybe.map (Tuple.pair theFocus)
@@ -170,13 +173,13 @@ focused root path =
                     if flevel < 0
                         then NotFocused
                         else FocusedBy flevel
-                ( x::xs, Group (Control ( _, items ) ( _, Just (Focus focus) ) handler) ) ->
+                ( x::xs, Group (Control ( _, items ) ( _, Just (FocusAt focus) ) handler) ) ->
                     if focus == x then
                         case items |> Array.get focus  of
                             Just ( _, item ) -> helper xs (flevel + 1) item
                             Nothing -> NotFocused
                     else NotFocused
-                ( x::xs, Choice (Control ( _, items ) ( _, ( Just (Focus focus), _ ) ) handler) ) ->
+                ( x::xs, Choice (Control ( _, items ) ( _, ( Just (FocusAt focus), _ ) ) handler) ) ->
                     if focus == x then
                         case items |> Array.get focus  of
                             Just ( _, item ) -> helper xs (flevel + 1) item
