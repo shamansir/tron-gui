@@ -1,7 +1,15 @@
 module Gui.Render.Style exposing (..)
 
 
-type StyleColor = StyleColor String
+type alias Color = String
+
+
+type Mode
+    = Dark
+    | Light
+
+
+type StyleColor = StyleColor Color
 
 
 type Style
@@ -27,7 +35,13 @@ aqua = StyleColor "#23CDE8"
 black = StyleColor "#3a3e41"
 
 
+white = StyleColor "#ffffff"
+
+
 gray = "#eeeeee"
+
+
+gray2 = "rgb(255 255 255 / 0.15)"
 
 
 label = "#909090"
@@ -37,6 +51,9 @@ lightBackground = "rgb(255 255 255 / 80%)"
 
 
 darkBackground = "rgb(15 15 15 / 60%)"
+
+
+canvasBackground = "lightgray"
 
 
 colorFor : Style -> StyleColor
@@ -57,3 +74,21 @@ next style =
         Yellow -> Aqua
         Aqua -> Green
         Black -> Black
+
+
+background : Mode -> Color
+background mode =
+    case mode of
+        Dark -> darkBackground
+        Light -> lightBackground
+
+
+knobLine : Mode -> Color
+knobLine mode =
+    case mode of
+        Dark -> gray2
+        Light -> gray
+
+
+colorToString : StyleColor -> String
+colorToString (StyleColor s) = s
