@@ -9,10 +9,10 @@ type Mode
     | Light
 
 
-type StyleColor = StyleColor Color
+type ToneColor = ToneColor Color
 
 
-type Style
+type Tone
     = Green
     | Pink
     | Yellow
@@ -20,22 +20,22 @@ type Style
     | Black
 
 
-green = StyleColor "#00cc47"
+green = ToneColor "#00cc47"
 
 
-pink = StyleColor "#ED31A2"
+pink = ToneColor "#ED31A2"
 
 
-yellow = StyleColor "#eab000"
+yellow = ToneColor "#eab000"
 
 
-aqua = StyleColor "#23CDE8"
+aqua = ToneColor "#23CDE8"
 
 
-black = StyleColor "#3a3e41"
+black = ToneColor "#3a3e41"
 
 
-white = StyleColor "#ffffff"
+white = ToneColor "#ffffff"
 
 
 gray = "#eeeeee"
@@ -56,7 +56,7 @@ darkBackground = "rgb(15 15 15 / 60%)"
 canvasBackground = "lightgray"
 
 
-colorFor : Style -> StyleColor
+colorFor : Tone -> ToneColor
 colorFor style =
     case style of
         Green -> green
@@ -66,7 +66,7 @@ colorFor style =
         Black -> black
 
 
-next : Style -> Style
+next : Tone -> Tone
 next style =
     case style of
         Green -> Pink
@@ -90,5 +90,5 @@ knobLine mode =
         Light -> gray
 
 
-colorToString : StyleColor -> String
-colorToString (StyleColor s) = s
+toneToString : ToneColor -> String
+toneToString (ToneColor s) = s

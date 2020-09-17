@@ -18,7 +18,7 @@ maxCellsByY = 5
 
 type Cell
     = One Path
-    | Plate (BinPack Path)
+    | Plate Path (BinPack Path)
 
 
 type alias Layout = BinPack Cell
@@ -37,7 +37,7 @@ find layout pos =
     case BinPack.find pos layout of
         Just ( One path, _ ) ->
             Just path
-        Just ( Plate innerLayout, bounds ) ->
+        Just ( Plate _ innerLayout, bounds ) ->
             BinPack.find
                 { x = pos.x - bounds.x
                 , y = pos.y - bounds.y
@@ -82,6 +82,7 @@ pack prop =
                             , height = toFloat h
                             }
                         , Plate
+                            (Path.fromList path)
                             <| Array.foldl
                                 (\(index, ( _, innerProp)) plateLayout ->
                                     packOne1 (path ++ [index]) plateLayout

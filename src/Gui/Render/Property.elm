@@ -16,8 +16,8 @@ import Gui.Render.Util exposing (..)
 import Gui.Render.Style exposing (..)
 
 
-view : Mode -> Style -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
-view mode style path bounds focus prop =
+view : Mode -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
+view mode tone path bounds focus prop =
     Svg.g
         [ HE.onClick <| Click path
         ]
@@ -32,8 +32,8 @@ view mode style path bounds focus prop =
         ]
 
 
-knobAt : Mode -> Style -> { x : Float, y : Float } -> Float -> Svg msg
-knobAt mode style center value =
+knobAt : Mode -> Tone -> { x : Float, y : Float } -> Float -> Svg msg
+knobAt mode tone center value =
     let
         toAngle v = (-120) + (v * 120 * 2)
         path color d =
@@ -48,7 +48,7 @@ knobAt mode style center value =
     in
         Svg.g
             []
-            [ path (colorFor style |> colorToString)
+            [ path (colorFor tone |> toneToString)
                 <| describeArc
                     center
                     { radiusA = 79, radiusB = 80 }
@@ -58,7 +58,7 @@ knobAt mode style center value =
                     center
                     { radiusA = 79, radiusB = 80 }
                     { from = toAngle value, to = toAngle 1 }
-            , path (colorFor style |> colorToString)
+            , path (colorFor tone |> toneToString)
                 <| describeMark
                     center
                     { radiusA = 79, radiusB = 80 }
