@@ -19,6 +19,7 @@ import Gui.Property exposing (..)
 import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (..)
 import Gui.Msg exposing (..)
+import Gui.Render.Style as Style exposing (..)
 import Gui.Render.Layout as Layout exposing (..)
 import Gui.Mouse exposing (..)
 import Gui.Mouse as Mouse exposing (..)
@@ -72,7 +73,10 @@ none =
 
 over : Property msg -> Gui msg
 over prop =
-    Gui TopToBottom Bounds.zero Gui.Mouse.init prop <| Layout.pack prop
+    { none
+    | tree = prop
+    , layout = Layout.pack prop
+    }
 
 
 update
@@ -326,6 +330,6 @@ boundsFromSize { width, height } layout =
         }
 
 
-view : Gui msg -> Html Msg
-view gui =
-    Layout.view gui.bounds gui.tree gui.layout
+view : Style.Mode -> Gui msg -> Html Msg
+view styleMode gui =
+    Layout.view styleMode gui.bounds gui.tree gui.layout

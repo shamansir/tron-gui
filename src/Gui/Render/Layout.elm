@@ -25,6 +25,7 @@ import Gui.Focus exposing (Focused(..), focused)
 import Gui.Render.Util exposing (..)
 import Gui.Render.Debug exposing (..)
 import Gui.Render.Property as Property exposing (..)
+import Gui.Render.Style as Style exposing (..)
 
 
 type alias GridView = Html Msg
@@ -41,11 +42,11 @@ type Mode
 
 
 mode : Mode
-mode = Debug
+mode = Fancy
 
 
-viewProperty : Property msg -> Path -> Bounds -> ( Label, Property msg ) -> Html Msg
-viewProperty root path propBounds ( label, prop ) = -- FIXME: get rid of passing root
+viewProperty : Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
+viewProperty path propBounds focus ( label, prop ) = -- FIXME: get rid of passing root
     positionAt_ (B.multiplyBy cellWidth <| propBounds) <|
         case mode of
             Debug ->
@@ -59,30 +60,42 @@ viewProperty root path propBounds ( label, prop ) = -- FIXME: get rid of passing
                         <| propBounds
                     , boundsDebug propBounds
                     , textAt 5 20
-                        <|  case focused root path of
-                        -- FIXME: unfolds all the structure from root for every prop
-                        FocusedBy level -> "focused " ++ String.fromInt level
-                        NotFocused -> ""
+                        <| case focus of
+                            FocusedBy level -> "focused " ++ String.fromInt level
+                            NotFocused -> ""
                     , positionAt 0 30
                         <| propertyDebug ( label, prop )
                     ]
-            Fancy -> Svg.g [] []
+            Fancy ->
+                Svg.g [] []
 
 
-viewPlate : Bounds -> Html msg
-viewPlate plateBounds =
-    positionAt_ (B.multiplyBy cellWidth <| plateBounds) <|
+viewPlate : Style.Mode -> Bounds -> Svg msg
+viewPlate styleMode plateBounds =
+    let
+        pixelBounds =
+            B.multiplyBy cellWidth <| plateBounds
+    in
+    positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g [ SA.class "plate--debug" ]
-                    [ rect_ "beige" <| B.multiplyBy cellWidth <| plateBounds
-                    , boundsDebug <| B.multiplyBy cellWidth <| plateBounds
+                    [ rect_ "beige" pixelBounds
+                    , boundsDebug pixelBounds
                     ]
-            Fancy -> Svg.g [] []
+            Fancy ->
+                Svg.rect
+                    [ SA.fill <| background styleMode
+                    , SA.rx "10"
+                    , SA.ry "10"
+                    , SA.width <| String.fromFloat pixelBounds.width ++ "px"
+                    , SA.height <| String.fromFloat pixelBounds.height ++ "px"
+                    ]
+                    []
 
 
-view : Bounds -> Property msg -> Layout -> Html Msg
-view bounds root layout =
+view : Style.Mode -> Bounds -> Property msg -> Layout -> Html Msg
+view styleMode bounds root layout =
     let
         keyDownHandler_ =
             H.on "keydown"
@@ -95,13 +108,17 @@ view bounds root layout =
                             ( prevPlates
                             , case root |> Property.find1 path of
                                 Just prop ->
-                                    viewProperty root path cellBounds prop
+                                    viewProperty
+                                        path
+                                        cellBounds
+                                        (focused root path)
+                                        prop
                                         :: prevCells
                                 Nothing ->
                                     prevCells
                             )
                         Plate plateLayout ->
-                            ( viewPlate cellBounds :: prevPlates
+                            ( viewPlate styleMode cellBounds :: prevPlates
                             , BinPack.unfold
                                 (\ ( path, propBounds ) pPrevCells ->
                                     case root |> Property.find1 path of
@@ -109,8 +126,12 @@ view bounds root layout =
                                             let
                                                 shiftedBounds = B.shift cellBounds propBounds
                                             in
-                                            viewProperty root path shiftedBounds prop
-                                                :: pPrevCells
+                                                viewProperty
+                                                    path
+                                                    shiftedBounds
+                                                    (focused root path)
+                                                    prop
+                                                    :: pPrevCells
                                         Nothing ->
                                             pPrevCells
                                 )

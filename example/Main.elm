@@ -21,6 +21,7 @@ import Gui.Gui as Tron exposing (Gui, focus, over)
 import Gui.Msg as Tron exposing (Msg)
 import Gui.Mouse exposing (Position)
 import Gui.Mouse as Tron exposing (MouseState)
+import Gui.Render.Style as Style exposing (..)
 
 import Simple.Main as Simple
 import Simple.Model as Simple
@@ -94,7 +95,7 @@ view { mode, gui, example } =
             DatGui -> Html.div [] []
             TronGui ->
                 gui
-                    |> Gui.view
+                    |> Gui.view Style.Dark
                     |> Html.map TronUpdate
         , Simple.view example
             |> Html.map (always NoOp)

@@ -6,9 +6,30 @@ import Gui.Property exposing (..)
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
+import Html.Events as HE
 
+import Bounds exposing (Bounds)
+import Gui.Path exposing (Path)
+import Gui.Msg exposing (Msg(..))
+import Gui.Focus exposing (Focused(..))
 import Gui.Render.Util exposing (..)
 import Gui.Render.Style exposing (..)
+
+
+view : Mode -> Style -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
+view mode style path bounds focus prop =
+    Svg.g
+        [ HE.onClick <| Click path
+        ]
+        [ Svg.rect
+            [ SA.fill <| background mode
+            , SA.rx "10"
+            , SA.ry "10"
+            , SA.width <| String.fromFloat bounds.width ++ "px"
+            , SA.height <| String.fromFloat bounds.height ++ "px"
+            ]
+            []
+        ]
 
 
 knobAt : Mode -> Style -> { x : Float, y : Float } -> Float -> Svg msg
