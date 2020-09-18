@@ -95,7 +95,7 @@ view { mode, gui, example } =
             DatGui -> Html.div [] []
             TronGui ->
                 gui
-                    |> Gui.view Style.Dark
+                    |> Gui.view Style.Light
                     |> Html.map TronUpdate
         , Simple.view example
             |> Html.map (always NoOp)

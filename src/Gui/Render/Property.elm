@@ -6,6 +6,7 @@ import Gui.Property exposing (..)
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
+import Html.Attributes as HA
 import Html.Events as HE
 
 import Bounds exposing (Bounds)
@@ -20,13 +21,17 @@ view : Mode -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> S
 view mode tone path bounds focus prop =
     Svg.g
         [ HE.onClick <| Click path
+        , HA.style "pointer-events" "all"
+        , HA.style "cursor" "pointer"
         ]
         [ Svg.rect
             [ SA.fill <| background mode
+            , SA.x "3"
+            , SA.y "3"
             , SA.rx "10"
             , SA.ry "10"
-            , SA.width <| String.fromFloat bounds.width ++ "px"
-            , SA.height <| String.fromFloat bounds.height ++ "px"
+            , SA.width <| String.fromFloat (bounds.width - 6) ++ "px"
+            , SA.height <| String.fromFloat (bounds.height - 6) ++ "px"
             ]
             []
         ]

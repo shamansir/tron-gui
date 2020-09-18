@@ -48,7 +48,11 @@ mode = Fancy
 
 viewProperty : Style.Mode -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
 viewProperty style tone path propBounds focus ( label, prop ) = -- FIXME: get rid of passing root
-    positionAt_ (B.multiplyBy cellWidth <| propBounds) <|
+    let
+        pixelBounds =
+            B.multiplyBy cellWidth <| propBounds
+    in
+    positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g
@@ -56,9 +60,7 @@ viewProperty style tone path propBounds focus ( label, prop ) = -- FIXME: get ri
                     , H.onClick <| Click path
                     ]
                     <| List.map (Svg.map <| always NoOp)
-                    <| [ rect_ "white"
-                        <| B.multiplyBy cellWidth
-                        <| propBounds
+                    <| [ rect_ "white" pixelBounds
                     , boundsDebug propBounds
                     , textAt 5 20
                         <| case focus of
@@ -68,7 +70,7 @@ viewProperty style tone path propBounds focus ( label, prop ) = -- FIXME: get ri
                         <| propertyDebug ( label, prop )
                     ]
             Fancy ->
-                Svg.g [] []
+                Property.view style tone path pixelBounds focus ( label, prop )
 
 
 viewPlate : Style.Mode -> Bounds -> Svg msg
