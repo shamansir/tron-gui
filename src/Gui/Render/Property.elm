@@ -48,8 +48,11 @@ view mode tone path bounds focus ( label, prop ) =
         ,
             case prop of
                 Number (Control { min, max } value _) ->
-                    Svg.none
-                    -- knobAt mode tone { x = 0, y = 30 } (value / (max - min))
+                    knobAt
+                        mode
+                        tone
+                        { x = cellWidth / 2, y = (cellHeight / 2) }
+                        <| (value - min) / (max - min)
                 _ -> Svg.none
         ]
 
@@ -63,26 +66,28 @@ knobAt mode tone center value =
                 [ SA.d d
                 , SA.fill "none"
                 , SA.stroke color
-                , SA.strokeWidth "3"
+                , SA.strokeWidth "2.5"
                 , SA.strokeLinecap "round"
                 ]
                 []
+        radiusA = radiusB - 1
+        radiusB = cellWidth * 0.27
     in
         Svg.g
             []
             [ path (colorFor tone |> toneToString)
                 <| describeArc
                     center
-                    { radiusA = 79, radiusB = 80 }
+                    { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle 0, to = toAngle value }
             , path (knobLine mode)
                 <| describeArc
                     center
-                    { radiusA = 79, radiusB = 80 }
+                    { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle value, to = toAngle 1 }
             , path (colorFor tone |> toneToString)
                 <| describeMark
                     center
-                    { radiusA = 79, radiusB = 80 }
+                    { radiusA = radiusA, radiusB = radiusB }
                     (toAngle value)
             ]
