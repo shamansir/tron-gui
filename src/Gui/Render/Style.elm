@@ -100,7 +100,6 @@ toneToString : ToneColor -> String
 toneToString (ToneColor s) = s
 
 
-
 assignTones : Property msg -> Dict String Tone -- List ( Path, Tone )
 assignTones =
     let

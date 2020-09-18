@@ -53,7 +53,21 @@ view mode tone path bounds focus ( label, prop ) =
                         tone
                         { x = cellWidth / 2, y = (cellHeight / 2) }
                         <| (value - min) / (max - min)
+                Choice (Control _ _ _) ->
+                    arrowAt mode tone { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                Group (Control _ _ _) ->
+                    arrowAt mode tone { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 _ -> Svg.none
+        , Svg.text_
+            [ SA.textAnchor "middle"
+            , SA.dominantBaseline "middle"
+            , SA.x <| String.fromFloat (cellWidth / 2)
+            , SA.y <| String.fromFloat (cellWidth / 5 * 4)
+            , SA.fontSize "13px"
+            , SA.fontFamily "\"IBM Plex Sans\", sans-serif"
+            , SA.fill "rgb(144, 144, 144)"
+            ]
+            [ Svg.text label ]
         ]
 
 
@@ -91,3 +105,26 @@ knobAt mode tone center value =
                     { radiusA = radiusA, radiusB = radiusB }
                     (toAngle value)
             ]
+
+
+arrowAt : Mode -> Tone -> { x : Float, y : Float } -> Svg msg
+arrowAt mode tone center =
+    Svg.g
+        [ SA.style <| "transform: translate("
+            ++ String.fromFloat center.x ++ "px,"
+            ++ String.fromFloat center.y ++ "px);"
+        ]
+        [ Svg.g
+            [ SA.style "transform: scale(0.7) translate(-32px,-32px);" ]
+            [ Svg.polyline
+                [ SA.fill <| toneToString <| colorFor tone
+                , SA.points "18.3,32.5 32,18.8 45.7,32.5 43.8,34.3 32,22.6 20.2,34.3 18.3,32.5"
+                ]
+                []
+            , Svg.polygon
+                [ SA.fill <| toneToString <| colorFor tone
+                , SA.points "33.4,20.7 33.4,44.7 30.6,44.7 30.6,20.7"
+                ]
+                []
+            ]
+        ]
