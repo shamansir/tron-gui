@@ -5,6 +5,10 @@ import Svg exposing (Svg)
 import Svg.Attributes as SA
 
 
+none : Svg msg
+none = Svg.text ""
+
+
 positionAt : Float -> Float -> Svg msg -> Svg msg
 positionAt x y s =
     Svg.g

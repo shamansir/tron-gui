@@ -89,10 +89,12 @@ viewPlate style plateBounds =
             Fancy ->
                 Svg.rect
                     [ SA.fill <| background style
-                    , SA.rx "10"
-                    , SA.ry "10"
-                    , SA.width <| String.fromFloat pixelBounds.width ++ "px"
-                    , SA.height <| String.fromFloat pixelBounds.height ++ "px"
+                    , SA.x <| String.fromFloat (gap / 2)
+                    , SA.y <| String.fromFloat (gap / 2)
+                    , SA.rx <| String.fromFloat borderRadius
+                    , SA.ry <| String.fromFloat borderRadius
+                    , SA.width <| String.fromFloat (pixelBounds.width - gap) ++ "px"
+                    , SA.height <| String.fromFloat (pixelBounds.height - gap) ++ "px"
                     ]
                     []
 

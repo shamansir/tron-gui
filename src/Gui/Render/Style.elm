@@ -105,7 +105,7 @@ assignTones : Property msg -> Dict String Tone -- List ( Path, Tone )
 assignTones =
     let
         assignTone ( path, prop ) ( knownTones, nextTone ) =
-            if Path.howDeep path == 0 then
+            if Path.howDeep path == 1 then
                 case prop of
                     Group _ ->
                         ( knownTones |> Dict.insert (Path.toString path) nextTone

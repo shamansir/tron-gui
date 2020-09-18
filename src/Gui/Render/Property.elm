@@ -10,30 +10,47 @@ import Html.Attributes as HA
 import Html.Events as HE
 
 import Bounds exposing (Bounds)
-import Gui.Path exposing (Path)
+import Gui.Path as Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
 import Gui.Focus exposing (Focused(..))
+import Gui.Control exposing (Control(..))
 import Gui.Render.Util exposing (..)
+import Gui.Render.Util as Svg exposing (none)
 import Gui.Render.Style exposing (..)
 
 
+gap = 6
+
+
+borderRadius = 10
+
+
 view : Mode -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
-view mode tone path bounds focus prop =
+view mode tone path bounds focus ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
         , HA.style "pointer-events" "all"
         , HA.style "cursor" "pointer"
         ]
-        [ Svg.rect
-            [ SA.fill <| background mode
-            , SA.x "3"
-            , SA.y "3"
-            , SA.rx "10"
-            , SA.ry "10"
-            , SA.width <| String.fromFloat (bounds.width - 6) ++ "px"
-            , SA.height <| String.fromFloat (bounds.height - 6) ++ "px"
-            ]
-            []
+        [
+            if (Path.howDeep path == 1) then
+                Svg.rect
+                    [ SA.fill <| background mode
+                    , SA.x <| String.fromFloat (gap / 2)
+                    , SA.y <| String.fromFloat (gap / 2)
+                    , SA.rx <| String.fromFloat borderRadius
+                    , SA.ry <| String.fromFloat borderRadius
+                    , SA.width <| String.fromFloat (bounds.width - gap) ++ "px"
+                    , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
+                    ]
+                    []
+            else Svg.none
+        ,
+            case prop of
+                Number (Control { min, max } value _) ->
+                    Svg.none
+                    -- knobAt mode tone { x = 0, y = 30 } (value / (max - min))
+                _ -> Svg.none
         ]
 
 
