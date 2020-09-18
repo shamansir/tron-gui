@@ -1,6 +1,12 @@
 module Gui.Render.Style exposing (..)
 
 
+import Dict exposing (Dict)
+
+import Gui.Property as Property exposing (Property(..))
+import Gui.Path as Path exposing (Path, toString)
+
+
 type alias Color = String
 
 
@@ -92,3 +98,51 @@ knobLine mode =
 
 toneToString : ToneColor -> String
 toneToString (ToneColor s) = s
+
+
+
+assignTones : Property msg -> Dict String Tone -- List ( Path, Tone )
+assignTones =
+    let
+        assignTone ( path, prop ) ( knownTones, nextTone ) =
+            if Path.howDeep path == 0 then
+                case prop of
+                    Group _ ->
+                        ( knownTones |> Dict.insert (Path.toString path) nextTone
+                        , next nextTone
+                        )
+                    Choice _ ->
+                        ( knownTones |> Dict.insert (Path.toString path) nextTone
+                        , next nextTone
+                        )
+                    _ ->
+                        ( knownTones |> Dict.insert (Path.toString path) Black
+                        , nextTone
+                        )
+            else -- path is deeper than 0
+                case Path.head path of
+                    Just sourcePath ->
+                        let
+                            parentTone =
+                                knownTones
+                                    |> Dict.get (sourcePath |> Path.toString)
+                                    -- |> Dict.get (Path.retract path |> Path.toString)
+                                    |> Maybe.withDefault nextTone
+
+                        in
+                            ( knownTones |> Dict.insert (Path.toString path) parentTone
+                            , nextTone
+                            )
+                    Nothing ->
+                        ( knownTones |> Dict.insert (Path.toString path) Black
+                        , nextTone
+                        )
+
+    in
+    Property.unfold
+        >> List.sortBy (Tuple.first >> Path.howDeep)
+        >> List.foldl assignTone ( Dict.empty, Green )
+        >> Tuple.first
+        -->> List.map (Tuple.mapFirst Gui.Path.toString)
+
+

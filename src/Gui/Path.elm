@@ -20,6 +20,20 @@ advance : Int -> Path -> Path
 advance n (Path l) = Path <| l ++ [ n ]
 
 
+retract : Path -> Path
+retract =
+    pop
+        >> Maybe.map Tuple.first
+        >> Maybe.withDefault start
+
+
+head : Path -> Maybe Path
+head (Path list) =
+    List.head list
+        |> Maybe.map List.singleton
+        |> Maybe.map Path
+
+
 equal : Path -> Path -> Bool
 equal (Path p1) (Path p2) = p1 == p2
 
@@ -44,3 +58,14 @@ pop (Path l) =
                     , deepest
                     )
                 )
+
+
+toString : Path -> String
+toString (Path list) =
+    list
+        |> List.map String.fromInt
+        |> String.join "/"
+
+
+howDeep : Path -> Int
+howDeep (Path list) = List.length list

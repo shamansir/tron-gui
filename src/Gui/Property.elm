@@ -227,6 +227,11 @@ fold f from root =
         helper Path.start root from
 
 
+unfold : Property msg -> List (Path, Property msg)
+unfold =
+    fold (\path prop prev -> ( path, prop ) :: prev ) []
+
+
 mapReplace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
 mapReplace f root =
     let

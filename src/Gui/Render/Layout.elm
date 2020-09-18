@@ -9,12 +9,13 @@ import Svg as S exposing (..)
 import Svg.Attributes as SA exposing (..)
 import Html.Events as H
 import Json.Decode as Json
+import Dict
 
 import BinPack
 import Bounds exposing (..)
 import Bounds as B exposing (..)
 
-import Gui.Path exposing (Path)
+import Gui.Path as Path exposing (Path)
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)
 import Gui.Property as Property exposing (find)
@@ -100,56 +101,56 @@ view styleMode bounds root layout =
         keyDownHandler_ =
             H.on "keydown"
                 <| Json.map KeyDown H.keyCode
-        { plates, cells } =
+        tones = Style.assignTones root
+        toneOf path =
+            tones |> Dict.get (Path.toString path) |> Maybe.withDefault Black
+        ( plates, cells ) =
             BinPack.unfold
-                (\( cell, cellBounds ) prev ->
+                (\( cell, cellBounds ) ( prevPlates, prevCells ) ->
                     case cell of
 
                         One path ->
-                            { plates = prev.plates
-                            , cells = case root |> Property.find1 path of
+                            ( prevPlates
+                            , case root |> Property.find1 path of
                                 Just prop ->
                                     viewProperty
                                         styleMode
-                                        Black
+                                        (toneOf path)
                                         path
                                         cellBounds
                                         (focused root path)
                                         prop
-                                        :: prev.cells
+                                        :: prevCells
                                 Nothing ->
-                                    prev.cells
-                            , tone = prev.tone
-                            }
+                                    prevCells
+                            )
 
                         Plate originPath plateLayout ->
-                            { plates = viewPlate styleMode cellBounds :: prev.plates
-                            , cells =
-                                BinPack.unfold
-                                    (\ ( path, propBounds ) pPrevCells ->
-                                        case root |> Property.find1 path of
-                                            Just prop ->
-                                                let
-                                                    shiftedBounds = B.shift cellBounds propBounds
-                                                in
-                                                    viewProperty
-                                                        styleMode
-                                                        Black
-                                                        path
-                                                        shiftedBounds
-                                                        (focused root path)
-                                                        prop
-                                                        :: pPrevCells
-                                            Nothing ->
-                                                pPrevCells
-                                    )
-                                    prev.cells
-                                    plateLayout
-                            , tone = prev.tone
-                            }
+                            ( viewPlate styleMode cellBounds :: prevPlates
+                            , BinPack.unfold
+                                (\ ( path, propBounds ) pPrevCells ->
+                                    case root |> Property.find1 path of
+                                        Just prop ->
+                                            let
+                                                shiftedBounds = B.shift cellBounds propBounds
+                                            in
+                                                viewProperty
+                                                    styleMode
+                                                    (toneOf path)
+                                                    path
+                                                    shiftedBounds
+                                                    (focused root path)
+                                                    prop
+                                                    :: pPrevCells
+                                        Nothing ->
+                                            pPrevCells
+                                )
+                                prevCells
+                                plateLayout
+                            )
 
                 )
-                { plates = [], cells = [], tone = Black }
+                ( [], [] )
                 layout
     in
         div [ HA.id rootId
