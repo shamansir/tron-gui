@@ -48,15 +48,17 @@ view mode tone path bounds focus ( label, prop ) =
         ,
             case prop of
                 Number (Control { min, max } value _) ->
-                    knobAt
+                    knob
                         mode
                         tone
                         { x = cellWidth / 2, y = (cellHeight / 2) }
                         <| (value - min) / (max - min)
-                Choice (Control _ _ _) ->
-                    arrowAt mode tone { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
-                Group (Control _ _ _) ->
-                    arrowAt mode tone { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                Toggle (Control _ value _) ->
+                    toggle mode tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                Choice (Control _ ( expanded, _ ) _) ->
+                    arrow mode tone expanded { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                Group (Control _ ( expanded, _ ) _) ->
+                    arrow mode tone expanded { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 _ -> Svg.none
         , Svg.text_
             [ SA.textAnchor "middle"
@@ -71,8 +73,8 @@ view mode tone path bounds focus ( label, prop ) =
         ]
 
 
-knobAt : Mode -> Tone -> { x : Float, y : Float } -> Float -> Svg msg
-knobAt mode tone center value =
+knob : Mode -> Tone -> { x : Float, y : Float } -> Float -> Svg msg
+knob mode tone center value =
     let
         toAngle v = (-120) + (v * 120 * 2)
         path color d =
@@ -107,12 +109,15 @@ knobAt mode tone center value =
             ]
 
 
-arrowAt : Mode -> Tone -> { x : Float, y : Float } -> Svg msg
-arrowAt mode tone center =
+arrow : Mode -> Tone -> ExpandState -> { x : Float, y : Float } -> Svg msg
+arrow mode tone expand center =
     Svg.g
         [ SA.style <| "transform: translate("
             ++ String.fromFloat center.x ++ "px,"
-            ++ String.fromFloat center.y ++ "px);"
+            ++ String.fromFloat center.y ++ "px)"
+            ++ case expand of
+                Expanded -> " rotate(180deg);"
+                Collapsed -> ";"
         ]
         [ Svg.g
             [ SA.style "transform: scale(0.7) translate(-32px,-32px);" ]
@@ -127,4 +132,20 @@ arrowAt mode tone center =
                 ]
                 []
             ]
+        ]
+
+
+toggle : Mode -> Tone -> ToggleState -> { x : Float, y : Float } -> Svg msg
+toggle mode tone state center =
+    Svg.circle
+        [ SA.cx <| String.fromFloat center.x
+        , SA.cy <| String.fromFloat center.y
+        , SA.r "10"
+        , SA.fill <| case state of
+            TurnedOn -> toneToString <| colorFor tone
+            TurnedOff -> "none"
+        , SA.stroke <| toneToString <| colorFor tone
+        , SA.strokeWidth "2.5"
+        ]
+        [
         ]
