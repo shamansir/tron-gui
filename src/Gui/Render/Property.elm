@@ -55,6 +55,8 @@ view mode tone path bounds focus ( label, prop ) =
                         <| (value - min) / (max - min)
                 Toggle (Control _ value _) ->
                     toggle mode tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                Action (Control maybeIcon _ _) ->
+                    button mode tone maybeIcon { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Choice (Control _ ( expanded, _ ) _) ->
                     arrow mode tone expanded { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Group (Control _ ( expanded, _ ) _) ->
@@ -133,6 +135,14 @@ arrow mode tone expand center =
                 []
             ]
         ]
+
+
+button : Mode -> Tone -> Maybe Icon -> { x : Float, y : Float } -> Svg msg
+button mode tone maybeIcon center =
+    case maybeIcon of
+        Just icon -> Svg.image [] []
+        Nothing -> toggle mode tone TurnedOff center
+
 
 
 toggle : Mode -> Tone -> ToggleState -> { x : Float, y : Float } -> Svg msg
