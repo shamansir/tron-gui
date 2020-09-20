@@ -53,6 +53,15 @@ view mode tone path bounds focus ( label, prop ) =
                         tone
                         { x = cellWidth / 2, y = (cellHeight / 2) }
                         <| (value - min) / (max - min)
+                Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
+                    coord
+                        mode
+                        tone
+                        { x = cellWidth / 2, y = (cellHeight / 2) }
+                        <|
+                            ( (xValue - xAxis.min) / (xAxis.max - xAxis.min)
+                            , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
+                            )
                 Toggle (Control _ value _) ->
                     toggle mode tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Action (Control maybeIcon _ _) ->
@@ -126,11 +135,13 @@ arrow mode tone expand center =
             [ Svg.polyline
                 [ SA.fill <| toneToString <| colorFor tone
                 , SA.points "18.3,32.5 32,18.8 45.7,32.5 43.8,34.3 32,22.6 20.2,34.3 18.3,32.5"
+                , SA.strokeLinecap "round"
                 ]
                 []
             , Svg.polygon
                 [ SA.fill <| toneToString <| colorFor tone
                 , SA.points "33.4,20.7 33.4,44.7 30.6,44.7 30.6,20.7"
+                , SA.strokeLinecap "round"
                 ]
                 []
             ]
@@ -141,7 +152,21 @@ button : Mode -> Tone -> Maybe Icon -> { x : Float, y : Float } -> Svg msg
 button mode tone maybeIcon center =
     case maybeIcon of
         Just icon -> Svg.image [] []
-        Nothing -> toggle mode tone TurnedOff center
+        Nothing ->
+            Svg.rect
+                [ SA.x <| String.fromFloat (center.x - 10)
+                , SA.y <| String.fromFloat (center.y - 12)
+                , SA.width "20"
+                , SA.height "20"
+                , SA.fill "none"
+                , SA.stroke <| toneToString <| colorFor tone
+                , SA.strokeWidth "2.5"
+                , SA.strokeLinecap "round"
+                , SA.rx "3"
+                , SA.ry "3"
+                ]
+                [
+                ]
 
 
 
@@ -159,3 +184,34 @@ toggle mode tone state center =
         ]
         [
         ]
+
+
+coord : Mode -> Tone -> { x : Float, y : Float } -> ( Float, Float ) -> Svg msg
+coord mode tone center ( valueX, valueY ) =
+    Svg.g
+        []
+        [ Svg.rect
+            [ SA.x <| String.fromFloat (center.x - 10)
+            , SA.y <| String.fromFloat (center.y - 12)
+            , SA.width "20"
+            , SA.height "20"
+            , SA.fill "none"
+            , SA.stroke <| toneToString <| colorFor tone
+            , SA.strokeWidth "2.5"
+            , SA.strokeLinecap "round"
+            , SA.strokeDasharray "2.5 15 5 15 5 15 5 15 2.5"
+            -- , SA.rx "3"
+            -- , SA.ry "3"
+            ]
+            [
+            ]
+        , Svg.circle
+            [ SA.cx <| String.fromFloat <| center.x + ((valueX - 0.5) * 20)
+            , SA.cy <| String.fromFloat <| center.y - 2 + ((valueY - 0.5) * 20)
+            , SA.fill <| toneToString <| colorFor tone
+            , SA.stroke "none"
+            , SA.r "3"
+            ]
+            []
+        ]
+-- 5 30 10 30 10 30 10 30 5
