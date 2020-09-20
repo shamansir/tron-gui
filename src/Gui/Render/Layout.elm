@@ -26,6 +26,7 @@ import Gui.Focus exposing (Focused(..), focused)
 import Gui.Render.Util exposing (..)
 import Gui.Render.Debug exposing (..)
 import Gui.Render.Property as Property exposing (..)
+import Gui.Render.Plate as Plate exposing (..)
 import Gui.Render.Style as Style exposing (..)
 
 
@@ -73,8 +74,8 @@ viewProperty style tone path propBounds focus ( label, prop ) = -- FIXME: get ri
                 Property.view style tone path pixelBounds focus ( label, prop )
 
 
-viewPlate : Style.Mode -> Bounds -> Svg msg
-viewPlate style plateBounds =
+viewPlate : Style.Mode -> Tone -> Bounds -> Path -> Svg Msg
+viewPlate style tone plateBounds path =
     let
         pixelBounds =
             B.multiplyBy cellWidth <| plateBounds
@@ -87,16 +88,7 @@ viewPlate style plateBounds =
                     , boundsDebug pixelBounds
                     ]
             Fancy ->
-                Svg.rect
-                    [ SA.fill <| background style
-                    , SA.x <| String.fromFloat (gap / 2)
-                    , SA.y <| String.fromFloat (gap / 2)
-                    , SA.rx <| String.fromFloat borderRadius
-                    , SA.ry <| String.fromFloat borderRadius
-                    , SA.width <| String.fromFloat (pixelBounds.width - gap) ++ "px"
-                    , SA.height <| String.fromFloat (pixelBounds.height - gap) ++ "px"
-                    ]
-                    []
+                Plate.view style tone pixelBounds path
 
 
 view : Style.Mode -> Bounds -> Property msg -> Layout -> Html Msg
@@ -130,7 +122,12 @@ view styleMode bounds root layout =
                             )
 
                         Plate originPath plateLayout ->
-                            ( viewPlate styleMode cellBounds :: prevPlates
+                            ( viewPlate
+                                styleMode
+                                (toneOf originPath)
+                                cellBounds
+                                originPath
+                                :: prevPlates
                             , BinPack.unfold
                                 (\ ( path, propBounds ) pPrevCells ->
                                     case root |> Property.find1 path of
