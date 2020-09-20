@@ -36,7 +36,15 @@ controls tone bounds path =
             ++ "px," ++ String.fromFloat gap ++ "px);"
         , HE.onClick <| Click path
         ]
-        [ arrow tone
+        [ Svg.rect
+            [ SA.fill "transparent"
+            , SA.x "-11"
+            , SA.y "2.5"
+            , SA.width "10"
+            , SA.height "10"
+            ]
+            []
+        , arrow tone
         ]
 
 
