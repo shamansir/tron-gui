@@ -48,11 +48,7 @@ mode = Fancy
 
 
 viewProperty : Style.Mode -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
-viewProperty style tone path propBounds focus ( label, prop ) = -- FIXME: get rid of passing root
-    let
-        pixelBounds =
-            B.multiplyBy cellWidth <| propBounds
-    in
+viewProperty style tone path pixelBounds focus ( label, prop ) =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -62,7 +58,7 @@ viewProperty style tone path propBounds focus ( label, prop ) = -- FIXME: get ri
                     ]
                     <| List.map (Svg.map <| always NoOp)
                     <| [ rect_ "white" pixelBounds
-                    , boundsDebug propBounds
+                    , boundsDebug pixelBounds -- FIXME: were in cells before, not in pixels
                     , textAt 5 20
                         <| case focus of
                             FocusedBy level -> "focused " ++ String.fromInt level
@@ -74,12 +70,8 @@ viewProperty style tone path propBounds focus ( label, prop ) = -- FIXME: get ri
                 Property.view style tone path pixelBounds focus ( label, prop )
 
 
-viewPlate : Style.Mode -> Tone -> Bounds -> Path -> Svg Msg
-viewPlate style tone plateBounds path =
-    let
-        pixelBounds =
-            B.multiplyBy cellWidth <| plateBounds
-    in
+viewPlateBack : Style.Mode -> Bounds -> Svg Msg
+viewPlateBack style pixelBounds =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -88,7 +80,17 @@ viewPlate style tone plateBounds path =
                     , boundsDebug pixelBounds
                     ]
             Fancy ->
-                Plate.view style tone pixelBounds path
+                Plate.back style pixelBounds
+
+
+viewPlateControls : Tone -> Bounds -> Path -> Svg Msg
+viewPlateControls tone pixelBounds path =
+    positionAt_ pixelBounds <|
+        case mode of
+            Debug ->
+                S.g [ ] [ ]
+            Fancy ->
+                Plate.controls tone pixelBounds path
 
 
 view : Style.Mode -> Bounds -> Property msg -> Layout -> Html Msg
@@ -107,44 +109,14 @@ view styleMode bounds root layout =
 
                         One path ->
                             ( prevPlates
-                            , case root |> Property.find1 path of
-                                Just prop ->
-                                    viewProperty
-                                        styleMode
-                                        (toneOf path)
-                                        path
-                                        cellBounds
-                                        (focused root path)
-                                        prop
-                                        :: prevCells
-                                Nothing ->
-                                    prevCells
+                            , ( path, cellBounds ) :: prevCells
                             )
 
                         Plate originPath plateLayout ->
-                            ( viewPlate
-                                styleMode
-                                (toneOf originPath)
-                                cellBounds
-                                originPath
-                                :: prevPlates
+                            ( ( originPath, cellBounds ) :: prevPlates
                             , BinPack.unfold
-                                (\ ( path, propBounds ) pPrevCells ->
-                                    case root |> Property.find1 path of
-                                        Just prop ->
-                                            let
-                                                shiftedBounds = B.shift cellBounds propBounds
-                                            in
-                                                viewProperty
-                                                    styleMode
-                                                    (toneOf path)
-                                                    path
-                                                    shiftedBounds
-                                                    (focused root path)
-                                                    prop
-                                                    :: pPrevCells
-                                        Nothing ->
-                                            pPrevCells
+                                (\( path, propBounds ) pPrevCells ->
+                                    ( path, B.shift cellBounds propBounds ) :: pPrevCells
                                 )
                                 prevCells
                                 plateLayout
@@ -153,6 +125,35 @@ view styleMode bounds root layout =
                 )
                 ( [], [] )
                 layout
+        ( plates1, cells1 ) =
+            ( plates |> List.map (Tuple.mapSecond <| B.multiplyBy cellWidth)
+            , cells |> List.map (Tuple.mapSecond <| B.multiplyBy cellWidth)
+            )
+        ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
+
+            ( plates1 |> List.map (Tuple.second >> viewPlateBack styleMode)
+
+            , cells1 |> List.map
+                (\(path, propertyBounds) ->
+                    case root |> Property.find1 path of
+                        Just prop -> Just <|
+                            viewProperty
+                                styleMode
+                                (toneOf path)
+                                path
+                                propertyBounds
+                                (focused root path)
+                                prop
+                        Nothing -> Nothing
+                )
+                |> List.filterMap identity
+
+            , plates1 |> List.map
+                (\(path, plateBounds) ->
+                    viewPlateControls (toneOf path) plateBounds path
+                )
+            )
+
     in
         div [ HA.id rootId
             , HA.class "gui gui--debug noselect"
@@ -169,8 +170,9 @@ view styleMode bounds root layout =
                 ]
                 [ Svg.g
                     []
-                    [ Svg.g [] plates
-                    , Svg.g [] cells
+                    [ Svg.g [] platesBacksRendered
+                    , Svg.g [] cellsRendered
+                    , Svg.g [] platesControlsRendered
                     ]
                 ]
 

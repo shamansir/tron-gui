@@ -33,18 +33,16 @@ view mode tone path bounds focus ( label, prop ) =
         , HA.style "cursor" "pointer"
         ]
         [
-            if (Path.howDeep path == 1) then
-                Svg.rect
-                    [ SA.fill <| background mode
-                    , SA.x <| String.fromFloat (gap / 2)
-                    , SA.y <| String.fromFloat (gap / 2)
-                    , SA.rx <| String.fromFloat borderRadius
-                    , SA.ry <| String.fromFloat borderRadius
-                    , SA.width <| String.fromFloat (bounds.width - gap) ++ "px"
-                    , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
-                    ]
-                    []
-            else Svg.none
+            Svg.rect
+                [ SA.fill <| if (Path.howDeep path == 1) then background mode else "transparent"
+                , SA.x <| String.fromFloat (gap / 2)
+                , SA.y <| String.fromFloat (gap / 2)
+                , SA.rx <| String.fromFloat borderRadius
+                , SA.ry <| String.fromFloat borderRadius
+                , SA.width <| String.fromFloat (bounds.width - gap) ++ "px"
+                , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
+                ]
+                []
         ,
             case prop of
                 Number (Control { min, max } value _) ->

@@ -14,28 +14,29 @@ import Svg.Attributes as SA
 import Html.Events as HE
 
 
-view : Style.Mode -> Style.Tone -> Bounds -> Path -> Svg Msg
-view style tone bounds path =
-    Svg.g
+back : Style.Mode -> Bounds -> Svg Msg
+back style bounds =
+    Svg.rect
+        [ SA.fill <| Style.background style
+        , SA.x <| String.fromFloat (gap / 2)
+        , SA.y <| String.fromFloat (gap / 2)
+        , SA.rx <| String.fromFloat borderRadius
+        , SA.ry <| String.fromFloat borderRadius
+        , SA.width <| String.fromFloat (bounds.width - gap) ++ "px"
+        , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
+        ]
         []
-        [ Svg.rect
-            [ SA.fill <| Style.background style
-            , SA.x <| String.fromFloat (gap / 2)
-            , SA.y <| String.fromFloat (gap / 2)
-            , SA.rx <| String.fromFloat borderRadius
-            , SA.ry <| String.fromFloat borderRadius
-            , SA.width <| String.fromFloat (bounds.width - gap) ++ "px"
-            , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
-            ]
-            []
-        , Svg.g
-            [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
-                (String.fromFloat <| bounds.width - gap)
-                ++ "px," ++ String.fromFloat gap ++ "px);"
-            , HE.onClick <| Click path
-            ]
-            [ arrow tone
-            ]
+
+
+controls : Style.Tone -> Bounds -> Path -> Svg Msg
+controls tone bounds path =
+    Svg.g
+        [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
+            (String.fromFloat <| bounds.width - gap)
+            ++ "px," ++ String.fromFloat gap ++ "px);"
+        , HE.onClick <| Click path
+        ]
+        [ arrow tone
         ]
 
 
