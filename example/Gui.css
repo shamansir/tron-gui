@@ -44,6 +44,12 @@
     pointer-events: none;
 }
 
+
+.gui.--light .cell.button .button--icon {
+    stroke: black !important;
+}
+
+
 .gui-arrow {
     transition: transform 0.3s ease-in;
 }

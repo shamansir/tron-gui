@@ -31,6 +31,7 @@ view mode tone path bounds focus ( label, prop ) =
         [ HE.onClick <| Click path
         , HA.style "pointer-events" "all"
         , HA.style "cursor" "pointer"
+        , SA.class <| makeClass prop
         ]
         [
             Svg.rect
@@ -156,10 +157,11 @@ button mode tone maybeIcon center =
                         Dark -> "dark"
                         Light -> "light"
                 iconUrl =
-                    "./assets/" ++ icon ++ "_" ++ postfix ++ ".svg"
+                    "./assets/" ++ icon {- ++ "_" ++ postfix -} ++ ".svg"
             in
                 Svg.image
                     [ SA.xlinkHref <| iconUrl
+                    , SA.class "button--icon"
                     , SA.width "35px"
                     , SA.height "35px"
                     , SA.x "18"
@@ -229,3 +231,17 @@ coord mode tone center ( valueX, valueY ) =
             []
         ]
 -- 5 30 10 30 10 30 10 30 5
+
+
+makeClass : Property msg -> String
+makeClass prop =
+    "cell " ++ case prop of
+        Nil -> "ghost"
+        Number _ -> "number"
+        Coordinate _ -> "coord"
+        Text _ -> "text"
+        Color _ -> "color"
+        Toggle _ -> "toggle"
+        Action _ -> "button"
+        Choice _ -> "choice"
+        Group _ -> "group"

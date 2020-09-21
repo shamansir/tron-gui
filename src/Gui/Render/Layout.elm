@@ -153,10 +153,17 @@ view styleMode bounds root layout =
                     viewPlateControls (toneOf path) plateBounds path
                 )
             )
-
+        makeClass =
+            "gui noselect "
+                ++ (case mode of
+                    Debug -> "gui--debug "
+                    _ -> "")
+                ++ (case styleMode of
+                    Dark -> "--dark"
+                    Light -> "--light")
     in
         div [ HA.id rootId
-            , HA.class "gui gui--debug noselect"
+            , HA.class makeClass
             , HA.tabindex 0
             , keyDownHandler_
             ]
