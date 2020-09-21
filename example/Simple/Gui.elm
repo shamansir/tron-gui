@@ -49,6 +49,9 @@ for model =
                     Choose )
         , ( "nest",
                 nestedButtons model.buttonPressed )
+        , ( "button",
+                Gui.button1 (Gui.icon "export") (always NoOp)
+          )
         , ( "toggle",
                 Gui.toggle
                     (Gui.boolToToggle model.toggle)

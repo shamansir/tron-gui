@@ -149,7 +149,23 @@ arrow mode tone expand center =
 button : Mode -> Tone -> Maybe Icon -> { x : Float, y : Float } -> Svg msg
 button mode tone maybeIcon center =
     case maybeIcon of
-        Just icon -> Svg.image [] []
+        Just (Icon icon) ->
+            let
+                postfix =
+                    case mode of
+                        Dark -> "dark"
+                        Light -> "light"
+                iconUrl =
+                    "./assets/" ++ icon ++ "_" ++ postfix ++ ".svg"
+            in
+                Svg.image
+                    [ SA.xlinkHref <| iconUrl
+                    , SA.width "35px"
+                    , SA.height "35px"
+                    , SA.x "18"
+                    , SA.y "15"
+                    ]
+                    []
         Nothing ->
             Svg.rect
                 [ SA.x <| String.fromFloat (center.x - 10)

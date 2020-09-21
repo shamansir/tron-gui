@@ -66,6 +66,18 @@ button =
             ()
 
 
+icon : String -> Icon
+icon = Icon
+
+
+button1 : Icon -> (() -> msg) -> Property msg
+button1 icon_ =
+    Action
+        << Control
+            (Just icon_)
+            ()
+
+
 toggle : ToggleState -> (ToggleState -> msg) -> Property msg
 toggle default =
     Toggle

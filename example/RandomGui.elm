@@ -7,11 +7,19 @@ import Array exposing (Array)
 import Gui.Gui exposing (Gui)
 import Gui.Control exposing (Control(..))
 import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, expand)
-import Gui.Property as Gui exposing (Label, ToggleState(..), ExpandState(..))
+import Gui.Property as Gui exposing (Label, ToggleState(..), ExpandState(..), Icon(..))
 
 
 
 type DeepLevel = DeepLevel Int
+
+
+type Icon
+    = Arrow
+    | Export
+    | Arm
+    | Regenerate
+    | Goose
 
 
 generator : Random.Generator (Property ())
@@ -110,10 +118,11 @@ text =
         <| Control () "" <| always ()
 
 
-button : Random.Generator ( Control ( Maybe a ) () () )
+button : Random.Generator ( Control ( Maybe Gui.Icon ) () () )
 button =
-    Random.constant
-        <| Control Nothing () <| always ()
+    Random.uniform Nothing [ Just Arrow, Just Export, Just Regenerate, Just Arm, Just Goose ]
+        |> Random.map (Maybe.map (sourceOf >> Gui.Icon))
+        |> Random.map (\icon -> Control icon () <| always ())
 
 
 controls : DeepLevel -> Random.Generator ( Array ( Label, Property () ) )
@@ -218,3 +227,13 @@ toggle =
                     tState
                     <| always ()
             )
+
+
+sourceOf : Icon -> String
+sourceOf icon =
+    case icon of
+        Arm -> "arm"
+        Arrow -> "arm"
+        Export -> "export"
+        Regenerate -> "regenerate"
+        Goose -> "cai"
