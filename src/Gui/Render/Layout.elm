@@ -47,8 +47,15 @@ mode : Mode
 mode = Fancy
 
 
-viewProperty : Style.Mode -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
-viewProperty style tone path pixelBounds focus ( label, prop ) =
+viewProperty
+    :  Style.Theme
+    -> Tone
+    -> Path
+    -> Bounds
+    -> Focused
+    -> ( Label, Property msg )
+    -> Svg Msg
+viewProperty theme tone path pixelBounds focus ( label, prop ) =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -67,11 +74,11 @@ viewProperty style tone path pixelBounds focus ( label, prop ) =
                         <| propertyDebug ( label, prop )
                     ]
             Fancy ->
-                Property.view style tone path pixelBounds focus ( label, prop )
+                Property.view theme tone path pixelBounds focus ( label, prop )
 
 
-viewPlateBack : Style.Mode -> Bounds -> Svg Msg
-viewPlateBack style pixelBounds =
+viewPlateBack : Style.Theme -> Bounds -> Svg Msg
+viewPlateBack theme pixelBounds =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -80,7 +87,7 @@ viewPlateBack style pixelBounds =
                     , boundsDebug pixelBounds
                     ]
             Fancy ->
-                Plate.back style pixelBounds
+                Plate.back theme pixelBounds
 
 
 viewPlateControls : Tone -> Bounds -> Path -> Svg Msg
@@ -93,8 +100,8 @@ viewPlateControls tone pixelBounds path =
                 Plate.controls tone pixelBounds path
 
 
-view : Style.Mode -> Bounds -> Property msg -> Layout -> Html Msg
-view styleMode bounds root layout =
+view : Style.Theme -> Bounds -> Property msg -> Layout -> Html Msg
+view theme bounds root layout =
     let
         keyDownHandler_ =
             H.on "keydown"
@@ -131,14 +138,14 @@ view styleMode bounds root layout =
             )
         ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
 
-            ( plates1 |> List.map (Tuple.second >> viewPlateBack styleMode)
+            ( plates1 |> List.map (Tuple.second >> viewPlateBack theme)
 
             , cells1 |> List.map
                 (\(path, propertyBounds) ->
                     case root |> Property.find1 path of
                         Just prop -> Just <|
                             viewProperty
-                                styleMode
+                                theme
                                 (toneOf path)
                                 path
                                 propertyBounds
@@ -158,7 +165,7 @@ view styleMode bounds root layout =
                 ++ (case mode of
                     Debug -> "gui--debug "
                     _ -> "")
-                ++ (case styleMode of
+                ++ (case theme of
                     Dark -> "--dark"
                     Light -> "--light")
     in

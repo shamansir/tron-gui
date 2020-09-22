@@ -9,6 +9,7 @@ import Json.Decode as D
 import Json.Encode as Encode
 import Html exposing (Html)
 import Html as Html exposing (map, div)
+import Html.Attributes as Attr exposing (class)
 import Html.Events as Html exposing (onClick)
 import Dict exposing (size)
 import Task as Task
@@ -39,6 +40,7 @@ type Msg
     | TronUpdate Tron.Msg
     | ToSimple Simple.Msg
     | Randomize (Tron.Gui Msg)
+    | SwitchTheme
     | TriggerRandom
     | TriggerDefault
 
@@ -54,6 +56,7 @@ type Mode
 
 type alias Model =
     { mode : Mode
+    , theme : Style.Theme
     , gui : Tron.Gui Msg
     , example : Example
     }
@@ -64,8 +67,9 @@ init =
     (
         { mode = TronGui
         , example = Simple.init
-        , gui = SimpleGui.for Simple.init
-                    |> Gui.over
+        , theme = Style.Light
+        , gui = Gui.init Gui.TopToBottom
+                    |> Gui.over (SimpleGui.for Simple.init)
                     |> Gui.map ToSimple
         }
     , Cmd.batch -- FIXME: Gui.init
@@ -76,9 +80,11 @@ init =
 
 
 view : Model -> Html Msg
-view { mode, gui, example } =
+view { mode, gui, example, theme } =
     Html.div
-        [ ]
+        [ Attr.class <| "example " ++ case theme of
+            Style.Dark -> "--dark"
+            Style.Light -> "--light" ]
         [ Html.button
             [ Html.onClick <| ChangeMode TronGui ]
             [ Html.text "Tron" ]
@@ -91,11 +97,14 @@ view { mode, gui, example } =
         , Html.button
             [ Html.onClick TriggerDefault ]
             [ Html.text "Default" ]
+        , Html.button
+            [ Html.onClick SwitchTheme ]
+            [ Html.text "Theme" ]
         , case mode of
             DatGui -> Html.div [] []
             TronGui ->
                 gui
-                    |> Gui.view Style.Light
+                    |> Gui.view theme
                     |> Html.map TronUpdate
         , Simple.view example
             |> Html.map (always NoOp)
@@ -169,7 +178,10 @@ update msg model =
                 [ destroyDatGui ()
                 , Random.generate Randomize
                     <| Random.map (Gui.map <| always NoOp)
-                    <| Random.map Gui.over
+                    <| Random.map
+                        (\prop ->
+                            Gui.init Gui.TopToBottom |> Gui.over prop
+                        )
                     <| Gui.generator
                 ]
             )
@@ -194,6 +206,14 @@ update msg model =
 
         ( TriggerDefault, _ ) ->
             init
+
+        ( SwitchTheme, _ ) ->
+            (
+                { model
+                | theme = Style.switch model.theme
+                }
+            , Cmd.none
+            )
 
         _ -> ( model, Cmd.none )
 

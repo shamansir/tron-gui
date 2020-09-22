@@ -25,8 +25,8 @@ gap = 6
 borderRadius = 10
 
 
-view : Mode -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
-view mode tone path bounds focus ( label, prop ) =
+view : Theme -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
+view theme tone path bounds focus ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
         , HA.style "pointer-events" "all"
@@ -35,7 +35,7 @@ view mode tone path bounds focus ( label, prop ) =
         ]
         [
             Svg.rect
-                [ SA.fill <| if (Path.howDeep path == 1) then background mode else "transparent"
+                [ SA.fill <| if (Path.howDeep path == 1) then background theme else "transparent"
                 , SA.x <| String.fromFloat (gap / 2)
                 , SA.y <| String.fromFloat (gap / 2)
                 , SA.rx <| String.fromFloat borderRadius
@@ -48,13 +48,13 @@ view mode tone path bounds focus ( label, prop ) =
             case prop of
                 Number (Control { min, max } value _) ->
                     knob
-                        mode
+                        theme
                         tone
                         { x = cellWidth / 2, y = (cellHeight / 2) }
                         <| (value - min) / (max - min)
                 Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
                     coord
-                        mode
+                        theme
                         tone
                         { x = cellWidth / 2, y = (cellHeight / 2) }
                         <|
@@ -62,13 +62,13 @@ view mode tone path bounds focus ( label, prop ) =
                             , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
                             )
                 Toggle (Control _ value _) ->
-                    toggle mode tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                    toggle theme tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Action (Control maybeIcon _ _) ->
-                    button mode tone maybeIcon { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                    button theme tone maybeIcon { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Choice (Control _ ( expanded, _ ) _) ->
-                    arrow mode tone expanded { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                    arrow theme tone expanded { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Group (Control _ ( expanded, _ ) _) ->
-                    arrow mode tone expanded { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                    arrow theme tone expanded { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 _ -> Svg.none
         , Svg.text_
             [ SA.textAnchor "middle"
@@ -83,8 +83,8 @@ view mode tone path bounds focus ( label, prop ) =
         ]
 
 
-knob : Mode -> Tone -> { x : Float, y : Float } -> Float -> Svg msg
-knob mode tone center value =
+knob : Theme -> Tone -> { x : Float, y : Float } -> Float -> Svg msg
+knob theme tone center value =
     let
         toAngle v = (-120) + (v * 120 * 2)
         path color d =
@@ -106,7 +106,7 @@ knob mode tone center value =
                     center
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle 0, to = toAngle value }
-            , path (knobLine mode)
+            , path (knobLine theme)
                 <| describeArc
                     center
                     { radiusA = radiusA, radiusB = radiusB }
@@ -119,8 +119,8 @@ knob mode tone center value =
             ]
 
 
-arrow : Mode -> Tone -> ExpandState -> { x : Float, y : Float } -> Svg msg
-arrow mode tone expand center =
+arrow : Theme -> Tone -> ExpandState -> { x : Float, y : Float } -> Svg msg
+arrow theme tone expand center =
     Svg.g
         [ SA.style <| "transform: translate("
             ++ String.fromFloat center.x ++ "px,"
@@ -147,17 +147,17 @@ arrow mode tone expand center =
         ]
 
 
-button : Mode -> Tone -> Maybe Icon -> { x : Float, y : Float } -> Svg msg
-button mode tone maybeIcon center =
+button : Theme -> Tone -> Maybe Icon -> { x : Float, y : Float } -> Svg msg
+button theme tone maybeIcon center =
     case maybeIcon of
         Just (Icon icon) ->
             let
                 postfix =
-                    case mode of
+                    case theme of
                         Dark -> "dark"
                         Light -> "light"
                 iconUrl =
-                    "./assets/" ++ icon {- ++ "_" ++ postfix -} ++ ".svg"
+                    "./assets/" ++ icon ++ "_" ++ postfix ++ ".svg"
             in
                 Svg.image
                     [ SA.xlinkHref <| iconUrl
@@ -186,8 +186,8 @@ button mode tone maybeIcon center =
 
 
 
-toggle : Mode -> Tone -> ToggleState -> { x : Float, y : Float } -> Svg msg
-toggle mode tone state center =
+toggle : Theme -> Tone -> ToggleState -> { x : Float, y : Float } -> Svg msg
+toggle theme tone state center =
     Svg.circle
         [ SA.cx <| String.fromFloat center.x
         , SA.cy <| String.fromFloat center.y
@@ -202,8 +202,8 @@ toggle mode tone state center =
         ]
 
 
-coord : Mode -> Tone -> { x : Float, y : Float } -> ( Float, Float ) -> Svg msg
-coord mode tone center ( valueX, valueY ) =
+coord : Theme -> Tone -> { x : Float, y : Float } -> ( Float, Float ) -> Svg msg
+coord theme tone center ( valueX, valueY ) =
     Svg.g
         []
         [ Svg.rect

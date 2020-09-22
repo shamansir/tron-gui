@@ -10,7 +10,7 @@ import Gui.Path as Path exposing (Path, toString)
 type alias Color = String
 
 
-type Mode
+type Theme
     = Dark
     | Light
 
@@ -82,16 +82,16 @@ next style =
         Black -> Black
 
 
-background : Mode -> Color
-background mode =
-    case mode of
+background : Theme -> Color
+background theme =
+    case theme of
         Dark -> darkBackground
         Light -> lightBackground
 
 
-knobLine : Mode -> Color
-knobLine mode =
-    case mode of
+knobLine : Theme -> Color
+knobLine theme =
+    case theme of
         Dark -> gray2
         Light -> gray
 
@@ -145,3 +145,8 @@ assignTones =
         -->> List.map (Tuple.mapFirst Gui.Path.toString)
 
 
+switch : Theme -> Theme
+switch from =
+    case from of
+        Dark -> Light
+        Light -> Dark

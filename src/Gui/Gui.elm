@@ -1,6 +1,6 @@
 module Gui.Gui exposing
-    ( Gui, over
-    , view, update, none, map
+    ( Gui, over, Flow(..)
+    , view, update, init, map
     , trackMouse, focus, reflow, fromWindow
     )
 
@@ -66,14 +66,14 @@ map f model =
     }
 
 
-none : Gui msg
-none =
-    Gui TopToBottom Bounds.zero Gui.Mouse.init Nil Layout.init
+init : Flow -> Gui msg
+init flow =
+    Gui flow Bounds.zero Gui.Mouse.init Nil Layout.init
 
 
-over : Property msg -> Gui msg
-over prop =
-    { none
+over : Property msg -> Gui msg -> Gui msg
+over prop from =
+    { from
     | tree = prop
     , layout = Layout.pack prop
     }
@@ -330,6 +330,6 @@ boundsFromSize { width, height } layout =
         }
 
 
-view : Style.Mode -> Gui msg -> Html Msg
-view styleMode gui =
-    Layout.view styleMode gui.bounds gui.tree gui.layout
+view : Style.Theme -> Gui msg -> Html Msg
+view theme gui =
+    Layout.view theme gui.bounds gui.tree gui.layout

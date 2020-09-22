@@ -14,10 +14,10 @@ import Svg.Attributes as SA
 import Html.Events as HE
 
 
-back : Style.Mode -> Bounds -> Svg Msg
-back style bounds =
+back : Style.Theme -> Bounds -> Svg Msg
+back theme bounds =
     Svg.rect
-        [ SA.fill <| Style.background style
+        [ SA.fill <| Style.background theme
         , SA.x <| String.fromFloat (gap / 2)
         , SA.y <| String.fromFloat (gap / 2)
         , SA.rx <| String.fromFloat borderRadius
