@@ -1,3 +1,15 @@
+.example {
+    height: 100vh;
+}
+
+.example.--dark  {
+    background-color: darkgray;
+}
+
+.example.--light {
+    background-color: lightgray;
+}
+
 .gui {
     position: absolute;
     top: 0;
