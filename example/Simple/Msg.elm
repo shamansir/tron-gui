@@ -1,16 +1,17 @@
 module Simple.Msg exposing (..)
 
 
-import Gui.Alt as Gui exposing (Color)
+import Color exposing (Color)
 import Simple.Model exposing (..)
 
 
 type Msg
-    = ChangeInt Int
+    = NoOp
+    | ChangeInt Int
     | ChangeFloat Float
     | ChangeXY ( Float, Float )
     | ChangeString String
-    | ChangeColor Gui.Color
+    | ChangeColor Color
     | Choose Choice
     | Switch Bool
     | Pressed Choice

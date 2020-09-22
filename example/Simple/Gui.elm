@@ -1,18 +1,20 @@
 module Simple.Gui exposing (..)
 
 
-import Gui.Alt as Gui
-import Gui.Alt exposing (Gui)
+import Gui.Build as Gui
+import Gui.Gui exposing (Gui)
+import Gui.Property  exposing (Property)
+import Gui.Property as Gui exposing (Label)
 
 
 import Simple.Model exposing (..)
 import Simple.Msg exposing (..)
 
 
-for : Model -> Gui Msg
+for : Model -> Property Msg
 for model =
-    Gui.make
-        [ ( "ghost", Gui.ghost )
+    Gui.root
+        [ ( "ghost", Gui.none )
         , ( "int",
                 Gui.int
                     { min = -20, max = 20, step = 5 }
@@ -42,28 +44,51 @@ for model =
                 Gui.choice
                     choiceToLabel
                     choices
-                    (Just model.choice)
+                    model.choice
                     compareChoices
                     Choose )
         , ( "nest",
-                Gui.nest
-                    Gui.Expanded
-                    <| nestedButtons model.buttonPressed )
+                nestedButtons model.buttonPressed )
+        , ( "button",
+                Gui.button1 (Gui.icon "export") (always NoOp)
+          )
         , ( "toggle",
                 Gui.toggle
                     (Gui.boolToToggle model.toggle)
                     (Gui.toggleToBool >> Switch) )
         ]
+        (always NoOp)
 
 
-nestedButtons : Choice -> Gui Msg
+nestedButtons : Choice -> Property Msg
 nestedButtons curChoice =
-    Gui.make
+    Gui.nestIn
+        ( 2, 3 )
         [ ( "a", Gui.button <| always <| Pressed A )
         , ( "b", Gui.button <| always <| Pressed B )
         , ( "c", Gui.button <| always <| Pressed C )
         , ( "d", Gui.button <| always <| Pressed D )
+        , ( "color", colorNest )
         ]
+        (always NoOp)
+
+
+colorNest : Property Msg
+colorNest =
+    let
+        colorCompKnob =
+            Gui.float
+                { min = 0, max = 255, step = 1 }
+                0
+                (always NoOp)
+    in
+        Gui.nestIn
+            ( 1, 3 )
+            [ ( "red", colorCompKnob )
+            , ( "green", colorCompKnob )
+            , ( "blue", colorCompKnob )
+            ]
+            (always NoOp)
 
 
 choiceToLabel : Choice -> Gui.Label

@@ -1,408 +1,316 @@
 module Gui.Gui exposing
-    ( Model
-    , view, update, build, none, map
-    , trackMouse, focus, fromWindow
-    , fromAlt -- FIXME: temporary
+    ( Gui, over, Flow(..)
+    , view, update, init, map
+    , trackMouse, focus, reflow, fromWindow
     )
 
 
 import Browser.Dom as Dom
 import Task
+import Color
 import Browser.Events as Browser
+import Html exposing (Html)
 
+import BinPack exposing (..)
+import Bounds exposing (Bounds)
 
-import Gui.Def exposing (..)
+import Gui.Path exposing (Path)
+import Gui.Control exposing (..)
+import Gui.Property exposing (..)
+import Gui.Layout exposing (Layout)
+import Gui.Layout as Layout exposing (..)
 import Gui.Msg exposing (..)
-import Gui.Nest exposing (..)
-import Gui.Focus exposing (..)
-import Gui.Focus as Focus exposing (..)
-import Gui.Grid as Grid exposing (..)
-import Gui.Render.Grid as Render exposing (..)
+import Gui.Render.Style as Style exposing (..)
+import Gui.Render.Layout as Layout exposing (..)
 import Gui.Mouse exposing (..)
 import Gui.Mouse as Mouse exposing (..)
 import Gui.Util exposing (..)
-import Gui.Alt as Alt exposing (Gui)
+-- import Gui.Alt as Alt exposing (Gui)
+import Gui.Focus as Focus exposing (..)
 
 
-type alias Model umsg =
-    { mouse : MouseState
-    , root : Nest umsg
+type Flow
+    = TopToBottom
+    | BottomToTop
+    | LeftToRight
+    | RightToLeft
+
+
+type alias Gui msg =
+    { flow : Flow
+    , bounds : Bounds
+    , mouse : MouseState
+    , tree : Property msg
+    , layout : Layout
     }
--- type alias View umsg = Render.Grid umsg
--- type alias Msg = Gui.Msg.Msg
 
 
-view : Model umsg -> Render.GridView umsg
-view = .root >> Render.view
+moves : Position -> MouseAction
+moves = Gui.Mouse.Move
+ups : Position -> MouseAction
+ups = Gui.Mouse.Up
+downs : Position -> MouseAction
+downs = Gui.Mouse.Down
 
 
-moves size gui =
-    Gui.Mouse.subPos (offsetFromSize size gui)
-        >> Gui.Mouse.Move
-ups size gui =
-    Gui.Mouse.subPos (offsetFromSize size gui)
-        >> Gui.Mouse.Up
-downs size gui =
-    Gui.Mouse.subPos (offsetFromSize size gui)
-        >> Gui.Mouse.Down
-
-
-extractMouse : Model umsg -> MouseState
+extractMouse : Gui msg -> MouseState
 extractMouse = .mouse
 
 
-build : Nest umsg -> Model umsg
-build =
-    Model Gui.Mouse.init
+map : (msgA -> msgB) -> Gui msgA -> Gui msgB
+map f model =
+    { flow = model.flow
+    , bounds = model.bounds
+    , mouse = model.mouse
+    , tree = Gui.Property.map f model.tree
+    , layout = model.layout
+    }
 
 
-none : Model umsg
-none =
-    Model Gui.Mouse.init noChildren
+init : Flow -> Gui msg
+init flow =
+    Gui flow Bounds.zero Gui.Mouse.init Nil Layout.init
 
 
-fromAlt : Alt.Gui umsg -> Nest umsg
-fromAlt altGui =
-    let
-        convertAxis { min, max, step } current =
-            { min = min, max = max, step = step, roundBy = 2, default = current }
-        cells =
-            altGui
-                |> List.map (\(_, label, prop) ->
-                    case prop of
-                        Alt.Ghost ->
-                            Ghost label
-                        Alt.Slider spec current toMsg ->
-                            Knob
-                                label
-                                (convertAxis spec current)
-                                current
-                                toMsg
-                        Alt.XY ( xSpec, ySpec ) ( curX, curY ) toMsg ->
-                            XY
-                                label
-                                ( convertAxis xSpec curX
-                                , convertAxis ySpec curY )
-                                ( curX, curY )
-                                toMsg
-                        Alt.Input curent toMsg ->
-                            Ghost label -- TODO
-                        Alt.Color curent toMsg ->
-                            Ghost label -- TODO
-                        Alt.Toggle current toMsg ->
-                            Toggle
-                                label
-                                (case current of
-                                    Alt.On -> TurnedOn
-                                    Alt.Off -> TurnedOff
-                                )
-                                (\next ->
-                                    case next of
-                                        TurnedOn ->toMsg Alt.On
-                                        TurnedOff -> toMsg Alt.Off
-                                )
-                        Alt.Button toMsg ->
-                            Button label toMsg
-                        Alt.Choice options maybeCurrent toMsg ->
-                            Choice label Expanded (maybeCurrent |> Maybe.withDefault 0)
-                                (\idx _ -> toMsg idx)
-                                <| oneLine
-                                    (options
-                                        |> List.map Tuple.second
-                                        |> List.map ChoiceItem)
-                        Alt.Nested expanded gui ->
-                            Nested
-                                label
-                                (case expanded of
-                                    Alt.Expanded -> Expanded
-                                    Alt.Collapsed -> Collapsed
-                                )
-                                <| fromAlt gui
-                )
-    in
-        oneLine cells
+over : Property msg -> Gui msg -> Gui msg
+over prop from =
+    { from
+    | tree = prop
+    , layout = Layout.pack prop
+    }
 
 
 update
-    :  Msg umsg
-    -> Model umsg
-    -> ( Model umsg, Cmd umsg )
-update msg ( { root, mouse } as model ) =
+    :  Msg
+    -> Gui umsg
+    -> ( Gui umsg, Cmd umsg )
+update msg gui =
     case msg of
+        NoOp ->
+            ( gui, Cmd.none )
 
         ApplyMouse mouseAction ->
-            handleMouse mouseAction model
+            handleMouse mouseAction gui
 
-        Click cell ->
-            model
-                |> updateWith
-                    (executeCell cell)
+        Click path ->
+            let
+                (nextRoot, cmds) =
+                    gui.tree |> executeAt path
+            in
+                (
+                    { gui
+                    | tree = nextRoot
+                    , layout = Layout.pack nextRoot
+                    }
+                , cmds
+                )
 
-        MouseDown { cell, nestPos } ->
-            case cell of
-                Knob _ _ _ _ ->
-                    update (FocusOn nestPos) model
-                _ -> ( model, Cmd.none )
+        MouseDown path ->
+            (
+                { gui
+                | tree = Focus.on gui.tree path
+                }
+            , Cmd.none
+            )
 
-        KeyDown keyCode focus_ maybeCells ->
-            model
-                |> updateWith
-                    (handleKeyDown focus_ maybeCells keyCode)
-
-        _ -> (
-            { model
-            | root =
-                case msg of
-
-                    ApplyMouse _ -> root
-
-                    Click _ -> root
-
-                    MouseDown _ -> root
-
-                    KeyDown _ _ _ -> root
-
-                    FocusOn pos ->
-                        root |> Focus.on (Focus pos)
-
-                    Tune pos alter ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Knob label setup curValue handler ->
-                                            Knob label setup
-                                                (alterKnob setup alter curValue)
-                                                handler
-                                        _ -> cell
-                                )
-
-                    TuneXY pos alter ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        XY label setup curValue handler ->
-                                            XY label setup
-                                                (alterXY setup alter curValue)
-                                                handler
-                                        _ -> cell
-                                )
-
-                    ToggleOn pos ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Toggle label _ handler ->
-                                            Toggle label TurnedOn handler
-                                        _ -> cell
-                                )
-
-                    ToggleOff pos ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Toggle label _ handler ->
-                                            Toggle label TurnedOff handler
-                                        _ -> cell
-                                )
-
-                    ExpandNested pos ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> collapseAllAbove pos
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Nested label _ cells ->
-                                            Nested label Expanded cells
-                                        _ -> cell
-                                )
-
-                    CollapseNested pos ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Nested label _ cells ->
-                                            Nested label Collapsed cells
-                                        _ -> cell
-                                )
-
-                    ExpandChoice pos ->
-                        root
-                            |> collapseAllAbove pos
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Choice label _ selection handler cells ->
-                                            Choice label Expanded selection handler cells
-                                        _ -> cell
-                                )
-
-                    CollapseChoice pos ->
-                        root
-                            |> Focus.on (Focus pos)
-                            |> updateCell pos
-                                (\cell ->
-                                    case cell of
-                                        Choice label _ selection handler cells ->
-                                            Choice label Collapsed selection handler cells
-                                        _ -> cell
-                                )
-
-                    Select pos ->
-                        let
-                            parentPos = getParentPos pos |> Maybe.withDefault nowhere
-                            index = getIndexOf pos |> Maybe.withDefault -1
-                        in
-                            root
-                                |> Focus.on (Focus pos)
-                                |> updateCell parentPos
-                                    (\cell ->
-                                        case cell of
-                                            Choice label expanded selection handler cells ->
-                                                Choice label expanded index handler cells
-                                            _ -> cell
-                                    )
-
-                    ShiftFocus direction ->
-                        root |> Focus.on (Focus.get root |> Focus.shift direction)
-
-                    NoOp ->
-                        root
-
-            }, Cmd.none )
+        KeyDown keyCode ->
+           let
+                curFocus = Focus.find gui.tree
+                (nextRoot, cmds) =
+                    gui.tree |> handleKeyDown keyCode curFocus
+            in
+                (
+                    { gui
+                    | tree = nextRoot
+                    , layout = Layout.pack nextRoot
+                    }
+                , cmds
+                )
 
 
-trackMouse :  { width : Int, height : Int } -> Model umsg -> Sub (Msg umsg)
-trackMouse windowSize gui =
+trackMouse : Sub Msg
+trackMouse =
     Sub.batch
-        [ Sub.map (downs windowSize gui)
+        [ Sub.map downs
             <| Browser.onMouseDown
             <| decodePosition
-        , Sub.map (ups windowSize gui)
+        , Sub.map ups
             <| Browser.onMouseUp
             <| decodePosition
-        , Sub.map (moves windowSize gui)
+        , Sub.map moves
             <| Browser.onMouseMove
             <| decodePosition
         ]
     |> Sub.map ApplyMouse
 
 
-handleMouse : MouseAction -> Model umsg -> ( Model umsg, Cmd umsg )
-handleMouse mouseAction model =
+
+reflow : ( Int, Int ) -> Gui msg -> Gui msg
+reflow ( w, h ) gui =
+    { gui
+    | bounds =
+        gui.layout |>
+            boundsFromSize
+                { width = toFloat w, height = toFloat h }
+    }
+
+
+-- TODO: make bounds to be bounded to pariticular units
+toGridCoords : Bounds -> Flow -> Position -> Position
+toGridCoords bounds flow pos =
+    { x = (pos.x - bounds.x) / cellWidth
+    , y = (pos.y - bounds.y) / cellHeight
+    }
+
+
+handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd msg )
+handleMouse mouseAction gui =
     let
-        curMouseState = model.mouse
-        nextMouseState = curMouseState |> Gui.Mouse.apply mouseAction -- FIXME: calculate once
-        maybeDragPos =
-            if nextMouseState.down then nextMouseState.dragFrom
-            else case mouseAction of
-                Mouse.Up _ -> if curMouseState.down then curMouseState.dragFrom else Nothing
-                _ -> Nothing
-        nextCell =
-            maybeDragPos
+        curMouseState =
+            gui.mouse
+        nextMouseState =
+            gui.mouse
+                |> Gui.Mouse.apply mouseAction
+
+        findPathAt pos =
+            pos
+                |> toGridCoords gui.bounds gui.flow
+                |> Layout.find gui.layout
+
+        findCellAt pos =
+            pos
+                |> findPathAt
                 |> Maybe.andThen
-                    (\dragPos ->
-                        layout model.root   -- FIXME: store layout in the Model
-                            |> findCellAt dragPos
-                            |> Maybe.map (\c -> ( c.cell, c.nestPos ))
+                    (\path ->
+                        Gui.Property.find path gui.tree
+                            |> Maybe.map (Tuple.pair path)
                     )
+
     in
-        case nextCell of
-            -- case findCell focusedPos ui of
 
-            Just ( (Knob _ knobState curValue handler), cellPos ) ->
-                let
-                    alter = applyKnobMove curMouseState nextMouseState knobState curValue
+        (
+            { gui
+            | mouse = nextMouseState
+            , tree =
 
-                in
-                    { model
-                    | mouse = nextMouseState
-                    } |>
-                        updateWith
-                            ( Tune cellPos alter
-                            , case mouseAction of
-                                Mouse.Up _ ->
-                                    if curMouseState.down
-                                    && not nextMouseState.down
-                                    then
-                                        Just <| handler (alterKnob knobState alter curValue)
-                                    else Nothing
-                                _ -> Nothing
-                            )
+                if curMouseState.down then
 
-            Just ( (XY _ xyState curValue handler), cellPos ) ->
-                let
-                    alter = applyXYMove curMouseState nextMouseState xyState curValue
+                    case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
 
-                in
-                    { model
-                    | mouse = nextMouseState
-                    } |>
-                        updateWith
-                            ( TuneXY cellPos alter
-                            , case mouseAction of
-                                Mouse.Up _ ->
-                                    if curMouseState.down
-                                    && not nextMouseState.down
-                                    then
-                                        Just <| handler (alterXY xyState alter curValue)
-                                    else Nothing
-                                _ -> Nothing
-                            )
+                        Just ( path, Number ( Control axis curValue handler ) ) ->
+                            let
+                                dY = distanceY knobDistance nextMouseState
+                                nextVal = alter axis dY curValue
+                                nextControl =
+                                    Control axis nextVal handler
+                            in
+                                updateAt
+                                    path
+                                    (always <| Number nextControl)
+                                    gui.tree
 
-            _ ->
-                (
-                    { model
-                    | mouse = nextMouseState
-                    }
-                , Cmd.none
-                )
+                        Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
+                            let
+                                ( dX, dY ) = distanceXY knobDistance nextMouseState
+                                ( nextX, nextY ) =
+                                    ( alter xAxis dX curX
+                                    , alter yAxis dY curY
+                                    )
+                                nextControl =
+                                    Control ( xAxis, yAxis ) ( nextX, nextY ) handler
+                            in
+                                updateAt
+                                    path
+                                    (always <| Coordinate nextControl)
+                                    gui.tree
+
+                        Just ( path, Color ( Control state curColor handler ) ) ->
+                            let
+                                hueAxis = { min = 0, max = 1, step = 0.01 }
+                                satAxis = { min = 0, max = 1, step = 0.01 }
+                                curHsla = Color.toHsla curColor
+                                ( dX, dY ) = distanceXY knobDistance nextMouseState
+                                ( nextHue, nextSaturation ) =
+                                    ( alter hueAxis dX curHsla.hue
+                                    , alter satAxis dY curHsla.saturation
+                                    )
+                                nextColor =
+                                    Color.hsla
+                                        nextHue
+                                        nextSaturation
+                                        curHsla.lightness
+                                        curHsla.alpha
+                                nextControl =
+                                    Control state nextColor handler
+                            in
+                                updateAt
+                                    path
+                                    (always <| Color nextControl)
+                                    gui.tree
+
+                        _ ->
+                            gui.tree
+
+                else
+
+                    nextMouseState.dragFrom
+                        |> Maybe.andThen findPathAt
+                        |> Maybe.map (Focus.on gui.tree)
+                        |> Maybe.withDefault gui.tree
+
+            }
+
+        ,
+
+            case mouseAction of
+
+                Mouse.Up _ ->
+                    if curMouseState.down
+                    && not nextMouseState.down
+                    then
+
+                        case curMouseState.dragFrom |> Maybe.andThen findCellAt of
+
+                            Just ( _, Number control ) ->
+                                call control
+                            Just ( _, Coordinate control ) ->
+                                call control
+                            Just ( _, Color control ) ->
+                                call control
+                            Just (_, _) -> Cmd.none
+                            Nothing -> Cmd.none
+
+                    else Cmd.none
+                _ -> Cmd.none
+
+        )
 
 
 handleKeyDown
-    :  Focus
-    -> Maybe { current : GridCell umsg, parent : GridCell umsg }
-    -> Int
-    -> ( Msg umsg, Maybe umsg )
-handleKeyDown (Focus currentFocus) maybeCells keyCode =
-    let
-        executeCell_ =
-            maybeCells
-            |> Maybe.map .current
-            |> Maybe.map executeCell
-            |> Maybe.withDefault ( NoOp, Nothing )
-        --_ = Debug.log "currentFocus" currentFocus
-    -- Find top focus, with it either doCellPurpose or ShiftFocusRight/ShiftFocusLeft
-    in
-        case {-Debug.log "key here"-} keyCode of
-            -- left arrow
-            37 -> ( ShiftFocus Focus.Left, Nothing )
-            -- right arrow
-            -- up arrow
-            38 -> ( ShiftFocus Focus.Up, Nothing )
-            -- down arrow
-            40 -> ( ShiftFocus Focus.Down, Nothing )
-            -- space
-            33 -> executeCell_
-            -- enter
-            13 -> executeCell_
-            -- else
-            _ -> ( NoOp, Nothing )
+    :  Int
+    -> Path
+    -> Property msg
+    -> ( Property msg, Cmd msg )
+handleKeyDown keyCode path root =
+    case keyCode of
+        -- left arrow
+        37 -> ( root |> Focus.shift Focus.Left, Cmd.none )
+        -- right arrow
+        39 -> ( root |> Focus.shift Focus.Right, Cmd.none )
+        -- up arrow
+        38 -> ( root |> Focus.shift Focus.Up, Cmd.none )
+        -- down arrow
+        40 -> ( root |> Focus.shift Focus.Down, Cmd.none )
+        -- space
+        33 -> root |> executeAt path
+        -- enter
+        13 -> root |> executeAt path
+        -- else
+        _ -> ( root, Cmd.none )
 
 
 
-updateWith : ( Msg umsg, Maybe umsg ) -> Model umsg -> ( Model umsg, Cmd umsg  )
+updateWith : ( Msg, Maybe msg ) -> Gui msg -> ( Gui msg, Cmd msg  )
 updateWith ( msg, maybeUserMsg ) model =
     update msg model
         |> Tuple.mapSecond
@@ -419,11 +327,11 @@ updateWith ( msg, maybeUserMsg ) model =
 
 focus : msg -> Cmd msg
 focus noOp =
-    Dom.focus Render.rootId
+    Dom.focus Layout.rootId
         |> Task.attempt (always noOp)
 
 
-fromWindow : (Int -> Int -> msg) -> Cmd msg
+fromWindow : (Int -> Int -> msg) -> Cmd msg -- FIXME: get rid of
 fromWindow passSize =
     Dom.getViewport
         |> Task.perform
@@ -433,113 +341,22 @@ fromWindow passSize =
             )
 
 
--- FIXME: move somewhere else, where it belongs
-executeCell : GridCell umsg -> ( Msg umsg, Maybe umsg )
-executeCell { cell, nestPos, isSelected, onSelect } =
-    case cell of
-        Knob _ _ _ _ ->
-            ( FocusOn nestPos, Nothing ) -- FIXME: NoOp? We do the same on mousedown
-        Toggle _ val handler ->
-            -- if val == TurnedOn then ToggleOff nestPos else ToggleOn nestPos
-            if val == TurnedOn
-            then ( ToggleOff nestPos, Just <| handler TurnedOff )
-            else ( ToggleOn nestPos, Just <| handler TurnedOn )
-        Nested _ state _ ->
-            if state == Expanded
-            then ( CollapseNested nestPos, Nothing )
-            else ( ExpandNested nestPos, Nothing )
-        Choice _ state _ _ _ ->
-            if state == Expanded
-            then ( CollapseChoice nestPos, Nothing )
-            else ( ExpandChoice nestPos, Nothing )
-        Button _ handler ->
-            ( NoOp, Just <| handler () )
-        ChoiceItem label ->
-            case isSelected of
-                Just NotSelected ->
-                    ( Select nestPos
-                    , onSelect
-                        |> Maybe.andThen ((|>) label)
-                    )
-                _ -> ( NoOp, Nothing )
-        _ ->
-            case isSelected of
-                Just NotSelected -> ( Select nestPos, Nothing )
-                _ -> ( NoOp, Nothing )
-
-
-
-{-
-trackMouse_ : Model umsg -> MouseState -> ( Msg, Maybe umsg )
-trackMouse_ ( prevMouseState, ui ) nextMouseState =
+boundsFromSize : { width : Float, height : Float } -> Layout -> Bounds
+boundsFromSize { width, height } layout =
     let
-        (Focus focusedPos) = findFocus ui
-        -- prevCell = Debug.log "prev" <| findCellAt prevMouseState.pos <| layout ui
-        -- _ = Debug.log "pos" nextMouseState.pos
-        nextCell = findCellAt nextMouseState.pos <| layout ui  -- FIXME: store layout in the model
-    in
-        case Debug.log "nextCell" nextCell of
-        -- case findCell focusedPos ui of
-            Just (Knob _ knobState curValue handler) ->
-                let
-                    alter = applyMove prevMouseState nextMouseState knobState curValue
-                    _ = Debug.log "prevMouseState" prevMouseState
-                    _ = Debug.log "nextMouseState" nextMouseState
-                in
-                    ( Tune focusedPos alter
-                    ,
-                        if (prevMouseState.down == True && nextMouseState.down == False)
-                        then Just <| handler (alterKnob knobState alter curValue)
-                        else Nothing
-                    )
-            _ -> ( NoOp, Nothing ) -}
-
-
-offsetFromSize : { width : Int, height : Int } -> Model msg -> { x : Int, y : Int }
-offsetFromSize { width, height } { root } =
-    let
+        ( gridWidthInCells, gridHeightInCells ) = getSize layout
         ( gridWidthInPx, gridHeightInPx ) =
-            layout root |> getSizeInPixels -- FIXME: store layout in the model
+            ( cellWidth * toFloat gridWidthInCells
+            , cellHeight * toFloat gridHeightInCells
+            )
     in
-        { x = floor <| (toFloat width / 2) - (toFloat gridWidthInPx / 2)
-        , y = floor <| (toFloat height / 2) - (toFloat gridHeightInPx / 2)
+        { x = (width / 2) - (gridWidthInPx / 2)
+        , y = (height / 2) - (gridHeightInPx / 2)
+        , width = gridWidthInPx
+        , height = gridHeightInPx
         }
 
 
-
-map : (msgA -> msgB) -> Model msgA -> Model msgB
-map f model =
-    Model model.mouse
-        <| mapNest f model.root
-
-
-mapNest : (msgA -> msgB) -> Nest msgA -> Nest msgB
-mapNest f nest =
-    { shape = nest.shape
-    , focus = nest.focus
-    , cells = nest.cells |> List.map (mapCell f)
-    }
-
-
-mapCell : (msgA -> msgB) -> Cell msgA -> Cell msgB
-mapCell f cell =
-    case cell of
-        Ghost label -> Ghost label
-        ChoiceItem label -> ChoiceItem label
-        Knob label state val handler ->
-            Knob label state val (f << handler)
-        XY label state val handler ->
-            XY label state val (f << handler)
-        Toggle label state handler ->
-            Toggle label state (f << handler)
-        Button label handler ->
-            Button label (f << handler)
-        Choice label expanded item handler nest ->
-            Choice
-                label
-                expanded
-                item
-                (\i l -> handler i l |> Maybe.map f)
-                (mapNest f nest)
-        Nested label expanded nest ->
-            Nested label expanded <| mapNest f nest
+view : Style.Theme -> Gui msg -> Html Msg
+view theme gui =
+    Layout.view theme gui.bounds gui.tree gui.layout

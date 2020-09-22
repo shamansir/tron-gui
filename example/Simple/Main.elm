@@ -2,14 +2,15 @@ module Simple.Main exposing (view, update)
 
 
 import Browser
+import Color
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Html
 import Html exposing (Html)
 import Html.Attributes as Html
 
-import Gui.Alt as Gui
-import Gui.Alt exposing (Gui)
+import Gui.Build as Gui
+import Gui.Gui exposing (Gui)
 
 import Simple.Gui as Simple
 import Simple.Model exposing (..)
@@ -20,6 +21,7 @@ import Simple.Msg exposing (..)
 update : Msg -> Model -> Model
 update msg model =
     case msg of
+        NoOp -> model
         ChangeInt int -> { model | int = int }
         ChangeFloat float -> { model | float = float }
         ChangeString string -> { model | string = string }
@@ -43,8 +45,8 @@ view model =
         , Html.li [] [ Html.text <| model.string ]
         , Html.li [] [ Html.text <| choiceToString model.choice ]
         , Html.li
-            [ Html.style "background-color" model.color ]
-            [ Html.text model.color ]
+            [ Html.style "background-color" <| Color.toCssString model.color ]
+            [ Html.text <| Color.toCssString model.color ]
         , Html.li [] [ Html.text <| if model.toggle then "On" else "Off" ]
         , Html.li [] [ Html.text <| choiceToString model.buttonPressed ]
         ]

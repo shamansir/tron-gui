@@ -9,36 +9,44 @@ import Json.Decode as D
 import Json.Encode as Encode
 import Html exposing (Html)
 import Html as Html exposing (map, div)
+import Html.Attributes as Attr exposing (class)
 import Html.Events as Html exposing (onClick)
+import Dict exposing (size)
 import Task as Task
+import Random
 
-import Gui.Alt as AGui
-import Gui.Alt exposing (Gui)
-import Gui.Gui as Gui exposing (view, fromAlt)
-import Gui.Gui as Tron exposing (Model, focus)
+import Gui.Gui exposing (Gui)
+import Gui.Gui as Gui exposing (view)
+import Gui.Expose as Exp exposing (Update)
+import Gui.Gui as Tron exposing (Gui, focus, over)
 import Gui.Msg as Tron exposing (Msg)
 import Gui.Mouse exposing (Position)
 import Gui.Mouse as Tron exposing (MouseState)
+import Gui.Render.Style as Style exposing (..)
 
 import Simple.Main as Simple
 import Simple.Model as Simple
 import Simple.Msg as Simple
 import Simple.Gui as SimpleGui
-import Dict exposing (size)
+
+import RandomGui as Gui exposing (generator)
 
 
 type Msg
-    = ChangeMode Mode
-    | DatGuiUpdate AGui.Update
-    | TronUpdate (Tron.Msg Msg)
-    | ToSimple Simple.Msg
+    = NoOp
+    | ChangeMode Mode
     | Resize Int Int
-    | NoOp
+    | DatGuiUpdate Exp.Update
+    | TronUpdate Tron.Msg
+    | ToSimple Simple.Msg
+    | Randomize (Tron.Gui Msg)
+    | SwitchTheme
+    | TriggerRandom
+    | TriggerDefault
 
 
-type Example
-    = Simple Simple.Model
-    | Elmsfeuer
+type alias Example
+    = Simple.Model
 
 
 type Mode
@@ -48,69 +56,80 @@ type Mode
 
 type alias Model =
     { mode : Mode
-    , gui : Tron.Model Msg
+    , theme : Style.Theme
+    , gui : Tron.Gui Msg
     , example : Example
-    , size : ( Int, Int )
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    update
-        (ChangeMode DatGui)
-        { mode = DatGui
-        , example = Simple <| Simple.init
-        , gui = Gui.none
-        , size = ( 0, 0 )
+    (
+        { mode = TronGui
+        , example = Simple.init
+        , theme = Style.Light
+        , gui = Gui.init Gui.TopToBottom
+                    |> Gui.over (SimpleGui.for Simple.init)
+                    |> Gui.map ToSimple
         }
+    , Cmd.batch -- FIXME: Gui.init
+        [ Tron.focus NoOp
+        , Tron.fromWindow Resize -- FIXME: subscribe to resizes along with the mouse
+        ]
+    )
 
 
 view : Model -> Html Msg
-view { mode, gui, example } =
+view { mode, gui, example, theme } =
     Html.div
-        [ ]
+        [ Attr.class <| "example " ++ case theme of
+            Style.Dark -> "--dark"
+            Style.Light -> "--light" ]
         [ Html.button
             [ Html.onClick <| ChangeMode TronGui ]
             [ Html.text "Tron" ]
         , Html.button
             [ Html.onClick <| ChangeMode DatGui ]
             [ Html.text "Dat.gui" ]
+        , Html.button
+            [ Html.onClick TriggerRandom ]
+            [ Html.text "Random" ]
+        , Html.button
+            [ Html.onClick TriggerDefault ]
+            [ Html.text "Default" ]
+        , Html.button
+            [ Html.onClick SwitchTheme ]
+            [ Html.text "Theme" ]
         , case mode of
             DatGui -> Html.div [] []
             TronGui ->
                 gui
-                    |> Gui.view
+                    |> Gui.view theme
                     |> Html.map TronUpdate
-        , case example of
-            Simple simpleExample ->
-                Simple.view simpleExample |> Html.map (always NoOp)
-            Elmsfeuer -> Html.div [] []
+        , Simple.view example
+            |> Html.map (always NoOp)
         ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ mode, example, gui } as model) =
-    case ( msg, mode, example ) of
+update msg model =
+    case ( msg, model.mode ) of
 
-        ( ChangeMode DatGui, _, Simple simpleExample ) ->
+        ( ChangeMode DatGui, _ ) ->
             (
                 { model
                 | mode = DatGui
-                -- FIXME: update Gui model as well
                 }
-            , SimpleGui.for simpleExample
-                |> AGui.encode
+            , model.gui
+                |> .tree
+                |> Exp.encode
                 |> startDatGui
             )
 
-        ( ChangeMode TronGui, _, Simple simpleExample ) ->
+        ( ChangeMode TronGui, _ ) ->
             (
                 { model
                 | mode = TronGui
-                , gui = SimpleGui.for simpleExample
-                    |> Gui.fromAlt
-                    |> Gui.build
-                    |> Gui.map ToSimple
                 }
             , Cmd.batch
                 [ destroyDatGui ()
@@ -119,29 +138,17 @@ update msg ({ mode, example, gui } as model) =
                 ]
             )
 
-        ( ChangeMode TronGui, _, _ ) ->
+        ( ToSimple smsg, _ ) ->
             (
                 { model
-                | mode = TronGui
-                -- FIXME: build Gui for Elmsfeuer as well
-                }
-            , Cmd.batch
-                [ destroyDatGui ()
-                , Tron.focus NoOp
-                , Tron.fromWindow Resize
-                ]
-            )
-
-        ( ToSimple smsg, _, Simple smodel ) ->
-            (
-                { model
-                | example = Simple <| Simple.update smsg smodel
+                | example =
+                    Simple.update smsg model.example
                 }
             , Cmd.none
             )
 
-        ( TronUpdate guiMsg, TronGui, Simple simpleExample ) ->
-            case gui |> Gui.update guiMsg of
+        ( TronUpdate guiMsg, TronGui ) ->
+            case model.gui |> Gui.update guiMsg of
                 ( nextGui, cmds ) ->
                     (
                         { model
@@ -150,25 +157,60 @@ update msg ({ mode, example, gui } as model) =
                     , cmds
                     )
 
-        ( DatGuiUpdate guiUpdate, DatGui, Simple simpleExample ) ->
+        ( DatGuiUpdate guiUpdate, DatGui ) ->
+            ( model
+            , model.gui
+                |> .tree -- FIXME
+                |> Exp.update guiUpdate
+            )
+
+        ( Resize width height, _ ) ->
             (
                 { model
-                | example =
-                    SimpleGui.for simpleExample
-                        |> AGui.update guiUpdate
-                        |> Maybe.map (\simpleMsg ->
-                                Simple.update simpleMsg simpleExample
-                            )
-                        |> Maybe.withDefault simpleExample
-                        |> Simple
+                | gui = model.gui |> Gui.reflow ( width, height )
                 }
             , Cmd.none
             )
 
-        ( Resize width height, _, _ ) ->
+        ( TriggerRandom, _ ) ->
+            ( model
+            , Cmd.batch
+                [ destroyDatGui ()
+                , Random.generate Randomize
+                    <| Random.map (Gui.map <| always NoOp)
+                    <| Random.map
+                        (\prop ->
+                            Gui.init Gui.TopToBottom |> Gui.over prop
+                        )
+                    <| Gui.generator
+                ]
+            )
+
+        ( Randomize newGui, _ ) ->
             (
                 { model
-                | size = ( width, height )
+                | gui = newGui
+                }
+            , case model.mode of
+                DatGui ->
+                    newGui
+                        |> .tree -- FIXME
+                        |> Exp.encode
+                        |> startDatGui
+                TronGui ->
+                    Cmd.batch
+                        [ Tron.focus NoOp
+                        , Tron.fromWindow Resize -- FIXME: subscribe to resizes along with the mouse
+                        ]
+            )
+
+        ( TriggerDefault, _ ) ->
+            init
+
+        ( SwitchTheme, _ ) ->
+            (
+                { model
+                | theme = Style.switch model.theme
                 }
             , Cmd.none
             )
@@ -184,22 +226,15 @@ update msg ({ mode, example, gui } as model) =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions { mode, example, gui, size } =
+subscriptions { mode } =
     case mode of
-        DatGui -> updateFromDatGui (DatGuiUpdate << AGui.fromPort)
+        DatGui ->
+            updateFromDatGui (DatGuiUpdate << Exp.fromPort)
         TronGui ->
-            case example of
-                Simple simpleExample ->
-                    Sub.batch
-                        [ Gui.trackMouse
-                            { width = Tuple.first size
-                            , height = Tuple.second size
-                            }
-                            gui
-                                |> Sub.map TronUpdate
-                        , Browser.onResize Resize
-                        ]
-                _ -> Sub.none
+            Sub.batch
+                [ Gui.trackMouse |> Sub.map TronUpdate
+                , Browser.onResize Resize
+                ]
 
 
 main : Program () Model Msg
@@ -212,7 +247,7 @@ main =
         }
 
 
-port updateFromDatGui : (AGui.PortUpdate -> msg) -> Sub msg
+port updateFromDatGui : (Exp.PortUpdate -> msg) -> Sub msg
 
 port startDatGui : Encode.Value -> Cmd msg
 

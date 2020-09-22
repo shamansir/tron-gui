@@ -1,8 +1,7 @@
 module Gui.Util exposing (..)
 
 
-import Gui.Def exposing (..)
-import Gui.Mouse exposing (..)
+import Gui.Control exposing (..)
 
 
 align : Float -> Float
@@ -12,48 +11,8 @@ align v =
         else v
 
 
-applyKnobMove : MouseState -> MouseState -> KnobState -> Float -> AlterKnob
-applyKnobMove prev next curState curValue =
-    case next.dragFrom of
-        Just dragFrom ->
-            if next.pos /= dragFrom then
-                let
-                    originY = dragFrom.y
-                    curY = next.pos.y
-                    topY = toFloat originY + (knobDistance / 2)
-                    diffY = (topY - toFloat curY) / knobDistance
-                in
-                    Alter <| align diffY
-            else Stay
-        _ -> Stay
-
-
-applyXYMove : MouseState -> MouseState -> ( KnobState, KnobState ) -> ( Float, Float ) -> AlterXY
-applyXYMove prev next curState curValue =
-    case next.dragFrom of
-        Just dragFrom ->
-            if next.pos /= dragFrom then
-                let
-                    originX = dragFrom.x
-                    originY = dragFrom.y
-                    curX = next.pos.x
-                    curY = next.pos.y
-                    leftX = toFloat originX - (knobDistance / 2)
-                    -- Y is going from top to bottom
-                    topY = toFloat originY + (knobDistance / 2)
-                    diffX = (toFloat curX - leftX) / knobDistance
-                    diffY = (topY - toFloat curY) / knobDistance
-                in
-                    Alter_
-                        ( align diffX
-                        , align (1 - diffY)
-                        )
-            else Stay_
-        _ -> Stay_
-
-
 findMap : (a -> Maybe x) -> List a -> Maybe x
-findMap toValue =  -- TODO: re-use in code where such `foldl` is used
+findMap toValue =
     List.foldl
         (\item maybeResult ->
             case maybeResult of
@@ -63,21 +22,9 @@ findMap toValue =  -- TODO: re-use in code where such `foldl` is used
         Nothing
 
 
-alterKnob : KnobState -> AlterKnob -> Float -> Float
-alterKnob { min, max, step } alter curValue =
-    case alter of
-        Alter amount ->
-            -- amount is a (0 <= value <= 1)
-            min + (amount * (max - min)) -- TODO: apply step
-        Stay -> curValue
-
-
-alterXY : ( KnobState, KnobState ) -> AlterXY -> ( Float, Float ) -> ( Float, Float )
-alterXY ( xSpec, ySpec ) alter ( curX, curY ) =
-    case alter of
-        Alter_ ( amountX, amountY ) ->
-            -- amount is a (0 <= value <= 1)
-            ( xSpec.min + (amountX * (xSpec.max - xSpec.min)) -- TODO: apply step
-            , ySpec.min + (amountY * (ySpec.max - ySpec.min))
-            )
-        Stay_ -> ( curX, curY )
+alter : { a | min : Float, max : Float, step : Float } -> Float -> Float -> Float
+alter { min, max, step } amount curValue =
+    let
+        toAdd = amount * (max - min)
+        alignedByStep = toFloat (floor (toAdd / step)) * step
+    in min + alignedByStep

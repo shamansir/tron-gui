@@ -2,6 +2,7 @@ module BinPack exposing (..)
 
 
 import Random
+import Bounds exposing (Bounds)
 
 
 {- Based on: https://github.com/bflyblue/binpack/blob/master/Data/BinPack/R2.hs -}
@@ -29,31 +30,24 @@ type BinPack a
 
 fold : (a -> b -> b) -> b -> BinPack a -> b
 fold f =
-  fold1 (\bp prev ->
-    case bp of
-      Node _ _ v -> f v prev
-      Free _ -> prev
-  )
+    fold1
+        (\bp prev ->
+            case bp of
+                Node _ _ v -> f v prev
+                Free _ -> prev
+        )
 
 
 fold1 : (BinPack a -> b -> b) -> b -> BinPack a -> b
 fold1 f i bp =
-  case bp of
-    Node _ { right, below } _ ->
-      let
-        current = f bp i
-        fromRight = fold1 f current right
-        fromBelow = fold1 f fromRight below
-      in fromBelow
-    Free _ -> f bp i
-
-
-type alias Bounds =
-    { x : Float
-    , y : Float
-    , width : Float
-    , height : Float
-    }
+    case bp of
+        Node _ { right, below } _ ->
+            let
+                current = f bp i
+                fromRight = fold1 f current right
+                fromBelow = fold1 f fromRight below
+            in fromBelow
+        Free _ -> f bp i
 
 
 unfold : ( ( a, Bounds ) -> k -> k) -> k -> BinPack a -> k
@@ -117,3 +111,20 @@ pack ( rect, value ) model =
 pack1 : ( { width : Float, height : Float }, a ) -> BinPack a -> BinPack a
 pack1 ( rect, value ) model =
     pack ( rect, value ) model |> Maybe.withDefault model
+
+
+find : { x : Float, y : Float } -> BinPack a -> Maybe ( a, Bounds )
+find pos =
+    unfold
+        (\ ( v, bounds ) foundBefore ->
+            case foundBefore of
+                Just _ -> foundBefore
+                Nothing ->
+                    if (pos.x >= bounds.x)
+                    && (pos.y >= bounds.y)
+                    && (pos.x < bounds.x + bounds.width)
+                    && (pos.y < bounds.y + bounds.height)
+                        then Just ( v, bounds )
+                        else Nothing
+        )
+        Nothing

@@ -22,14 +22,25 @@ const sendProxy = (origSend) => {
   }
 };
 
+const toCssColor = (rgbaStr) => {
+  let rgba = rgbaStr.split(',');
+  return 'rgba(' + (rgba[0] * 255) + ',' + (rgba[1] * 255) + ',' + (rgba[2] * 255) + ',' + rgba[3] + ')';
+}
+
+const fromCssColor = (css) => {
+  let rgba = css.slice(5,-1).split(',');
+  console.log((parseFloat(rgba[0]) / 255) + ',' + (parseFloat(rgba[1]) / 255) + ',' + (parseFloat(rgba[2]) / 255) + ',' + parseFloat(rgba[4]));
+  return (parseFloat(rgba[0]) / 255) + ',' + (parseFloat(rgba[1]) / 255) + ',' + (parseFloat(rgba[2]) / 255) + ',' + parseFloat(rgba[3]);
+}
+
 
 const applyDefinition = (config, definition, send) => {
 
   function setProperty(label, property) {
     const propName = propNameFromPath(property.path);
 
-    if (property.type == 'gui') {
-      property.nest.gui.forEach((component) => {
+    if (property.type == 'nest') {
+      property.nest.forEach((component) => {
         setProperty(component.label, component.property);
       });
     } else if (property.type == 'button') {
@@ -37,14 +48,18 @@ const applyDefinition = (config, definition, send) => {
       config[propName] = () => { sender('button'); }
     } else if (property.type == 'toggle') {
       config[propName] = (property.current == 'on');
+    } else if (property.type == 'color') {
+      config[propName] = toCssColor(property.current);
     } else if (property.type != 'ghost') {
       config[propName] = property.current;
     }
   }
 
-  definition.gui.forEach((component) => {
-    setProperty(component.label, component.property);
-  });
+  if (definition.nest) {
+    definition.nest.forEach((component) => {
+      setProperty(component.label, component.property);
+    });
+  }
 
 }
 
@@ -63,10 +78,10 @@ function start(document, definition, origSend) {
 
     const propName = propNameFromPath(property.path);
 
-    if (property.type == 'gui') {
+    if (property.type == 'nest') {
       const nestedGui = root.addFolder(label);
 
-      property.nest.gui.forEach((component) => {
+      property.nest.forEach((component) => {
         addControl(nestedGui, component.label, component.property);
       });
 
@@ -124,16 +139,18 @@ function start(document, definition, origSend) {
       const color = root.addColor(config, propName).name(label);
       const sender = send(property);
       color.onFinishChange((value) => {
-        sender(value);
+        sender(fromCssColor(value));
       });
 
     }
 
   }
 
-  definition.gui.forEach((component) => {
-    addControl(gui, component.label, component.property);
-  });
+  if (definition.nest) {
+    definition.nest.forEach((component) => {
+      addControl(gui, component.label, component.property);
+    });
+  }
 
   document.querySelector('.dg.ac').classList.add('hide-on-space');
 
