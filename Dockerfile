@@ -21,7 +21,7 @@ FROM nginx:1.15
 COPY --from=0 /app/example/assets /usr/share/nginx/html
 COPY --from=0 /app/example/app.js /usr/share/nginx/html
 COPY --from=0 /app/example/dat.gui.min.js /usr/share/nginx/html
-COPY --from=0 /src/Gui/Gui.css /usr/share/nginx/html
+COPY --from=0 /app/src/Gui/Gui.css /usr/share/nginx/html
 COPY --from=0 /app/example/Gui.js /usr/share/nginx/html
 COPY --from=0 /app/example/index.html /usr/share/nginx/html
 
