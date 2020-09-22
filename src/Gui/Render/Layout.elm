@@ -77,7 +77,7 @@ viewProperty theme tone path pixelBounds focus ( label, prop ) =
                 Property.view theme tone path pixelBounds focus ( label, prop )
 
 
-viewPlateBack : Style.Theme -> Bounds -> Svg Msg
+viewPlateBack : Theme -> Bounds -> Svg Msg
 viewPlateBack theme pixelBounds =
     positionAt_ pixelBounds <|
         case mode of
@@ -90,14 +90,14 @@ viewPlateBack theme pixelBounds =
                 Plate.back theme pixelBounds
 
 
-viewPlateControls : Tone -> Bounds -> Path -> Svg Msg
-viewPlateControls tone pixelBounds path =
+viewPlateControls : Theme -> Tone -> Bounds -> Path -> Svg Msg
+viewPlateControls theme tone pixelBounds path =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g [ ] [ ]
             Fancy ->
-                Plate.controls tone pixelBounds path
+                Plate.controls theme tone pixelBounds path
 
 
 view : Style.Theme -> Bounds -> Property msg -> Layout -> Html Msg
@@ -108,7 +108,7 @@ view theme bounds root layout =
                 <| Json.map KeyDown H.keyCode
         tones = Style.assignTones root
         toneOf path =
-            tones |> Dict.get (Path.toString path) |> Maybe.withDefault Black
+            tones |> Dict.get (Path.toString path) |> Maybe.withDefault None
         ( plates, cells ) =
             BinPack.unfold
                 (\( cell, cellBounds ) ( prevPlates, prevCells ) ->
@@ -157,7 +157,7 @@ view theme bounds root layout =
 
             , plates1 |> List.map
                 (\(path, plateBounds) ->
-                    viewPlateControls (toneOf path) plateBounds path
+                    viewPlateControls theme (toneOf path) plateBounds path
                 )
             )
         makeClass =

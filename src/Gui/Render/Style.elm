@@ -19,11 +19,11 @@ type ToneColor = ToneColor Color
 
 
 type Tone
-    = Green
+    = None
+    | Green
     | Pink
     | Yellow
     | Aqua
-    | Black
 
 
 green = ToneColor "#00cc47"
@@ -62,14 +62,17 @@ darkBackground = "rgb(15 15 15 / 60%)"
 canvasBackground = "lightgray"
 
 
-colorFor : Tone -> ToneColor
-colorFor style =
+colorFor : Theme -> Tone -> ToneColor
+colorFor theme style =
     case style of
         Green -> green
         Pink -> pink
         Yellow -> yellow
         Aqua -> aqua
-        Black -> black
+        None ->
+            case theme of
+                Dark -> white
+                Light -> black
 
 
 next : Tone -> Tone
@@ -79,7 +82,7 @@ next style =
         Pink -> Yellow
         Yellow -> Aqua
         Aqua -> Green
-        Black -> Black
+        None -> None
 
 
 background : Theme -> Color
@@ -115,7 +118,7 @@ assignTones =
                         , next nextTone
                         )
                     _ ->
-                        ( knownTones |> Dict.insert (Path.toString path) Black
+                        ( knownTones |> Dict.insert (Path.toString path) None
                         , nextTone
                         )
             else -- path is deeper than 0
@@ -133,7 +136,7 @@ assignTones =
                             , nextTone
                             )
                     Nothing ->
-                        ( knownTones |> Dict.insert (Path.toString path) Black
+                        ( knownTones |> Dict.insert (Path.toString path) None
                         , nextTone
                         )
 

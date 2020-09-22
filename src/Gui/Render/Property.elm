@@ -101,7 +101,7 @@ knob theme tone center value =
     in
         Svg.g
             []
-            [ path (colorFor tone |> toneToString)
+            [ path (colorFor theme tone |> toneToString)
                 <| describeArc
                     center
                     { radiusA = radiusA, radiusB = radiusB }
@@ -111,7 +111,7 @@ knob theme tone center value =
                     center
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle value, to = toAngle 1 }
-            , path (colorFor tone |> toneToString)
+            , path (colorFor theme tone |> toneToString)
                 <| describeMark
                     center
                     { radiusA = radiusA, radiusB = radiusB }
@@ -132,13 +132,13 @@ arrow theme tone expand center =
         [ Svg.g
             [ SA.style "transform: scale(0.7) translate(-32px,-32px);" ]
             [ Svg.polyline
-                [ SA.fill <| toneToString <| colorFor tone
+                [ SA.fill <| toneToString <| colorFor theme tone
                 , SA.points "18.3,32.5 32,18.8 45.7,32.5 43.8,34.3 32,22.6 20.2,34.3 18.3,32.5"
                 , SA.strokeLinecap "round"
                 ]
                 []
             , Svg.polygon
-                [ SA.fill <| toneToString <| colorFor tone
+                [ SA.fill <| toneToString <| colorFor theme tone
                 , SA.points "33.4,20.7 33.4,44.7 30.6,44.7 30.6,20.7"
                 , SA.strokeLinecap "round"
                 ]
@@ -175,7 +175,7 @@ button theme tone maybeIcon center =
                 , SA.width "20"
                 , SA.height "20"
                 , SA.fill "none"
-                , SA.stroke <| toneToString <| colorFor tone
+                , SA.stroke <| toneToString <| colorFor theme tone
                 , SA.strokeWidth "2.5"
                 , SA.strokeLinecap "round"
                 , SA.rx "3"
@@ -193,9 +193,9 @@ toggle theme tone state center =
         , SA.cy <| String.fromFloat center.y
         , SA.r "10"
         , SA.fill <| case state of
-            TurnedOn -> toneToString <| colorFor tone
+            TurnedOn -> toneToString <| colorFor theme tone
             TurnedOff -> "none"
-        , SA.stroke <| toneToString <| colorFor tone
+        , SA.stroke <| toneToString <| colorFor theme tone
         , SA.strokeWidth "2.5"
         ]
         [
@@ -212,7 +212,7 @@ coord theme tone center ( valueX, valueY ) =
             , SA.width "20"
             , SA.height "20"
             , SA.fill "none"
-            , SA.stroke <| toneToString <| colorFor tone
+            , SA.stroke <| toneToString <| colorFor theme tone
             , SA.strokeWidth "2.5"
             , SA.strokeLinecap "round"
             , SA.strokeDasharray "2.5 15 5 15 5 15 5 15 2.5"
@@ -224,7 +224,7 @@ coord theme tone center ( valueX, valueY ) =
         , Svg.circle
             [ SA.cx <| String.fromFloat <| center.x + ((valueX - 0.5) * 20)
             , SA.cy <| String.fromFloat <| center.y - 2 + ((valueY - 0.5) * 20)
-            , SA.fill <| toneToString <| colorFor tone
+            , SA.fill <| toneToString <| colorFor theme tone
             , SA.stroke "none"
             , SA.r "3"
             ]
