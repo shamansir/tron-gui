@@ -12,3 +12,4 @@ type Msg
     | Click Path
     | MouseDown Path
     | KeyDown Int
+    | Detach Path

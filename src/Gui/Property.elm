@@ -29,9 +29,10 @@ type alias Axis =
     }
 
 
-type ExpandState
+type GroupState
     = Expanded
     | Collapsed
+    | Detached
 
 
 type ToggleState
@@ -48,14 +49,14 @@ type Selected = Selected Int
 type alias GroupControl msg =
     Control
         ( Shape, Array ( Label, Property msg ) )
-        ( ExpandState, Maybe FocusAt )
+        ( GroupState, Maybe FocusAt )
         msg
 
 
 type alias ChoiceControl msg =
     Control
         ( Shape, Array ( Label, Property msg ) ) -- FIXME: Control ( Maybe Icon ) () msg
-        ( ExpandState, ( Maybe FocusAt, Selected ) )
+        ( GroupState, ( Maybe FocusAt, Selected ) )
         msg
 
 
@@ -303,6 +304,7 @@ execute item =
                     case expanded of
                         Collapsed -> Expanded
                         Expanded -> Collapsed
+                        Detached -> Detached
                 nextChoice =
                     Control
                         setup
@@ -320,6 +322,7 @@ execute item =
                     case expanded of
                         Collapsed -> Expanded
                         Expanded -> Collapsed
+                        Detached -> Detached
                 nextGroup =
                     Control
                         setup
@@ -415,6 +418,12 @@ expand prop =
         _ -> prop
 
 
+expandAt : Path -> Property msg -> Property msg
+expandAt path =
+    updateAt path expand
+
+
+
 collapse : Property msg -> Property msg
 collapse prop =
     case prop of
@@ -423,6 +432,40 @@ collapse prop =
         Choice ( Control setup ( _, selection ) handler ) ->
             Choice ( Control setup ( Collapsed, selection ) handler )
         _ -> prop
+
+
+detach : Property msg -> Property msg
+detach prop =
+    case prop of
+        Group ( Control setup ( _, focus ) handler ) ->
+            Group ( Control setup ( Detached, focus ) handler )
+        Choice ( Control setup ( _, selection ) handler ) ->
+            Choice ( Control setup ( Detached, selection ) handler )
+        _ -> prop
+
+
+detachAt : Path -> Property msg -> Property msg
+detachAt path =
+    updateAt path detach
+
+
+toggle : Property msg -> Property msg
+toggle prop =
+    let
+        invert current =
+            case current of
+                TurnedOff -> TurnedOn
+                TurnedOn -> TurnedOff
+    in
+    case prop of
+        Toggle ( Control setup current handler ) ->
+            Toggle ( Control setup (invert current) handler )
+        _ -> prop
+
+
+toggleAt : Path -> Property msg -> Property msg
+toggleAt path =
+    updateAt path toggle
 
 
 toggleOn : Property msg -> Property msg

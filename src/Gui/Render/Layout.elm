@@ -10,6 +10,7 @@ import Svg.Attributes as SA exposing (..)
 import Html.Events as H
 import Json.Decode as Json
 import Dict
+import Url exposing (Url)
 
 import BinPack
 import Bounds exposing (..)
@@ -90,18 +91,18 @@ viewPlateBack theme pixelBounds =
                 Plate.back theme pixelBounds
 
 
-viewPlateControls : Theme -> Tone -> Bounds -> Path -> Svg Msg
-viewPlateControls theme tone pixelBounds path =
+viewPlateControls : Theme -> Tone -> (Path -> Maybe Url) -> Bounds -> Path -> Svg Msg
+viewPlateControls theme tone detach pixelBounds path =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g [ ] [ ]
             Fancy ->
-                Plate.controls theme tone pixelBounds path
+                Plate.controls theme tone detach pixelBounds path
 
 
-view : Style.Theme -> Bounds -> Property msg -> Layout -> Html Msg
-view theme bounds root layout =
+view : Style.Theme -> Bounds -> (Path -> Maybe Url) -> Property msg -> Layout -> Html Msg
+view theme bounds detach root layout =
     let
         keyDownHandler_ =
             H.on "keydown"
@@ -157,7 +158,7 @@ view theme bounds root layout =
 
             , plates1 |> List.map
                 (\(path, plateBounds) ->
-                    viewPlateControls theme (toneOf path) plateBounds path
+                    viewPlateControls theme (toneOf path) detach plateBounds path
                 )
             )
         makeClass =

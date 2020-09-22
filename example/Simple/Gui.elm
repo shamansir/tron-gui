@@ -4,7 +4,7 @@ module Simple.Gui exposing (..)
 import Gui.Build as Gui
 import Gui.Gui exposing (Gui)
 import Gui.Property  exposing (Property)
-import Gui.Property as Gui exposing (Label)
+import Gui.Property as Property exposing (Label)
 
 
 import Simple.Model exposing (..)
@@ -54,8 +54,8 @@ for model =
           )
         , ( "toggle",
                 Gui.toggle
-                    (Gui.boolToToggle model.toggle)
-                    (Gui.toggleToBool >> Switch) )
+                    (Property.boolToToggle model.toggle)
+                    (Property.toggleToBool >> Switch) )
         ]
         (always NoOp)
 
@@ -91,7 +91,7 @@ colorNest =
             (always NoOp)
 
 
-choiceToLabel : Choice -> Gui.Label
+choiceToLabel : Choice -> Property.Label
 choiceToLabel c =
     case c of
         A -> "The A"

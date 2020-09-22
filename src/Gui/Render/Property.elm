@@ -124,14 +124,15 @@ knob theme tone center value =
             ]
 
 
-arrow : Theme -> Tone -> ExpandState -> { x : Float, y : Float } -> Svg msg
-arrow theme tone expand center =
+arrow : Theme -> Tone -> GroupState -> { x : Float, y : Float } -> Svg msg
+arrow theme tone groupState center =
     Svg.g
         [ SA.style <| "transform: translate("
             ++ String.fromFloat center.x ++ "px,"
             ++ String.fromFloat center.y ++ "px)"
-            ++ case expand of
+            ++ case groupState of
                 Expanded -> " rotate(180deg);"
+                Detached -> " rotate(70deg);"
                 Collapsed -> ";"
         ]
         [ Svg.g

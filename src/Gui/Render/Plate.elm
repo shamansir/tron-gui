@@ -2,6 +2,7 @@ module Gui.Render.Plate exposing (..)
 
 
 import Color
+import Url exposing (Url)
 
 import Bounds exposing (Bounds)
 import Gui.Path exposing (Path)
@@ -30,8 +31,8 @@ back theme bounds =
         []
 
 
-controls : Style.Theme -> Style.Tone -> Bounds -> Path -> Svg Msg
-controls theme tone bounds path =
+controls : Style.Theme -> Style.Tone -> (Path -> Maybe Url) -> Bounds -> Path -> Svg Msg
+controls theme tone detach bounds path =
     Svg.g
         [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
             (String.fromFloat <| bounds.width - gap)

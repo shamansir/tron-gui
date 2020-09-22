@@ -103,11 +103,11 @@ pack prop =
                     -> Layout
                     -> Control
                             ( Shape, Array ( Label, Property msg ) )
-                            ( ExpandState, a )
+                            ( GroupState, a )
                             msg
                     -> Layout
-                packGroupControl path layout (Control ( innerShape, innerItems ) (expanded, _) _) =
-                    case expanded of
+                packGroupControl path layout (Control ( innerShape, innerItems ) (grpState, _) _) =
+                    case grpState of
                         Expanded ->
                             let
                                 withPlate
@@ -119,6 +119,7 @@ pack prop =
                             in
                                 packPlatesOf path withPlate innerItems
                         Collapsed -> layout
+                        Detached -> layout
 
                 packPlatesOf path layout =
                     Array.indexedMap Tuple.pair

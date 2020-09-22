@@ -6,6 +6,7 @@ module Gui.Gui exposing
 
 
 import Browser.Dom as Dom
+import Url exposing (Url)
 import Task
 import Color
 import Browser.Events as Browser
@@ -42,6 +43,7 @@ type alias Gui msg =
     , mouse : MouseState
     , tree : Property msg
     , layout : Layout
+    , detach : Path -> Maybe Url
     }
 
 
@@ -64,17 +66,25 @@ map f model =
     , mouse = model.mouse
     , tree = Gui.Property.map f model.tree
     , layout = model.layout
+    , detach = model.detach
     }
 
 
 init : Flow -> Gui msg
 init flow =
-    Gui flow Bounds.zero Gui.Mouse.init Nil Layout.init
+    Gui flow Bounds.zero Gui.Mouse.init Nil Layout.init <| always Nothing
+
+
+detachAs : (Path -> Maybe Url) -> Gui msg -> Gui msg
+detachAs createUrl gui =
+    { gui
+    | detach = createUrl
+    }
 
 
 over : Property msg -> Gui msg -> Gui msg
-over prop from =
-    { from
+over prop gui =
+    { gui
     | tree = prop
     , layout = Layout.pack prop
     }
@@ -126,6 +136,15 @@ update msg gui =
                     }
                 , cmds
                 )
+
+        Detach path ->
+            (
+                { gui
+                | tree =
+                    detachAt path gui.tree
+                }
+            , Cmd.none
+            )
 
 
 trackMouse : Sub Msg
@@ -359,4 +378,4 @@ boundsFromSize { width, height } layout =
 
 view : Style.Theme -> Gui msg -> Html Msg
 view theme gui =
-    Layout.view theme gui.bounds gui.tree gui.layout
+    Layout.view theme gui.bounds gui.detach gui.tree gui.layout

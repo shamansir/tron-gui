@@ -121,7 +121,7 @@ update msg model =
                 | mode = DatGui
                 }
             , model.gui
-                |> .tree
+                |> .tree -- FIXME
                 |> Exp.encode
                 |> startDatGui
             )
@@ -216,13 +216,6 @@ update msg model =
             )
 
         _ -> ( model, Cmd.none )
-
-
--- tronGuiFor : Simple.Model -> Gui.Model Simple.Msg
--- tronGuiFor simpleExample =
---     SimpleGui.for simpleExample
---         |> Gui.fromAlt
---         |> Gui.build
 
 
 subscriptions : Model -> Sub Msg

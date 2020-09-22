@@ -147,23 +147,33 @@ encodePropertyAt path property =
                 , ( "path", encodePath path )
                 ]
 
-        Choice ( Control ( _, items ) ( expanded, ( _, Selected current ) ) _) ->
+        Choice ( Control ( _, items ) ( state, ( _, Selected current ) ) _) ->
             E.object
                 [ ( "type", E.string "choice" )
                 , ( "path", encodePath path )
                 , ( "current", E.int current )
-                , ( "expanded", E.bool <| case expanded of
+                , ( "expanded", E.bool <| case state of
                     Expanded -> True
-                    Collapsed -> False )
+                    Collapsed -> False
+                    Detached -> False )
+                , ( "detached", E.bool <| case state of
+                    Detached -> True
+                    Collapsed -> False
+                    Expanded -> False )
                 , ( "options", encodeNested path items )
                 ]
-        Group (Control ( _, items ) ( expanded, _ ) _ ) ->
+        Group (Control ( _, items ) ( state, _ ) _ ) ->
             E.object
                 [ ( "type", E.string "nest" )
                 , ( "path", encodePath path )
-                , ( "expanded", E.bool <| case expanded of
+                , ( "expanded", E.bool <| case state of
                     Expanded -> True
-                    Collapsed -> False )
+                    Collapsed -> False
+                    Detached -> False )
+                , ( "detached", E.bool <| case state of
+                    Detached -> True
+                    Collapsed -> False
+                    Expanded -> False )
                 , ( "nest", encodeNested path items )
                 ]
 
@@ -215,6 +225,7 @@ fromPort portUpdate =
         D.decodeValue (valueDecoder portUpdate.type_) portUpdate.value
             |> Result.withDefault Other
     }
+
 
 encodeColor : Color -> E.Value
 encodeColor color =
