@@ -2,6 +2,7 @@ module Simple.Main exposing (view, update)
 
 
 import Browser
+import Color
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Html
@@ -44,8 +45,8 @@ view model =
         , Html.li [] [ Html.text <| model.string ]
         , Html.li [] [ Html.text <| choiceToString model.choice ]
         , Html.li
-            [ Html.style "background-color" model.color ]
-            [ Html.text model.color ]
+            [ Html.style "background-color" <| Color.toCssString model.color ]
+            [ Html.text <| Color.toCssString model.color ]
         , Html.li [] [ Html.text <| if model.toggle then "On" else "Off" ]
         , Html.li [] [ Html.text <| choiceToString model.buttonPressed ]
         ]

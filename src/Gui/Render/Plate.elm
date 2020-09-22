@@ -1,6 +1,8 @@
 module Gui.Render.Plate exposing (..)
 
 
+import Color
+
 import Bounds exposing (Bounds)
 import Gui.Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
@@ -17,7 +19,7 @@ import Html.Events as HE
 back : Style.Theme -> Bounds -> Svg Msg
 back theme bounds =
     Svg.rect
-        [ SA.fill <| Style.background theme
+        [ SA.fill <| Color.toCssString <| Style.background theme
         , SA.x <| String.fromFloat (gap / 2)
         , SA.y <| String.fromFloat (gap / 2)
         , SA.rx <| String.fromFloat borderRadius
@@ -54,13 +56,13 @@ arrow theme tone =
         [ SA.style "transform: scale(0.35) translate(15px,52px) rotate(180deg);"
         ]
         [ Svg.polyline
-            [ SA.fill <| Style.toneToString <| Style.colorFor theme tone
+            [ SA.fill <| Color.toCssString <| Style.colorFor theme tone
             , SA.points "18.3,32.5 32,18.8 45.7,32.5 43.8,34.3 32,22.6 20.2,34.3 18.3,32.5"
             , SA.strokeLinecap "round"
             ]
             []
         , Svg.polygon
-            [ SA.fill <| Style.toneToString <| Style.colorFor theme tone
+            [ SA.fill <| Color.toCssString <| Style.colorFor theme tone
             , SA.points "33.4,20.7 33.4,44.7 30.6,44.7 30.6,20.7"
             , SA.strokeLinecap "round"
             ]

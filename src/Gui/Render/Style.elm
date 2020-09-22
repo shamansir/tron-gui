@@ -3,19 +3,16 @@ module Gui.Render.Style exposing (..)
 
 import Dict exposing (Dict)
 
+
+import Color exposing (Color)
+
 import Gui.Property as Property exposing (Property(..))
 import Gui.Path as Path exposing (Path, toString)
-
-
-type alias Color = String
 
 
 type Theme
     = Dark
     | Light
-
-
-type ToneColor = ToneColor Color
 
 
 type Tone
@@ -26,43 +23,46 @@ type Tone
     | Aqua
 
 
-green = ToneColor "#00cc47"
+green = Color.rgb255 0 204 71 -- "#00cc47"
 
 
-pink = ToneColor "#ED31A2"
+pink = Color.rgb255 237 49 162 -- "#ED31A2"
 
 
-yellow = ToneColor "#eab000"
+yellow = Color.rgb255 234 176 0 -- "#eab000"
 
 
-aqua = ToneColor "#23CDE8"
+aqua = Color.rgb255 35 205 232 -- "#23CDE8"
 
 
-black = ToneColor "#3a3e41"
+black = Color.rgb255 58 62 65 -- "#3a3e41"
 
 
-white = ToneColor "#ffffff"
+white = Color.white
 
 
-gray = "#eeeeee"
+gray = Color.rgb255 238 238 238 -- "#eeeeee"
 
 
-gray2 = "rgb(255 255 255 / 0.15)"
+gray2 = Color.rgba 1.0 1.0 1.0 0.15
 
 
-label = "#909090"
+label = Color.rgb255 144 144 144 -- "#909090"
 
 
-lightBackground = "rgb(255 255 255 / 80%)"
+lightBackground = Color.rgba 1.0 1.0 1.0 0.8
 
 
-darkBackground = "rgb(15 15 15 / 60%)"
+darkBackground = Color.rgba 0.05 0.05 0.05 0.6
 
 
-canvasBackground = "lightgray"
+canvasBackground = Color.lightGray
 
 
-colorFor : Theme -> Tone -> ToneColor
+transparent = Color.rgba 0.0 0.0 0.0 0.0
+
+
+colorFor : Theme -> Tone -> Color
 colorFor theme style =
     case style of
         Green -> green
@@ -97,10 +97,6 @@ knobLine theme =
     case theme of
         Dark -> gray2
         Light -> gray
-
-
-toneToString : ToneColor -> String
-toneToString (ToneColor s) = s
 
 
 assignTones : Property msg -> Dict String Tone -- List ( Path, Tone )

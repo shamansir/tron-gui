@@ -22,6 +22,17 @@ const sendProxy = (origSend) => {
   }
 };
 
+const toCssColor = (rgbaStr) => {
+  let rgba = rgbaStr.split(',');
+  return 'rgba(' + (rgba[0] * 255) + ',' + (rgba[1] * 255) + ',' + (rgba[2] * 255) + ',' + rgba[3] + ')';
+}
+
+const fromCssColor = (css) => {
+  let rgba = css.slice(5,-1).split(',');
+  console.log((parseFloat(rgba[0]) / 255) + ',' + (parseFloat(rgba[1]) / 255) + ',' + (parseFloat(rgba[2]) / 255) + ',' + parseFloat(rgba[4]));
+  return (parseFloat(rgba[0]) / 255) + ',' + (parseFloat(rgba[1]) / 255) + ',' + (parseFloat(rgba[2]) / 255) + ',' + parseFloat(rgba[3]);
+}
+
 
 const applyDefinition = (config, definition, send) => {
 
@@ -37,6 +48,8 @@ const applyDefinition = (config, definition, send) => {
       config[propName] = () => { sender('button'); }
     } else if (property.type == 'toggle') {
       config[propName] = (property.current == 'on');
+    } else if (property.type == 'color') {
+      config[propName] = toCssColor(property.current);
     } else if (property.type != 'ghost') {
       config[propName] = property.current;
     }
@@ -55,8 +68,6 @@ const Config = function(definition, send) {
 };
 
 function start(document, definition, origSend) {
-
-  console.log(definition);
 
   const send = sendProxy(origSend);
 
@@ -128,7 +139,7 @@ function start(document, definition, origSend) {
       const color = root.addColor(config, propName).name(label);
       const sender = send(property);
       color.onFinishChange((value) => {
-        sender(value);
+        sender(fromCssColor(value));
       });
 
     }

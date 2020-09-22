@@ -5,13 +5,12 @@ import Array exposing (Array)
 
 import Task
 
+import Color exposing (Color)
+
 import Gui.Path exposing (Path)
 import Gui.Path as Path
 import Gui.Control exposing (..)
 import Gui.Control as Control exposing (..)
-
-
-type alias Color = String
 
 
 type alias Label = String

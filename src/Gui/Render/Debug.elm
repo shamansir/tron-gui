@@ -4,6 +4,7 @@ module Gui.Render.Debug exposing (..)
 import Bounds exposing (..)
 
 import Svg exposing (Svg)
+import Color
 
 import Gui.Control exposing (Control(..))
 import Gui.Property exposing (..)
@@ -53,7 +54,7 @@ propertyDebug ( label, prop )  =
                 ]
         Color (Control _ color _) ->
             Svg.g []
-                [ textAt 5 5 <| label ++ " color: " ++ color
+                [ textAt 5 5 <| label ++ " color: " ++ Color.toCssString color
                 ]
         Text (Control _ value _) ->
             Svg.g []

@@ -1,8 +1,9 @@
 module Gui.Render.Property exposing (..)
 
 
-import Gui.Property exposing (..)
+import Color exposing (Color)
 
+import Gui.Property exposing (..)
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
@@ -35,7 +36,9 @@ view theme tone path bounds focus ( label, prop ) =
         ]
         [
             Svg.rect
-                [ SA.fill <| if (Path.howDeep path == 1) then background theme else "transparent"
+                [ SA.fill
+                    <| Color.toCssString
+                    <| if (Path.howDeep path == 1) then background theme else transparent
                 , SA.x <| String.fromFloat (gap / 2)
                 , SA.y <| String.fromFloat (gap / 2)
                 , SA.rx <| String.fromFloat borderRadius
@@ -65,6 +68,8 @@ view theme tone path bounds focus ( label, prop ) =
                     toggle theme tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Action (Control maybeIcon _ _) ->
                     button theme tone maybeIcon { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                Color (Control _ value _) ->
+                    color theme tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Choice (Control _ ( expanded, _ ) _) ->
                     arrow theme tone expanded { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Group (Control _ ( expanded, _ ) _) ->
@@ -87,11 +92,11 @@ knob : Theme -> Tone -> { x : Float, y : Float } -> Float -> Svg msg
 knob theme tone center value =
     let
         toAngle v = (-120) + (v * 120 * 2)
-        path color d =
+        path stroke d =
             Svg.path
                 [ SA.d d
                 , SA.fill "none"
-                , SA.stroke color
+                , SA.stroke stroke
                 , SA.strokeWidth "2.5"
                 , SA.strokeLinecap "round"
                 ]
@@ -101,17 +106,17 @@ knob theme tone center value =
     in
         Svg.g
             []
-            [ path (colorFor theme tone |> toneToString)
+            [ path (colorFor theme tone |> Color.toCssString)
                 <| describeArc
                     center
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle 0, to = toAngle value }
-            , path (knobLine theme)
+            , path (knobLine theme |> Color.toCssString)
                 <| describeArc
                     center
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle value, to = toAngle 1 }
-            , path (colorFor theme tone |> toneToString)
+            , path (colorFor theme tone |> Color.toCssString)
                 <| describeMark
                     center
                     { radiusA = radiusA, radiusB = radiusB }
@@ -132,13 +137,13 @@ arrow theme tone expand center =
         [ Svg.g
             [ SA.style "transform: scale(0.7) translate(-32px,-32px);" ]
             [ Svg.polyline
-                [ SA.fill <| toneToString <| colorFor theme tone
+                [ SA.fill <| Color.toCssString <| colorFor theme tone
                 , SA.points "18.3,32.5 32,18.8 45.7,32.5 43.8,34.3 32,22.6 20.2,34.3 18.3,32.5"
                 , SA.strokeLinecap "round"
                 ]
                 []
             , Svg.polygon
-                [ SA.fill <| toneToString <| colorFor theme tone
+                [ SA.fill <| Color.toCssString <| colorFor theme tone
                 , SA.points "33.4,20.7 33.4,44.7 30.6,44.7 30.6,20.7"
                 , SA.strokeLinecap "round"
                 ]
@@ -175,7 +180,7 @@ button theme tone maybeIcon center =
                 , SA.width "20"
                 , SA.height "20"
                 , SA.fill "none"
-                , SA.stroke <| toneToString <| colorFor theme tone
+                , SA.stroke <| Color.toCssString <| colorFor theme tone
                 , SA.strokeWidth "2.5"
                 , SA.strokeLinecap "round"
                 , SA.rx "3"
@@ -183,6 +188,24 @@ button theme tone maybeIcon center =
                 ]
                 [
                 ]
+
+
+color : Theme -> Tone -> Color -> { x : Float, y : Float } -> Svg msg
+color theme tone value center =
+    Svg.rect
+        [ SA.x <| String.fromFloat (center.x - 10)
+        , SA.y <| String.fromFloat (center.y - 12)
+        , SA.width "20"
+        , SA.height "20"
+        , SA.fill <| Color.toCssString value
+        , SA.stroke <| Color.toCssString <| colorFor theme tone
+        , SA.strokeWidth "2.5"
+        , SA.strokeLinecap "round"
+        , SA.rx "3"
+        , SA.ry "3"
+        ]
+        [
+        ]
 
 
 
@@ -193,9 +216,9 @@ toggle theme tone state center =
         , SA.cy <| String.fromFloat center.y
         , SA.r "10"
         , SA.fill <| case state of
-            TurnedOn -> toneToString <| colorFor theme tone
+            TurnedOn -> Color.toCssString <| colorFor theme tone
             TurnedOff -> "none"
-        , SA.stroke <| toneToString <| colorFor theme tone
+        , SA.stroke <| Color.toCssString <| colorFor theme tone
         , SA.strokeWidth "2.5"
         ]
         [
@@ -212,7 +235,7 @@ coord theme tone center ( valueX, valueY ) =
             , SA.width "20"
             , SA.height "20"
             , SA.fill "none"
-            , SA.stroke <| toneToString <| colorFor theme tone
+            , SA.stroke <| Color.toCssString <| colorFor theme tone
             , SA.strokeWidth "2.5"
             , SA.strokeLinecap "round"
             , SA.strokeDasharray "2.5 15 5 15 5 15 5 15 2.5"
@@ -224,7 +247,7 @@ coord theme tone center ( valueX, valueY ) =
         , Svg.circle
             [ SA.cx <| String.fromFloat <| center.x + ((valueX - 0.5) * 20)
             , SA.cy <| String.fromFloat <| center.y - 2 + ((valueY - 0.5) * 20)
-            , SA.fill <| toneToString <| colorFor theme tone
+            , SA.fill <| Color.toCssString <| colorFor theme tone
             , SA.stroke "none"
             , SA.r "3"
             ]

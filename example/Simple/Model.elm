@@ -1,7 +1,7 @@
 module Simple.Model exposing (..)
 
 
-import Gui.Property as Gui exposing (Color)
+import Color exposing (Color)
 
 
 type Choice = A | B | C | D
@@ -16,7 +16,7 @@ type alias Model =
     , float : Float
     , string : String
     , choice : Choice
-    , color : Gui.Color
+    , color : Color
     , toggle : Bool
     , xy : ( Float, Float )
     , buttonPressed : Choice
@@ -29,7 +29,7 @@ init =
     , float = 0.0
     , string = ""
     , choice = A
-    , color = "#ffc200"
+    , color = Color.rgb255 255 194 0
     , toggle = False
     , xy = ( 0, 0 )
     , buttonPressed = C

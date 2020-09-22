@@ -2,6 +2,7 @@ module Gui.Build exposing (..)
 
 
 import Array
+import Color exposing (Color)
 
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)

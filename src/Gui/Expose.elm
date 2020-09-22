@@ -1,5 +1,7 @@
 module Gui.Expose exposing (..)
 
+import Color exposing (Color)
+
 import Json.Decode as D
 import Json.Encode as E
 
@@ -128,7 +130,7 @@ encodePropertyAt path property =
             E.object
                 [ ( "type", E.string "color" )
                 , ( "path", encodePath path )
-                , ( "current", E.string val )
+                , ( "current", encodeColor val )
                 ]
         Toggle ( Control _ val _ ) ->
             E.object
@@ -198,7 +200,7 @@ valueDecoder type_ =
         "ghost" -> D.succeed Other
         "slider" -> D.float |> D.map FromSlider
         "text" -> D.string |> D.map FromInput
-        "color" -> D.string |> D.map FromColor
+        "color" -> decodeColor |> D.map FromColor
         "choice" -> D.int |> D.map FromChoice
         "toggle" -> D.bool |> D.map boolToToggle |> D.map FromToggle
         "button" -> D.succeed FromButton
@@ -213,3 +215,65 @@ fromPort portUpdate =
         D.decodeValue (valueDecoder portUpdate.type_) portUpdate.value
             |> Result.withDefault Other
     }
+
+encodeColor : Color -> E.Value
+encodeColor color =
+    E.string <| case Color.toRgba color of
+        { red, green, blue, alpha } ->
+            [ red, green, blue, alpha ]
+                |> List.map String.fromFloat
+                |> String.join ","
+            {-
+            ([ red, green, blue ]
+                |> List.map ((*) 255)
+                |> List.map String.fromFloat
+                |> String.join ",") ++ "," ++ String.fromFloat alpha
+            -}
+
+
+decodeColor : D.Decoder Color
+decodeColor =
+    D.string
+        |> D.andThen (\str ->
+            case String.split "," str of
+                r::g::b::a::_ ->
+                    Maybe.map4
+                        Color.rgba
+                        (String.toFloat r)
+                        (String.toFloat g)
+                        (String.toFloat b)
+                        (String.toFloat a)
+                    |> Maybe.map D.succeed
+                    |> Maybe.withDefault (D.fail <| "failed to parse color" ++ str)
+                _ -> D.fail <| "failed to parse color" ++ str
+        )
+
+
+
+{-
+encodeColor : Color -> E.Value
+encodeColor color =
+    E.string <| case Color.toHsla color of
+        { hue, saturation, lightness, alpha } ->
+            [ hue, saturation, lightness, alpha ]
+                |> List.map String.fromFloat
+                |> String.join "|"
+
+
+decodeColor : D.Decoder Color
+decodeColor =
+    D.string
+        |> D.andThen (\str ->
+            case String.split "|" str of
+                h::s::l::a::_ ->
+                    Maybe.map4
+                        Color.hsla
+                        (String.toFloat h)
+                        (String.toFloat s)
+                        (String.toFloat l)
+                        (String.toFloat a)
+                    |> Maybe.map D.succeed
+                    |> Maybe.withDefault (D.fail <| "failed to parse color" ++ str)
+                _ -> D.fail <| "failed to parse color" ++ str
+        )
+-}

@@ -7,6 +7,7 @@ module Gui.Gui exposing
 
 import Browser.Dom as Dom
 import Task
+import Color
 import Browser.Events as Browser
 import Html exposing (Html)
 
@@ -223,6 +224,30 @@ handleMouse mouseAction gui =
                                     (always <| Coordinate nextControl)
                                     gui.tree
 
+                        Just ( path, Color ( Control state curColor handler ) ) ->
+                            let
+                                hueAxis = { min = 0, max = 1, step = 0.01 }
+                                satAxis = { min = 0, max = 1, step = 0.01 }
+                                curHsla = Color.toHsla curColor
+                                ( dX, dY ) = distanceXY knobDistance nextMouseState
+                                ( nextHue, nextSaturation ) =
+                                    ( alter hueAxis dX curHsla.hue
+                                    , alter satAxis dY curHsla.saturation
+                                    )
+                                nextColor =
+                                    Color.hsla
+                                        nextHue
+                                        nextSaturation
+                                        curHsla.lightness
+                                        curHsla.alpha
+                                nextControl =
+                                    Control state nextColor handler
+                            in
+                                updateAt
+                                    path
+                                    (always <| Color nextControl)
+                                    gui.tree
+
                         _ ->
                             gui.tree
 
@@ -249,6 +274,8 @@ handleMouse mouseAction gui =
                             Just ( _, Number control ) ->
                                 call control
                             Just ( _, Coordinate control ) ->
+                                call control
+                            Just ( _, Color control ) ->
                                 call control
                             Just (_, _) -> Cmd.none
                             Nothing -> Cmd.none
