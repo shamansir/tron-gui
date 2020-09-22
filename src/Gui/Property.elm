@@ -447,3 +447,14 @@ reshape shape prop =
         Group ( Control ( _, items ) ( expanded, focus ) handler ) ->
             Group ( Control ( shape, items ) ( expanded, focus ) handler )
         _ -> prop
+
+
+isGhost : Property msg -> Bool
+isGhost prop =
+    case prop of
+        Nil -> True
+        _ -> False
+
+
+noGhosts : Array (Property msg) -> Array (Property msg)
+noGhosts = Array.filter (not << isGhost)

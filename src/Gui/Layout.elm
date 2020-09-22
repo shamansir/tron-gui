@@ -51,6 +51,8 @@ find layout pos =
 pack : Property msg -> Layout
 pack prop =
     case prop of
+        Nil ->
+            init
         Group (Control (shape, items) _ _) ->
             let
 
@@ -58,8 +60,10 @@ pack prop =
                     items
                         |> Array.indexedMap Tuple.pair
                         |> Array.foldl
-                            (\(index, _) layout ->
-                                layout |> packOne [index]
+                            (\(index, (_, theProp)) layout ->
+                                if not <| isGhost theProp
+                                    then layout |> packOne [index]
+                                    else layout
                             )
                             init
 
@@ -85,7 +89,9 @@ pack prop =
                             (Path.fromList path)
                             <| Array.foldl
                                 (\(index, ( _, innerProp)) plateLayout ->
-                                    packOne1 (path ++ [index]) plateLayout
+                                    if not <| isGhost innerProp
+                                        then packOne1 (path ++ [index]) plateLayout
+                                        else plateLayout
                                 )
                                 (BinPack.container (toFloat w) (toFloat h))
                             <| Array.indexedMap Tuple.pair

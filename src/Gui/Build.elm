@@ -95,7 +95,7 @@ nest items =
 
 root : List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
 root props =
-    nestIn ( 1, List.length props ) props
+    nestIn ( 1, List.length <| List.filter (Tuple.second >> isGhost >> not) props ) props
         >> expand
 
 
