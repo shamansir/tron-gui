@@ -132,7 +132,7 @@ arrow theme tone groupState center =
             ++ String.fromFloat center.y ++ "px)"
             ++ case groupState of
                 Expanded -> " rotate(180deg);"
-                Detached -> " rotate(70deg);"
+                Detached -> " rotate(45deg);"
                 Collapsed -> ";"
         ]
         [ Svg.g

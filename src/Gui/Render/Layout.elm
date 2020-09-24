@@ -23,6 +23,7 @@ import Gui.Property as Property exposing (find)
 import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
 import Gui.Focus exposing (Focused(..), focused)
+import Gui.Detach exposing (DetachFn)
 
 import Gui.Render.Util exposing (..)
 import Gui.Render.Debug exposing (..)
@@ -91,7 +92,7 @@ viewPlateBack theme pixelBounds =
                 Plate.back theme pixelBounds
 
 
-viewPlateControls : Theme -> Tone -> (Path -> Maybe Url) -> Bounds -> Path -> Svg Msg
+viewPlateControls : Theme -> Tone -> DetachFn -> Bounds -> Path -> Svg Msg
 viewPlateControls theme tone detach pixelBounds path =
     positionAt_ pixelBounds <|
         case mode of
@@ -101,7 +102,7 @@ viewPlateControls theme tone detach pixelBounds path =
                 Plate.controls theme tone detach pixelBounds path
 
 
-view : Style.Theme -> Bounds -> (Path -> Maybe Url) -> Property msg -> Layout -> Html Msg
+view : Style.Theme -> Bounds -> DetachFn -> Property msg -> Layout -> Html Msg
 view theme bounds detach root layout =
     let
         keyDownHandler_ =

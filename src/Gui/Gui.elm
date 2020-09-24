@@ -1,7 +1,8 @@
 module Gui.Gui exposing
-    ( Gui, over, Flow(..)
+    ( Gui, over, overMap, Flow(..)
     , view, update, init, map
     , trackMouse, focus, reflow, fromWindow
+    , detachable
     )
 
 
@@ -28,6 +29,7 @@ import Gui.Mouse as Mouse exposing (..)
 import Gui.Util exposing (..)
 -- import Gui.Alt as Alt exposing (Gui)
 import Gui.Focus as Focus exposing (..)
+import Gui.Detach as Detach exposing (..)
 
 
 type Flow
@@ -43,7 +45,7 @@ type alias Gui msg =
     , mouse : MouseState
     , tree : Property msg
     , layout : Layout
-    , detach : Path -> Maybe Url
+    , detach : DetachFn
     }
 
 
@@ -72,13 +74,20 @@ map f model =
 
 init : Flow -> Gui msg
 init flow =
-    Gui flow Bounds.zero Gui.Mouse.init Nil Layout.init <| always Nothing
+    Gui flow Bounds.zero Gui.Mouse.init Nil Layout.init Detach.never
 
 
-detachAs : (Path -> Maybe Url) -> Gui msg -> Gui msg
-detachAs createUrl gui =
+detachBy : (Path -> Maybe Url) -> Gui msg -> Gui msg
+detachBy detachFn gui =
     { gui
-    | detach = createUrl
+    | detach = DetachFn detachFn
+    }
+
+
+detachable : Url -> Gui msg -> Gui msg
+detachable base gui =
+    { gui
+    | detach = Detach.default base
     }
 
 
@@ -88,6 +97,11 @@ over prop gui =
     | tree = prop
     , layout = Layout.pack prop
     }
+
+
+overMap : (msgA -> msgB) -> Property msgA -> Gui msgB -> Gui msgB
+overMap f prop =
+    over <| Gui.Property.map f prop
 
 
 update
