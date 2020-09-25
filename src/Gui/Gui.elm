@@ -44,7 +44,7 @@ type alias Gui msg =
     , bounds : Bounds
     , mouse : MouseState
     , tree : Property msg
-    , layout : Layout
+    , layout : Layout -- seems to be updated after every tree change, so don't store?
     , detach : DetachFn
     }
 
@@ -152,13 +152,16 @@ update msg gui =
                 )
 
         Detach path ->
-            (
-                { gui
-                | tree =
-                    detachAt path gui.tree
-                }
-            , Cmd.none
-            )
+            let
+                nextRoot = detachAt path gui.tree
+            in
+                (
+                    { gui
+                    | tree = nextRoot
+                    , layout = Layout.pack nextRoot
+                    }
+                , Cmd.none
+                )
 
 
 trackMouse : Sub Msg

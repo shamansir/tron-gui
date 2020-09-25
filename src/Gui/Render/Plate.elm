@@ -44,19 +44,20 @@ controls theme tone detachFn bounds path =
                        String.fromFloat gap ++ "px," ++ String.fromFloat gap ++ "px);"
                     , HE.onClick <| Detach path
                     ]
-                    [ Svg.rect
-                        [ SA.fill "transparent"
-                        , SA.x "-11"
-                        , SA.y "2.5"
-                        , SA.width "10"
-                        , SA.height "10"
-                        ]
-                        []
-                    , Svg.a
+                    [ Svg.a
                         [ SA.xlinkHref <| Url.toString url
                         , SA.target "_blank"
                         ]
-                        [ detach theme tone ]
+                        [ Svg.rect
+                            [ SA.fill "transparent"
+                            , SA.x "0"
+                            , SA.y "2.5"
+                            , SA.width "10"
+                            , SA.height "10"
+                            ]
+                            []
+                        , detach theme tone
+                        ]
                     ]
             Nothing -> Svg.g [] []
         , Svg.g
