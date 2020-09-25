@@ -17,6 +17,7 @@ import Gui.Focus exposing (Focused(..))
 import Gui.Control exposing (Control(..))
 import Gui.Render.Util exposing (..)
 import Gui.Render.Util as Svg exposing (none)
+import Gui.Render.Util as Util exposing (arrow)
 import Gui.Render.Style exposing (..)
 
 
@@ -127,31 +128,16 @@ knob theme tone center value =
 arrow : Theme -> Tone -> GroupState -> { x : Float, y : Float } -> Svg msg
 arrow theme tone groupState center =
     Svg.g
-        [ SA.style <| "transform: translate("
-            ++ String.fromFloat center.x ++ "px,"
-            ++ String.fromFloat center.y ++ "px)"
-            ++ case groupState of
-                Expanded -> " rotate(180deg);"
-                Detached -> " rotate(45deg);"
-                Collapsed -> ";"
+        [ SA.style <|
+            "transform: "
+                ++ "translate(" ++ String.fromFloat (center.x - (14 * 0.7)) ++ "px,"
+                                ++ String.fromFloat (center.y - (14 * 0.7)) ++ "px)"
         ]
-        [ Svg.g
-            [ SA.style "transform: scale(0.7) translate(-32px,-32px);" ]
-            [ Svg.polyline
-                [ SA.fill <| Color.toCssString <| colorFor theme tone
-                , SA.points "18.3,32.5 32,18.8 45.7,32.5 43.8,34.3 32,22.6 20.2,34.3 18.3,32.5"
-                , SA.strokeLinecap "round"
-                ]
-                []
-            , Svg.polygon
-                [ SA.fill <| Color.toCssString <| colorFor theme tone
-                , SA.points "33.4,20.7 33.4,44.7 30.6,44.7 30.6,20.7"
-                , SA.strokeLinecap "round"
-                ]
-                []
-            ]
+        [ Util.arrow (colorFor theme tone) (scale 0.7) <| case groupState of
+                Expanded -> rotate 180
+                Detached -> rotate 45
+                Collapsed -> rotate 0
         ]
-
 
 button : Theme -> Tone -> Maybe Icon -> { x : Float, y : Float } -> Svg msg
 button theme tone maybeIcon center =
