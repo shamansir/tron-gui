@@ -29,7 +29,8 @@ import Gui.Mouse as Mouse exposing (..)
 import Gui.Util exposing (..)
 -- import Gui.Alt as Alt exposing (Gui)
 import Gui.Focus as Focus exposing (..)
-import Gui.Detach as Detach exposing (..)
+import Gui.Detach as Detach exposing (make, Detach, map)
+import Gui.Expose as Exp exposing (..)
 
 
 type Flow
@@ -45,7 +46,7 @@ type alias Gui msg =
     , mouse : MouseState
     , tree : Property msg
     , layout : Layout -- seems to be updated after every tree change, so don't store?
-    , detach : DetachFn
+    , detach : Detach msg
     }
 
 
@@ -66,9 +67,9 @@ map f model =
     { flow = model.flow
     , bounds = model.bounds
     , mouse = model.mouse
-    , tree = Gui.Property.map f model.tree
+    , tree = model.tree |> Gui.Property.map f
     , layout = model.layout
-    , detach = model.detach
+    , detach = model.detach |> Detach.map f
     }
 
 
@@ -77,17 +78,10 @@ init flow =
     Gui flow Bounds.zero Gui.Mouse.init Nil Layout.init Detach.never
 
 
-detachBy : (Path -> Maybe Url) -> Gui msg -> Gui msg
-detachBy detachFn gui =
+detachable : (Exp.PortUpdate -> Cmd msg) -> Url -> Gui msg -> Gui msg
+detachable send base  gui =
     { gui
-    | detach = DetachFn detachFn
-    }
-
-
-detachable : Url -> Gui msg -> Gui msg
-detachable base gui =
-    { gui
-    | detach = Detach.default base
+    | detach = Detach.make send base
     }
 
 

@@ -1,6 +1,3 @@
-
-
-
 const propNameFromPath = (path) => {
   return path
     .concat([])

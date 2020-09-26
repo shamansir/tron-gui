@@ -7,7 +7,7 @@ import Url exposing (Url)
 import Bounds exposing (Bounds)
 import Gui.Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
-import Gui.Detach exposing (DetachFn, callWith)
+import Gui.Detach exposing (Detach, getUrl)
 
 import Gui.Render.Style as Style
 import Gui.Render.Property exposing (gap, borderRadius)
@@ -33,11 +33,11 @@ back theme bounds =
         []
 
 
-controls : Style.Theme -> Style.Tone -> DetachFn -> Bounds -> Path -> Svg Msg
+controls : Style.Theme -> Style.Tone -> Detach msg -> Bounds -> Path -> Svg Msg
 controls theme tone detachFn bounds path =
     Svg.g
         [ ]
-        [ case detachFn |> callWith path of
+        [ case detachFn |> getUrl path of
             Just url ->
                 Svg.g
                     [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
