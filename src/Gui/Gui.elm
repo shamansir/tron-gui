@@ -301,12 +301,21 @@ handleMouse mouseAction gui =
 
                         case curMouseState.dragFrom |> Maybe.andThen findCellAt of
 
-                            Just ( _, Number control ) ->
-                                call control
-                            Just ( _, Coordinate control ) ->
-                                call control
-                            Just ( _, Color control ) ->
-                                call control
+                            Just ( path, Number control ) ->
+                                Cmd.batch
+                                    [ call control
+                                    , Detach.send gui.detach path <| Number control
+                                    ]
+                            Just ( path, Coordinate control ) ->
+                                Cmd.batch
+                                    [ call control
+                                    , Detach.send gui.detach path <| Coordinate control
+                                    ]
+                            Just ( path, Color control ) ->
+                                Cmd.batch
+                                    [ call control
+                                    , Detach.send gui.detach path <| Color control
+                                    ]
                             Just (_, _) -> Cmd.none
                             Nothing -> Cmd.none
 

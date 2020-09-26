@@ -5,26 +5,27 @@ import Url exposing (Url)
 import Url.Builder as Url
 import Gui.Path as Path exposing (Path, toList)
 import Gui.Expose as Exp
+import Gui.Property exposing (Property)
 
 
 type Detach msg =
     Detach
         { toUrl : Path -> Maybe Url
-        , send : Exp.PortUpdate -> Cmd msg
+        , sendUpdate : Exp.PortUpdate -> Cmd msg
         }
 
 
 map : (msgA -> msgB) -> Detach msgA -> Detach msgB
-map f (Detach { toUrl, send }) =
+map f (Detach { toUrl, sendUpdate }) =
     Detach
         { toUrl = toUrl
-        , send = send >> Cmd.map f
+        , sendUpdate = sendUpdate >> Cmd.map f
         }
 
 
 never : Detach msg
 never =
-    Detach { send = always Cmd.none, toUrl = always Nothing }
+    Detach { sendUpdate = always Cmd.none, toUrl = always Nothing }
 
 
 getUrl : Path -> Detach msg -> Maybe Url
@@ -44,12 +45,17 @@ formUrl base path =
 
 
 make : (Exp.PortUpdate -> Cmd msg) -> Url -> Detach msg
-make send base =
+make sendUpdate base =
     Detach
         { toUrl = Just << formUrl base
-        , send = send
+        , sendUpdate = sendUpdate
         }
 
 
 -- extract : Url -> List Path
 -- extract
+
+
+send : Detach msg -> Path -> Property msg -> Cmd msg
+send (Detach { sendUpdate }) path prop =
+    sendUpdate (Exp.encodeUpdate path prop)

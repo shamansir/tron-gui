@@ -11,6 +11,8 @@ import Array exposing (Array)
 import Gui.Util exposing (findMap)
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)
+import Gui.Path exposing (Path)
+import Gui.Path as Path exposing (toList)
 
 
 type alias JsPath = List Id
@@ -21,6 +23,7 @@ type alias Id = Int
 
 type Value
     = FromSlider Float
+    | FromXY ( Float, Float )
     | FromInput String
     | FromChoice Id
     | FromColor Color
@@ -81,9 +84,13 @@ update { path, value } gui =
                 _ -> Cmd.none
 
 
-encodePath : JsPath -> E.Value
-encodePath=
+encodeJsPath : JsPath -> E.Value
+encodeJsPath=
     E.list E.int
+
+
+encodePath : Path -> E.Value
+encodePath = Path.toList >> encodeJsPath
 
 
 encodePropertyAt : JsPath -> Property msg -> E.Value
@@ -92,12 +99,12 @@ encodePropertyAt path property =
         Nil ->
             E.object
                 [ ( "type", E.string "ghost" )
-                , ( "path", encodePath path )
+                , ( "path", encodeJsPath path )
                 ]
         Number ( Control { min, max, step } val _ ) ->
             E.object
                 [ ( "type", E.string "slider"  )
-                , ( "path", encodePath path )
+                , ( "path", encodeJsPath path )
                 , ( "current", E.float val )
                 , ( "min", E.float min )
                 , ( "max", E.float max )
@@ -105,8 +112,8 @@ encodePropertyAt path property =
                 ]
         Coordinate ( Control ( xSpec, ySpec ) ( x, y ) _ ) ->
             E.object
-                [ ( "type", E.string "xy"  )
-                , ( "path", encodePath path )
+                [ ( "type", E.string "xy" )
+                , ( "path", encodeJsPath path )
                 , ( "current",
                     E.object
                         [ ( "x", E.float x )
@@ -123,19 +130,19 @@ encodePropertyAt path property =
         Text ( Control _ val _ ) ->
             E.object
                 [ ( "type", E.string "text" )
-                , ( "path", encodePath path )
+                , ( "path", encodeJsPath path )
                 , ( "current", E.string val )
                 ]
         Color ( Control _ val _ ) ->
             E.object
                 [ ( "type", E.string "color" )
-                , ( "path", encodePath path )
+                , ( "path", encodeJsPath path )
                 , ( "current", encodeColor val )
                 ]
         Toggle ( Control _ val _ ) ->
             E.object
                 [ ( "type", E.string "toggle" )
-                , ( "path", encodePath path )
+                , ( "path", encodeJsPath path )
                 , ( "current", E.string
                         <| case val of
                             TurnedOn -> "on"
@@ -144,13 +151,13 @@ encodePropertyAt path property =
         Action _ ->
             E.object
                 [ ( "type", E.string "button" )
-                , ( "path", encodePath path )
+                , ( "path", encodeJsPath path )
                 ]
 
         Choice ( Control ( _, items ) ( state, ( _, Selected current ) ) _) ->
             E.object
                 [ ( "type", E.string "choice" )
-                , ( "path", encodePath path )
+                , ( "path", encodeJsPath path )
                 , ( "current", E.int current )
                 , ( "expanded", E.bool <| case state of
                     Expanded -> True
@@ -165,7 +172,7 @@ encodePropertyAt path property =
         Group (Control ( _, items ) ( state, _ ) _ ) ->
             E.object
                 [ ( "type", E.string "nest" )
-                , ( "path", encodePath path )
+                , ( "path", encodeJsPath path )
                 , ( "expanded", E.bool <| case state of
                     Expanded -> True
                     Collapsed -> False
@@ -200,6 +207,59 @@ encode : Property msg -> E.Value
 encode = encodePropertyAt []
 
 
+encodeUpdate : Path -> Property msg -> PortUpdate
+encodeUpdate path prop =
+    case prop of
+        Nil ->
+            { path = Path.toList path
+            , value = E.null
+            , type_ = "ghost"
+            }
+        Number ( Control { min, max, step } val _ ) ->
+            { path = Path.toList path
+            , value = E.float val
+            , type_ = "slider"
+            }
+        Coordinate ( Control ( xSpec, ySpec ) ( x, y ) _ ) ->
+            { path = Path.toList path
+            , value = E.string <| String.fromFloat x ++ "|" ++ String.fromFloat y
+            , type_ = "coord"
+            }
+        Text ( Control _ val _ ) ->
+            { path = Path.toList path
+            , value = E.string val
+            , type_ = "text"
+            }
+        Color ( Control _ val _ ) ->
+            { path = Path.toList path
+            , value = encodeColor val
+            , type_ = "color"
+            }
+        Toggle ( Control _ val _ ) ->
+            { path = Path.toList path
+            , value = E.string
+                        <| case val of
+                            TurnedOn -> "on"
+                            TurnedOff -> "off"
+            , type_ = "toggle"
+            }
+        Action _ ->
+            { path = Path.toList path
+            , value = E.null
+            , type_ = "button"
+            }
+        Choice ( Control ( _, items ) ( state, ( _, Selected current ) ) _) ->
+            { path = Path.toList path
+            , value = E.int current
+            , type_ = "choice"
+            }
+        Group _ ->
+            { path = Path.toList path
+            , value = E.null
+            , type_ = "nest"
+            }
+
+
 -- select : Path -> Gui msg -> Gui msg
 -- select selector gui = gui
 
@@ -209,6 +269,7 @@ valueDecoder type_ =
     case type_ of
         "ghost" -> D.succeed Other
         "slider" -> D.float |> D.map FromSlider
+        "coord" -> decodeCoord |> D.map FromXY
         "text" -> D.string |> D.map FromInput
         "color" -> decodeColor |> D.map FromColor
         "choice" -> D.int |> D.map FromChoice
@@ -255,11 +316,26 @@ decodeColor =
                         (String.toFloat b)
                         (String.toFloat a)
                     |> Maybe.map D.succeed
-                    |> Maybe.withDefault (D.fail <| "failed to parse color" ++ str)
-                _ -> D.fail <| "failed to parse color" ++ str
+                    |> Maybe.withDefault (D.fail <| "failed to parse color: " ++ str)
+                _ -> D.fail <| "failed to parse color: " ++ str
         )
 
 
+decodeCoord : D.Decoder (Float, Float)
+decodeCoord =
+    D.string
+        |> D.andThen
+        (\str ->
+            case str |> String.split "|" of
+                v1::v2::_ ->
+                    Maybe.map2
+                        Tuple.pair
+                        (String.toFloat v1)
+                        (String.toFloat v2)
+                    |> Maybe.map D.succeed
+                    |> Maybe.withDefault (D.fail <| "failed to parse coord: " ++ str)
+                _ -> D.fail <| "failed to parse coord: " ++ str
+        )
 
 {-
 encodeColor : Color -> E.Value
