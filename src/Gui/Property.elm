@@ -282,8 +282,19 @@ updateAt path f =
             if Path.equal otherPath path then f item else item
 
 
+updateMany : List ( Path, Property msg ) -> Property msg -> Property msg
+updateMany updates root =
+    List.foldl
+        (\(path, nextProp) lastRoot ->
+            lastRoot |> updateAt path (always nextProp)
+        )
+        root
+        updates
+
+
 -- for mouse click or enter key handling, does not change the tree
 -- only updates the controls itself
+-- FIXME: should not call controls itself, only return the update
 execute : Property msg -> ( Property msg, Cmd msg )
 execute item =
     case item of
@@ -337,7 +348,8 @@ execute item =
         _ -> ( item, Cmd.none )
 
 
-executeAt : Path -> Property msg -> ( Property msg, Cmd msg )
+-- FIXME: should not call controls itself, only return the update
+executeAt : Path -> Property msg -> ( List ( Path, Property msg ), Cmd msg )
 executeAt path root =
     case root
         |> findWithParent path of
@@ -353,28 +365,29 @@ executeAt path root =
 
                                 ( newCell, cmd ) = execute item
                             in
-                                ( root
-                                    |> updateAt toParent (always <| Choice newParent)
-                                    |> updateAt path (always newCell)
+                                (
+                                    [ ( toParent, Choice newParent )
+                                    , ( path, newCell )
+                                    ]
                                 , Cmd.batch
                                     [ cmd
                                     , call newParent
                                     ]
                                 )
                         Nothing ->
-                            ( root, Cmd.none )
+                            ( [], Cmd.none )
 
                 ( _, _ ) ->
 
                     let
                         ( newCell, cmd ) = execute item
                     in
-                        ( root |> updateAt path (always newCell)
+                        ( [ ( path, newCell ) ]
                         , cmd
                         )
 
         Nothing ->
-            ( root, Cmd.none )
+            ( [], Cmd.none )
 
 
 doToggle : Control state ToggleState msg -> Control state ToggleState msg

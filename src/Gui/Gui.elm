@@ -112,8 +112,10 @@ update msg gui =
 
         Click path ->
             let
-                (nextRoot, cmds) =
+                (updates, cmds) =
                     gui.tree |> executeAt path
+                nextRoot =
+                    gui.tree |> updateMany updates
             in
                 (
                     { gui
@@ -134,16 +136,8 @@ update msg gui =
         KeyDown keyCode ->
            let
                 curFocus = Focus.find gui.tree
-                (nextRoot, cmds) =
-                    gui.tree |> handleKeyDown keyCode curFocus
             in
-                (
-                    { gui
-                    | tree = nextRoot
-                    , layout = Layout.pack nextRoot
-                    }
-                , cmds
-                )
+                handleKeyDown keyCode curFocus gui
 
         Detach path ->
             let
@@ -328,24 +322,56 @@ handleMouse mouseAction gui =
 handleKeyDown
     :  Int
     -> Path
-    -> Property msg
-    -> ( Property msg, Cmd msg )
-handleKeyDown keyCode path root =
-    case keyCode of
+    -> Gui msg
+    -> ( Gui msg, Cmd msg )
+handleKeyDown keyCode path gui =
+    let
+
+        shiftFocus to =
+            let
+                nextRoot = gui.tree |> Focus.shift to
+            in
+                { gui
+                | tree = nextRoot
+                , layout = Layout.pack nextRoot
+                }
+
+        executeByPath _ =
+            let
+                ( updates, cmd ) = gui.tree |> executeAt path
+                nextRoot = gui.tree |> updateMany updates
+            in
+                (
+                    { gui
+                    | tree = nextRoot
+                    , layout = Layout.pack nextRoot
+                    }
+                , Cmd.batch
+                    [ cmd
+                    , updates
+                        |> List.map
+                            (\(uPath, prop) ->
+                                Detach.send gui.detach uPath prop
+                            )
+                        |> Cmd.batch
+                    ]
+                )
+
+    in case keyCode of
         -- left arrow
-        37 -> ( root |> Focus.shift Focus.Left, Cmd.none )
+        37 -> ( shiftFocus Focus.Left, Cmd.none )
         -- right arrow
-        39 -> ( root |> Focus.shift Focus.Right, Cmd.none )
+        39 -> ( shiftFocus Focus.Right, Cmd.none )
         -- up arrow
-        38 -> ( root |> Focus.shift Focus.Up, Cmd.none )
+        38 -> ( shiftFocus Focus.Up, Cmd.none )
         -- down arrow
-        40 -> ( root |> Focus.shift Focus.Down, Cmd.none )
+        40 -> ( shiftFocus Focus.Down, Cmd.none )
         -- space
-        33 -> root |> executeAt path
+        33 -> executeByPath ()
         -- enter
-        13 -> root |> executeAt path
+        13 -> executeByPath ()
         -- else
-        _ -> ( root, Cmd.none )
+        _ -> ( gui, Cmd.none )
 
 
 
