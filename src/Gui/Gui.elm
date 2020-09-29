@@ -18,7 +18,9 @@ import Bounds exposing (Bounds)
 
 import Gui.Path exposing (Path)
 import Gui.Control exposing (..)
+import Gui.Control as Control exposing (call)
 import Gui.Property exposing (..)
+import Gui.Property as Property exposing (call)
 import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (..)
 import Gui.Msg exposing (..)
@@ -112,7 +114,7 @@ update msg gui =
 
         Click path ->
             let
-                (updates, cmds) =
+                updates =
                     gui.tree |> executeAt path
                 nextRoot =
                     gui.tree |> updateMany updates
@@ -122,7 +124,7 @@ update msg gui =
                     | tree = nextRoot
                     , layout = Layout.pack nextRoot
                     }
-                , cmds
+                , updates |> notifyUpdates gui.detach
                 )
 
         MouseDown path ->
@@ -295,29 +297,18 @@ handleMouse mouseAction gui =
 
                         case curMouseState.dragFrom |> Maybe.andThen findCellAt of
 
-                            Just ( path, Number control ) ->
-                                Cmd.batch
-                                    [ call control
-                                    , Detach.send gui.detach path <| Number control
-                                    ]
-                            Just ( path, Coordinate control ) ->
-                                Cmd.batch
-                                    [ call control
-                                    , Detach.send gui.detach path <| Coordinate control
-                                    ]
-                            Just ( path, Color control ) ->
-                                Cmd.batch
-                                    [ call control
-                                    , Detach.send gui.detach path <| Color control
-                                    ]
-                            Just (_, _) -> Cmd.none
+                            Just ( path, prop ) ->
+                                case prop of
+                                    Number _ -> ( path, prop ) |> notifyUpdate gui.detach
+                                    Coordinate _ -> ( path, prop ) |> notifyUpdate gui.detach
+                                    Color _ -> ( path, prop ) |> notifyUpdate gui.detach
+                                    _ -> Cmd.none
                             Nothing -> Cmd.none
 
                     else Cmd.none
                 _ -> Cmd.none
 
         )
-
 
 handleKeyDown
     :  Int
@@ -338,7 +329,7 @@ handleKeyDown keyCode path gui =
 
         executeByPath _ =
             let
-                ( updates, cmd ) = gui.tree |> executeAt path
+                updates = gui.tree |> executeAt path
                 nextRoot = gui.tree |> updateMany updates
             in
                 (
@@ -346,15 +337,7 @@ handleKeyDown keyCode path gui =
                     | tree = nextRoot
                     , layout = Layout.pack nextRoot
                     }
-                , Cmd.batch
-                    [ cmd
-                    , updates
-                        |> List.map
-                            (\(uPath, prop) ->
-                                Detach.send gui.detach uPath prop
-                            )
-                        |> Cmd.batch
-                    ]
+                , updates |> notifyUpdates gui.detach
                 )
 
     in case keyCode of
@@ -374,20 +357,19 @@ handleKeyDown keyCode path gui =
         _ -> ( gui, Cmd.none )
 
 
+notifyUpdate : Detach msg -> ( Path, Property msg ) -> Cmd msg
+notifyUpdate detach ( path, prop ) =
+    Cmd.batch
+        [ Property.call prop
+        , Detach.send detach path prop
+        ]
 
-updateWith : ( Msg, Maybe msg ) -> Gui msg -> ( Gui msg, Cmd msg  )
-updateWith ( msg, maybeUserMsg ) model =
-    update msg model
-        |> Tuple.mapSecond
-            (\cmd ->
-                Cmd.batch
-                    [ cmd
-                    , maybeUserMsg
-                        |> Maybe.map Task.succeed
-                        |> Maybe.map (Task.perform identity)
-                        |> Maybe.withDefault Cmd.none
-                    ]
-            )
+
+notifyUpdates : Detach msg -> List ( Path, Property msg ) -> Cmd msg
+notifyUpdates detach =
+    List.map
+        (notifyUpdate detach)
+        >> Cmd.batch
 
 
 focus : msg -> Cmd msg

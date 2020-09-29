@@ -295,20 +295,14 @@ updateMany updates root =
 -- for mouse click or enter key handling, does not change the tree
 -- only updates the controls itself
 -- FIXME: should not call controls itself, only return the update
-execute : Property msg -> ( Property msg, Cmd msg )
+execute : Property msg -> Maybe (Property msg)
 execute item =
     case item of
         Toggle toggleControl ->
-            let
-                nextToggle = doToggle toggleControl
-            in
-                ( Toggle nextToggle
-                , call nextToggle
-                )
+            Just <| Toggle <| doToggle toggleControl
         Action control ->
-            ( Action control
-            , call control
-            )
+            -- we don't update the value since it's `()`, but we do execute it
+            Just <| Action control
         Choice (Control setup ( expanded, selected ) handler) ->
             let
                 nextState =
@@ -316,17 +310,16 @@ execute item =
                         Collapsed -> Expanded
                         Expanded -> Collapsed
                         Detached -> Detached
-                nextChoice =
-                    Control
+
+            in
+                Just
+                    <| Choice
+                    <| Control
                         setup
                         ( nextState
                         , selected
                         )
                         handler
-            in
-                ( Choice nextChoice
-                , call nextChoice
-                )
         Group (Control setup ( expanded, focus ) handler) ->
             let
                 nextState =
@@ -334,22 +327,21 @@ execute item =
                         Collapsed -> Expanded
                         Expanded -> Collapsed
                         Detached -> Detached
-                nextGroup =
-                    Control
+
+            in
+                Just
+                    <| Group
+                    <| Control
                         setup
                         ( nextState
                         , focus
                         )
                         handler
-            in
-                ( Group nextGroup
-                , call nextGroup
-                )
-        _ -> ( item, Cmd.none )
+        _ -> Nothing
 
 
 -- FIXME: should not call controls itself, only return the update
-executeAt : Path -> Property msg -> ( List ( Path, Property msg ), Cmd msg )
+executeAt : Path -> Property msg -> List ( Path, Property msg )
 executeAt path root =
     case root
         |> findWithParent path of
@@ -362,32 +354,25 @@ executeAt path root =
                             let
                                 newParent =
                                     select selectedIndex control
-
-                                ( newCell, cmd ) = execute item
                             in
-                                (
-                                    [ ( toParent, Choice newParent )
-                                    , ( path, newCell )
-                                    ]
-                                , Cmd.batch
-                                    [ cmd
-                                    , call newParent
-                                    ]
-                                )
+                                case execute item of
+                                    Just newCell ->
+                                        [ ( toParent, Choice newParent )
+                                        , ( path, newCell )
+                                        ]
+                                    Nothing ->
+                                        [ ( toParent, Choice newParent )
+                                        ]
                         Nothing ->
-                            ( [], Cmd.none )
+                            []
 
                 ( _, _ ) ->
 
-                    let
-                        ( newCell, cmd ) = execute item
-                    in
-                        ( [ ( path, newCell ) ]
-                        , cmd
-                        )
+                    case execute item of
+                        Just newCell -> [ ( path, newCell ) ]
+                        Nothing -> []
 
-        Nothing ->
-            ( [], Cmd.none )
+        Nothing -> []
 
 
 doToggle : Control state ToggleState msg -> Control state ToggleState msg
@@ -514,3 +499,17 @@ isGhost prop =
 
 noGhosts : Array (Property msg) -> Array (Property msg)
 noGhosts = Array.filter (not << isGhost)
+
+
+call : Property msg -> Cmd msg
+call prop =
+    case prop of
+        Nil -> Cmd.none
+        Number control -> Control.call control
+        Coordinate control -> Control.call control
+        Text control -> Control.call control
+        Color control -> Control.call control
+        Toggle control -> Control.call control
+        Action control -> Control.call control
+        Choice control -> Control.call control
+        Group control -> Control.call control
