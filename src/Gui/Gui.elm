@@ -80,10 +80,15 @@ init flow =
     Gui flow Bounds.zero Gui.Mouse.init Nil Layout.init Detach.never
 
 
-detachable : (Exp.PortUpdate -> Cmd msg) -> Url -> Gui msg -> Gui msg
-detachable send base  gui =
+detachable
+     : (Exp.RawProperty -> Cmd msg)
+    -> (Exp.RawUpdate -> Cmd msg)
+    -> Url
+    -> Gui msg
+    -> Gui msg
+detachable sendTree sendUpdate base  gui =
     { gui
-    | detach = Detach.make send base
+    | detach = Detach.make sendTree sendUpdate base
     }
 
 
@@ -150,7 +155,7 @@ update msg gui =
                     | tree = nextRoot
                     , layout = Layout.pack nextRoot
                     }
-                , Cmd.none
+                , Detach.sendTree gui.detach nextRoot
                 )
 
 
@@ -361,7 +366,7 @@ notifyUpdate : Detach msg -> ( Path, Property msg ) -> Cmd msg
 notifyUpdate detach ( path, prop ) =
     Cmd.batch
         [ Property.call prop
-        , Detach.send detach path prop
+        , Detach.sendUpdate detach path prop
         ]
 
 

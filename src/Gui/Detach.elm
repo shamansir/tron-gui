@@ -11,21 +11,27 @@ import Gui.Property exposing (Property)
 type Detach msg =
     Detach
         { toUrl : Path -> Maybe Url
-        , sendUpdate : Exp.PortUpdate -> Cmd msg
+        , sendUpdate : Exp.RawUpdate -> Cmd msg
+        , sendTree : Exp.RawProperty -> Cmd msg
         }
 
 
 map : (msgA -> msgB) -> Detach msgA -> Detach msgB
-map f (Detach { toUrl, sendUpdate }) =
+map f (Detach d) =
     Detach
-        { toUrl = toUrl
-        , sendUpdate = sendUpdate >> Cmd.map f
+        { toUrl = d.toUrl
+        , sendUpdate = d.sendUpdate >> Cmd.map f
+        , sendTree = d.sendTree >> Cmd.map f
         }
 
 
 never : Detach msg
 never =
-    Detach { sendUpdate = always Cmd.none, toUrl = always Nothing }
+    Detach
+        { toUrl = always Nothing
+        , sendUpdate = always Cmd.none
+        , sendTree = always Cmd.none
+        }
 
 
 getUrl : Path -> Detach msg -> Maybe Url
@@ -44,11 +50,12 @@ formUrl base path =
     }
 
 
-make : (Exp.PortUpdate -> Cmd msg) -> Url -> Detach msg
-make sendUpdate base =
+make : (Exp.RawProperty -> Cmd msg) -> (Exp.RawUpdate -> Cmd msg) -> Url -> Detach msg
+make sendTree_ sendUpdate_ base =
     Detach
         { toUrl = Just << formUrl base
-        , sendUpdate = sendUpdate
+        , sendUpdate = sendUpdate_
+        , sendTree = sendTree_
         }
 
 
@@ -56,6 +63,11 @@ make sendUpdate base =
 -- extract
 
 
-send : Detach msg -> Path -> Property msg -> Cmd msg
-send (Detach { sendUpdate }) path prop =
-    sendUpdate (Exp.encodeUpdate path prop)
+sendUpdate : Detach msg -> Path -> Property msg -> Cmd msg
+sendUpdate (Detach d) path =
+    d.sendUpdate << Exp.encodeUpdate path
+
+
+sendTree : Detach msg -> Property msg -> Cmd msg
+sendTree (Detach d) =
+    d.sendTree << Exp.encode

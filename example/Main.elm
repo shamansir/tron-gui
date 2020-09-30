@@ -71,7 +71,7 @@ init url _ =
         , theme = Style.Light
         , gui = Gui.init Gui.TopToBottom
                     |> Gui.over (SimpleGui.for Simple.init)
-                    |> Gui.detachable sendUpdateToWs url
+                    |> Gui.detachable sendUiToWs sendUpdateToWs url
                     |> Gui.map ToSimple
         }
     , Cmd.batch -- FIXME: Gui.init
@@ -257,12 +257,14 @@ main =
         }
 
 
-port updateFromDatGui : (Exp.PortUpdate -> msg) -> Sub msg
+port updateFromDatGui : (Exp.RawUpdate -> msg) -> Sub msg
 
-port startDatGui : Encode.Value -> Cmd msg
+port startDatGui : Exp.RawProperty -> Cmd msg
 
 port destroyDatGui : () -> Cmd msg
 
-port updateDatGui : Encode.Value -> Cmd msg
+-- port updateDatGui : Encode.Value -> Cmd msg
 
-port sendUpdateToWs : Exp.PortUpdate -> Cmd msg
+port sendUiToWs : Exp.RawProperty -> Cmd msg
+
+port sendUpdateToWs : Exp.RawUpdate -> Cmd msg

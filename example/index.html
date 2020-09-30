@@ -62,8 +62,12 @@
             latestGui = null;
         });
 
+        app.ports.sendUiToWs.subscribe((update) => {
+            console.log('send ui to WS', update);
+        });
+
         app.ports.sendUpdateToWs.subscribe((update) => {
-            console.log('send to WS', update);
+            console.log('send update to WS', update);
         });
     </script>
 

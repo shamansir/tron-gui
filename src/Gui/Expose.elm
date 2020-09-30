@@ -15,13 +15,16 @@ import Gui.Path exposing (Path)
 import Gui.Path as Path exposing (toList)
 
 
-type alias JsPath = List Id
+type alias RawPath = List Id
+
+
+type alias RawProperty = E.Value
 
 
 type alias Id = Int
 
 
-type Value
+type ProxyValue -- TODO: get rid of?
     = FromSlider Float
     | FromXY ( Float, Float )
     | FromInput String
@@ -33,19 +36,19 @@ type Value
 
 
 type alias Update =
-    { path : JsPath
-    , value : Value
+    { path : RawPath
+    , value : ProxyValue
     }
 
 
-type alias PortUpdate =
-    { path : JsPath
+type alias RawUpdate =
+    { path : RawPath
     , value : E.Value
     , type_ : String
     }
 
 
-updateProperty : Value -> Property msg -> Cmd msg
+updateProperty : ProxyValue -> Property msg -> Cmd msg
 updateProperty value property
     = case ( property, value ) of
         ( Nil, _ ) ->
@@ -84,27 +87,27 @@ update { path, value } gui =
                 _ -> Cmd.none
 
 
-encodeJsPath : JsPath -> E.Value
-encodeJsPath=
+encodeRawPath : RawPath -> E.Value
+encodeRawPath=
     E.list E.int
 
 
 encodePath : Path -> E.Value
-encodePath = Path.toList >> encodeJsPath
+encodePath = Path.toList >> encodeRawPath
 
 
-encodePropertyAt : JsPath -> Property msg -> E.Value
+encodePropertyAt : RawPath -> Property msg -> RawProperty
 encodePropertyAt path property =
     case property of
         Nil ->
             E.object
                 [ ( "type", E.string "ghost" )
-                , ( "path", encodeJsPath path )
+                , ( "path", encodeRawPath path )
                 ]
         Number ( Control { min, max, step } val _ ) ->
             E.object
                 [ ( "type", E.string "slider"  )
-                , ( "path", encodeJsPath path )
+                , ( "path", encodeRawPath path )
                 , ( "current", E.float val )
                 , ( "min", E.float min )
                 , ( "max", E.float max )
@@ -113,7 +116,7 @@ encodePropertyAt path property =
         Coordinate ( Control ( xSpec, ySpec ) ( x, y ) _ ) ->
             E.object
                 [ ( "type", E.string "xy" )
-                , ( "path", encodeJsPath path )
+                , ( "path", encodeRawPath path )
                 , ( "current",
                     E.object
                         [ ( "x", E.float x )
@@ -130,19 +133,19 @@ encodePropertyAt path property =
         Text ( Control _ val _ ) ->
             E.object
                 [ ( "type", E.string "text" )
-                , ( "path", encodeJsPath path )
+                , ( "path", encodeRawPath path )
                 , ( "current", E.string val )
                 ]
         Color ( Control _ val _ ) ->
             E.object
                 [ ( "type", E.string "color" )
-                , ( "path", encodeJsPath path )
+                , ( "path", encodeRawPath path )
                 , ( "current", encodeColor val )
                 ]
         Toggle ( Control _ val _ ) ->
             E.object
                 [ ( "type", E.string "toggle" )
-                , ( "path", encodeJsPath path )
+                , ( "path", encodeRawPath path )
                 , ( "current", E.string
                         <| case val of
                             TurnedOn -> "on"
@@ -151,13 +154,13 @@ encodePropertyAt path property =
         Action _ ->
             E.object
                 [ ( "type", E.string "button" )
-                , ( "path", encodeJsPath path )
+                , ( "path", encodeRawPath path )
                 ]
 
         Choice ( Control ( _, items ) ( state, ( _, Selected current ) ) _) ->
             E.object
                 [ ( "type", E.string "choice" )
-                , ( "path", encodeJsPath path )
+                , ( "path", encodeRawPath path )
                 , ( "current", E.int current )
                 , ( "expanded", E.bool <| case state of
                     Expanded -> True
@@ -172,7 +175,7 @@ encodePropertyAt path property =
         Group (Control ( _, items ) ( state, _ ) _ ) ->
             E.object
                 [ ( "type", E.string "nest" )
-                , ( "path", encodeJsPath path )
+                , ( "path", encodeRawPath path )
                 , ( "expanded", E.bool <| case state of
                     Expanded -> True
                     Collapsed -> False
@@ -185,7 +188,7 @@ encodePropertyAt path property =
                 ]
 
 
-encodeNested : JsPath -> Array ( Label, Property msg ) -> E.Value
+encodeNested : RawPath -> Array ( Label, Property msg ) -> RawProperty
 encodeNested path items =
     E.list
         (\(id, (label, property)) ->
@@ -203,11 +206,11 @@ encodeNested path items =
         <| items
 
 
-encode : Property msg -> E.Value
+encode : Property msg -> RawProperty
 encode = encodePropertyAt []
 
 
-encodeUpdate : Path -> Property msg -> PortUpdate
+encodeUpdate : Path -> Property msg -> RawUpdate
 encodeUpdate path prop =
     case prop of
         Nil ->
@@ -264,7 +267,7 @@ encodeUpdate path prop =
 -- select selector gui = gui
 
 
-valueDecoder : String -> D.Decoder Value
+valueDecoder : String -> D.Decoder ProxyValue
 valueDecoder type_ =
     case type_ of
         "ghost" -> D.succeed Other
@@ -279,7 +282,7 @@ valueDecoder type_ =
 
 
 
-fromPort : PortUpdate -> Update -- FIXME: -> Result
+fromPort : RawUpdate -> Update -- FIXME: -> Result
 fromPort portUpdate =
     { path = portUpdate.path
     , value =
