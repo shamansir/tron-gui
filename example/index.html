@@ -25,7 +25,9 @@
     <div id="elm-node"></div>
     <script type="text/javascript">
 
-        var app = Elm.Main.init({
+        const uuid = "b2465319";
+
+        const app = Elm.Main.init({
             node : document.getElementById("elm-node")
         });
 
@@ -34,7 +36,7 @@
         socket.onopen = function(e) {
             alert("[open] Connection established");
             alert("Sending to server");
-            socket.send("My name is John");
+            // socket.send("My name is John");
         };
 
         socket.onmessage = function(event) {
@@ -89,11 +91,15 @@
         });
 
         app.ports.sendUiToWs.subscribe((update) => {
-            console.log('send ui to WS', update);
+            const package = JSON.stringify({ uuid, data : update, code: 'BLD' });
+            console.log('send UI to WS', package);
+            socket.send(package);
         });
 
         app.ports.sendUpdateToWs.subscribe((update) => {
-            console.log('send update to WS', update);
+            const package = JSON.stringify({ uuid, data : update, code: 'UPD' });
+            console.log('send update to WS', package);
+            socket.send(package);
         });
     </script>
 
