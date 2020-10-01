@@ -21,7 +21,7 @@ import Gui.Gui exposing (Gui)
 import Gui.Gui as Gui exposing (view, detachable)
 import Gui.Expose as Exp exposing (Update)
 import Gui.Gui as Tron exposing (Gui, focus, over)
-import Gui.Msg as Tron exposing (Msg)
+import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Mouse exposing (Position)
 import Gui.Render.Style as Style exposing (..)
 
@@ -238,6 +238,8 @@ subscriptions { mode } =
         TronGui ->
             Sub.batch
                 [ Gui.trackMouse |> Sub.map TronUpdate
+                , receieveUiFromWs (TronUpdate << Tron.RefreshRaw)
+                , receieveUpdateFromWs (TronUpdate << Tron.ReceiveRaw)
                 , Browser.onResize Resize
                 ]
 
@@ -262,6 +264,10 @@ port updateFromDatGui : (Exp.RawUpdate -> msg) -> Sub msg
 port startDatGui : Exp.RawProperty -> Cmd msg
 
 port destroyDatGui : () -> Cmd msg
+
+port receieveUiFromWs : (Exp.RawProperty -> msg) -> Sub msg
+
+port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
 
 -- port updateDatGui : Encode.Value -> Cmd msg
 

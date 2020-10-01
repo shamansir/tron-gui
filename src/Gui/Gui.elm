@@ -158,6 +158,12 @@ update msg gui =
                 , Detach.sendTree gui.detach nextRoot
                 )
 
+        ReceiveRaw _ ->
+            ( gui, Cmd.none )
+
+        RefreshRaw _ ->
+            ( gui, Cmd.none )
+
 
 trackMouse : Sub Msg
 trackMouse =
@@ -173,7 +179,6 @@ trackMouse =
             <| decodePosition
         ]
     |> Sub.map ApplyMouse
-
 
 
 reflow : ( Int, Int ) -> Gui msg -> Gui msg
