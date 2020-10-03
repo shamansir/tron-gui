@@ -34,27 +34,32 @@
         let socket = new WebSocket("ws://localhost:3333");
 
         socket.onopen = function(e) {
-            alert("[open] Connection established");
-            alert("Sending to server");
-            // socket.send("My name is John");
+            console.info("[open] Connection established");
+            console.info("Sending to server");
+            //socket.send("My name is John");
         };
 
         socket.onmessage = function(event) {
-            alert(`[message] Data received from server: ${event.data}`);
+            console.info(`[message] Data received from server: ${event.data}`);
+            const package = JSON.parse(event.data);
+            if (uuid === package.uuid) {
+                app.ports.receieveUpdateFromWs.send(package.data);
+            }
+            console.log(package.uuid);
         };
 
         socket.onclose = function(event) {
             if (event.wasClean) {
-                alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                console.info(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
             } else {
                 // e.g. server process killed or network down
                 // event.code is usually 1006 in this case
-                alert('[close] Connection died');
+                console.info('[close] Connection died');
             }
         };
 
         socket.onerror = function(error) {
-            alert(`[error] ${error.message}`);
+            console.info(`[error] ${error.message}`);
         };
 
         let latestGui = null;
@@ -90,7 +95,7 @@
             latestGui = null;
         });
 
-        app.ports.sendUiToWs.subscribe((update) => {
+        app.ports.sendUiToWs.subscribe((update) => { // FIXME: not needed, remove
             const package = JSON.stringify({ uuid, data : update, code: 'BLD' });
             console.log('send UI to WS', package);
             socket.send(package);

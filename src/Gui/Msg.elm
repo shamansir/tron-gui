@@ -14,5 +14,4 @@ type Msg
     | MouseDown Path
     | KeyDown Int
     | Detach Path
-    | RefreshRaw Exp.RawProperty
     | ReceiveRaw Exp.RawUpdate

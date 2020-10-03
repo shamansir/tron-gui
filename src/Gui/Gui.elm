@@ -86,9 +86,20 @@ detachable
     -> Url
     -> Gui msg
     -> Gui msg
-detachable sendTree sendUpdate base  gui =
+detachable sendTree sendUpdate base gui =
+    let
+        nextRoot =
+            case Detach.checkAttached base of
+                Just path ->
+                    gui.tree
+                        |> Property.detachAll
+                        |> Property.attachAt path
+                Nothing -> gui.tree
+    in
     { gui
     | detach = Detach.make sendTree sendUpdate base
+    , tree = nextRoot
+    , layout = Layout.pack nextRoot
     }
 
 
@@ -158,11 +169,11 @@ update msg gui =
                 , Detach.sendTree gui.detach nextRoot
                 )
 
-        ReceiveRaw _ ->
-            ( gui, Cmd.none )
-
-        RefreshRaw _ ->
-            ( gui, Cmd.none )
+        ReceiveRaw rawUpdate ->
+            ( gui
+            , gui.tree
+                |> Exp.update (Exp.fromPort rawUpdate)
+            )
 
 
 trackMouse : Sub Msg

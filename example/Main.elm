@@ -242,7 +242,6 @@ subscriptions { mode } =
         TronGui ->
             Sub.batch
                 [ Gui.trackMouse |> Sub.map TronUpdate
-                , receieveUiFromWs (TronUpdate << Tron.RefreshRaw)
                 , receieveUpdateFromWs (TronUpdate << Tron.ReceiveRaw)
                 , Browser.onResize Resize
                 ]

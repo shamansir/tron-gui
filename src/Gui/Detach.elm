@@ -71,3 +71,18 @@ sendUpdate (Detach d) path =
 sendTree : Detach msg -> Property msg -> Cmd msg
 sendTree (Detach d) =
     d.sendTree << Exp.encode
+
+
+-- isAttached : Property msg -> Bool
+
+
+checkAttached : Url -> Maybe Path
+checkAttached url =
+    url.fragment
+        |> Maybe.map (String.split "|")
+        |> Maybe.map
+            (List.map String.toInt
+                >> List.filterMap identity)
+        |> Maybe.map Path.fromList
+
+

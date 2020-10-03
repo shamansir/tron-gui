@@ -447,6 +447,26 @@ detachAt path =
     updateAt path detach
 
 
+attach : Property msg -> Property msg
+attach prop =
+    case prop of
+        Group ( Control setup ( _, focus ) handler ) ->
+            Group ( Control setup ( Expanded, focus ) handler )
+        Choice ( Control setup ( _, selection ) handler ) ->
+            Choice ( Control setup ( Expanded, selection ) handler )
+        _ -> prop
+
+
+attachAt : Path -> Property msg -> Property msg
+attachAt path =
+    updateAt path attach
+
+
+detachAll : Property msg -> Property msg
+detachAll =
+    mapReplace <| always detach
+
+
 toggle : Property msg -> Property msg
 toggle prop =
     let

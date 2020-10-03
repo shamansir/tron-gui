@@ -298,12 +298,6 @@ encodeColor color =
             [ red, green, blue, alpha ]
                 |> List.map String.fromFloat
                 |> String.join ","
-            {-
-            ([ red, green, blue ]
-                |> List.map ((*) 255)
-                |> List.map String.fromFloat
-                |> String.join ",") ++ "," ++ String.fromFloat alpha
-            -}
 
 
 decodeColor : D.Decoder Color
@@ -339,31 +333,3 @@ decodeCoord =
                     |> Maybe.withDefault (D.fail <| "failed to parse coord: " ++ str)
                 _ -> D.fail <| "failed to parse coord: " ++ str
         )
-
-{-
-encodeColor : Color -> E.Value
-encodeColor color =
-    E.string <| case Color.toHsla color of
-        { hue, saturation, lightness, alpha } ->
-            [ hue, saturation, lightness, alpha ]
-                |> List.map String.fromFloat
-                |> String.join "|"
-
-
-decodeColor : D.Decoder Color
-decodeColor =
-    D.string
-        |> D.andThen (\str ->
-            case String.split "|" str of
-                h::s::l::a::_ ->
-                    Maybe.map4
-                        Color.hsla
-                        (String.toFloat h)
-                        (String.toFloat s)
-                        (String.toFloat l)
-                        (String.toFloat a)
-                    |> Maybe.map D.succeed
-                    |> Maybe.withDefault (D.fail <| "failed to parse color" ++ str)
-                _ -> D.fail <| "failed to parse color" ++ str
-        )
--}
