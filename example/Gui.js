@@ -108,7 +108,7 @@ function start(document, definition, origSend) {
       const toggle = root.add(config, propName).name(label);
       const sender = send(property);
       toggle.onFinishChange((value) => {
-        sender(value);
+        sender(value ? 'on' : 'off');
       });
 
     } else if (property.type == 'slider') {

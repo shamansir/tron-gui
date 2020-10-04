@@ -56,6 +56,8 @@ updateProperty value property =
             Cmd.none
         ( Number control, FromSlider f ) ->
             f |> callWith control
+        ( Coordinate control, FromXY xy ) ->
+            xy |> callWith control
         ( Text control, FromInput s ) ->
             s |> callWith control
         ( Color control, FromColor c ) ->
@@ -95,6 +97,8 @@ applyProperty value prop =
             prop
         ( Number control, FromSlider f ) ->
             control |> Control.setValue f |> Number
+        ( Coordinate control, FromXY xy ) ->
+            control |> Control.setValue xy |> Coordinate
         ( Text control, FromInput s ) ->
             control |> Control.setValue s |> Text
         ( Color control, FromColor c ) ->
@@ -118,7 +122,7 @@ applyProperty value prop =
 apply : Update -> Property msg -> Property msg
 apply { path, value } prop =
     case path of
-        [] -> applyProperty value prop
+        [] -> applyProperty (Debug.log "val" value) prop
         id :: next ->
             case prop of
                 Group control ->
@@ -323,7 +327,7 @@ valueDecoder type_ =
         "text" -> D.string |> D.map FromInput
         "color" -> decodeColor |> D.map FromColor
         "choice" -> D.int |> D.map FromChoice
-        "toggle" -> D.bool |> D.map boolToToggle |> D.map FromToggle
+        "toggle" -> decodeToggle |> D.map FromToggle
         "button" -> D.succeed FromButton
         _ -> D.succeed Other
 
@@ -379,4 +383,16 @@ decodeCoord =
                     |> Maybe.map D.succeed
                     |> Maybe.withDefault (D.fail <| "failed to parse coord: " ++ str)
                 _ -> D.fail <| "failed to parse coord: " ++ str
+        )
+
+
+decodeToggle : D.Decoder ToggleState
+decodeToggle =
+    D.string
+        |> D.map
+        (\str ->
+            case str of
+                "on" -> TurnedOn
+                "off" -> TurnedOff
+                _ -> TurnedOff
         )
