@@ -41,4 +41,5 @@ getValue : Control s v msg -> v
 getValue (Control _ v _) = v
 
 
--- updateAndExecute : (v -> v) -> Control s v msg -> ( Control s v msg, msg )
+setValue : v -> Control s v msg -> Control s v msg
+setValue v = update <| always v

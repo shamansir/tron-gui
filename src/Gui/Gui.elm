@@ -170,10 +170,19 @@ update msg gui =
                 )
 
         ReceiveRaw rawUpdate ->
-            ( gui
-            , gui.tree
-                |> Exp.update (Exp.fromPort rawUpdate)
-            )
+            let
+                nextRoot =
+                    gui.tree
+                        |> Exp.apply (Exp.fromPort rawUpdate)
+            in
+                (
+                    { gui
+                    | tree = nextRoot
+                    , layout = Layout.pack nextRoot
+                    }
+                , nextRoot
+                    |> Exp.update (Exp.fromPort rawUpdate)
+                )
 
 
 trackMouse : Sub Msg

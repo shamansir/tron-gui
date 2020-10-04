@@ -60,7 +60,6 @@ type alias ChoiceControl msg =
         msg
 
 
-
 type Property msg
     = Nil
     | Number (Control Axis Float msg)
@@ -533,3 +532,24 @@ call prop =
         Action control -> Control.call control
         Choice control -> Control.call control
         Group control -> Control.call control
+
+
+withItem
+     : Int
+    -> (Property msg -> Property msg)
+    -> Control ( a, Array ( b, Property msg ) ) value msg
+    -> Control ( a, Array ( b, Property msg ) ) value msg
+withItem id f ( Control ( shape, items ) state handler ) =
+    Control
+        ( shape
+        , case Array.get id items of
+            Just ( label, innerProp ) ->
+                items
+                |> Array.set id
+                    ( label
+                    , f innerProp
+                    )
+            Nothing -> items
+        )
+        state
+        handler

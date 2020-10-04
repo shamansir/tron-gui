@@ -10,6 +10,7 @@ import Array exposing (Array)
 
 import Gui.Util exposing (findMap)
 import Gui.Control exposing (..)
+import Gui.Control as Control exposing (update)
 import Gui.Property exposing (..)
 import Gui.Path exposing (Path)
 import Gui.Path as Path exposing (toList)
@@ -49,8 +50,8 @@ type alias RawUpdate =
 
 
 updateProperty : ProxyValue -> Property msg -> Cmd msg
-updateProperty value property
-    = case ( property, value ) of
+updateProperty value property =
+    case ( property, value ) of
         ( Nil, _ ) ->
             Cmd.none
         ( Number control, FromSlider f ) ->
@@ -72,19 +73,65 @@ updateProperty value property
 
 
 update : Update -> Property msg -> Cmd msg
-update { path, value } gui =
+update { path, value } prop =
     case path of
-        [] -> updateProperty value gui
+        [] -> updateProperty value prop
         id :: next ->
-            case gui of
+            case prop of
                 Group ( Control ( _, items ) _ _) ->
                     case Array.get id items of
-                        Just ( _, innerGui ) ->
-                            innerGui
+                        Just ( _, innerProp ) ->
+                            innerProp
                                 |> update { path = next, value = value }
                         Nothing ->
                             Cmd.none
                 _ -> Cmd.none
+
+
+applyProperty : ProxyValue -> Property msg -> Property msg
+applyProperty value prop =
+    case ( prop, value ) of
+        ( Nil, _ ) ->
+            prop
+        ( Number control, FromSlider f ) ->
+            control |> Control.setValue f |> Number
+        ( Text control, FromInput s ) ->
+            control |> Control.setValue s |> Text
+        ( Color control, FromColor c ) ->
+            control |> Control.setValue c |> Color
+        ( Toggle control, FromToggle t ) ->
+            control |> Control.setValue t |> Toggle
+        ( Action control, FromButton ) ->
+            control |> Control.setValue () |> Action
+        ( Choice control, FromChoice i ) ->
+            control
+                |> Control.update
+                    (\( expanded, ( focus, _) )
+                        -> ( expanded, ( focus, Selected i ) )
+                    )
+                |> Choice
+        ( Group _, _ ) ->
+            prop
+        _ -> prop
+
+
+apply : Update -> Property msg -> Property msg
+apply { path, value } prop =
+    case path of
+        [] -> applyProperty value prop
+        id :: next ->
+            case prop of
+                Group control ->
+                    control
+                        |> withItem id
+                                (apply { path = next, value = value })
+                        |> Group
+                Choice control ->
+                    control
+                        |> withItem id
+                                (apply { path = next, value = value })
+                        |> Choice
+                _ -> prop
 
 
 encodeRawPath : RawPath -> E.Value
