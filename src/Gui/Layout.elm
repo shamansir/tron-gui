@@ -68,8 +68,9 @@ pack1 rootPath prop =
 
 
 packItemsAtRoot : Path -> Shape -> Array (Label, Property msg) -> Layout
-packItemsAtRoot rootPath shape items =
+packItemsAtRoot rp shape items =
     let
+        rootPath = Path.toList rp
 
         firstLevel =
             items
@@ -77,7 +78,7 @@ packItemsAtRoot rootPath shape items =
                 |> Array.foldl
                     (\(index, (_, theProp)) layout ->
                         if not <| isGhost theProp
-                            then layout |> packOne [index]
+                            then layout |> packOne (rootPath ++ [index])
                             else layout
                     )
                     init
@@ -154,4 +155,4 @@ packItemsAtRoot rootPath shape items =
                     layout
 
     in
-        items |> packPlatesOf (Path.toList rootPath) firstLevel
+        items |> packPlatesOf rootPath firstLevel

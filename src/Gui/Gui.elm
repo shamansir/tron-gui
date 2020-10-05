@@ -17,6 +17,7 @@ import BinPack exposing (..)
 import Bounds exposing (Bounds)
 
 import Gui.Path exposing (Path)
+import Gui.Path as Path exposing (start)
 import Gui.Control exposing (..)
 import Gui.Control as Control exposing (call)
 import Gui.Property exposing (..)
@@ -211,6 +212,7 @@ toGridCoords bounds flow pos =
 handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd msg )
 handleMouse mouseAction gui =
     let
+        rootPath = getRootPath gui
         curMouseState =
             gui.mouse
         nextMouseState =
@@ -227,8 +229,11 @@ handleMouse mouseAction gui =
                 |> findPathAt
                 |> Maybe.andThen
                     (\path ->
-                        Gui.Property.find path gui.tree
-                            |> Maybe.map (Tuple.pair path)
+                        let
+                            fullPath = Path.add rootPath path
+                        in
+                        Gui.Property.find fullPath gui.tree
+                            |> Maybe.map (Tuple.pair fullPath)
                     )
 
     in
@@ -421,6 +426,13 @@ boundsFromSize { width, height } layout =
         , width = gridWidthInPx
         , height = gridHeightInPx
         }
+
+
+getRootPath : Gui msg -> Path
+getRootPath gui =
+    gui.detach
+        |> Detach.isAttached
+        |> Maybe.withDefault Path.start
 
 
 view : Style.Theme -> Gui msg -> Html Msg

@@ -73,3 +73,23 @@ howDeep (Path list) = List.length list
 
 isRoot : Path -> Bool
 isRoot path = howDeep path == 0
+
+
+add : Path -> Path -> Path
+add (Path a) (Path b) = Path <| a ++ b
+
+
+sub : Path -> Path -> Path
+sub (Path w) (Path f) =
+    let
+        helper what from =
+            case (what, from) of
+                ( [], ys ) -> ys
+                ( xs, [] ) -> []
+                ( x::xs, y::ys ) ->
+                    if x == y then
+                        helper xs ys
+                    else from
+    in
+        Path <| helper w f
+

@@ -24,6 +24,7 @@ import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
 import Gui.Focus exposing (Focused(..), focused)
 import Gui.Detach exposing (Detach)
+import Gui.Detach as Detach exposing (isAttached)
 
 import Gui.Render.Util exposing (..)
 import Gui.Render.Debug exposing (..)
@@ -108,6 +109,9 @@ view theme bounds detach root layout =
         keyDownHandler_ =
             H.on "keydown"
                 <| Json.map KeyDown H.keyCode
+        rootPath =
+            Detach.isAttached detach
+                |> Maybe.withDefault Path.start
         tones = Style.assignTones root
         toneOf path =
             tones |> Dict.get (Path.toString path) |> Maybe.withDefault None
@@ -144,7 +148,7 @@ view theme bounds detach root layout =
 
             , cells1 |> List.map
                 (\(path, propertyBounds) ->
-                    case root |> Property.find1 path of
+                    case root |> Property.find1 (Path.sub rootPath path) of
                         Just prop -> Just <|
                             viewProperty
                                 theme
