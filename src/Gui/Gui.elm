@@ -87,19 +87,8 @@ detachable
     -> Gui msg
     -> Gui msg
 detachable sendTree sendUpdate base gui =
-    let
-        nextRoot =
-            case Detach.checkAttached base of
-                Just path ->
-                    gui.tree
-                        |> Property.detachAll
-                        |> Property.attachAt path
-                Nothing -> gui.tree
-    in
     { gui
     | detach = Detach.make sendTree sendUpdate base
-    , tree = nextRoot
-    , layout = Layout.pack nextRoot
     }
 
 
@@ -436,4 +425,15 @@ boundsFromSize { width, height } layout =
 
 view : Style.Theme -> Gui msg -> Html Msg
 view theme gui =
-    Layout.view theme gui.bounds gui.detach gui.tree gui.layout
+    case Detach.isAttached gui.detach
+        |> Maybe.andThen
+            (\path ->
+                gui.tree
+                    |> Property.find path
+                    |> Maybe.map (Tuple.pair path)
+            ) of
+        Nothing ->
+            Layout.view theme gui.bounds gui.detach gui.tree gui.layout
+        Just ( attachedPath, root ) ->
+            Layout.view theme gui.bounds gui.detach root
+                <| Layout.pack1 attachedPath root

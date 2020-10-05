@@ -69,3 +69,7 @@ toString (Path list) =
 
 howDeep : Path -> Int
 howDeep (Path list) = List.length list
+
+
+isRoot : Path -> Bool
+isRoot path = howDeep path == 0

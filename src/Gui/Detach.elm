@@ -13,6 +13,7 @@ type Detach msg =
         { toUrl : Path -> Maybe Url
         , sendUpdate : Exp.RawUpdate -> Cmd msg
         , sendTree : Exp.RawProperty -> Cmd msg
+        , attached : Maybe Path
         }
 
 
@@ -22,6 +23,7 @@ map f (Detach d) =
         { toUrl = d.toUrl
         , sendUpdate = d.sendUpdate >> Cmd.map f
         , sendTree = d.sendTree >> Cmd.map f
+        , attached = d.attached
         }
 
 
@@ -31,6 +33,7 @@ never =
         { toUrl = always Nothing
         , sendUpdate = always Cmd.none
         , sendTree = always Cmd.none
+        , attached = Nothing
         }
 
 
@@ -56,6 +59,7 @@ make sendTree_ sendUpdate_ base =
         { toUrl = Just << formUrl base
         , sendUpdate = sendUpdate_
         , sendTree = sendTree_
+        , attached = checkAttached base
         }
 
 
@@ -86,3 +90,5 @@ checkAttached url =
         |> Maybe.map Path.fromList
 
 
+isAttached : Detach msg -> Maybe Path
+isAttached (Detach { attached }) = attached
