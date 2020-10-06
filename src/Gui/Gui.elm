@@ -45,19 +45,19 @@ type Flow
 
 type alias Gui msg =
     { flow : Flow
-    , bounds : Bounds
+    , viewport : ( Int, Int ) -- in pixels
+    , size : ( Int, Int ) -- in cells
     , mouse : MouseState
     , tree : Property msg
-    , layout : Layout -- seems to be updated after every tree change, so don't store?
     , detach : Detach msg
     }
 
 
-moves : Position -> MouseAction
+moves : Mouse.Position -> MouseAction
 moves = Gui.Mouse.Move
-ups : Position -> MouseAction
+ups : Mouse.Position -> MouseAction
 ups = Gui.Mouse.Up
-downs : Position -> MouseAction
+downs : Mouse.Position -> MouseAction
 downs = Gui.Mouse.Down
 
 
@@ -68,17 +68,17 @@ extractMouse = .mouse
 map : (msgA -> msgB) -> Gui msgA -> Gui msgB
 map f model =
     { flow = model.flow
-    , bounds = model.bounds
+    , viewport = model.viewport
+    , size = model.size
     , mouse = model.mouse
     , tree = model.tree |> Gui.Property.map f
-    , layout = model.layout
     , detach = model.detach |> Detach.map f
     }
 
 
 init : Flow -> Gui msg
 init flow =
-    Gui flow Bounds.zero Gui.Mouse.init Nil Layout.init Detach.never
+    Gui flow ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init Nil Detach.never
 
 
 detachable
@@ -97,7 +97,6 @@ over : Property msg -> Gui msg -> Gui msg
 over prop gui =
     { gui
     | tree = prop
-    , layout = Layout.pack prop
     }
 
 
@@ -128,7 +127,6 @@ update msg gui =
                 (
                     { gui
                     | tree = nextRoot
-                    , layout = Layout.pack nextRoot
                     }
                 , updates |> notifyUpdates gui.detach
                 )
@@ -154,7 +152,6 @@ update msg gui =
                 (
                     { gui
                     | tree = nextRoot
-                    , layout = Layout.pack nextRoot
                     }
                 , Detach.sendTree gui.detach nextRoot
                 )
@@ -168,7 +165,6 @@ update msg gui =
                 (
                     { gui
                     | tree = nextRoot
-                    , layout = Layout.pack nextRoot
                     }
                 , nextRoot
                     |> Exp.update (Exp.fromPort rawUpdate)
@@ -192,12 +188,9 @@ trackMouse =
 
 
 reflow : ( Int, Int ) -> Gui msg -> Gui msg
-reflow ( w, h ) gui =
+reflow viewport gui =
     { gui
-    | bounds =
-        gui.layout |>
-            boundsFromSize
-                { width = toFloat w, height = toFloat h }
+    | viewport = viewport
     }
 
 
@@ -218,11 +211,15 @@ handleMouse mouseAction gui =
         nextMouseState =
             gui.mouse
                 |> Gui.Mouse.apply mouseAction
+        bounds =
+            boundsFromSize gui.viewport gui.size
+        layout =
+            Layout.pack gui.size gui.tree
 
         findPathAt pos =
             pos
-                |> toGridCoords gui.bounds gui.flow
-                |> Layout.find gui.layout
+                |> toGridCoords bounds gui.flow
+                |> Layout.find layout
 
         findCellAt pos =
             pos
@@ -334,6 +331,7 @@ handleMouse mouseAction gui =
 
         )
 
+
 handleKeyDown
     :  Int
     -> Path
@@ -348,7 +346,6 @@ handleKeyDown keyCode path gui =
             in
                 { gui
                 | tree = nextRoot
-                , layout = Layout.pack nextRoot
                 }
 
         executeByPath _ =
@@ -359,7 +356,6 @@ handleKeyDown keyCode path gui =
                 (
                     { gui
                     | tree = nextRoot
-                    , layout = Layout.pack nextRoot
                     }
                 , updates |> notifyUpdates gui.detach
                 )
@@ -412,17 +408,16 @@ fromWindow passSize =
             )
 
 
-boundsFromSize : { width : Float, height : Float } -> Layout -> Bounds
-boundsFromSize { width, height } layout =
+boundsFromSize : ( Int, Int ) -> ( Int, Int ) -> Bounds
+boundsFromSize ( width, height ) ( gridWidthInCells, gridHeightInCells ) =
     let
-        ( gridWidthInCells, gridHeightInCells ) = getSize layout
         ( gridWidthInPx, gridHeightInPx ) =
             ( cellWidth * toFloat gridWidthInCells
             , cellHeight * toFloat gridHeightInCells
             )
     in
-        { x = (width / 2) - (gridWidthInPx / 2)
-        , y = (height / 2) - (gridHeightInPx / 2)
+        { x = (toFloat width / 2) - (gridWidthInPx / 2)
+        , y = (toFloat height / 2) - (gridHeightInPx / 2)
         , width = gridWidthInPx
         , height = gridHeightInPx
         }
@@ -437,6 +432,10 @@ getRootPath gui =
 
 view : Style.Theme -> Gui msg -> Html Msg
 view theme gui =
+    let
+        bounds =
+            boundsFromSize gui.viewport gui.size
+    in
     case Detach.isAttached gui.detach
         |> Maybe.andThen
             (\path ->
@@ -445,7 +444,8 @@ view theme gui =
                     |> Maybe.map (Tuple.pair path)
             ) of
         Nothing ->
-            Layout.view theme gui.bounds gui.detach gui.tree gui.layout
+            Layout.view theme bounds gui.detach gui.tree
+                <| Layout.pack gui.size gui.tree
         Just ( attachedPath, root ) ->
-            Layout.view theme gui.bounds gui.detach root
-                <| Layout.pack1 attachedPath root
+            Layout.view theme bounds gui.detach root
+                <| Layout.pack1 gui.size attachedPath root

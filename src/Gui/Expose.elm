@@ -122,7 +122,7 @@ applyProperty value prop =
 apply : Update -> Property msg -> Property msg
 apply { path, value } prop =
     case path of
-        [] -> applyProperty (Debug.log "val" value) prop
+        [] -> applyProperty value prop
         id :: next ->
             case prop of
                 Group control ->

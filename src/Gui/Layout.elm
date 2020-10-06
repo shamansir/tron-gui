@@ -12,10 +12,6 @@ import Gui.Property as Property exposing (fold)
 import BinPack exposing (..)
 
 
-maxCellsByX = 9
-maxCellsByY = 5
-
-
 type Cell
     = One Path
     | Plate Path (BinPack Path)
@@ -24,17 +20,27 @@ type Cell
 type alias Layout = BinPack Cell
 
 
-getSize : Layout -> ( Int, Int )
-getSize _ = ( maxCellsByX, maxCellsByY )
+{-
+type Cells = Cells
+
+type Pixels = Pixels
 
 
-init : Layout
-init = container maxCellsByX maxCellsByY
+type Size a = Size ( Int, Int )
 
 
-find : Layout -> { x : Float, y : Float } -> Maybe Path
+type Position a = Position { x : Float, y : Float }
+-}
+
+
+init : ( Int, Int ) -> Layout
+init ( maxCellsByX, maxCellsByY )
+    = container (toFloat maxCellsByX) (toFloat maxCellsByY)
+
+
+find : Layout -> { x : Float, y : Float }-> Maybe Path
 find layout pos =
-    case BinPack.find pos layout of
+    case layout |> BinPack.find pos of
         Just ( One path, _ ) ->
             Just path
         Just ( Plate _ innerLayout, bounds ) ->
@@ -48,27 +54,26 @@ find layout pos =
             Nothing
 
 
-pack : Property msg -> Layout
-pack = pack1 Path.start
+pack : ( Int, Int ) -> Property msg -> Layout
+pack size = pack1 size Path.start
 
 
-pack1 : Path -> Property msg -> Layout
-pack1 rootPath prop =
+pack1 : ( Int, Int ) -> Path -> Property msg -> Layout
+pack1 size rootPath prop =
     case prop of
         Nil ->
-            init
+            init size
         Group (Control (shape, items) _ _) ->
-            packItemsAtRoot rootPath shape items
+            packItemsAtRoot size rootPath shape items
         Choice (Control (shape, items) _ _) ->
-            packItemsAtRoot rootPath shape items
+            packItemsAtRoot size rootPath shape items
         _ ->
-            init
-                |> BinPack.pack ( { width = 1, height = 1 }, One <| Path.start )
-                |> Maybe.withDefault init
+            init size
+                |> BinPack.pack1 ( { width = 1, height = 1 }, One <| Path.start )
 
 
-packItemsAtRoot : Path -> Shape -> Array (Label, Property msg) -> Layout
-packItemsAtRoot rp shape items =
+packItemsAtRoot : ( Int, Int ) -> Path -> Shape -> Array (Label, Property msg) -> Layout
+packItemsAtRoot size rp shape items =
     let
         rootPath = Path.toList rp
 
@@ -81,7 +86,7 @@ packItemsAtRoot rp shape items =
                             then layout |> packOne (rootPath ++ [index])
                             else layout
                     )
-                    init
+                    (init size)
 
         packOne path =
             BinPack.pack1
