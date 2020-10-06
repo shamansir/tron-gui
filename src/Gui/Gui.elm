@@ -213,24 +213,21 @@ handleMouse mouseAction gui =
                 |> Gui.Mouse.apply mouseAction
         bounds =
             boundsFromSize gui.viewport gui.size
-        layout =
-            Layout.pack gui.size gui.tree
+        theLayout =
+            layout gui |> Tuple.second
 
         findPathAt pos =
             pos
                 |> toGridCoords bounds gui.flow
-                |> Layout.find layout
+                |> Layout.find theLayout
 
         findCellAt pos =
             pos
                 |> findPathAt
                 |> Maybe.andThen
                     (\path ->
-                        let
-                            fullPath = Path.add rootPath path
-                        in
-                        Gui.Property.find fullPath gui.tree
-                            |> Maybe.map (Tuple.pair fullPath)
+                        Gui.Property.find path gui.tree
+                            |> Maybe.map (Tuple.pair path)
                     )
 
     in
@@ -430,12 +427,8 @@ getRootPath gui =
         |> Maybe.withDefault Path.start
 
 
-view : Style.Theme -> Gui msg -> Html Msg
-view theme gui =
-    let
-        bounds =
-            boundsFromSize gui.viewport gui.size
-    in
+layout : Gui msg -> ( Property msg, Layout )
+layout gui =
     case Detach.isAttached gui.detach
         |> Maybe.andThen
             (\path ->
@@ -444,8 +437,18 @@ view theme gui =
                     |> Maybe.map (Tuple.pair path)
             ) of
         Nothing ->
-            Layout.view theme bounds gui.detach gui.tree
-                <| Layout.pack gui.size gui.tree
+            ( gui.tree, Layout.pack gui.size gui.tree )
         Just ( attachedPath, root ) ->
-            Layout.view theme bounds gui.detach root
-                <| Layout.pack1 gui.size attachedPath root
+            ( root, Layout.pack1 gui.size attachedPath root )
+
+
+view : Style.Theme -> Gui msg -> Html Msg
+view theme gui =
+    let
+        bounds =
+            boundsFromSize gui.viewport gui.size
+    in
+    case layout gui of
+        ( root, theLayout ) ->
+            theLayout
+                |> Layout.view theme bounds gui.detach root
