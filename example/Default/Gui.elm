@@ -1,4 +1,4 @@
-module Simple.Gui exposing (..)
+module Default.Gui exposing (..)
 
 
 import Gui.Build as Gui
@@ -7,8 +7,8 @@ import Gui.Property  exposing (Property)
 import Gui.Property as Property exposing (Label)
 
 
-import Simple.Model exposing (..)
-import Simple.Msg exposing (..)
+import Default.Model exposing (..)
+import Default.Msg exposing (..)
 
 
 for : Model -> Property Msg

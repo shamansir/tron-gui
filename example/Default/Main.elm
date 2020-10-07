@@ -1,4 +1,4 @@
-module Simple.Main exposing (view, update)
+module Default.Main exposing (view, update)
 
 
 import Browser
@@ -12,10 +12,10 @@ import Html.Attributes as Html
 import Gui.Build as Gui
 import Gui.Gui exposing (Gui)
 
-import Simple.Gui as Simple
-import Simple.Model exposing (..)
-import Simple.Model as Model exposing (init)
-import Simple.Msg exposing (..)
+import Default.Gui as Simple
+import Default.Model exposing (..)
+import Default.Model as Model exposing (init)
+import Default.Msg exposing (..)
 
 
 update : Msg -> Model -> Model

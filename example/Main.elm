@@ -25,10 +25,10 @@ import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Mouse exposing (Position)
 import Gui.Render.Style as Style exposing (..)
 
-import Simple.Main as Simple
-import Simple.Model as Simple
-import Simple.Msg as Simple
-import Simple.Gui as SimpleGui
+import Default.Main as Default
+import Default.Model as Default
+import Default.Msg as Default
+import Default.Gui as DefaultGui
 
 import RandomGui as Gui exposing (generator)
 
@@ -39,7 +39,7 @@ type Msg
     | Resize Int Int
     | DatGuiUpdate Exp.Update
     | TronUpdate Tron.Msg
-    | ToSimple Simple.Msg
+    | ToDefault Default.Msg
     | Randomize (Tron.Gui Msg)
     | SwitchTheme
     | TriggerRandom
@@ -47,7 +47,7 @@ type Msg
 
 
 type alias Example
-    = Simple.Model
+    = Default.Model
 
 
 type Mode
@@ -67,12 +67,12 @@ init : Url -> Navigation.Key -> ( Model, Cmd Msg )
 init url _ =
     (
         { mode = TronGui
-        , example = Simple.init
+        , example = Default.init
         , theme = Style.Light
         , gui = Gui.init Gui.TopToBottom
-                    |> Gui.over (SimpleGui.for Simple.init)
+                    |> Gui.over (DefaultGui.for Default.init)
                     |> Gui.detachable sendUiToWs sendUpdateToWs url
-                    |> Gui.map ToSimple
+                    |> Gui.map ToDefault
         }
     , Cmd.batch -- FIXME: Gui.init
         [ Tron.focus NoOp
@@ -108,7 +108,7 @@ view { mode, gui, example, theme } =
                 gui
                     |> Gui.view theme
                     |> Html.map TronUpdate
-        , Simple.view example
+        , Default.view example
             |> Html.map (always NoOp)
         ]
 
@@ -140,11 +140,11 @@ update msg model =
                 ]
             )
 
-        ( ToSimple smsg, _ ) ->
+        ( ToDefault dmsg, _ ) ->
             (
                 { model
                 | example =
-                    Simple.update smsg model.example
+                    Default.update dmsg model.example
                 }
             , Cmd.none
             )
@@ -211,7 +211,7 @@ update msg model =
                 { model
                 | gui =
                     model.gui
-                        |> Gui.overMap ToSimple (SimpleGui.for Simple.init)
+                        |> Gui.overMap ToDefault (DefaultGui.for Default.init)
                 }
             , Cmd.batch -- FIXME: Gui.init
                 [ Tron.focus NoOp
