@@ -26,6 +26,39 @@ update msg model =
         ChangeFloat float -> { model | float = float }
         ChangeString string -> { model | string = string }
         ChangeColor color -> { model | color = color }
+        ChangeRed red ->
+            { model | color =
+                case model.color |> Color.toRgba of
+                    { green, blue, alpha } ->
+                        Color.fromRgba
+                            { red = red / 255
+                            , green = green
+                            , blue = blue
+                            , alpha = alpha
+                            }
+            }
+        ChangeGreen green ->
+            { model | color =
+                case model.color |> Color.toRgba of
+                    { red, blue, alpha } ->
+                        Color.fromRgba
+                            { red = red
+                            , green = green / 255
+                            , blue = blue
+                            , alpha = alpha
+                            }
+            }
+        ChangeBlue blue ->
+            { model | color =
+                case model.color |> Color.toRgba of
+                    { red, green, alpha } ->
+                        Color.fromRgba
+                            { red = red
+                            , green = green
+                            , blue = blue / 255
+                            , alpha = alpha
+                            }
+            }
         ChangeXY xy -> { model | xy = xy }
         Choose choice -> { model | choice = choice }
         Switch to -> { model | toggle = to }

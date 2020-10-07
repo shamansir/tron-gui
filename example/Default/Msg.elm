@@ -12,6 +12,9 @@ type Msg
     | ChangeXY ( Float, Float )
     | ChangeString String
     | ChangeColor Color
+    | ChangeRed Float
+    | ChangeGreen Float
+    | ChangeBlue Float
     | Choose Choice
     | Switch Bool
     | Pressed Choice

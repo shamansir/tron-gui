@@ -1,6 +1,8 @@
 module Default.Gui exposing (..)
 
 
+import Color exposing (Color)
+
 import Gui.Build as Gui
 import Gui.Gui exposing (Gui)
 import Gui.Property  exposing (Property)
@@ -76,17 +78,17 @@ nestedButtons curChoice =
 colorNest : Property Msg
 colorNest =
     let
-        colorCompKnob =
+        colorCompKnob msg =
             Gui.float
                 { min = 0, max = 255, step = 1 }
                 0
-                (always NoOp)
+                msg
     in
         Gui.nestIn
             ( 1, 3 )
-            [ ( "red", colorCompKnob )
-            , ( "green", colorCompKnob )
-            , ( "blue", colorCompKnob )
+            [ ( "red", colorCompKnob ChangeRed )
+            , ( "green", colorCompKnob ChangeGreen )
+            , ( "blue", colorCompKnob ChangeBlue )
             ]
             (always NoOp)
 
