@@ -4,6 +4,7 @@ module Gui.Render.Util exposing (..)
 import Color exposing (Color)
 import Svg exposing (Svg)
 import Svg.Attributes as SA
+import Url exposing (Url)
 
 
 none : Svg msg
@@ -154,3 +155,26 @@ arrow fill (Transform s) (Transform r) =
                 []
             ]
 
+
+{- arrowWithLink : Color -> msg -> Url -> Svg msg
+arrowWithLink color onClick url =
+    Svg.g
+        [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
+            String.fromFloat gap ++ "px," ++ String.fromFloat gap ++ "px);"
+        , onClick onClick
+        ]
+        [ Svg.a
+            [ SA.xlinkHref <| Url.toString url
+            , SA.target "_blank"
+            ]
+            [ Svg.rect
+                [ SA.fill "transparent"
+                , SA.x "0"
+                , SA.y "2.5"
+                , SA.width "10"
+                , SA.height "10"
+                ]
+                []
+            , arrow color (scale 0.35) (rotate 45)
+            ]
+        ] -}

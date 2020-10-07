@@ -33,10 +33,6 @@ import Simple.Gui as SimpleGui
 import RandomGui as Gui exposing (generator)
 
 
-
-uuid = "b2465319"
-
-
 type Msg
     = NoOp
     | ChangeMode Mode

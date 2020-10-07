@@ -41,11 +41,16 @@ getUrl : Path -> Detach msg -> Maybe Url
 getUrl path (Detach { toUrl }) = toUrl path
 
 
+root : String
+root = "root"
+
+
 formUrl : Url -> Path -> Url
 formUrl base path =
     { base
     | fragment =
-        path
+        if Path.howDeep path == 0 then Just "root"
+        else path
             |> Path.toList
             |> List.map String.fromInt
             |> String.join "|"
@@ -83,11 +88,17 @@ sendTree (Detach d) =
 checkAttached : Url -> Maybe Path
 checkAttached url =
     url.fragment
-        |> Maybe.map (String.split "|")
         |> Maybe.map
-            (List.map String.toInt
-                >> List.filterMap identity)
-        |> Maybe.map Path.fromList
+            (\str ->
+                if str == "root"
+                then Path.start
+                else
+                    str
+                        |> String.split "|"
+                        |> List.map String.toInt
+                        |> List.filterMap identity
+                        |> Path.fromList
+            )
 
 
 isAttached : Detach msg -> Maybe Path

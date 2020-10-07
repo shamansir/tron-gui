@@ -7,7 +7,7 @@ import Html.Attributes as HA
 import Svg exposing (Svg)
 import Svg as S exposing (..)
 import Svg.Attributes as SA exposing (..)
-import Html.Events as H
+import Html.Events as HE
 import Json.Decode as Json
 import Dict
 import Url exposing (Url)
@@ -65,7 +65,7 @@ viewProperty placement theme tone path pixelBounds focus ( label, prop ) =
             Debug ->
                 S.g
                     [ SA.class "cell--debug"
-                    , H.onClick <| Click path
+                    , HE.onClick <| Click path
                     ]
                     <| List.map (Svg.map <| always NoOp)
                     <| [ rect_ "white" pixelBounds
@@ -108,8 +108,8 @@ view : Style.Theme -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
 view theme bounds detach root layout =
     let
         keyDownHandler_ =
-            H.on "keydown"
-                <| Json.map KeyDown H.keyCode
+            HE.on "keydown"
+                <| Json.map KeyDown HE.keyCode
         rootPath =
             Detach.isAttached detach
                 |> Maybe.withDefault Path.start
@@ -198,6 +198,29 @@ view theme bounds detach root layout =
                     [ Svg.g [] platesBacksRendered
                     , Svg.g [] cellsRendered
                     , Svg.g [] platesControlsRendered
+                    , case detach |> Detach.getUrl rootPath of
+                        Just url ->
+                            Svg.g
+                                [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
+                                String.fromFloat gap ++ "px," ++ String.fromFloat gap ++ "px);"
+                                , HE.onClick <| Detach rootPath
+                                ]
+                                [ Svg.a
+                                    [ SA.xlinkHref <| Url.toString url
+                                    , SA.target "_blank"
+                                    ]
+                                    [ Svg.rect
+                                        [ SA.fill "transparent"
+                                        , SA.x "0"
+                                        , SA.y "2.5"
+                                        , SA.width "10"
+                                        , SA.height "10"
+                                        ]
+                                        []
+                                    , Plate.detach theme Style.None
+                                    ]
+                                ]
+                        Nothing -> Svg.g [] []
                     ]
                 ]
 
