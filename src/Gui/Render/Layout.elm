@@ -51,14 +51,15 @@ mode = Fancy
 
 
 viewProperty
-    :  Style.Theme
+    :  Property.Placement
+    -> Style.Theme
     -> Tone
     -> Path
     -> Bounds
     -> Focused
     -> ( Label, Property msg )
     -> Svg Msg
-viewProperty theme tone path pixelBounds focus ( label, prop ) =
+viewProperty placement theme tone path pixelBounds focus ( label, prop ) =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -77,7 +78,7 @@ viewProperty theme tone path pixelBounds focus ( label, prop ) =
                         <| propertyDebug ( label, prop )
                     ]
             Fancy ->
-                Property.view theme tone path pixelBounds focus ( label, prop )
+                Property.view placement theme tone path pixelBounds focus ( label, prop )
 
 
 viewPlateBack : Theme -> Bounds -> Svg Msg
@@ -151,6 +152,10 @@ view theme bounds detach root layout =
                     case root |> Property.find1 (Path.sub rootPath path) of
                         Just prop -> Just <|
                             viewProperty
+                                (if (Path.sub rootPath path |> Path.howDeep) == 1
+                                    then AtRoot
+                                    else OnAPlate
+                                )
                                 theme
                                 (toneOf path)
                                 path

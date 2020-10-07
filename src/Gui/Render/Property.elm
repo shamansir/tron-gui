@@ -27,8 +27,13 @@ gap = 6
 borderRadius = 10
 
 
-view : Theme -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
-view theme tone path bounds focus ( label, prop ) =
+type Placement
+    = AtRoot
+    | OnAPlate
+
+
+view : Placement -> Theme -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
+view placement theme tone path bounds focus ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
         , HA.style "pointer-events" "all"
@@ -39,7 +44,9 @@ view theme tone path bounds focus ( label, prop ) =
             Svg.rect
                 [ SA.fill
                     <| Color.toCssString
-                    <| if (Path.howDeep path == 1) then background theme else transparent
+                    <| case placement of
+                        AtRoot -> background theme
+                        OnAPlate -> transparent
                 , SA.x <| String.fromFloat (gap / 2)
                 , SA.y <| String.fromFloat (gap / 2)
                 , SA.rx <| String.fromFloat borderRadius
