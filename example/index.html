@@ -37,6 +37,10 @@
             console.info("[open] Connection established");
             console.info("Sending to server");
             //socket.send("My name is John");
+
+            const package = JSON.stringify({ uuid, code: 'ACK' });
+            console.log('send ACK to WS', package);
+            socket.send(package);
         };
 
         socket.onmessage = function(event) {
