@@ -17,6 +17,7 @@ import Gui.Focus exposing (Focused(..))
 import Gui.Control exposing (Control(..))
 import Gui.Render.Util exposing (..)
 import Gui.Render.Util as Svg exposing (none)
+import Gui.Render.Util as Util exposing (arrow)
 import Gui.Render.Style exposing (..)
 
 
@@ -26,8 +27,13 @@ gap = 6
 borderRadius = 10
 
 
-view : Theme -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
-view theme tone path bounds focus ( label, prop ) =
+type Placement
+    = AtRoot
+    | OnAPlate
+
+
+view : Placement -> Theme -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
+view placement theme tone path bounds focus ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
         , HA.style "pointer-events" "all"
@@ -38,7 +44,9 @@ view theme tone path bounds focus ( label, prop ) =
             Svg.rect
                 [ SA.fill
                     <| Color.toCssString
-                    <| if (Path.howDeep path == 1) then background theme else transparent
+                    <| case placement of
+                        AtRoot -> background theme
+                        OnAPlate -> transparent
                 , SA.x <| String.fromFloat (gap / 2)
                 , SA.y <| String.fromFloat (gap / 2)
                 , SA.rx <| String.fromFloat borderRadius
@@ -124,33 +132,19 @@ knob theme tone center value =
             ]
 
 
-arrow : Theme -> Tone -> ExpandState -> { x : Float, y : Float } -> Svg msg
-arrow theme tone expand center =
+arrow : Theme -> Tone -> GroupState -> { x : Float, y : Float } -> Svg msg
+arrow theme tone groupState center =
     Svg.g
-        [ SA.style <| "transform: translate("
-            ++ String.fromFloat center.x ++ "px,"
-            ++ String.fromFloat center.y ++ "px)"
-            ++ case expand of
-                Expanded -> " rotate(180deg);"
-                Collapsed -> ";"
+        [ SA.style <|
+            "transform: "
+                ++ "translate(" ++ String.fromFloat (center.x - (14 * 0.7)) ++ "px,"
+                                ++ String.fromFloat (center.y - (14 * 0.7)) ++ "px)"
         ]
-        [ Svg.g
-            [ SA.style "transform: scale(0.7) translate(-32px,-32px);" ]
-            [ Svg.polyline
-                [ SA.fill <| Color.toCssString <| colorFor theme tone
-                , SA.points "18.3,32.5 32,18.8 45.7,32.5 43.8,34.3 32,22.6 20.2,34.3 18.3,32.5"
-                , SA.strokeLinecap "round"
-                ]
-                []
-            , Svg.polygon
-                [ SA.fill <| Color.toCssString <| colorFor theme tone
-                , SA.points "33.4,20.7 33.4,44.7 30.6,44.7 30.6,20.7"
-                , SA.strokeLinecap "round"
-                ]
-                []
-            ]
+        [ Util.arrow (colorFor theme tone) (scale 0.7) <| case groupState of
+                Expanded -> rotate 180
+                Detached -> rotate 45
+                Collapsed -> rotate 0
         ]
-
 
 button : Theme -> Tone -> Maybe Icon -> { x : Float, y : Float } -> Svg msg
 button theme tone maybeIcon center =

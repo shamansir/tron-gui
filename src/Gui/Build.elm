@@ -88,19 +88,19 @@ toggle default =
 
 
 -- FIXME: get rid of the handler having almost no sense
-nest : List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
+nest : List (Label, Property msg) -> (GroupState -> msg) -> Property msg
 nest items =
     nestIn (findShape items) items
 
 
-root : List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
+root : List (Label, Property msg) -> (GroupState -> msg) -> Property msg
 root props =
     nestIn ( 1, List.length <| List.filter (Tuple.second >> isGhost >> not) props ) props
         >> expand
 
 
 -- FIXME: get rid of the handler having almost no sense
-nestIn : Shape -> List (Label, Property msg) -> (ExpandState -> msg) -> Property msg
+nestIn : Shape -> List (Label, Property msg) -> (GroupState -> msg) -> Property msg
 nestIn shape items handler =
     Group
         <| Control

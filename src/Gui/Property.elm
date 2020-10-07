@@ -29,9 +29,10 @@ type alias Axis =
     }
 
 
-type ExpandState
+type GroupState
     = Expanded
     | Collapsed
+    | Detached
 
 
 type ToggleState
@@ -48,16 +49,15 @@ type Selected = Selected Int
 type alias GroupControl msg =
     Control
         ( Shape, Array ( Label, Property msg ) )
-        ( ExpandState, Maybe FocusAt )
+        ( GroupState, Maybe FocusAt )
         msg
 
 
 type alias ChoiceControl msg =
     Control
         ( Shape, Array ( Label, Property msg ) ) -- FIXME: Control ( Maybe Icon ) () msg
-        ( ExpandState, ( Maybe FocusAt, Selected ) )
+        ( GroupState, ( Maybe FocusAt, Selected ) )
         msg
-
 
 
 type Property msg
@@ -281,60 +281,66 @@ updateAt path f =
             if Path.equal otherPath path then f item else item
 
 
+updateMany : List ( Path, Property msg ) -> Property msg -> Property msg
+updateMany updates root =
+    List.foldl
+        (\(path, nextProp) lastRoot ->
+            lastRoot |> updateAt path (always nextProp)
+        )
+        root
+        updates
+
+
 -- for mouse click or enter key handling, does not change the tree
 -- only updates the controls itself
-execute : Property msg -> ( Property msg, Cmd msg )
+-- FIXME: should not call controls itself, only return the update
+execute : Property msg -> Maybe (Property msg)
 execute item =
     case item of
         Toggle toggleControl ->
-            let
-                nextToggle = doToggle toggleControl
-            in
-                ( Toggle nextToggle
-                , call nextToggle
-                )
+            Just <| Toggle <| doToggle toggleControl
         Action control ->
-            ( Action control
-            , call control
-            )
+            -- we don't update the value since it's `()`, but we do execute it
+            Just <| Action control
         Choice (Control setup ( expanded, selected ) handler) ->
             let
                 nextState =
                     case expanded of
                         Collapsed -> Expanded
                         Expanded -> Collapsed
-                nextChoice =
-                    Control
+                        Detached -> Detached
+
+            in
+                Just
+                    <| Choice
+                    <| Control
                         setup
                         ( nextState
                         , selected
                         )
                         handler
-            in
-                ( Choice nextChoice
-                , call nextChoice
-                )
         Group (Control setup ( expanded, focus ) handler) ->
             let
                 nextState =
                     case expanded of
                         Collapsed -> Expanded
                         Expanded -> Collapsed
-                nextGroup =
-                    Control
+                        Detached -> Detached
+
+            in
+                Just
+                    <| Group
+                    <| Control
                         setup
                         ( nextState
                         , focus
                         )
                         handler
-            in
-                ( Group nextGroup
-                , call nextGroup
-                )
-        _ -> ( item, Cmd.none )
+        _ -> Nothing
 
 
-executeAt : Path -> Property msg -> ( Property msg, Cmd msg )
+-- FIXME: should not call controls itself, only return the update
+executeAt : Path -> Property msg -> List ( Path, Property msg )
 executeAt path root =
     case root
         |> findWithParent path of
@@ -347,31 +353,25 @@ executeAt path root =
                             let
                                 newParent =
                                     select selectedIndex control
-
-                                ( newCell, cmd ) = execute item
                             in
-                                ( root
-                                    |> updateAt toParent (always <| Choice newParent)
-                                    |> updateAt path (always newCell)
-                                , Cmd.batch
-                                    [ cmd
-                                    , call newParent
-                                    ]
-                                )
+                                case execute item of
+                                    Just newCell ->
+                                        [ ( toParent, Choice newParent )
+                                        , ( path, newCell )
+                                        ]
+                                    Nothing ->
+                                        [ ( toParent, Choice newParent )
+                                        ]
                         Nothing ->
-                            ( root, Cmd.none )
+                            []
 
                 ( _, _ ) ->
 
-                    let
-                        ( newCell, cmd ) = execute item
-                    in
-                        ( root |> updateAt path (always newCell)
-                        , cmd
-                        )
+                    case execute item of
+                        Just newCell -> [ ( path, newCell ) ]
+                        Nothing -> []
 
-        Nothing ->
-            ( root, Cmd.none )
+        Nothing -> []
 
 
 doToggle : Control state ToggleState msg -> Control state ToggleState msg
@@ -415,6 +415,12 @@ expand prop =
         _ -> prop
 
 
+expandAt : Path -> Property msg -> Property msg
+expandAt path =
+    updateAt path expand
+
+
+
 collapse : Property msg -> Property msg
 collapse prop =
     case prop of
@@ -423,6 +429,60 @@ collapse prop =
         Choice ( Control setup ( _, selection ) handler ) ->
             Choice ( Control setup ( Collapsed, selection ) handler )
         _ -> prop
+
+
+detach : Property msg -> Property msg
+detach prop =
+    case prop of
+        Group ( Control setup ( _, focus ) handler ) ->
+            Group ( Control setup ( Detached, focus ) handler )
+        Choice ( Control setup ( _, selection ) handler ) ->
+            Choice ( Control setup ( Detached, selection ) handler )
+        _ -> prop
+
+
+detachAt : Path -> Property msg -> Property msg
+detachAt path =
+    updateAt path detach
+
+
+attach : Property msg -> Property msg
+attach prop =
+    case prop of
+        Group ( Control setup ( _, focus ) handler ) ->
+            Group ( Control setup ( Expanded, focus ) handler )
+        Choice ( Control setup ( _, selection ) handler ) ->
+            Choice ( Control setup ( Expanded, selection ) handler )
+        _ -> prop
+
+
+attachAt : Path -> Property msg -> Property msg
+attachAt path =
+    updateAt path attach
+
+
+detachAll : Property msg -> Property msg
+detachAll =
+    mapReplace <| always detach
+
+
+toggle : Property msg -> Property msg
+toggle prop =
+    let
+        invert current =
+            case current of
+                TurnedOff -> TurnedOn
+                TurnedOn -> TurnedOff
+    in
+    case prop of
+        Toggle ( Control setup current handler ) ->
+            Toggle ( Control setup (invert current) handler )
+        _ -> prop
+
+
+toggleAt : Path -> Property msg -> Property msg
+toggleAt path =
+    updateAt path toggle
 
 
 toggleOn : Property msg -> Property msg
@@ -458,3 +518,38 @@ isGhost prop =
 
 noGhosts : Array (Property msg) -> Array (Property msg)
 noGhosts = Array.filter (not << isGhost)
+
+
+call : Property msg -> Cmd msg
+call prop =
+    case prop of
+        Nil -> Cmd.none
+        Number control -> Control.call control
+        Coordinate control -> Control.call control
+        Text control -> Control.call control
+        Color control -> Control.call control
+        Toggle control -> Control.call control
+        Action control -> Control.call control
+        Choice control -> Control.call control
+        Group control -> Control.call control
+
+
+withItem
+     : Int
+    -> (Property msg -> Property msg)
+    -> Control ( a, Array ( b, Property msg ) ) value msg
+    -> Control ( a, Array ( b, Property msg ) ) value msg
+withItem id f ( Control ( shape, items ) state handler ) =
+    Control
+        ( shape
+        , case Array.get id items of
+            Just ( label, innerProp ) ->
+                items
+                |> Array.set id
+                    ( label
+                    , f innerProp
+                    )
+            Nothing -> items
+        )
+        state
+        handler

@@ -1,11 +1,13 @@
 module Gui.Gui exposing
-    ( Gui, over, Flow(..)
+    ( Gui, over, overMap, Flow(..)
     , view, update, init, map
     , trackMouse, focus, reflow, fromWindow
+    , detachable
     )
 
 
 import Browser.Dom as Dom
+import Url exposing (Url)
 import Task
 import Color
 import Browser.Events as Browser
@@ -15,8 +17,11 @@ import BinPack exposing (..)
 import Bounds exposing (Bounds)
 
 import Gui.Path exposing (Path)
+import Gui.Path as Path exposing (start)
 import Gui.Control exposing (..)
+import Gui.Control as Control exposing (call)
 import Gui.Property exposing (..)
+import Gui.Property as Property exposing (call)
 import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (..)
 import Gui.Msg exposing (..)
@@ -27,6 +32,8 @@ import Gui.Mouse as Mouse exposing (..)
 import Gui.Util exposing (..)
 -- import Gui.Alt as Alt exposing (Gui)
 import Gui.Focus as Focus exposing (..)
+import Gui.Detach as Detach exposing (make, Detach, map)
+import Gui.Expose as Exp exposing (..)
 
 
 type Flow
@@ -38,18 +45,19 @@ type Flow
 
 type alias Gui msg =
     { flow : Flow
-    , bounds : Bounds
+    , viewport : ( Int, Int ) -- in pixels
+    , size : ( Int, Int ) -- in cells
     , mouse : MouseState
     , tree : Property msg
-    , layout : Layout
+    , detach : Detach msg
     }
 
 
-moves : Position -> MouseAction
+moves : Mouse.Position -> MouseAction
 moves = Gui.Mouse.Move
-ups : Position -> MouseAction
+ups : Mouse.Position -> MouseAction
 ups = Gui.Mouse.Up
-downs : Position -> MouseAction
+downs : Mouse.Position -> MouseAction
 downs = Gui.Mouse.Down
 
 
@@ -60,24 +68,41 @@ extractMouse = .mouse
 map : (msgA -> msgB) -> Gui msgA -> Gui msgB
 map f model =
     { flow = model.flow
-    , bounds = model.bounds
+    , viewport = model.viewport
+    , size = model.size
     , mouse = model.mouse
-    , tree = Gui.Property.map f model.tree
-    , layout = model.layout
+    , tree = model.tree |> Gui.Property.map f
+    , detach = model.detach |> Detach.map f
     }
 
 
 init : Flow -> Gui msg
 init flow =
-    Gui flow Bounds.zero Gui.Mouse.init Nil Layout.init
+    Gui flow ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init Nil Detach.never
+
+
+detachable
+     : (Exp.RawProperty -> Cmd msg)
+    -> (Exp.RawUpdate -> Cmd msg)
+    -> Url
+    -> Gui msg
+    -> Gui msg
+detachable sendTree sendUpdate base gui =
+    { gui
+    | detach = Detach.make sendTree sendUpdate base
+    }
 
 
 over : Property msg -> Gui msg -> Gui msg
-over prop from =
-    { from
+over prop gui =
+    { gui
     | tree = prop
-    , layout = Layout.pack prop
     }
+
+
+overMap : (msgA -> msgB) -> Property msgA -> Gui msgB -> Gui msgB
+overMap f prop =
+    over <| Gui.Property.map f prop
 
 
 update
@@ -94,15 +119,16 @@ update msg gui =
 
         Click path ->
             let
-                (nextRoot, cmds) =
+                updates =
                     gui.tree |> executeAt path
+                nextRoot =
+                    gui.tree |> updateMany updates
             in
                 (
                     { gui
                     | tree = nextRoot
-                    , layout = Layout.pack nextRoot
                     }
-                , cmds
+                , updates |> notifyUpdates gui.detach
                 )
 
         MouseDown path ->
@@ -116,15 +142,32 @@ update msg gui =
         KeyDown keyCode ->
            let
                 curFocus = Focus.find gui.tree
-                (nextRoot, cmds) =
-                    gui.tree |> handleKeyDown keyCode curFocus
+            in
+                handleKeyDown keyCode curFocus gui
+
+        Detach path ->
+            let
+                nextRoot = detachAt path gui.tree
             in
                 (
                     { gui
                     | tree = nextRoot
-                    , layout = Layout.pack nextRoot
                     }
-                , cmds
+                , Detach.sendTree gui.detach nextRoot
+                )
+
+        ReceiveRaw rawUpdate ->
+            let
+                nextRoot =
+                    gui.tree
+                        |> Exp.apply (Exp.fromPort rawUpdate)
+            in
+                (
+                    { gui
+                    | tree = nextRoot
+                    }
+                , nextRoot
+                    |> Exp.update (Exp.fromPort rawUpdate)
                 )
 
 
@@ -144,14 +187,10 @@ trackMouse =
     |> Sub.map ApplyMouse
 
 
-
 reflow : ( Int, Int ) -> Gui msg -> Gui msg
-reflow ( w, h ) gui =
+reflow viewport gui =
     { gui
-    | bounds =
-        gui.layout |>
-            boundsFromSize
-                { width = toFloat w, height = toFloat h }
+    | viewport = viewport
     }
 
 
@@ -166,16 +205,21 @@ toGridCoords bounds flow pos =
 handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd msg )
 handleMouse mouseAction gui =
     let
+        rootPath = getRootPath gui
         curMouseState =
             gui.mouse
         nextMouseState =
             gui.mouse
                 |> Gui.Mouse.apply mouseAction
+        bounds =
+            boundsFromSize gui.viewport gui.size
+        theLayout =
+            layout gui |> Tuple.second
 
         findPathAt pos =
             pos
-                |> toGridCoords gui.bounds gui.flow
-                |> Layout.find gui.layout
+                |> toGridCoords bounds gui.flow
+                |> Layout.find theLayout
 
         findCellAt pos =
             pos
@@ -271,13 +315,12 @@ handleMouse mouseAction gui =
 
                         case curMouseState.dragFrom |> Maybe.andThen findCellAt of
 
-                            Just ( _, Number control ) ->
-                                call control
-                            Just ( _, Coordinate control ) ->
-                                call control
-                            Just ( _, Color control ) ->
-                                call control
-                            Just (_, _) -> Cmd.none
+                            Just ( path, prop ) ->
+                                case prop of
+                                    Number _ -> ( path, prop ) |> notifyUpdate gui.detach
+                                    Coordinate _ -> ( path, prop ) |> notifyUpdate gui.detach
+                                    Color _ -> ( path, prop ) |> notifyUpdate gui.detach
+                                    _ -> Cmd.none
                             Nothing -> Cmd.none
 
                     else Cmd.none
@@ -289,40 +332,61 @@ handleMouse mouseAction gui =
 handleKeyDown
     :  Int
     -> Path
-    -> Property msg
-    -> ( Property msg, Cmd msg )
-handleKeyDown keyCode path root =
-    case keyCode of
+    -> Gui msg
+    -> ( Gui msg, Cmd msg )
+handleKeyDown keyCode path gui =
+    let
+
+        shiftFocus to =
+            let
+                nextRoot = gui.tree |> Focus.shift to
+            in
+                { gui
+                | tree = nextRoot
+                }
+
+        executeByPath _ =
+            let
+                updates = gui.tree |> executeAt path
+                nextRoot = gui.tree |> updateMany updates
+            in
+                (
+                    { gui
+                    | tree = nextRoot
+                    }
+                , updates |> notifyUpdates gui.detach
+                )
+
+    in case keyCode of
         -- left arrow
-        37 -> ( root |> Focus.shift Focus.Left, Cmd.none )
+        37 -> ( shiftFocus Focus.Left, Cmd.none )
         -- right arrow
-        39 -> ( root |> Focus.shift Focus.Right, Cmd.none )
+        39 -> ( shiftFocus Focus.Right, Cmd.none )
         -- up arrow
-        38 -> ( root |> Focus.shift Focus.Up, Cmd.none )
+        38 -> ( shiftFocus Focus.Up, Cmd.none )
         -- down arrow
-        40 -> ( root |> Focus.shift Focus.Down, Cmd.none )
+        40 -> ( shiftFocus Focus.Down, Cmd.none )
         -- space
-        33 -> root |> executeAt path
+        33 -> executeByPath ()
         -- enter
-        13 -> root |> executeAt path
+        13 -> executeByPath ()
         -- else
-        _ -> ( root, Cmd.none )
+        _ -> ( gui, Cmd.none )
 
 
+notifyUpdate : Detach msg -> ( Path, Property msg ) -> Cmd msg
+notifyUpdate detach ( path, prop ) =
+    Cmd.batch
+        [ Property.call prop
+        , Detach.sendUpdate detach path prop
+        ]
 
-updateWith : ( Msg, Maybe msg ) -> Gui msg -> ( Gui msg, Cmd msg  )
-updateWith ( msg, maybeUserMsg ) model =
-    update msg model
-        |> Tuple.mapSecond
-            (\cmd ->
-                Cmd.batch
-                    [ cmd
-                    , maybeUserMsg
-                        |> Maybe.map Task.succeed
-                        |> Maybe.map (Task.perform identity)
-                        |> Maybe.withDefault Cmd.none
-                    ]
-            )
+
+notifyUpdates : Detach msg -> List ( Path, Property msg ) -> Cmd msg
+notifyUpdates detach =
+    List.map
+        (notifyUpdate detach)
+        >> Cmd.batch
 
 
 focus : msg -> Cmd msg
@@ -341,22 +405,50 @@ fromWindow passSize =
             )
 
 
-boundsFromSize : { width : Float, height : Float } -> Layout -> Bounds
-boundsFromSize { width, height } layout =
+boundsFromSize : ( Int, Int ) -> ( Int, Int ) -> Bounds
+boundsFromSize ( width, height ) ( gridWidthInCells, gridHeightInCells ) =
     let
-        ( gridWidthInCells, gridHeightInCells ) = getSize layout
         ( gridWidthInPx, gridHeightInPx ) =
             ( cellWidth * toFloat gridWidthInCells
             , cellHeight * toFloat gridHeightInCells
             )
     in
-        { x = (width / 2) - (gridWidthInPx / 2)
-        , y = (height / 2) - (gridHeightInPx / 2)
+        { x = (toFloat width / 2) - (gridWidthInPx / 2)
+        , y = (toFloat height / 2) - (gridHeightInPx / 2)
         , width = gridWidthInPx
         , height = gridHeightInPx
         }
 
 
+getRootPath : Gui msg -> Path
+getRootPath gui =
+    gui.detach
+        |> Detach.isAttached
+        |> Maybe.withDefault Path.start
+
+
+layout : Gui msg -> ( Property msg, Layout )
+layout gui =
+    case Detach.isAttached gui.detach
+        |> Maybe.andThen
+            (\path ->
+                gui.tree
+                    |> Property.find path
+                    |> Maybe.map (Tuple.pair path)
+            ) of
+        Nothing ->
+            ( gui.tree, Layout.pack gui.size gui.tree )
+        Just ( attachedPath, root ) ->
+            ( root, Layout.pack1 gui.size attachedPath root )
+
+
 view : Style.Theme -> Gui msg -> Html Msg
 view theme gui =
-    Layout.view theme gui.bounds gui.tree gui.layout
+    let
+        bounds =
+            boundsFromSize gui.viewport gui.size
+    in
+    case layout gui of
+        ( root, theLayout ) ->
+            theLayout
+                |> Layout.view theme bounds gui.detach root

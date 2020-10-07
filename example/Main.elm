@@ -4,6 +4,7 @@ port module Main exposing (main)
 import Browser
 import Browser.Events as Browser
 import Browser.Dom as Browser
+import Browser.Navigation as Navigation
 import Json.Decode as Decode
 import Json.Decode as D
 import Json.Encode as Encode
@@ -14,14 +15,14 @@ import Html.Events as Html exposing (onClick)
 import Dict exposing (size)
 import Task as Task
 import Random
+import Url exposing (Url)
 
 import Gui.Gui exposing (Gui)
-import Gui.Gui as Gui exposing (view)
+import Gui.Gui as Gui exposing (view, detachable)
 import Gui.Expose as Exp exposing (Update)
 import Gui.Gui as Tron exposing (Gui, focus, over)
-import Gui.Msg as Tron exposing (Msg)
+import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Mouse exposing (Position)
-import Gui.Mouse as Tron exposing (MouseState)
 import Gui.Render.Style as Style exposing (..)
 
 import Simple.Main as Simple
@@ -62,14 +63,15 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Url -> Navigation.Key -> ( Model, Cmd Msg )
+init url _ =
     (
         { mode = TronGui
         , example = Simple.init
         , theme = Style.Light
         , gui = Gui.init Gui.TopToBottom
                     |> Gui.over (SimpleGui.for Simple.init)
+                    |> Gui.detachable sendUiToWs sendUpdateToWs url
                     |> Gui.map ToSimple
         }
     , Cmd.batch -- FIXME: Gui.init
@@ -121,7 +123,7 @@ update msg model =
                 | mode = DatGui
                 }
             , model.gui
-                |> .tree
+                |> .tree -- FIXME
                 |> Exp.encode
                 |> startDatGui
             )
@@ -205,7 +207,17 @@ update msg model =
             )
 
         ( TriggerDefault, _ ) ->
-            init
+            (
+                { model
+                | gui =
+                    model.gui
+                        |> Gui.overMap ToSimple (SimpleGui.for Simple.init)
+                }
+            , Cmd.batch -- FIXME: Gui.init
+                [ Tron.focus NoOp
+                , Tron.fromWindow Resize -- FIXME: subscribe to resizes along with the mouse
+                ]
+            )
 
         ( SwitchTheme, _ ) ->
             (
@@ -218,13 +230,6 @@ update msg model =
         _ -> ( model, Cmd.none )
 
 
--- tronGuiFor : Simple.Model -> Gui.Model Simple.Msg
--- tronGuiFor simpleExample =
---     SimpleGui.for simpleExample
---         |> Gui.fromAlt
---         |> Gui.build
-
-
 subscriptions : Model -> Sub Msg
 subscriptions { mode } =
     case mode of
@@ -233,24 +238,38 @@ subscriptions { mode } =
         TronGui ->
             Sub.batch
                 [ Gui.trackMouse |> Sub.map TronUpdate
+                , receieveUpdateFromWs (TronUpdate << Tron.ReceiveRaw)
                 , Browser.onResize Resize
                 ]
 
 
 main : Program () Model Msg
 main =
-    Browser.element
+    Browser.application
         { init = always init
-        , view = view
+        , view = \model ->
+            { title = "Tron 2.0"
+            , body = [ view model ]
+            }
         , subscriptions = subscriptions
         , update = update
+        , onUrlRequest = always NoOp
+        , onUrlChange = always NoOp
         }
 
 
-port updateFromDatGui : (Exp.PortUpdate -> msg) -> Sub msg
+port updateFromDatGui : (Exp.RawUpdate -> msg) -> Sub msg
 
-port startDatGui : Encode.Value -> Cmd msg
+port startDatGui : Exp.RawProperty -> Cmd msg
 
 port destroyDatGui : () -> Cmd msg
 
-port updateDatGui : Encode.Value -> Cmd msg
+port receieveUiFromWs : (Exp.RawProperty -> msg) -> Sub msg
+
+port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
+
+-- port updateDatGui : Encode.Value -> Cmd msg
+
+port sendUiToWs : Exp.RawProperty -> Cmd msg
+
+port sendUpdateToWs : Exp.RawUpdate -> Cmd msg

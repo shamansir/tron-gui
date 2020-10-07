@@ -1,8 +1,10 @@
 module Gui.Render.Util exposing (..)
 
 
+import Color exposing (Color)
 import Svg exposing (Svg)
 import Svg.Attributes as SA
+import Url exposing (Url)
 
 
 none : Svg msg
@@ -102,3 +104,77 @@ describeMark center { radiusA, radiusB } angleInDegrees =
         ] |> String.join " "
 
 
+type Transform a = Transform Float
+
+
+type Rotate = Rotate
+type Scale = Scale
+
+
+rotate : Float -> Transform Rotate
+rotate = Transform
+
+
+scale : Float -> Transform Scale
+scale = Transform
+
+
+arrow : Color -> Transform Scale -> Transform Rotate -> Svg msg
+arrow fill (Transform s) (Transform r) =
+    let
+        ( cx, cy ) = ( 14, 14 )
+        pointsA =
+            [ (0.3,14.5), (14,0.8), (27.7,14.5), (25.8,16.3), (14,4.6), (2.2,16.3), (0.3,14.5) ]
+        pointsB =
+            [ (15.4,2.7), (15.4,26.7), (12.6,26.7), (12.6,2.7) ]
+        stringify =
+            List.map (Tuple.mapBoth String.fromFloat String.fromFloat)
+            >> List.map (\(x, y) -> x ++ "," ++ y)
+            >> String.join " "
+        pointsAstr = stringify pointsA
+        pointsBstr = stringify pointsB
+        transformStr
+            =  "scale(" ++ String.fromFloat s ++ ") "
+            ++ "rotate("
+                    ++ String.fromFloat r ++ " "
+                    ++ String.fromFloat cx ++ " "
+                    ++ String.fromFloat cy ++ ")"
+    in
+        Svg.g
+            [ SA.transform transformStr
+            ]
+            [ Svg.polyline
+                [ SA.points pointsAstr
+                , SA.fill <| Color.toCssString fill
+                ]
+                []
+            , Svg.polygon
+                [ SA.points pointsBstr
+                , SA.fill <| Color.toCssString fill
+                ]
+                []
+            ]
+
+
+{- arrowWithLink : Color -> msg -> Url -> Svg msg
+arrowWithLink color onClick url =
+    Svg.g
+        [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
+            String.fromFloat gap ++ "px," ++ String.fromFloat gap ++ "px);"
+        , onClick onClick
+        ]
+        [ Svg.a
+            [ SA.xlinkHref <| Url.toString url
+            , SA.target "_blank"
+            ]
+            [ Svg.rect
+                [ SA.fill "transparent"
+                , SA.x "0"
+                , SA.y "2.5"
+                , SA.width "10"
+                , SA.height "10"
+                ]
+                []
+            , arrow color (scale 0.35) (rotate 45)
+            ]
+        ] -}

@@ -7,9 +7,10 @@ import Html.Attributes as HA
 import Svg exposing (Svg)
 import Svg as S exposing (..)
 import Svg.Attributes as SA exposing (..)
-import Html.Events as H
+import Html.Events as HE
 import Json.Decode as Json
 import Dict
+import Url exposing (Url)
 
 import BinPack
 import Bounds exposing (..)
@@ -22,6 +23,8 @@ import Gui.Property as Property exposing (find)
 import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
 import Gui.Focus exposing (Focused(..), focused)
+import Gui.Detach exposing (Detach)
+import Gui.Detach as Detach exposing (isAttached)
 
 import Gui.Render.Util exposing (..)
 import Gui.Render.Debug exposing (..)
@@ -48,20 +51,21 @@ mode = Fancy
 
 
 viewProperty
-    :  Style.Theme
+    :  Property.Placement
+    -> Style.Theme
     -> Tone
     -> Path
     -> Bounds
     -> Focused
     -> ( Label, Property msg )
     -> Svg Msg
-viewProperty theme tone path pixelBounds focus ( label, prop ) =
+viewProperty placement theme tone path pixelBounds focus ( label, prop ) =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g
                     [ SA.class "cell--debug"
-                    , H.onClick <| Click path
+                    , HE.onClick <| Click path
                     ]
                     <| List.map (Svg.map <| always NoOp)
                     <| [ rect_ "white" pixelBounds
@@ -74,7 +78,7 @@ viewProperty theme tone path pixelBounds focus ( label, prop ) =
                         <| propertyDebug ( label, prop )
                     ]
             Fancy ->
-                Property.view theme tone path pixelBounds focus ( label, prop )
+                Property.view placement theme tone path pixelBounds focus ( label, prop )
 
 
 viewPlateBack : Theme -> Bounds -> Svg Msg
@@ -90,22 +94,25 @@ viewPlateBack theme pixelBounds =
                 Plate.back theme pixelBounds
 
 
-viewPlateControls : Theme -> Tone -> Bounds -> Path -> Svg Msg
-viewPlateControls theme tone pixelBounds path =
+viewPlateControls : Theme -> Tone -> Detach msg -> Bounds -> Path -> Svg Msg
+viewPlateControls theme tone detach pixelBounds path =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g [ ] [ ]
             Fancy ->
-                Plate.controls theme tone pixelBounds path
+                Plate.controls theme tone detach pixelBounds path
 
 
-view : Style.Theme -> Bounds -> Property msg -> Layout -> Html Msg
-view theme bounds root layout =
+view : Style.Theme -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
+view theme bounds detach root layout =
     let
         keyDownHandler_ =
-            H.on "keydown"
-                <| Json.map KeyDown H.keyCode
+            HE.on "keydown"
+                <| Json.map KeyDown HE.keyCode
+        rootPath =
+            Detach.isAttached detach
+                |> Maybe.withDefault Path.start
         tones = Style.assignTones root
         toneOf path =
             tones |> Dict.get (Path.toString path) |> Maybe.withDefault None
@@ -142,9 +149,13 @@ view theme bounds root layout =
 
             , cells1 |> List.map
                 (\(path, propertyBounds) ->
-                    case root |> Property.find1 path of
+                    case root |> Property.find1 (Path.sub rootPath path) of
                         Just prop -> Just <|
                             viewProperty
+                                (if (Path.sub rootPath path |> Path.howDeep) == 1
+                                    then AtRoot
+                                    else OnAPlate
+                                )
                                 theme
                                 (toneOf path)
                                 path
@@ -157,7 +168,7 @@ view theme bounds root layout =
 
             , plates1 |> List.map
                 (\(path, plateBounds) ->
-                    viewPlateControls theme (toneOf path) plateBounds path
+                    viewPlateControls theme (toneOf path) detach plateBounds path
                 )
             )
         makeClass =
@@ -187,6 +198,29 @@ view theme bounds root layout =
                     [ Svg.g [] platesBacksRendered
                     , Svg.g [] cellsRendered
                     , Svg.g [] platesControlsRendered
+                    , case detach |> Detach.getUrl rootPath of
+                        Just url ->
+                            Svg.g
+                                [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
+                                String.fromFloat gap ++ "px," ++ String.fromFloat gap ++ "px);"
+                                , HE.onClick <| Detach rootPath
+                                ]
+                                [ Svg.a
+                                    [ SA.xlinkHref <| Url.toString url
+                                    , SA.target "_blank"
+                                    ]
+                                    [ Svg.rect
+                                        [ SA.fill "transparent"
+                                        , SA.x "0"
+                                        , SA.y "2.5"
+                                        , SA.width "10"
+                                        , SA.height "10"
+                                        ]
+                                        []
+                                    , Plate.detach theme Style.None
+                                    ]
+                                ]
+                        Nothing -> Svg.g [] []
                     ]
                 ]
 

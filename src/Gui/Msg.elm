@@ -3,6 +3,7 @@ module Gui.Msg exposing (..)
 
 import Gui.Path exposing (Path)
 import Gui.Mouse exposing (MouseAction)
+import Gui.Expose as Exp
 
 
 type Msg
@@ -12,3 +13,5 @@ type Msg
     | Click Path
     | MouseDown Path
     | KeyDown Int
+    | Detach Path
+    | ReceiveRaw Exp.RawUpdate

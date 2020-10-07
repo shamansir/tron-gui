@@ -7,7 +7,7 @@ import Array exposing (Array)
 import Gui.Gui exposing (Gui)
 import Gui.Control exposing (Control(..))
 import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, expand)
-import Gui.Property as Gui exposing (Label, ToggleState(..), ExpandState(..), Icon(..))
+import Gui.Property as Gui exposing (Label, ToggleState(..), GroupState(..), Icon(..))
 
 
 
@@ -211,7 +211,7 @@ toggleState =
         |> Random.map (\n -> if n < 40 then TurnedOff else TurnedOn)
 
 
-expandState : Random.Generator ExpandState
+expandState : Random.Generator GroupState
 expandState =
     Random.int 0 100
         |> Random.map (\n -> if n < 40 then Collapsed else Expanded)
