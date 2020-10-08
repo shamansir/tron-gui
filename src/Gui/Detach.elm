@@ -6,13 +6,14 @@ import Url.Builder as Url
 import Gui.Path as Path exposing (Path, toList)
 import Gui.Expose as Exp
 import Gui.Property exposing (Property)
+import Gui.Msg exposing (Msg(..))
 
 
 type Detach msg =
     Detach
         { toUrl : Path -> Maybe Url
-        , sendUpdate : Exp.RawUpdate -> Cmd msg
-        , sendTree : Exp.RawProperty -> Cmd msg
+        , send : Exp.RawUpdate -> Cmd msg
+        , receive : ((Exp.RawUpdate -> Msg) -> Sub Msg)
         , attached : Maybe Path
         }
 
@@ -21,8 +22,8 @@ map : (msgA -> msgB) -> Detach msgA -> Detach msgB
 map f (Detach d) =
     Detach
         { toUrl = d.toUrl
-        , sendUpdate = d.sendUpdate >> Cmd.map f
-        , sendTree = d.sendTree >> Cmd.map f
+        , send = d.send >> Cmd.map f
+        , receive = d.receive
         , attached = d.attached
         }
 
@@ -31,8 +32,8 @@ never : Detach msg
 never =
     Detach
         { toUrl = always Nothing
-        , sendUpdate = always Cmd.none
-        , sendTree = always Cmd.none
+        , send = always Cmd.none
+        , receive = always Sub.none
         , attached = Nothing
         }
 
@@ -58,12 +59,16 @@ formUrl base path =
     }
 
 
-make : (Exp.RawProperty -> Cmd msg) -> (Exp.RawUpdate -> Cmd msg) -> Url -> Detach msg
-make sendTree_ sendUpdate_ base =
+make
+     : (Exp.RawUpdate -> Cmd msg)
+    -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
+    -> Url
+    -> Detach msg
+make sendPort receivePort base =
     Detach
         { toUrl = Just << formUrl base
-        , sendUpdate = sendUpdate_
-        , sendTree = sendTree_
+        , send = sendPort
+        , receive = receivePort
         , attached = checkAttached base
         }
 
@@ -72,14 +77,14 @@ make sendTree_ sendUpdate_ base =
 -- extract
 
 
-sendUpdate : Detach msg -> Path -> Property msg -> Cmd msg
-sendUpdate (Detach d) path =
-    d.sendUpdate << Exp.encodeUpdate path
+send : Detach msg -> Path -> Property msg -> Cmd msg
+send (Detach d) path =
+    d.send << Exp.encodeUpdate path
 
 
-sendTree : Detach msg -> Property msg -> Cmd msg
-sendTree (Detach d) =
-    d.sendTree << Exp.encode
+receive : Detach msg -> Sub Msg
+receive (Detach d) =
+    d.receive ReceiveRaw
 
 
 -- isAttached : Property msg -> Bool

@@ -1,4 +1,4 @@
-port module Main exposing (main)
+module MainDefaultOnly exposing (main)
 
 
 import Browser
@@ -71,7 +71,7 @@ init url _ =
         , theme = Style.Light
         , gui = Gui.init Gui.TopToBottom
                     |> Gui.over (DefaultGui.for Default.init)
-                    |> Gui.detachable sendUpdateToWs receieveUpdateFromWs url
+                    |> Gui.detachable sendUiToWs sendUpdateToWs url
                     |> Gui.map ToDefault
         }
     , Cmd.batch -- FIXME: Gui.init
@@ -232,15 +232,11 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions { mode } =
-    case mode of
-        DatGui ->
-            updateFromDatGui (DatGuiUpdate << Exp.fromPort)
-        TronGui ->
-            Sub.batch
-                [ Gui.trackMouse |> Sub.map TronUpdate
-                , receieveUpdateFromWs (TronUpdate << Tron.ReceiveRaw)
-                , Browser.onResize Resize
-                ]
+    Sub.batch
+        [ Gui.trackMouse |> Sub.map TronUpdate
+        , receieveUpdateFromWs (TronUpdate << Tron.ReceiveRaw)
+        , Browser.onResize Resize
+        ]
 
 
 main : Program () Model Msg
@@ -256,20 +252,3 @@ main =
         , onUrlRequest = always NoOp
         , onUrlChange = always NoOp
         }
-
-
-port updateFromDatGui : (Exp.RawUpdate -> msg) -> Sub msg
-
-port startDatGui : Exp.RawProperty -> Cmd msg
-
-port destroyDatGui : () -> Cmd msg
-
-port receieveUiFromWs : (Exp.RawProperty -> msg) -> Sub msg
-
-port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
-
--- port updateDatGui : Encode.Value -> Cmd msg
-
-port sendUiToWs : Exp.RawProperty -> Cmd msg
-
-port sendUpdateToWs : Exp.RawUpdate -> Cmd msg

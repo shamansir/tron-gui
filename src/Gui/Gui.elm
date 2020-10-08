@@ -1,6 +1,7 @@
 module Gui.Gui exposing
     ( Gui, over, overMap, Flow(..)
-    , view, update, init, map
+    , view, update, init, subscribe
+    , map
     , trackMouse, focus, reflow, fromWindow
     , detachable
     )
@@ -82,14 +83,14 @@ init flow =
 
 
 detachable
-     : (Exp.RawProperty -> Cmd msg)
-    -> (Exp.RawUpdate -> Cmd msg)
+     : (Exp.RawUpdate -> Cmd msg)
+    -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
     -> Url
     -> Gui msg
     -> Gui msg
-detachable sendTree sendUpdate base gui =
+detachable send receive base gui =
     { gui
-    | detach = Detach.make sendTree sendUpdate base
+    | detach = Detach.make send receive base
     }
 
 
@@ -153,7 +154,7 @@ update msg gui =
                     { gui
                     | tree = nextRoot
                     }
-                , Detach.sendTree gui.detach nextRoot
+                , Cmd.none -- Detach.sendTree gui.detach nextRoot
                 )
 
         ReceiveRaw rawUpdate ->
@@ -378,7 +379,7 @@ notifyUpdate : Detach msg -> ( Path, Property msg ) -> Cmd msg
 notifyUpdate detach ( path, prop ) =
     Cmd.batch
         [ Property.call prop
-        , Detach.sendUpdate detach path prop
+        , Detach.send detach path prop
         ]
 
 
@@ -441,6 +442,17 @@ layout gui =
         Just ( attachedPath, root ) ->
             ( root, Layout.pack1 gui.size attachedPath root )
 
+
+subscribe : Gui msg -> Sub Msg
+subscribe gui =
+    Sub.batch
+        [ trackMouse
+        , Detach.receive gui.detach
+        -- Browser.onResize Resize
+        ]
+
+
+-- port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
 
 view : Style.Theme -> Gui msg -> Html Msg
 view theme gui =
