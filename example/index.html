@@ -99,12 +99,6 @@
             latestGui = null;
         });
 
-        app.ports.sendUiToWs.subscribe((update) => { // FIXME: not needed, remove
-            const package = JSON.stringify({ uuid, data : update, code: 'BLD' });
-            console.log('send UI to WS', package);
-            socket.send(package);
-        });
-
         app.ports.sendUpdateToWs.subscribe((update) => {
             const package = JSON.stringify({ uuid, data : update, code: 'UPD' });
             console.log('send update to WS', package);

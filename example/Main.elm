@@ -241,12 +241,8 @@ port startDatGui : Exp.RawProperty -> Cmd msg
 
 port destroyDatGui : () -> Cmd msg
 
-port receieveUiFromWs : (Exp.RawProperty -> msg) -> Sub msg
-
 port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
 
 -- port updateDatGui : Encode.Value -> Cmd msg
-
-port sendUiToWs : Exp.RawProperty -> Cmd msg
 
 port sendUpdateToWs : Exp.RawUpdate -> Cmd msg
