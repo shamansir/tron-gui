@@ -1,8 +1,8 @@
 module Gui.Gui exposing
     ( Gui, over, overMap, Flow(..)
-    , view, update, init, subscribe
+    , view, update, init, subscribe, run
     , map
-    , trackMouse, focus, reflow, fromWindow
+    , trackMouse, focus, fromWindow
     , detachable
     )
 
@@ -82,6 +82,14 @@ init flow =
     Gui flow ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init Nil Detach.never
 
 
+run : Cmd Msg
+run =
+    Cmd.batch
+        [ focus NoOp
+        , fromWindow Reflow
+        ]
+
+
 detachable
      : (Exp.RawUpdate -> Cmd msg)
     -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
@@ -146,6 +154,14 @@ update msg gui =
             in
                 handleKeyDown keyCode curFocus gui
 
+        Reflow viewport ->
+            (
+                { gui
+                | viewport = viewport
+                }
+            , Cmd.none
+            )
+
         Detach path ->
             let
                 nextRoot = detachAt path gui.tree
@@ -186,13 +202,6 @@ trackMouse =
             <| decodePosition
         ]
     |> Sub.map ApplyMouse
-
-
-reflow : ( Int, Int ) -> Gui msg -> Gui msg
-reflow viewport gui =
-    { gui
-    | viewport = viewport
-    }
 
 
 -- TODO: make bounds to be bounded to pariticular units
@@ -396,13 +405,14 @@ focus noOp =
         |> Task.attempt (always noOp)
 
 
-fromWindow : (Int -> Int -> msg) -> Cmd msg -- FIXME: get rid of
+fromWindow : ((Int, Int) -> msg) -> Cmd msg -- FIXME: get rid of
 fromWindow passSize =
     Dom.getViewport
         |> Task.perform
             (\d -> passSize
-                (floor d.viewport.width)
-                (floor d.viewport.height)
+                ( floor d.viewport.width
+                , floor d.viewport.height
+                )
             )
 
 
@@ -448,7 +458,7 @@ subscribe gui =
     Sub.batch
         [ trackMouse
         , Detach.receive gui.detach
-        -- Browser.onResize Resize
+        , Browser.onResize <| \w h -> Reflow ( w, h )
         ]
 
 

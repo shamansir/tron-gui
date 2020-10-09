@@ -9,7 +9,7 @@ import Gui.Expose as Exp
 type Msg
     = NoOp
     | ApplyMouse MouseAction -- from the document
-    -- | Reflow ( Int, Int ) -- TODO:
+    | Reflow ( Int, Int )
     | Click Path
     | MouseDown Path
     | KeyDown Int

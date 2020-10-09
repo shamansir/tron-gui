@@ -18,7 +18,7 @@ import Random
 import Url exposing (Url)
 
 import Gui.Gui exposing (Gui)
-import Gui.Gui as Gui exposing (view, detachable)
+import Gui.Gui as Gui exposing (view, detachable, subscribe)
 import Gui.Expose as Exp exposing (Update)
 import Gui.Gui as Tron exposing (Gui, focus, over)
 import Gui.Msg as Tron exposing (Msg(..))
@@ -36,7 +36,6 @@ import RandomGui as Gui exposing (generator)
 type Msg
     = NoOp
     | ChangeMode Mode
-    | Resize Int Int
     | DatGuiUpdate Exp.Update
     | TronUpdate Tron.Msg
     | ToDefault Default.Msg
@@ -74,10 +73,7 @@ init url _ =
                     |> Gui.detachable sendUpdateToWs receieveUpdateFromWs url
                     |> Gui.map ToDefault
         }
-    , Cmd.batch -- FIXME: Gui.init
-        [ Tron.focus NoOp
-        , Tron.fromWindow Resize -- FIXME: subscribe to resizes along with the mouse
-        ]
+    , Tron.run |> Cmd.map TronUpdate
     )
 
 
@@ -135,8 +131,7 @@ update msg model =
                 }
             , Cmd.batch
                 [ destroyDatGui ()
-                , Tron.focus NoOp
-                , Tron.fromWindow Resize
+                , Tron.run |> Cmd.map TronUpdate
                 ]
             )
 
@@ -166,14 +161,6 @@ update msg model =
                 |> Exp.update guiUpdate
             )
 
-        ( Resize width height, _ ) ->
-            (
-                { model
-                | gui = model.gui |> Gui.reflow ( width, height )
-                }
-            , Cmd.none
-            )
-
         ( TriggerRandom, _ ) ->
             ( model
             , Cmd.batch
@@ -200,10 +187,7 @@ update msg model =
                         |> Exp.encode
                         |> startDatGui
                 TronGui ->
-                    Cmd.batch
-                        [ Tron.focus NoOp
-                        , Tron.fromWindow Resize -- FIXME: subscribe to resizes along with the mouse
-                        ]
+                    Tron.run |> Cmd.map TronUpdate
             )
 
         ( TriggerDefault, _ ) ->
@@ -213,10 +197,7 @@ update msg model =
                     model.gui
                         |> Gui.overMap ToDefault (DefaultGui.for Default.init)
                 }
-            , Cmd.batch -- FIXME: Gui.init
-                [ Tron.focus NoOp
-                , Tron.fromWindow Resize -- FIXME: subscribe to resizes along with the mouse
-                ]
+            , Tron.run |> Cmd.map TronUpdate
             )
 
         ( SwitchTheme, _ ) ->
@@ -231,16 +212,12 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions { mode } =
+subscriptions { mode, gui } =
     case mode of
         DatGui ->
             updateFromDatGui (DatGuiUpdate << Exp.fromPort)
         TronGui ->
-            Sub.batch
-                [ Gui.trackMouse |> Sub.map TronUpdate
-                , receieveUpdateFromWs (TronUpdate << Tron.ReceiveRaw)
-                , Browser.onResize Resize
-                ]
+            Gui.subscribe gui |> Sub.map TronUpdate
 
 
 main : Program () Model Msg
