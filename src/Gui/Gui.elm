@@ -3,7 +3,7 @@ module Gui.Gui exposing
     , view, update, init, subscribe, run
     , map
     , trackMouse, focus, fromWindow
-    , detachable
+    , detachable, encode, applyRaw
     )
 
 
@@ -13,6 +13,7 @@ import Task
 import Color
 import Browser.Events as Browser
 import Html exposing (Html)
+import Json.Encode as E
 
 import BinPack exposing (..)
 import Bounds exposing (Bounds)
@@ -109,6 +110,10 @@ over prop gui =
     }
 
 
+encode : Gui msg -> E.Value
+encode = .tree >> Exp.encode
+
+
 overMap : (msgA -> msgB) -> Property msgA -> Gui msgB -> Gui msgB
 overMap f prop =
     over <| Gui.Property.map f prop
@@ -186,6 +191,14 @@ update msg gui =
                 , nextRoot
                     |> Exp.update (Exp.fromPort rawUpdate)
                 )
+
+
+applyRaw
+     : Exp.RawUpdate
+    -> Gui msg
+    -> Cmd msg
+applyRaw rawUpdate =
+    .tree >> Exp.update (Exp.fromPort rawUpdate)
 
 
 trackMouse : Sub Msg

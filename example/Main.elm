@@ -36,7 +36,7 @@ import RandomGui as Gui exposing (generator)
 type Msg
     = NoOp
     | ChangeMode Mode
-    | DatGuiUpdate Exp.Update
+    | DatGuiUpdate Exp.RawUpdate
     | TronUpdate Tron.Msg
     | ToDefault Default.Msg
     | Randomize (Tron.Gui Msg)
@@ -156,9 +156,7 @@ update msg model =
 
         ( DatGuiUpdate guiUpdate, DatGui ) ->
             ( model
-            , model.gui
-                |> .tree -- FIXME
-                |> Exp.update guiUpdate
+            , model.gui |> Tron.applyRaw guiUpdate
             )
 
         ( TriggerRandom, _ ) ->
@@ -183,8 +181,7 @@ update msg model =
             , case model.mode of
                 DatGui ->
                     newGui
-                        |> .tree -- FIXME
-                        |> Exp.encode
+                        |> Tron.encode
                         |> startDatGui
                 TronGui ->
                     Tron.run |> Cmd.map TronUpdate
@@ -215,7 +212,7 @@ subscriptions : Model -> Sub Msg
 subscriptions { mode, gui } =
     case mode of
         DatGui ->
-            updateFromDatGui (DatGuiUpdate << Exp.fromPort)
+            updateFromDatGui DatGuiUpdate
         TronGui ->
             Gui.subscribe gui |> Sub.map TronUpdate
 
