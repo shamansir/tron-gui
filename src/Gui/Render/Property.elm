@@ -44,9 +44,12 @@ view placement theme tone path bounds focus ( label, prop ) =
             Svg.rect
                 [ SA.fill
                     <| Color.toCssString
-                    <| case placement of
-                        AtRoot -> background theme
-                        OnAPlate -> transparent
+                    <| case focusColor theme focus of
+                        Just focusColor -> focusColor
+                        Nothing ->
+                            case placement of
+                                AtRoot -> background theme
+                                OnAPlate -> transparent
                 , SA.x <| String.fromFloat (gap / 2)
                 , SA.y <| String.fromFloat (gap / 2)
                 , SA.rx <| String.fromFloat borderRadius
