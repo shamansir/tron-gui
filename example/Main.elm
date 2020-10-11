@@ -69,7 +69,8 @@ init url _ =
     let
         initialModel = Default.init
         ( gui, startGui ) =
-            Default.init |> defaultGui (Detach.fromUrl url)
+            Default.init
+                |> defaultGui (Detach.fromUrl url)
     in
         (
             { mode = TronGui

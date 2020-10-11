@@ -80,8 +80,8 @@ map f model =
 
 
 init : Flow -> Builder msg -> ( Gui msg, Cmd Msg )
-init flow prop =
-    ( Gui flow ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init Nil Detach.never
+init flow root =
+    ( Gui flow ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init root Detach.never
     , run
     )
 
