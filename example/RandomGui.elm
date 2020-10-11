@@ -8,7 +8,7 @@ import Gui.Gui exposing (Gui)
 import Gui.Control exposing (Control(..))
 import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, expand)
 import Gui.Property as Gui exposing (Label, ToggleState(..), GroupState(..), Icon(..))
-
+import Gui.Build exposing (Builder)
 
 
 type DeepLevel = DeepLevel Int
@@ -22,14 +22,14 @@ type Icon
     | Goose
 
 
-generator : Random.Generator (Property ())
+generator : Random.Generator (Builder ())
 generator =
     group (DeepLevel 0)
         |> Random.map Group
         |> Random.map expand
 
 
-property : DeepLevel -> Random.Generator (Property ())
+property : DeepLevel -> Random.Generator (Builder ())
 property (DeepLevel deep) =
     Random.int 0 8
         |> Random.andThen
@@ -125,7 +125,7 @@ button =
         |> Random.map (\icon -> Control icon () <| always ())
 
 
-controls : DeepLevel -> Random.Generator ( Array ( Label, Property () ) )
+controls : DeepLevel -> Random.Generator ( Array ( Label, Builder () ) )
 controls deep =
     let
         labelFor prop =
@@ -139,7 +139,7 @@ controls deep =
                 Action _ -> "button"
                 Choice _ -> "choice"
                 Group _ -> "group"
-        addLabel : Property () -> Random.Generator ( Label, Property () )
+        addLabel : Builder () -> Random.Generator ( Label, Builder () )
         addLabel prop =
             Random.int 0 10000
                 |> Random.map String.fromInt

@@ -9,19 +9,27 @@ import Gui.Property exposing (Property)
 import Gui.Msg exposing (Msg(..))
 
 
+type Fragment = Fragment String
+
+
+type State
+    = Detached
+    | AttachedAt Path
+
+
 type Detach msg =
     Detach
-        { toUrl : Path -> Maybe Url
+        { toFragment : Path -> Maybe Fragment
         , send : Exp.RawUpdate -> Cmd msg
         , receive : ((Exp.RawUpdate -> Msg) -> Sub Msg)
-        , attached : Maybe Path
+        , attached : State
         }
 
 
 map : (msgA -> msgB) -> Detach msgA -> Detach msgB
 map f (Detach d) =
     Detach
-        { toUrl = d.toUrl
+        { toFragment = d.toFragment
         , send = d.send >> Cmd.map f
         , receive = d.receive
         , attached = d.attached
@@ -31,45 +39,59 @@ map f (Detach d) =
 never : Detach msg
 never =
     Detach
-        { toUrl = always Nothing
+        { toFragment = always Nothing
         , send = always Cmd.none
         , receive = always Sub.none
-        , attached = Nothing
+        , attached = attachedAtRoot
         }
 
 
-getUrl : Path -> Detach msg -> Maybe Url
-getUrl path (Detach { toUrl }) = toUrl path
+detached : State
+detached = Detached
+
+
+attachedAt : Path -> State
+attachedAt = AttachedAt
+
+
+attachedAtRoot : State
+attachedAtRoot = AttachedAt Path.start
+
+
+getFragment : Path -> Detach msg -> Maybe Fragment
+getFragment path (Detach { toFragment }) = toFragment path
 
 
 root : String
 root = "root"
 
 
-formUrl : Url -> Path -> Url
-formUrl base path =
-    { base
-    | fragment =
-        if Path.howDeep path == 0 then Just "root"
-        else path
-            |> Path.toList
-            |> List.map String.fromInt
-            |> String.join "|"
-            |> Just
-    }
+formFragment : Path -> Maybe Fragment
+formFragment path =
+    if Path.howDeep path == 0 then Just <| Fragment root
+    else path
+        |> Path.toList
+        |> List.map String.fromInt
+        |> String.join "|"
+        |> Fragment
+        |> Just
+
+
+fragmentToString : Fragment -> String
+fragmentToString (Fragment str) = "#" ++ str
 
 
 make
-     : (Exp.RawUpdate -> Cmd msg)
+     : State
+    -> (Exp.RawUpdate -> Cmd msg)
     -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
-    -> Url
     -> Detach msg
-make sendPort receivePort base =
+make state sendPort receivePort =
     Detach
-        { toUrl = Just << formUrl base
+        { toFragment = formFragment
         , send = sendPort
         , receive = receivePort
-        , attached = checkAttached base
+        , attached = state
         }
 
 
@@ -87,24 +109,28 @@ receive (Detach d) =
     d.receive ReceiveRaw
 
 
--- isAttached : Property msg -> Bool
-
-
-checkAttached : Url -> Maybe Path
-checkAttached url =
-    url.fragment
-        |> Maybe.map
-            (\str ->
-                if str == "root"
-                then Path.start
-                else
-                    str
-                        |> String.split "|"
-                        |> List.map String.toInt
-                        |> List.filterMap identity
-                        |> Path.fromList
-            )
+fromUrl : Url -> State
+fromUrl { fragment } =
+    case fragment of
+        Just str ->
+            if str == root
+            then AttachedAt Path.start
+            else
+                str
+                    |> String.split "|"
+                    |> List.map String.toInt
+                    |> List.filterMap identity
+                    |> Path.fromList
+                    |> AttachedAt
+        Nothing -> Detached
 
 
 isAttached : Detach msg -> Maybe Path
-isAttached (Detach { attached }) = attached
+isAttached (Detach { attached }) = stateToMaybe attached
+
+
+stateToMaybe : State -> Maybe Path
+stateToMaybe state =
+    case state of
+        Detached -> Nothing
+        AttachedAt path -> Just path

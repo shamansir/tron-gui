@@ -1,7 +1,7 @@
 module Gui.Gui exposing
-    ( Gui, over, overMap, Flow(..)
+    ( Gui, Flow(..)
     , view, update, init, subscribe, run
-    , map
+    , map, over
     , trackMouse, focus, fromWindow
     , detachable, encode, applyRaw
     )
@@ -36,6 +36,7 @@ import Gui.Util exposing (..)
 import Gui.Focus as Focus exposing (..)
 import Gui.Detach as Detach exposing (make, Detach, map)
 import Gui.Expose as Exp exposing (..)
+import Gui.Build exposing (..)
 
 
 type Flow
@@ -50,7 +51,7 @@ type alias Gui msg =
     , viewport : ( Int, Int ) -- in pixels
     , size : ( Int, Int ) -- in cells
     , mouse : MouseState
-    , tree : Property msg
+    , tree : Builder msg
     , detach : Detach msg
     }
 
@@ -78,9 +79,11 @@ map f model =
     }
 
 
-init : Flow -> Gui msg
-init flow =
-    Gui flow ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init Nil Detach.never
+init : Flow -> Builder msg -> ( Gui msg, Cmd Msg )
+init flow prop =
+    ( Gui flow ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init Nil Detach.never
+    , run
+    )
 
 
 run : Cmd Msg
@@ -92,18 +95,18 @@ run =
 
 
 detachable
-     : (Exp.RawUpdate -> Cmd msg)
+     : Detach.State
+    -> (Exp.RawUpdate -> Cmd msg)
     -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
-    -> Url
     -> Gui msg
     -> Gui msg
-detachable send receive base gui =
+detachable state send receive gui =
     { gui
-    | detach = Detach.make send receive base
+    | detach = Detach.make state send receive
     }
 
 
-over : Property msg -> Gui msg -> Gui msg
+over : Builder msg -> Gui msg -> Gui msg
 over prop gui =
     { gui
     | tree = prop
@@ -114,15 +117,15 @@ encode : Gui msg -> E.Value
 encode = .tree >> Exp.encode
 
 
-overMap : (msgA -> msgB) -> Property msgA -> Gui msgB -> Gui msgB
-overMap f prop =
-    over <| Gui.Property.map f prop
+-- overMap : (msgA -> msgB) -> Property msgA -> Gui msgB -> Gui msgB
+-- overMap f prop =
+--     over <| Gui.Property.map f prop
 
 
 update
     :  Msg
-    -> Gui umsg
-    -> ( Gui umsg, Cmd umsg )
+    -> Gui msg
+    -> ( Gui msg, Cmd msg )
 update msg gui =
     case msg of
         NoOp ->
@@ -420,6 +423,7 @@ focus noOp =
 
 fromWindow : ((Int, Int) -> msg) -> Cmd msg -- FIXME: get rid of
 fromWindow passSize =
+    -- Cmd.none
     Dom.getViewport
         |> Task.perform
             (\d -> passSize

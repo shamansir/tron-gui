@@ -10,17 +10,20 @@ import Gui.Control exposing (Control(..))
 import Gui.Util exposing (findMap)
 
 
-none : Property msg
+type alias Builder msg = Property msg
+
+
+none : Builder msg
 none = Nil
 
 
-float : Axis -> Float -> ( Float -> msg ) -> Property msg
+float : Axis -> Float -> ( Float -> msg ) -> Builder msg
 float axis default =
     Number
         << Control axis default -- RoundBy 2
 
 
-int : { min: Int, max : Int, step : Int } -> Int -> ( Int -> msg ) -> Property msg
+int : { min: Int, max : Int, step : Int } -> Int -> ( Int -> msg ) -> Builder msg
 int { min, max, step } default toMsg =
     float
         { min = toFloat min, max = toFloat max, step = toFloat step } -- RoundBy 0
@@ -28,13 +31,13 @@ int { min, max, step } default toMsg =
         (round >> toMsg)
 
 
-xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Property msg
+xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Builder msg
 xy axes default =
     Coordinate
         << Control axes default
 
 
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Property msg
+input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Builder msg
 input toString fromString default toMsg =
     Text
         <| Control
@@ -43,7 +46,7 @@ input toString fromString default toMsg =
             (fromString >> Maybe.withDefault default >> toMsg)
 
 
-text : String -> (String -> msg) -> Property msg
+text : String -> (String -> msg) -> Builder msg
 text default =
     Text
         << Control
@@ -51,7 +54,7 @@ text default =
             default
 
 
-color : Color -> (Color -> msg) -> Property msg
+color : Color -> (Color -> msg) -> Builder msg
 color default =
     Color
         << Control
@@ -59,7 +62,7 @@ color default =
             default
 
 
-button : (() -> msg) -> Property msg
+button : (() -> msg) -> Builder msg
 button =
     Action
         << Control
@@ -71,7 +74,7 @@ icon : String -> Icon
 icon = Icon
 
 
-button1 : Icon -> (() -> msg) -> Property msg
+button1 : Icon -> (() -> msg) -> Builder msg
 button1 icon_ =
     Action
         << Control
@@ -79,7 +82,7 @@ button1 icon_ =
             ()
 
 
-toggle : ToggleState -> (ToggleState -> msg) -> Property msg
+toggle : ToggleState -> (ToggleState -> msg) -> Builder msg
 toggle default =
     Toggle
         << Control
@@ -88,19 +91,19 @@ toggle default =
 
 
 -- FIXME: get rid of the handler having almost no sense
-nest : List (Label, Property msg) -> (GroupState -> msg) -> Property msg
+nest : List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
 nest items =
     nestIn (findShape items) items
 
 
-root : List (Label, Property msg) -> (GroupState -> msg) -> Property msg
+root : List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
 root props =
     nestIn ( 1, List.length <| List.filter (Tuple.second >> isGhost >> not) props ) props
         >> expand
 
 
 -- FIXME: get rid of the handler having almost no sense
-nestIn : Shape -> List (Label, Property msg) -> (GroupState -> msg) -> Property msg
+nestIn : Shape -> List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
 nestIn shape items handler =
     Group
         <| Control
@@ -119,7 +122,7 @@ choice
     -> a
     -> ( a -> a -> Bool )
     -> ( a -> msg )
-    -> Property msg
+    -> Builder msg
 choice f items =
     choiceIn (findShape items) f items
 
@@ -131,7 +134,7 @@ choiceIn
     -> a
     -> ( a -> a -> Bool )
     -> ( a -> msg )
-    -> Property msg
+    -> Builder msg
 choiceIn shape toLabel options current compare toMsg =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
@@ -180,7 +183,7 @@ strings
      : List String
     -> String
     -> ( String -> msg )
-    -> Property msg
+    -> Builder msg
 strings options current toMsg =
     choice
         identity

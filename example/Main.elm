@@ -20,10 +20,12 @@ import Url exposing (Url)
 import Gui.Gui exposing (Gui)
 import Gui.Gui as Gui exposing (view, detachable, subscribe)
 import Gui.Expose as Exp exposing (Update)
-import Gui.Gui as Tron exposing (Gui, focus, over)
+import Gui.Gui as Tron exposing (Gui)
 import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Mouse exposing (Position)
 import Gui.Render.Style as Style exposing (..)
+import Gui.Build as Tron exposing (Builder)
+import Gui.Detach as Detach exposing (fromUrl)
 
 import Default.Main as Default
 import Default.Model as Default
@@ -39,7 +41,7 @@ type Msg
     | DatGuiUpdate Exp.RawUpdate
     | TronUpdate Tron.Msg
     | ToDefault Default.Msg
-    | Randomize (Tron.Gui Msg)
+    | Randomize (Tron.Builder ())
     | SwitchTheme
     | TriggerRandom
     | TriggerDefault
@@ -64,17 +66,19 @@ type alias Model =
 
 init : Url -> Navigation.Key -> ( Model, Cmd Msg )
 init url _ =
-    (
-        { mode = TronGui
-        , example = Default.init
-        , theme = Style.Light
-        , gui = Gui.init Gui.TopToBottom
-                    |> Gui.over (DefaultGui.for Default.init)
-                    |> Gui.detachable sendUpdateToWs receieveUpdateFromWs url
-                    |> Gui.map ToDefault
-        }
-    , Tron.run |> Cmd.map TronUpdate
-    )
+    let
+        initialModel = Default.init
+        ( gui, startGui ) =
+            Default.init |> defaultGui (Detach.fromUrl url)
+    in
+        (
+            { mode = TronGui
+            , example = initialModel
+            , theme = Style.Light
+            , gui = gui
+            }
+        , startGui
+        )
 
 
 view : Model -> Html Msg
@@ -119,8 +123,7 @@ update msg model =
                 | mode = DatGui
                 }
             , model.gui
-                |> .tree -- FIXME
-                |> Exp.encode
+                |> Tron.encode
                 |> startDatGui
             )
 
@@ -131,7 +134,8 @@ update msg model =
                 }
             , Cmd.batch
                 [ destroyDatGui ()
-                , Tron.run |> Cmd.map TronUpdate
+                , Tron.run
+                    |> Cmd.map TronUpdate
                 ]
             )
 
@@ -156,46 +160,53 @@ update msg model =
 
         ( DatGuiUpdate guiUpdate, DatGui ) ->
             ( model
-            , model.gui |> Tron.applyRaw guiUpdate
+            , model.gui
+                |> Tron.applyRaw guiUpdate
             )
 
         ( TriggerRandom, _ ) ->
             ( model
             , Cmd.batch
                 [ destroyDatGui ()
-                , Random.generate Randomize
-                    <| Random.map (Gui.map <| always NoOp)
-                    <| Random.map
-                        (\prop ->
-                            Gui.init Gui.TopToBottom |> Gui.over prop
-                        )
-                    <| Gui.generator
+                , Gui.generator
+                    |> Random.generate Randomize
                 ]
             )
 
-        ( Randomize newGui, _ ) ->
-            (
-                { model
-                | gui = newGui
-                }
-            , case model.mode of
-                DatGui ->
-                    newGui
-                        |> Tron.encode
-                        |> startDatGui
-                TronGui ->
-                    Tron.run |> Cmd.map TronUpdate
-            )
+        ( Randomize newTree, _ ) ->
+            let
+                ( newGui, startGui ) =
+                    newTree
+                        |> Gui.init Gui.TopToBottom
+            in
+                (
+                    { model
+                    | gui = newGui |> Gui.map (always NoOp)
+                    }
+                , Cmd.batch
+                    [ case model.mode of
+                        DatGui ->
+                            newGui
+                                |> Tron.encode
+                                |> startDatGui
+                        TronGui ->
+                            Cmd.none
+                    , startGui
+                        |> Cmd.map TronUpdate
+                    ]
+                )
 
         ( TriggerDefault, _ ) ->
-            (
-                { model
-                | gui =
-                    model.gui
-                        |> Gui.overMap ToDefault (DefaultGui.for Default.init)
-                }
-            , Tron.run |> Cmd.map TronUpdate
-            )
+            let
+                ( gui, startGui ) =
+                    Default.init |> defaultGui Detach.attachedAtRoot
+            in
+                (
+                    { model
+                    | gui = gui
+                    }
+                , startGui
+                )
 
         ( SwitchTheme, _ ) ->
             (
@@ -232,6 +243,23 @@ main =
         }
 
 
+defaultGui : Detach.State -> Default.Model -> ( Gui Msg, Cmd Msg )
+defaultGui detachState model =
+    let
+        ( gui, startGui ) =
+            DefaultGui.for model
+                |> Gui.init Gui.TopToBottom
+    in
+        ( gui
+            |> Gui.detachable
+                    detachState
+                    sendUpdateToWs
+                    receieveUpdateFromWs
+            |> Gui.map ToDefault
+        , startGui |> Cmd.map TronUpdate
+        )
+
+
 port updateFromDatGui : (Exp.RawUpdate -> msg) -> Sub msg
 
 port startDatGui : Exp.RawProperty -> Cmd msg
@@ -239,7 +267,5 @@ port startDatGui : Exp.RawProperty -> Cmd msg
 port destroyDatGui : () -> Cmd msg
 
 port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
-
--- port updateDatGui : Encode.Value -> Cmd msg
 
 port sendUpdateToWs : Exp.RawUpdate -> Cmd msg

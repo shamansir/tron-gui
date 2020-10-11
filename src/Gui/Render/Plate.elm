@@ -7,7 +7,7 @@ import Url exposing (Url)
 import Bounds exposing (Bounds)
 import Gui.Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
-import Gui.Detach exposing (Detach, getUrl)
+import Gui.Detach exposing (Detach, getFragment, fragmentToString)
 
 import Gui.Render.Style as Style
 import Gui.Render.Property exposing (gap, borderRadius)
@@ -37,15 +37,15 @@ controls : Style.Theme -> Style.Tone -> Detach msg -> Bounds -> Path -> Svg Msg
 controls theme tone detachFn bounds path =
     Svg.g
         [ ]
-        [ case detachFn |> getUrl path of
-            Just url ->
+        [ case detachFn |> getFragment path of
+            Just fragment ->
                 Svg.g
                     [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
                        String.fromFloat gap ++ "px," ++ String.fromFloat gap ++ "px);"
                     , HE.onClick <| Detach path
                     ]
                     [ Svg.a
-                        [ SA.xlinkHref <| Url.toString url
+                        [ SA.xlinkHref <| fragmentToString fragment
                         , SA.target "_blank"
                         ]
                         [ Svg.rect

@@ -198,15 +198,15 @@ view theme bounds detach root layout =
                     [ Svg.g [] platesBacksRendered
                     , Svg.g [] cellsRendered
                     , Svg.g [] platesControlsRendered
-                    , case detach |> Detach.getUrl rootPath of
-                        Just url ->
+                    , case detach |> Detach.getFragment rootPath of
+                        Just fragment ->
                             Svg.g
                                 [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
                                 String.fromFloat gap ++ "px," ++ String.fromFloat gap ++ "px);"
                                 , HE.onClick <| Detach rootPath
                                 ]
                                 [ Svg.a
-                                    [ SA.xlinkHref <| Url.toString url
+                                    [ SA.xlinkHref <| Detach.fragmentToString fragment
                                     , SA.target "_blank"
                                     ]
                                     [ Svg.rect
