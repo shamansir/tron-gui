@@ -46,6 +46,11 @@ type FocusAt = FocusAt Int
 type Selected = Selected Int
 
 
+type TextState
+    = Ready
+    | Editing
+
+
 type alias GroupControl msg =
     Control
         ( Shape, Array ( Label, Property msg ) )
@@ -64,7 +69,7 @@ type Property msg
     = Nil
     | Number (Control Axis Float msg)
     | Coordinate (Control ( Axis, Axis ) ( Float, Float ) msg)
-    | Text (Control () String msg)
+    | Text (Control () ( TextState, String ) msg)
     | Color (Control () Color msg)
     | Toggle (Control () ToggleState msg)
     | Action (Control ( Maybe Icon ) () msg)

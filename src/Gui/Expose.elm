@@ -59,7 +59,7 @@ updateProperty value property =
         ( Coordinate control, FromXY xy ) ->
             xy |> callWith control
         ( Text control, FromInput s ) ->
-            s |> callWith control
+            ( Ready, s ) |> callWith control
         ( Color control, FromColor c ) ->
             c |> callWith control
         ( Toggle control, FromToggle t ) ->
@@ -100,7 +100,7 @@ applyProperty value prop =
         ( Coordinate control, FromXY xy ) ->
             control |> Control.setValue xy |> Coordinate
         ( Text control, FromInput s ) ->
-            control |> Control.setValue s |> Text
+            control |> Control.setValue (Ready, s) |> Text
         ( Color control, FromColor c ) ->
             control |> Control.setValue c |> Color
         ( Toggle control, FromToggle t ) ->
@@ -181,7 +181,7 @@ encodePropertyAt path property =
                 , ( "maxY", E.float ySpec.max )
                 , ( "stepY", E.float ySpec.step )
                 ]
-        Text ( Control _ val _ ) ->
+        Text ( Control _ ( _, val ) _ ) ->
             E.object
                 [ ( "type", E.string "text" )
                 , ( "path", encodeRawPath path )
@@ -279,7 +279,7 @@ encodeUpdate path prop =
             , value = E.string <| String.fromFloat x ++ "|" ++ String.fromFloat y
             , type_ = "coord"
             }
-        Text ( Control _ val _ ) ->
+        Text ( Control _ ( _, val ) _ ) ->
             { path = Path.toList path
             , value = E.string val
             , type_ = "text"

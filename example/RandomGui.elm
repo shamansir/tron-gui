@@ -7,7 +7,8 @@ import Array exposing (Array)
 import Gui.Gui exposing (Gui)
 import Gui.Control exposing (Control(..))
 import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, expand)
-import Gui.Property as Gui exposing (Label, ToggleState(..), GroupState(..), Icon(..))
+import Gui.Property as Gui exposing
+    ( Label, ToggleState(..), GroupState(..), Icon(..), TextState(..) )
 import Gui.Build exposing (Builder)
 
 
@@ -112,10 +113,10 @@ coordinate =
             )
 
 
-text : Random.Generator ( Control () String () )
+text : Random.Generator ( Control () ( TextState, String ) () )
 text =
     Random.constant
-        <| Control () "" <| always ()
+        <| Control () ( Ready, "" ) <| always ()
 
 
 button : Random.Generator ( Control ( Maybe Gui.Icon ) () () )

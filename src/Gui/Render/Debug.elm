@@ -56,7 +56,7 @@ propertyDebug ( label, prop )  =
             Svg.g []
                 [ textAt 5 5 <| label ++ " color: " ++ Color.toCssString color
                 ]
-        Text (Control _ value _) ->
+        Text (Control _ ( _, value ) _) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " text: " ++ value
                 ]

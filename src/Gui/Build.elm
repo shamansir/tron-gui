@@ -42,16 +42,17 @@ input toString fromString default toMsg =
     Text
         <| Control
             ()
-            (toString default)
-            (fromString >> Maybe.withDefault default >> toMsg)
+            ( Ready, toString default)
+            (Tuple.second >> fromString >> Maybe.withDefault default >> toMsg)
 
 
 text : String -> (String -> msg) -> Builder msg
-text default =
+text default handler =
     Text
-        << Control
+        <| Control
             ()
-            default
+            (Ready, default)
+            (Tuple.second >> handler)
 
 
 color : Color -> (Color -> msg) -> Builder msg
