@@ -296,6 +296,11 @@ updateMany updates root =
         updates
 
 
+setAt : Path -> Property msg -> Property msg -> Property msg
+setAt path newProperty =
+    updateAt path <| always newProperty
+
+
 -- for mouse click or enter key handling, does not change the tree
 -- only updates the controls itself
 -- FIXME: should not call controls itself, only return the update
@@ -407,6 +412,21 @@ finishEditingAt path =
         \prop ->
             case prop of
                 Text control -> Text <| finishEditing control
+                _ -> prop
+
+
+updateText : String -> Control setup ( a, String ) msg -> Control setup ( a, String ) msg
+updateText newValue =
+    update
+        <| \(s, v) -> ( s, newValue )
+
+
+updateTextAt : Path -> String -> Property msg -> Property msg
+updateTextAt path newValue =
+    updateAt path <|
+        \prop ->
+            case prop of
+                Text control -> Text <| updateText newValue control
                 _ -> prop
 
 
