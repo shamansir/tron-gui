@@ -307,6 +307,8 @@ execute item =
         Action control ->
             -- we don't update the value since it's `()`, but we do execute it
             Just <| Action control
+        Text textControl ->
+            Just <| Text <| ensureEditing textControl
         Choice (Control setup ( expanded, selected ) handler) ->
             let
                 nextState =
@@ -379,13 +381,20 @@ executeAt path root =
         Nothing -> []
 
 
-doToggle : Control state ToggleState msg -> Control state ToggleState msg
+doToggle : Control setup ToggleState msg -> Control setup ToggleState msg
 doToggle =
     update
         <| \current ->
             case current of
                 TurnedOff -> TurnedOn
                 TurnedOn -> TurnedOff
+
+
+ensureEditing : Control setup ( TextState, a ) msg -> Control setup ( TextState, a ) msg
+ensureEditing =
+    update
+        <| \(_, v) ->
+            ( Editing, v )
 
 
 select : Int -> ChoiceControl msg -> ChoiceControl msg

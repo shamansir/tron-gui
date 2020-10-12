@@ -7,6 +7,7 @@ import Gui.Property exposing (..)
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
+import Html
 import Html.Attributes as HA
 import Html.Events as HE
 
@@ -75,6 +76,8 @@ view placement theme tone path bounds focus ( label, prop ) =
                             ( (xValue - xAxis.min) / (xAxis.max - xAxis.min)
                             , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
                             )
+                Text (Control _ value _) ->
+                    text theme tone value
                 Toggle (Control _ value _) ->
                     toggle theme tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Action (Control maybeIcon _ _) ->
@@ -251,6 +254,28 @@ coord theme tone center ( valueX, valueY ) =
             []
         ]
 -- 5 30 10 30 10 30 10 30 5
+
+
+text : Theme -> Tone -> ( TextState, String ) -> Svg msg
+text theme tone ( editing, value ) =
+    Svg.g
+        []
+        [ case editing of
+            Ready ->
+                Svg.text_ [] [ Svg.text value ]
+            Editing ->
+                Svg.foreignObject
+                    [ HA.style "width" "100px"
+                    , HA.style "height" "21px"
+                    ]
+                    [ Html.input
+                        [ HA.style "width" "100px"
+                        , HA.style "height" "21px"
+                        , HA.type_ "text"
+                        ]
+                        [ ]
+                    ]
+        ]
 
 
 makeClass : Property msg -> String
