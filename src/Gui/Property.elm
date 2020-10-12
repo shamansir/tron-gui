@@ -346,7 +346,6 @@ execute item =
         _ -> Nothing
 
 
--- FIXME: should not call controls itself, only return the update
 executeAt : Path -> Property msg -> List ( Path, Property msg )
 executeAt path root =
     case root
@@ -393,8 +392,22 @@ doToggle =
 ensureEditing : Control setup ( TextState, a ) msg -> Control setup ( TextState, a ) msg
 ensureEditing =
     update
-        <| \(_, v) ->
-            ( Editing, v )
+        <| \(_, v) -> ( Editing, v )
+
+
+finishEditing : Control setup ( TextState, a ) msg -> Control setup ( TextState, a ) msg
+finishEditing =
+    update
+        <| \(_, v) -> ( Ready, v )
+
+
+finishEditingAt : Path -> Property msg -> Property msg
+finishEditingAt path =
+    updateAt path <|
+        \prop ->
+            case prop of
+                Text control -> Text <| finishEditing control
+                _ -> prop
 
 
 select : Int -> ChoiceControl msg -> ChoiceControl msg

@@ -23,7 +23,7 @@ import Gui.Path as Path exposing (start)
 import Gui.Control exposing (..)
 import Gui.Control as Control exposing (call)
 import Gui.Property exposing (..)
-import Gui.Property as Property exposing (call)
+import Gui.Property as Property exposing (call, find)
 import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (..)
 import Gui.Msg exposing (..)
@@ -371,10 +371,10 @@ handleKeyDown keyCode path gui =
                 | tree = nextRoot
                 }
 
-        executeByPath _ =
+        executeByPath root =
             let
-                updates = gui.tree |> executeAt path
-                nextRoot = gui.tree |> updateMany updates
+                updates = root |> executeAt path
+                nextRoot = root |> updateMany updates
             in
                 (
                     { gui
@@ -393,9 +393,13 @@ handleKeyDown keyCode path gui =
         -- down arrow
         40 -> ( shiftFocus Focus.Down, Cmd.none )
         -- space
-        33 -> executeByPath ()
+        33 -> executeByPath gui.tree
         -- enter
-        13 -> executeByPath ()
+        13 ->
+            gui.tree
+                -- nothing will be changed if there's no text control at the path
+                |> finishEditingAt path
+                |> executeByPath
         -- else
         _ -> ( gui, Cmd.none )
 
