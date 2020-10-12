@@ -77,7 +77,7 @@ view placement theme tone path bounds focus ( label, prop ) =
                             , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
                             )
                 Text (Control _ value _) ->
-                    text theme tone value
+                    text theme tone value <| TextInput path
                 Toggle (Control _ value _) ->
                     toggle theme tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
                 Action (Control maybeIcon _ _) ->
@@ -256,26 +256,27 @@ coord theme tone center ( valueX, valueY ) =
 -- 5 30 10 30 10 30 10 30 5
 
 
-text : Theme -> Tone -> ( TextState, String ) -> Svg msg
-text theme tone ( editing, value ) =
-    Svg.g
-        []
-        [ case editing of
-            Ready ->
-                Svg.text_ [] [ Svg.text value ]
-            Editing ->
-                Svg.foreignObject
+text : Theme -> Tone -> ( TextState, String ) -> (String -> msg) -> Svg msg
+text theme tone ( editing, value ) onInput =
+    case editing of
+        Ready ->
+            Svg.text_
+                [ SA.dominantBaseline "hanging"
+                ]
+                [ Svg.text value ]
+        Editing ->
+            Svg.foreignObject
+                [ HA.style "width" "100px"
+                , HA.style "height" "21px"
+                ]
+                [ Html.input
                     [ HA.style "width" "100px"
                     , HA.style "height" "21px"
+                    , HA.type_ "text"
+                    , HE.onInput onInput
                     ]
-                    [ Html.input
-                        [ HA.style "width" "100px"
-                        , HA.style "height" "21px"
-                        , HA.type_ "text"
-                        ]
-                        [ ]
-                    ]
-        ]
+                    [ ]
+                ]
 
 
 makeClass : Property msg -> String

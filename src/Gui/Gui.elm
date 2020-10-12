@@ -170,6 +170,19 @@ update msg gui =
             , Cmd.none
             )
 
+        TextInput path val ->
+            let
+                nextRoot =
+                    gui.tree
+                        |> updateTextAt path val
+            in
+                (
+                    { gui
+                    | tree = nextRoot
+                    }
+                , Cmd.none
+                )
+
         Detach path ->
             let
                 nextRoot = detachAt path gui.tree
@@ -371,10 +384,10 @@ handleKeyDown keyCode path gui =
                 | tree = nextRoot
                 }
 
-        executeByPath root =
+        executeByPath _ =
             let
-                updates = root |> executeAt path
-                nextRoot = root |> updateMany updates
+                updates = gui.tree |> executeAt path
+                nextRoot = gui.tree |> updateMany updates
             in
                 (
                     { gui
@@ -396,10 +409,21 @@ handleKeyDown keyCode path gui =
         33 -> executeByPath gui.tree
         -- enter
         13 ->
-            gui.tree
-                -- nothing will be changed if there's no text control at the path
-                |> finishEditingAt path
-                |> executeByPath
+            case gui.tree |> Property.find path of
+                Just (Text control) ->
+                    let nextProp = (Text <| finishEditing control)
+                    in
+                        (
+                            { gui
+                            | tree =
+                                -- FIXME: second time search for a path
+                                gui.tree
+                                    |> setAt path nextProp
+                            }
+                        -- FIXME: inside, we check if it is a text prop again
+                        , notifyUpdate gui.detach ( path, nextProp )
+                        )
+                _ -> executeByPath ()
         -- else
         _ -> ( gui, Cmd.none )
 

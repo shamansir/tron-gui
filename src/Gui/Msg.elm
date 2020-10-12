@@ -13,5 +13,6 @@ type Msg
     | Click Path
     | MouseDown Path
     | KeyDown Int
+    | TextInput Path String
     | Detach Path
     | ReceiveRaw Exp.RawUpdate
