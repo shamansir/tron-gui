@@ -71,6 +71,8 @@ controls theme tone detachFn bounds label path =
             , HA.style "font-family" fontFamily
             , HA.style "font-size" "9px"
             , HA.style "text-anchor" "middle"
+            , HA.style "line-height" "3vh"
+            , HA.style "letter-spacing" "1px"
             , HA.style "fill" <| Color.toCssString <| Style.text theme
             ]
             [ Svg.text label ]
