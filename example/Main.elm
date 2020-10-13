@@ -129,16 +129,20 @@ update msg model =
             )
 
         ( ChangeMode TronGui, _ ) ->
-            (
-                { model
-                | mode = TronGui
-                }
-            , Cmd.batch
-                [ destroyDatGui ()
-                , Tron.run
-                    |> Cmd.map TronUpdate
-                ]
-            )
+            let
+                ( gui, startGui ) =
+                    model.example |> defaultGui Detach.attachedAtRoot
+            in
+                (
+                    { model
+                    | gui = gui
+                    , mode = TronGui
+                    }
+                , Cmd.batch
+                    [ destroyDatGui ()
+                    , startGui
+                    ]
+                )
 
         ( ToDefault dmsg, _ ) ->
             (
@@ -184,17 +188,14 @@ update msg model =
                     { model
                     | gui = newGui |> Gui.map (always NoOp)
                     }
-                , Cmd.batch
-                    [ case model.mode of
-                        DatGui ->
-                            newGui
-                                |> Tron.encode
-                                |> startDatGui
-                        TronGui ->
-                            Cmd.none
-                    , startGui
-                        |> Cmd.map TronUpdate
-                    ]
+                , case model.mode of
+                    DatGui ->
+                        newGui
+                            |> Tron.encode
+                            |> startDatGui
+                    TronGui ->
+                        startGui
+                            |> Cmd.map TronUpdate
                 )
 
         ( TriggerDefault, _ ) ->
