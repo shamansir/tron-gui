@@ -28,6 +28,9 @@ gap = 6
 borderRadius = 10
 
 
+fontFamily = "\"IBM Plex Sans\", sans-serif"
+
+
 type Placement
     = AtRoot
     | OnAPlate
@@ -59,35 +62,38 @@ view placement theme tone path bounds focus ( label, prop ) =
                 , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
                 ]
                 []
-        ,
+        , let
+            cellCenter = { x = cellWidth / 2, y = cellHeight / 2 }
+            cellShiftedCenter = { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+        in
             case prop of
                 Number (Control { min, max } value _) ->
                     knob
                         theme
                         tone
-                        { x = cellWidth / 2, y = (cellHeight / 2) }
+                        cellCenter
                         <| (value - min) / (max - min)
                 Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
                     coord
                         theme
                         tone
-                        { x = cellWidth / 2, y = (cellHeight / 2) }
+                        cellCenter
                         <|
                             ( (xValue - xAxis.min) / (xAxis.max - xAxis.min)
                             , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
                             )
                 Text (Control _ value _) ->
-                    text theme tone value <| TextInput path
+                    text theme tone value (TextInput path) cellShiftedCenter
                 Toggle (Control _ value _) ->
-                    toggle theme tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                    toggle theme tone value cellShiftedCenter
                 Action (Control maybeIcon _ _) ->
-                    button theme tone maybeIcon { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                    button theme tone maybeIcon cellShiftedCenter
                 Color (Control _ value _) ->
-                    color theme tone value { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                    color theme tone value cellShiftedCenter
                 Choice (Control _ ( expanded, _ ) _) ->
-                    arrow theme tone expanded { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                    arrow theme tone expanded cellShiftedCenter
                 Group (Control _ ( expanded, _ ) _) ->
-                    arrow theme tone expanded { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
+                    arrow theme tone expanded cellShiftedCenter
                 _ -> Svg.none
         , Svg.text_
             [ SA.textAnchor "middle"
@@ -95,7 +101,7 @@ view placement theme tone path bounds focus ( label, prop ) =
             , SA.x <| String.fromFloat (cellWidth / 2)
             , SA.y <| String.fromFloat (cellWidth / 5 * 4)
             , SA.fontSize "13px"
-            , SA.fontFamily "\"IBM Plex Sans\", sans-serif"
+            , SA.fontFamily fontFamily
             , SA.fill "rgb(144, 144, 144)"
             ]
             [ Svg.text label ]
@@ -256,27 +262,54 @@ coord theme tone center ( valueX, valueY ) =
 -- 5 30 10 30 10 30 10 30 5
 
 
-text : Theme -> Tone -> ( TextState, String ) -> (String -> msg) -> Svg msg
-text theme tone ( editing, value ) onInput =
+text
+    :  Theme
+    -> Tone
+    -> ( TextState, String )
+    -> (String -> msg)
+    -> { x : Float, y : Float }
+    -> Svg msg
+text theme tone ( editing, value ) onInput center =
     case editing of
         Ready ->
             Svg.text_
-                [ SA.dominantBaseline "hanging"
+                [ SA.dominantBaseline "middle"
+                , SA.textAnchor "middle"
+                , SA.fontSize "13px"
+                , SA.fontFamily fontFamily
+                , SA.x <| String.fromFloat center.x
+                , SA.y <| String.fromFloat center.y
                 ]
                 [ Svg.text value ]
         Editing ->
             Svg.foreignObject
-                [ HA.style "width" "100px"
-                , HA.style "height" "21px"
+                [ HA.style "width" <| String.fromFloat cellWidth ++ "px"
+                , HA.style "height" <| String.fromFloat cellHeight ++ "px"
                 ]
                 [ Html.input
-                    [ HA.style "width" "100px"
+                    [ HA.style "max-width" <| String.fromFloat (cellWidth - gap * 2) ++ "px"
                     , HA.style "height" "21px"
+                    , HA.style "position" "relative"
+                    , HA.style "left" <| String.fromFloat gap ++ "px"
+                    , HA.style "top" <| String.fromFloat (center.y - 12) ++ "px"
+                    , HA.style "outline" "none"
+                    , HA.style "border" "1px solid lightblue"
                     , HA.type_ "text"
                     , HE.onInput onInput
+                    , HA.value value
                     ]
                     [ ]
                 ]
+
+{-
+    max-width: 60px;
+    height: 21px;
+    position: relative;
+    left: 6px;
+    top: 20px;
+    outline: none;
+    border: 1px solid lightblue;
+-}
 
 
 makeClass : Property msg -> String
