@@ -8,6 +8,7 @@ import Color exposing (Color)
 
 import Gui.Property as Property exposing (Property(..))
 import Gui.Path as Path exposing (Path, toString)
+import Gui.Focus exposing (Focused(..))
 
 
 type Theme
@@ -92,6 +93,10 @@ background theme =
         Light -> lightBackground
 
 
+text : Theme -> Color
+text _ =
+    Color.rgb255 144 144 144
+
 knobLine : Theme -> Color
 knobLine theme =
     case theme of
@@ -149,3 +154,19 @@ switch from =
     case from of
         Dark -> Light
         Light -> Dark
+
+
+focusColor : Theme -> Focused -> Maybe Color
+focusColor theme focused =
+    case focused of
+        NotFocused -> Nothing
+        FocusedBy n ->
+            Just <| case theme of
+                Light ->
+                    Color.rgb 1.0 1.0 1.0
+                Dark ->
+                    Color.rgb 0.2 0.2 0.2
+                {-
+                if n == 0 then rgb 1.0 1.0 1.0
+                else if n == 1 then rgb 0.95 0.95 0.95
+                else ... -}

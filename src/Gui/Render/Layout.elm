@@ -94,28 +94,32 @@ viewPlateBack theme pixelBounds =
                 Plate.back theme pixelBounds
 
 
-viewPlateControls : Theme -> Tone -> Detach msg -> Bounds -> Path -> Svg Msg
-viewPlateControls theme tone detach pixelBounds path =
+viewPlateControls : Theme -> Tone -> Detach msg -> Bounds -> Label -> Path -> Svg Msg
+viewPlateControls theme tone detach pixelBounds label path =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g [ ] [ ]
             Fancy ->
-                Plate.controls theme tone detach pixelBounds path
+                Plate.controls theme tone detach pixelBounds label path
 
 
 view : Style.Theme -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
 view theme bounds detach root layout =
     let
+
         keyDownHandler_ =
             HE.on "keydown"
                 <| Json.map KeyDown HE.keyCode
+
         rootPath =
             Detach.isAttached detach
                 |> Maybe.withDefault Path.start
         tones = Style.assignTones root
+
         toneOf path =
             tones |> Dict.get (Path.toString path) |> Maybe.withDefault None
+
         ( plates, cells ) =
             BinPack.unfold
                 (\( cell, cellBounds ) ( prevPlates, prevCells ) ->
@@ -139,10 +143,12 @@ view theme bounds detach root layout =
                 )
                 ( [], [] )
                 layout
+
         ( plates1, cells1 ) =
             ( plates |> List.map (Tuple.mapSecond <| B.multiplyBy cellWidth)
             , cells |> List.map (Tuple.mapSecond <| B.multiplyBy cellWidth)
             )
+
         ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
 
             ( plates1 |> List.map (Tuple.second >> viewPlateBack theme)
@@ -168,9 +174,14 @@ view theme bounds detach root layout =
 
             , plates1 |> List.map
                 (\(path, plateBounds) ->
-                    viewPlateControls theme (toneOf path) detach plateBounds path
+                    case root |> Property.find1 (Path.sub rootPath path) of
+                        Just ( label, _ ) ->
+                            viewPlateControls theme (toneOf path) detach plateBounds label path
+                        Nothing ->
+                            viewPlateControls theme (toneOf path) detach plateBounds "" path
                 )
             )
+
         makeClass =
             "gui noselect "
                 ++ (case mode of
@@ -179,12 +190,14 @@ view theme bounds detach root layout =
                 ++ (case theme of
                     Dark -> "--dark"
                     Light -> "--light")
+
     in
         div [ HA.id rootId
             , HA.class makeClass
             , HA.tabindex 0
             , keyDownHandler_
             ]
+
             [ Svg.svg
                 [ SA.width <| String.fromFloat bounds.width ++ "px"
                 , SA.height <| String.fromFloat bounds.height ++ "px"
@@ -193,13 +206,16 @@ view theme bounds detach root layout =
                     ++ String.fromFloat bounds.y ++ "px)"
                 , SA.class "grid"
                 ]
+
                 [ Svg.g
                     []
                     [ Svg.g [] platesBacksRendered
                     , Svg.g [] cellsRendered
                     , Svg.g [] platesControlsRendered
+
                     , case detach |> Detach.getFragment rootPath of
                         Just fragment ->
+
                             Svg.g
                                 [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
                                 String.fromFloat gap ++ "px," ++ String.fromFloat gap ++ "px);"
@@ -220,6 +236,7 @@ view theme bounds detach root layout =
                                     , Plate.detach theme Style.None
                                     ]
                                 ]
+
                         Nothing -> Svg.g [] []
                     ]
                 ]

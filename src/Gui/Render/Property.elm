@@ -20,6 +20,7 @@ import Gui.Render.Util exposing (..)
 import Gui.Render.Util as Svg exposing (none)
 import Gui.Render.Util as Util exposing (arrow)
 import Gui.Render.Style exposing (..)
+import Gui.Render.Style as Style exposing (text)
 
 
 gap = 6
@@ -102,7 +103,7 @@ view placement theme tone path bounds focus ( label, prop ) =
             , SA.y <| String.fromFloat (cellWidth / 5 * 4)
             , SA.fontSize "13px"
             , SA.fontFamily fontFamily
-            , SA.fill "rgb(144, 144, 144)"
+            , SA.fill <| Color.toCssString <| Style.text theme
             ]
             [ Svg.text label ]
         ]
@@ -303,16 +304,6 @@ text theme tone ( editing, value ) onInput center =
                     ]
                     [ ]
                 ]
-
-{-
-    max-width: 60px;
-    height: 21px;
-    position: relative;
-    left: 6px;
-    top: 20px;
-    outline: none;
-    border: 1px solid lightblue;
--}
 
 
 makeClass : Property msg -> String

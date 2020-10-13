@@ -8,14 +8,16 @@ import Bounds exposing (Bounds)
 import Gui.Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
 import Gui.Detach exposing (Detach, getFragment, fragmentToString)
+import Gui.Property exposing (Label)
 
 import Gui.Render.Style as Style
-import Gui.Render.Property exposing (gap, borderRadius)
+import Gui.Render.Property exposing (gap, borderRadius, fontFamily)
 import Gui.Render.Util exposing (arrow, rotate, scale)
 
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
+import Html.Attributes as HA
 import Html.Events as HE
 
 
@@ -33,8 +35,8 @@ back theme bounds =
         []
 
 
-controls : Style.Theme -> Style.Tone -> Detach msg -> Bounds -> Path -> Svg Msg
-controls theme tone detachFn bounds path =
+controls : Style.Theme -> Style.Tone -> Detach msg -> Bounds -> Label -> Path -> Svg Msg
+controls theme tone detachFn bounds label path =
     Svg.g
         [ ]
         [ case detachFn |> getFragment path of
@@ -60,6 +62,18 @@ controls theme tone detachFn bounds path =
                         ]
                     ]
             Nothing -> Svg.g [] []
+        , Svg.text_
+            [ SA.x <| String.fromFloat <| bounds.width / 2
+            , SA.y <| String.fromFloat <| gap + 1
+            , SA.fill "lightgray"
+            , HA.style "dominant-baseline" "hanging"
+            , HA.style "text-transform" "uppercase"
+            , HA.style "font-family" fontFamily
+            , HA.style "font-size" "9px"
+            , HA.style "text-anchor" "middle"
+            , HA.style "fill" <| Color.toCssString <| Style.text theme
+            ]
+            [ Svg.text label ]
         , Svg.g
             [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
                 (String.fromFloat <| bounds.width - gap - 10)

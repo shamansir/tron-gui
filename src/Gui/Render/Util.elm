@@ -5,7 +5,6 @@ import Color exposing (Color)
 import Svg exposing (Svg)
 import Svg.Attributes as SA
 import Url exposing (Url)
-import Gui.Focus exposing (Focused(..))
 import Gui.Render.Style exposing (Theme)
 
 
@@ -104,18 +103,6 @@ describeMark center { radiusA, radiusB } angleInDegrees =
         [ "M", String.fromFloat start.x, String.fromFloat start.y
         , "L", String.fromFloat end.x, String.fromFloat end.y
         ] |> String.join " "
-
-
-focusColor : Theme -> Focused -> Maybe Color
-focusColor _ focused =
-    case focused of
-        NotFocused -> Nothing
-        FocusedBy n ->
-            Just <| Color.rgb 1.0 1.0 1.0
-                {-
-                if n == 0 then rgb 1.0 1.0 1.0
-                else if n == 1 then rgb 0.95 0.95 0.95
-                else ... -}
 
 
 type Transform a = Transform Float

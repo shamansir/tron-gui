@@ -50,7 +50,8 @@ for model =
                     compareChoices
                     Choose )
         , ( "nest",
-                nestedButtons model.buttonPressed )
+                nestedButtons model.buttonPressed
+          )
         , ( "button",
                 Gui.button1 (Gui.icon "export") (always NoOp)
           )
