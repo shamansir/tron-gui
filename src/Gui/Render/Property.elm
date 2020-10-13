@@ -278,9 +278,12 @@ text theme tone ( editing, value ) onInput center =
                 , SA.fontSize "13px"
                 , SA.fontFamily fontFamily
                 , SA.x <| String.fromFloat center.x
-                , SA.y <| String.fromFloat center.y
+                , SA.y <| String.fromFloat <| center.y + 1
                 ]
-                [ Svg.text value ]
+                [ Svg.text <|
+                    if String.length value <= 6 then
+                        value
+                    else (value |> String.left 6) ++ ".." ]
         Editing ->
             Svg.foreignObject
                 [ HA.style "width" <| String.fromFloat cellWidth ++ "px"
