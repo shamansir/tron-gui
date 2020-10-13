@@ -65,7 +65,7 @@ update msg model =
         Pressed choice -> { model | buttonPressed = choice }
 
 
-view : Model -> Html Msg
+view : Model -> Html msg
 view model =
     Html.ul
         []

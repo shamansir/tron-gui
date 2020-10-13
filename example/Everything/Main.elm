@@ -69,7 +69,7 @@ init url _ =
     let
         initialModel = Default.init
         ( gui, startGui ) =
-            Default.init
+            initialModel
                 |> defaultGui (Detach.fromUrl url)
     in
         (
@@ -110,7 +110,6 @@ view { mode, gui, example, theme } =
                     |> Gui.view theme
                     |> Html.map TronUpdate
         , Default.view example
-            |> Html.map (always NoOp)
         ]
 
 
