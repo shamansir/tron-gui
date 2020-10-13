@@ -1,4 +1,4 @@
-port module Main exposing (main)
+port module Everything.Main exposing (main)
 
 
 import Browser
