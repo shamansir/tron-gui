@@ -3,12 +3,9 @@ port module DatGui.Main exposing (main)
 
 import Browser exposing (element)
 import Html exposing (Html, div)
-import Html.Attributes as Attr exposing (class)
 
-import Gui.Gui as Tron exposing (Gui, initRaw, view, update, subscribe)
-import Gui.Msg as Tron exposing (Msg(..))
+import Gui.Gui as Tron exposing (Gui, initRaw, view, subscribe)
 import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
-import Gui.Render.Style as Tron exposing (Theme(..))
 
 import Default.Main as Default
 import Default.Model as Default
