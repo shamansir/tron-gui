@@ -38,8 +38,8 @@ import RandomGui as Gui exposing (generator)
 type Msg
     = NoOp
     | ChangeMode Mode
-    | DatGuiUpdate Exp.RawUpdate
-    | TronUpdate Tron.Msg
+    | FromDatGui Exp.RawUpdate
+    | ToTron Tron.Msg
     | ToDefault Default.Msg
     | Randomize (Tron.Builder ())
     | SwitchTheme
@@ -108,7 +108,7 @@ view { mode, gui, example, theme } =
             TronGui ->
                 gui
                     |> Gui.view theme
-                    |> Html.map TronUpdate
+                    |> Html.map ToTron
         , Default.view example
         ]
 
@@ -152,7 +152,7 @@ update msg model =
             , Cmd.none
             )
 
-        ( TronUpdate guiMsg, TronGui ) ->
+        ( ToTron guiMsg, TronGui ) ->
             case model.gui |> Gui.update guiMsg of
                 ( nextGui, cmds ) ->
                     (
@@ -162,7 +162,7 @@ update msg model =
                     , cmds
                     )
 
-        ( DatGuiUpdate guiUpdate, DatGui ) ->
+        ( FromDatGui guiUpdate, DatGui ) ->
             ( model
             , model.gui
                 |> Tron.applyRaw guiUpdate
@@ -180,8 +180,7 @@ update msg model =
         ( Randomize newTree, _ ) ->
             let
                 ( newGui, startGui ) =
-                    newTree
-                        |> Gui.init Gui.TopToBottom
+                    newTree |> Gui.init
             in
                 (
                     { model
@@ -194,7 +193,7 @@ update msg model =
                             |> startDatGui
                     TronGui ->
                         startGui
-                            |> Cmd.map TronUpdate
+                            |> Cmd.map ToTron
                 )
 
         ( TriggerDefault, _ ) ->
@@ -224,9 +223,9 @@ subscriptions : Model -> Sub Msg
 subscriptions { mode, gui } =
     case mode of
         DatGui ->
-            updateFromDatGui DatGuiUpdate
+            updateFromDatGui FromDatGui
         TronGui ->
-            Gui.subscribe gui |> Sub.map TronUpdate
+            Gui.subscribe gui |> Sub.map ToTron
 
 
 main : Program () Model Msg
@@ -249,7 +248,7 @@ defaultGui detachState model =
     let
         ( gui, startGui ) =
             DefaultGui.for model
-                |> Gui.init Gui.TopToBottom
+                |> Gui.init
     in
         ( gui
             |> Gui.detachable
@@ -257,7 +256,7 @@ defaultGui detachState model =
                     sendUpdateToWs
                     receieveUpdateFromWs
             |> Gui.map ToDefault
-        , startGui |> Cmd.map TronUpdate
+        , startGui |> Cmd.map ToTron
         )
 
 

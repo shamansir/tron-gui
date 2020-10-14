@@ -58,7 +58,8 @@ for model =
         , ( "toggle",
                 Gui.toggle
                     (Property.boolToToggle model.toggle)
-                    (Property.toggleToBool >> Switch) )
+                    (Property.toggleToBool >> Switch)
+          )
         ]
         (always NoOp)
 

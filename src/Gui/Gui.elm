@@ -3,7 +3,7 @@ module Gui.Gui exposing
     , view, update, init, subscribe, run
     , map, over
     , trackMouse, focus, fromWindow
-    , detachable, encode, applyRaw
+    , detachable, encode, applyRaw, initRaw
     )
 
 
@@ -79,11 +79,15 @@ map f model =
     }
 
 
-init : Flow -> Builder msg -> ( Gui msg, Cmd Msg )
-init flow root =
-    ( Gui flow ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init root Detach.never
+init : Builder msg -> ( Gui msg, Cmd Msg )
+init root =
+    ( initRaw root
     , run
     )
+
+
+initRaw : Builder msg -> Gui msg
+initRaw root = Gui TopToBottom ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init root Detach.never
 
 
 run : Cmd Msg
