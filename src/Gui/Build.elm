@@ -1,6 +1,12 @@
 module Gui.Build exposing (..)
 
 
+{-| The Builder helps you define the structure of your GUI. It is made as abstract from the representation as possible, so that any control could be changed to a better or alternative one without the requirement for you to change the definition. What you specify is the type of the value to be changed and the message to in the case of such change. Plus grouping, as deep as you want and as wide as the free space allows.
+
+This way works the optional connection with `dat.gui`: `dat.gui` operates over the similar set of types of values — we can replace them with our controls and vice versa, groups are interchanged with folders. Of course, this definition also can be translated to plain HTML forms, as the set of possible `<input>`’s is limited to the same set of types.
+
+-}
+
 import Array
 import Color exposing (Color)
 
@@ -17,12 +23,16 @@ none : Builder msg
 none = Nil
 
 
+{-| `float` creates a control over a rational number value, with a minimum, maximum and a step.
+-}
 float : Axis -> Float -> ( Float -> msg ) -> Builder msg
 float axis default =
     Number
         << Control axis default -- RoundBy 2
 
 
+{-| `int` creates a control over an integer number value, with a minimum, maximum and a step.
+-}
 int : { min: Int, max : Int, step : Int } -> Int -> ( Int -> msg ) -> Builder msg
 int { min, max, step } default toMsg =
     float
@@ -31,6 +41,8 @@ int { min, max, step } default toMsg =
         (round >> toMsg)
 
 
+{-| `xy` creates a control over a number value, with a minimum, maximum and a step.
+-}
 xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Builder msg
 xy axes default =
     Coordinate
@@ -55,6 +67,8 @@ text default handler =
             (Tuple.second >> handler)
 
 
+{-| `color` creates a control over a color, for the moment it is Hue/Saturation in 2D space, same as `xy`, but with different representation, but we may improve it later. Or you may change it to `choice` with your own palette.
+-}
 color : Color -> (Color -> msg) -> Builder msg
 color default =
     Color
@@ -117,6 +131,8 @@ nestIn shape items handler =
             (Tuple.first >> handler)
 
 
+{-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the numeric ID of this option and its value. Thanks to Elm rich type system, you are not limited to strings, the option can have any type. But since we also translate these values to HTML and JSON, you need to specify the converter to String and from it.
+-}
 choice
      : ( a -> Label )
     -> List a

@@ -18,7 +18,7 @@ import Random
 import Url exposing (Url)
 
 import Gui.Gui exposing (Gui)
-import Gui.Gui as Gui exposing (view, detachable, subscribe)
+import Gui.Gui as Gui exposing (view, detachable, subscriptions)
 import Gui.Expose as Exp exposing (Update)
 import Gui.Gui as Tron exposing (Gui)
 import Gui.Msg as Tron exposing (Msg(..))
@@ -225,7 +225,7 @@ subscriptions { mode, gui } =
         DatGui ->
             updateFromDatGui FromDatGui
         TronGui ->
-            Gui.subscribe gui |> Sub.map ToTron
+            Gui.subscriptions gui |> Sub.map ToTron
 
 
 main : Program () Model Msg

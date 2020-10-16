@@ -1,10 +1,80 @@
 module Gui.Gui exposing
     ( Gui, Flow(..)
-    , view, update, init, subscribe, run
+    , view, update, init, subscriptions, run
     , map, over
-    , trackMouse, focus, fromWindow
     , detachable, encode, applyRaw, initRaw
     )
+
+
+{-| `Gui` is the component-like module to be connected with your application.
+
+When you have defined the structure of you GUI using `Gui.Build` module and got the `Builder msg` (where `msg` is the `Msg` of your application) in response, use:
+
+    * `init` function to wrap a `Gui msg` over it;
+    * `subscribe` to make GUI receive all the mouse/keyboard information it requires;
+    * `update` to pass inner messages to the GUI;
+    * `view` to render it;
+
+See `example/Basic` in the sources for a full example, here are the important excerpts from it:
+
+    import Gui.Gui as Tron
+
+    type Msg = MyMsgOne | MyMsgTwo | ... | ToTron Tron.Msg
+
+    init _ =
+        let
+            myModel = MyModel.init -- init your model
+            ( gui, guiEffect ) =
+                MyGui.for myModel -- create a `Builder msg` from your model
+                    |> Tron.init -- and immediately create the GUI
+        in
+            (
+                ( myModel
+                , gui -- store GUI in your model, as one would do with a component model
+                )
+            , guiEffect |> Cmd.map ToTron -- map the messages of GUI to itself
+            )
+
+    view ( myModel, gui ) =
+        Html.div [ ]
+            [ gui
+                |> Tron.view Tron.Light -- Light vs. Dark theme
+                |> Html.map ToTron
+            , MyApp.view myModel
+            ]
+
+    update msg ( myModel, gui ) =
+        case msg of
+            MyMsgOne -> ...
+            MyMsgTwo -> ...
+            ... -> ...
+            ToTron guiMsg ->
+                case gui |> Tron.update guiMsg of
+                    ( nextGui, cmds ) ->
+                        ( ( myModel, nextGui )
+                        , cmds
+                        )
+
+    subscriptions ( _, gui ) =
+        Tron.subscriptions gui |> Sub.map ToTron
+
+That's enough to make your application work with Tron!
+
+If you need features that exceed Basic functionality like detachable parts or communication with JS, they can be purchased in the store. It's a joke, just lead to another examples in the `example` folder and to the `Gui.Detach` module documentation.
+
+# Tron GUI Lifecycle
+@docs init, update, view, subscriptions, run
+
+# Styling
+@docs Flow
+
+# Common Helpers
+@docs map, over
+
+# Detaching and Connecting to JavaScript
+@docs detachable, encode, applyRaw, initRaw
+
+-}
 
 
 import Browser.Dom as Dom
@@ -68,6 +138,9 @@ extractMouse : Gui msg -> MouseState
 extractMouse = .mouse
 
 
+{-| Make the same Tron GUI work with other messages, since you provide
+the conversion function.
+-}
 map : (msgA -> msgB) -> Gui msgA -> Gui msgB
 map f model =
     { flow = model.flow
@@ -79,6 +152,34 @@ map f model =
     }
 
 
+{-| Initialize Tron from `Builder msg`. See `Gui.Build` module for documentation on how
+to build your GUI from the model, usually it is something like:
+
+    type Msg = MyMsgOne Int | MyMsgTwo Bool | ... | ToTron Tron.Msg
+
+    for : MyModel -> Builder MyMsg
+    for myModel =
+        [ ( "int", Builder.int ... MyMsgOne ... )
+        , ( "toggle", Builder.toggle ... MyMsgTwo ... )
+        , ...
+        ]
+
+    init _ =
+        let
+            myModel = MyModel.init -- init your model
+            ( gui, guiEffect ) =
+                for myModel -- create a `Builder MyMsg` from your model
+                    |> Tron.init -- and immediately create the GUI
+        in
+            (
+                ( myModel
+                , gui -- store GUI in your model, as one would do with a component model
+                )
+            , guiEffect |> Cmd.map ToTron -- map the messages of GUI to itself
+            )
+
+Tron GUI needs some side-effect initialization, like do a keyboard focus or get the current window size, that's why it also produces `Cmd Tron.Msg`. Feel free to `Cmd.batch` it with your effects.
+-}
 init : Builder msg -> ( Gui msg, Cmd Msg )
 init root =
     ( initRaw root
@@ -90,6 +191,10 @@ initRaw : Builder msg -> Gui msg
 initRaw root = Gui TopToBottom ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init root Detach.never
 
 
+{-| Perform the effects needed for initialization. Call it if you don't use the visual part of Tron (i.e. for `dat.gui`) or when you re-create the GUI.
+
+Tron GUI needs some side-effect initialization, like do a keyboard focus or get the current window size, that's why it produces `Cmd Tron.Msg`.
+-}
 run : Cmd Msg
 run =
     Cmd.batch
@@ -117,6 +222,11 @@ over prop gui =
     }
 
 
+{-| Encode any Tron GUI structure into JSON.
+
+That allows you to re-create one from WebSockets or to build the same GUI
+in `dat.gui` and gives many other possibilities.
+-}
 encode : Gui msg -> E.Value
 encode = .tree >> Exp.encode
 
@@ -126,6 +236,8 @@ encode = .tree >> Exp.encode
 --     over <| Gui.Property.map f prop
 
 
+{-|
+-}
 update
     :  Msg
     -> Gui msg
@@ -502,8 +614,19 @@ layout gui =
             ( root, Layout.pack1 gui.size attachedPath root )
 
 
-subscribe : Gui msg -> Sub Msg
-subscribe gui =
+{-| Subscribe the updates of the GUI, so it would resize with the window,
+track mouse etc.
+
+`Sub.map` it to the message that will wrap `Tron.Msg` and send it to `update`:
+
+    subscriptions ( myModel, gui ) =
+        Sub.batch
+            [ ...
+            , Tron.subscribe gui |> Sub.map ToTron
+            ]
+-}
+subscriptions : Gui msg -> Sub Msg
+subscriptions gui =
     Sub.batch
         [ trackMouse
         , Detach.receive gui.detach
@@ -513,6 +636,21 @@ subscribe gui =
 
 -- port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
 
+{-| Build the corresponding structure for Tron GUI.
+
+Use it in your `view` function, just `Html.map` it to the message
+that will wrap `Tron.Msg` and send it to `update`:
+
+    view ( myModel, gui ) =
+        Html.div [ ]
+            [ gui
+                |> Tron.view Tron.Light
+                |> Html.map ToTron
+            , MyApp.view myModel
+            ]
+
+Use `Theme` from `Gui.Style` to set it to `Dark` or `Light` theme.
+-}
 view : Style.Theme -> Gui msg -> Html Msg
 view theme gui =
     let
