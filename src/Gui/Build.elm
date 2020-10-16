@@ -24,6 +24,9 @@ Every control may:
 # Groups
 @docs nest, nestIn, choice, choice1, choiceIn, strings
 
+# Icons
+@docs icon
+
 -}
 
 import Array
@@ -79,7 +82,7 @@ int { min, max, step } default toMsg =
         (round >> toMsg)
 
 
-{-| `xy` creates a control over a number value, with a minimum, maximum and a step.
+{-| `xy` creates a control over a pair of two number values or anything that can be translated to them.
 -}
 xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Builder msg
 xy axes default =
@@ -87,6 +90,8 @@ xy axes default =
         << Control axes default
 
 
+{-| `input` creates a control over a value which can be translated to `String` and parsed from `String`. It is just a helper over `text` control.
+-}
 input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Builder msg
 input toString fromString default toMsg =
     Text
@@ -96,6 +101,8 @@ input toString fromString default toMsg =
             (Tuple.second >> fromString >> Maybe.withDefault default >> toMsg)
 
 
+{-| `text` creates a control over a `String` value,
+-}
 text : String -> (String -> msg) -> Builder msg
 text default handler =
     Text
@@ -115,6 +122,8 @@ color default =
             default
 
 
+{-| `button` creates a control over a _unit_ `()` value. Type science aside, when you receive the unit value `()` in the handler, it just means that button was pushed.
+-}
 button : (() -> msg) -> Builder msg
 button =
     Action
@@ -123,10 +132,14 @@ button =
             ()
 
 
+{-| Create an `Icon` from its URL or filename.
+-}
 icon : String -> Icon
 icon = Icon
 
 
+{-| Same as `button`, but with icon instead of a boring square. See `icon` function as a helper to define icon using its URL. SVG files preferred, keep in mind that you'll need to host them somewhere nearby, for example using simple HTTP server.
+-}
 button1 : Icon -> (() -> msg) -> Builder msg
 button1 icon_ =
     Action
@@ -135,6 +148,8 @@ button1 icon_ =
             ()
 
 
+{-| `toggle` creates a control over a boolean value. But to make it friendlier, there's a `ToggleState` type to represent it.
+-}
 toggle : ToggleState -> (ToggleState -> msg) -> Builder msg
 toggle default =
     Toggle
@@ -144,12 +159,18 @@ toggle default =
 
 
 -- FIXME: get rid of the handler having almost no sense
+{-| `nest` lets you group other controls (including other `nest`ings) under a button which expands a group. Also, this group can be _detached_ if GUI is confugured so.
+
+Handler receives the state of the group, like if it is exapanded or collapsed or detached, but usually it's fine just to make it `always NoOp`.
+-}
 nest : List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
 nest items =
     nestIn (findShape items) items
 
 
 -- FIXME: get rid of the handler having almost no sense
+{-| `nestIn` is the same as `nets`, but lets you define the shape in which items will be grouped, instead of automatic calculations.
+-}
 nestIn : Shape -> List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
 nestIn shape items handler =
     Group
@@ -188,6 +209,8 @@ choice1 f items v =
     choiceIn (findShape items) f items v (==)
 
 
+{-| `choiceIn` is the same as `choice`, but lets you define the shape in which items will be grouped, instead of automatic calculations.
+-}
 choiceIn
      : Shape
     -> ( a -> Label )
@@ -240,6 +263,8 @@ choiceIn shape toLabel options current compare toMsg =
                 (Tuple.second >> Tuple.second >> callByIndex)
 
 
+{-| `strings` is a helper to create `choice` over string values.
+-}
 strings
      : List String
     -> String
