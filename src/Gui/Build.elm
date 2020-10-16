@@ -5,6 +5,25 @@ module Gui.Build exposing (..)
 
 This way works the optional connection with `dat.gui`: `dat.gui` operates over the similar set of types of values — we can replace them with our controls and vice versa, groups are interchanged with folders. Of course, this definition also can be translated to plain HTML forms, as the set of possible `<input>`’s is limited to the same set of types.
 
+Every control may:
+
+    * have a setup to define how it behaves, for example min/max values and step for knobs;
+    * have a default/current value, which is usually just taken from your model, from a correspodning field;
+    * have a handler, which receives the new value and produces your message with it;
+    * have a String label;
+    * have a shape, which could be different from 1x1 in the grid;
+    * be expandable to a group of any controls, contained in some shape;
+    * if it's a group or nesting or choice, it can be detached if GUI configured so;
+
+# Root
+@docs root
+
+# Items
+@docs none, int, float, xy, text, input, color, button, button1, toggle
+
+# Groups
+@docs nest, nestIn, choice, choice1, choiceIn, strings
+
 -}
 
 import Array
@@ -19,8 +38,27 @@ import Gui.Util exposing (findMap)
 type alias Builder msg = Property msg
 
 
+{-| Similar to `Cmd.none`, `Sub.none` etc., makes it easier to use expressions in the definition.
+
+For example:
+
+    if user |> User.is Root then
+        Gui.button RemoveAllFiles
+    else
+        Gui.none
+-}
 none : Builder msg
 none = Nil
+
+
+{-| Use the root only once, to mark the first visible row of your UI, and put anything else inside.
+
+Actually it is just an alias for the nested row of controls, always expanded.
+-}
+root : List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
+root props =
+    nestIn ( 1, List.length <| List.filter (Tuple.second >> isGhost >> not) props ) props
+        >> expand
 
 
 {-| `float` creates a control over a rational number value, with a minimum, maximum and a step.
@@ -111,12 +149,6 @@ nest items =
     nestIn (findShape items) items
 
 
-root : List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
-root props =
-    nestIn ( 1, List.length <| List.filter (Tuple.second >> isGhost >> not) props ) props
-        >> expand
-
-
 -- FIXME: get rid of the handler having almost no sense
 nestIn : Shape -> List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
 nestIn shape items handler =
@@ -131,7 +163,7 @@ nestIn shape items handler =
             (Tuple.first >> handler)
 
 
-{-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the numeric ID of this option and its value. Thanks to Elm rich type system, you are not limited to strings, the option can have any type. But since we also translate these values to HTML and JSON, you need to specify the converter to String and from it.
+{-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Thanks to Elm rich type system, you are not limited to strings, the option can have any type. But since we also translate these values to HTML and JSON, you need to specify the converter to `String` and from it. Also, since we don't ask for `comparable` type here, you are asked to provide comparison function.
 -}
 choice
      : ( a -> Label )
@@ -142,6 +174,18 @@ choice
     -> Builder msg
 choice f items =
     choiceIn (findShape items) f items
+
+
+{-| `choice1` is the same as `choice`, but works with `comparable` values.
+-}
+choice1
+     : ( comparable -> Label )
+    -> List comparable
+    -> comparable
+    -> ( comparable -> msg )
+    -> Builder msg
+choice1 f items v =
+    choiceIn (findShape items) f items v (==)
 
 
 choiceIn
