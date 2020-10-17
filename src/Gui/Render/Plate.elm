@@ -7,7 +7,7 @@ import Url exposing (Url)
 import Bounds exposing (Bounds)
 import Gui.Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
-import Gui.Detach exposing (Detach, getFragment, fragmentToString)
+import Gui.Detach exposing (ClientId, Detach, getFragment, fragmentToString)
 import Gui.Property exposing (Label)
 
 import Gui.Render.Style as Style
@@ -35,11 +35,18 @@ back theme bounds =
         []
 
 
-controls : Style.Theme -> Style.Tone -> Detach msg -> Bounds -> Label -> Path -> Svg Msg
-controls theme tone detachFn bounds label path =
+controls
+    :  Style.Theme
+    -> Style.Tone
+    -> ( ClientId, Detach msg )
+    -> Bounds
+    -> Label
+    -> Path
+    -> Svg Msg
+controls theme tone (clientId, detachFn )  bounds label path =
     Svg.g
         [ ]
-        [ case detachFn |> getFragment path of
+        [ case detachFn |> getFragment ( clientId, path ) of
             Just fragment ->
                 Svg.g
                     [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++

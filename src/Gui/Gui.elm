@@ -104,7 +104,7 @@ import Gui.Mouse as Mouse exposing (..)
 import Gui.Util exposing (..)
 -- import Gui.Alt as Alt exposing (Gui)
 import Gui.Focus as Focus exposing (..)
-import Gui.Detach as Detach exposing (make, Detach, map)
+import Gui.Detach as Detach exposing (make, ClientId, Detach, map)
 import Gui.Expose as Exp exposing (..)
 import Gui.Build exposing (..)
 
@@ -123,6 +123,7 @@ type alias Gui msg =
     , mouse : MouseState
     , tree : Builder msg
     , detach : Detach msg
+    , client : Maybe ClientId
     }
 
 
@@ -145,13 +146,14 @@ extractMouse = .mouse
 the conversion function.
 -}
 map : (msgA -> msgB) -> Gui msgA -> Gui msgB
-map f model =
-    { flow = model.flow
-    , viewport = model.viewport
-    , size = model.size
-    , mouse = model.mouse
-    , tree = model.tree |> Gui.Property.map f
-    , detach = model.detach |> Detach.map f
+map f gui =
+    { flow = gui.flow
+    , viewport = gui.viewport
+    , size = gui.size
+    , mouse = gui.mouse
+    , tree = gui.tree |> Gui.Property.map f
+    , detach = gui.detach |> Detach.map f
+    , client = gui.client
     }
 
 
@@ -191,7 +193,7 @@ init root =
 
 
 initRaw : Builder msg -> Gui msg
-initRaw root = Gui TopToBottom ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init root Detach.never
+initRaw root = Gui TopToBottom ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init root Detach.never Nothing
 
 
 {-| Perform the effects needed for initialization. Call it if you don't use the visual part of Tron (i.e. for `dat.gui`) or when you re-create the GUI.
@@ -203,9 +205,18 @@ run =
     Cmd.batch
         [ focus NoOp
         , fromWindow Reflow
+        , Detach.nextClientId
         ]
 
 
+{-| This is the only function you need to make your `GUI` _detachable*_. However, this function requires some ports to be present as an argument, so you'll need a pair of ports as well. And a WebSocket server. But that's it!
+
+_*_ — _detachable GUI_ in the context of Web Application means that you may move parts of your user interface to another browser window, tab, or even another device, such as a phone, a tablet, TV, VR glasses or whatever has a browser inside nowadays.
+
+For a detailed example, see `example/Detachable` in the sources.
+
+TODO: explain ports and `State` here.
+-}
 detachable
      : Detach.State
     -> (Exp.RawUpdate -> Cmd msg)
@@ -218,6 +229,8 @@ detachable state send receive gui =
     }
 
 
+{-| While keeping another options intact, replace the GUI structure completely.
+-}
 over : Builder msg -> Gui msg -> Gui msg
 over prop gui =
     { gui
