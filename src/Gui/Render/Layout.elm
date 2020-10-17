@@ -23,7 +23,7 @@ import Gui.Property as Property exposing (find)
 import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
 import Gui.Focus exposing (Focused(..), focused)
-import Gui.Detach exposing (Detach)
+import Gui.Detach exposing (ClientId, Detach)
 import Gui.Detach as Detach exposing (isAttached)
 
 import Gui.Render.Util exposing (..)
@@ -94,7 +94,7 @@ viewPlateBack theme pixelBounds =
                 Plate.back theme pixelBounds
 
 
-viewPlateControls : Theme -> Tone -> Detach msg -> Bounds -> Label -> Path -> Svg Msg
+viewPlateControls : Theme -> Tone -> ( ClientId, Detach msg ) -> Bounds -> Label -> Path -> Svg Msg
 viewPlateControls theme tone detach pixelBounds label path =
     positionAt_ pixelBounds <|
         case mode of
@@ -104,8 +104,8 @@ viewPlateControls theme tone detach pixelBounds label path =
                 Plate.controls theme tone detach pixelBounds label path
 
 
-view : Style.Theme -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
-view theme bounds detach root layout =
+view : Style.Theme -> Bounds -> ( ClientId, Detach msg ) -> Property msg -> Layout -> Html Msg
+view theme bounds ( clientId, detach ) root layout =
     let
 
         keyDownHandler_ =
@@ -113,7 +113,7 @@ view theme bounds detach root layout =
                 <| Json.map KeyDown HE.keyCode
 
         rootPath =
-            Detach.isAttached detach
+            Detach.isAttached ( clientId, detach )
                 |> Maybe.withDefault Path.start
         tones = Style.assignTones root
 
@@ -176,9 +176,17 @@ view theme bounds detach root layout =
                 (\(path, plateBounds) ->
                     case root |> Property.find1 (Path.sub rootPath path) of
                         Just ( label, _ ) ->
-                            viewPlateControls theme (toneOf path) detach plateBounds label path
+                            viewPlateControls
+                                theme (toneOf path)
+                                ( clientId, detach )
+                                plateBounds
+                                label path
                         Nothing ->
-                            viewPlateControls theme (toneOf path) detach plateBounds "" path
+                            viewPlateControls
+                                theme (toneOf path)
+                                ( clientId, detach )
+                                plateBounds
+                                "" path
                 )
             )
 
@@ -213,7 +221,7 @@ view theme bounds detach root layout =
                     , Svg.g [] cellsRendered
                     , Svg.g [] platesControlsRendered
 
-                    , case detach |> Detach.getFragment rootPath of
+                    , case detach |> Detach.getFragment ( clientId, rootPath ) of
                         Just fragment ->
 
                             Svg.g

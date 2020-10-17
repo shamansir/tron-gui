@@ -3,6 +3,9 @@ module Gui.Detach exposing (..)
 
 import Url exposing (Url)
 import Url.Builder as Url
+import Random
+import HashId exposing (HashId)
+
 import Gui.Path as Path exposing (Path, toList)
 import Gui.Expose as Exp
 import Gui.Property exposing (Property)
@@ -12,6 +15,9 @@ import Gui.Msg exposing (Msg(..))
 type Fragment = Fragment String
 
 
+type alias ClientId = HashId
+
+
 type State
     = Detached
     | AttachedAt Path
@@ -19,31 +25,43 @@ type State
 
 type Detach msg =
     Detach
-        { toFragment : Path -> Maybe Fragment
-        , send : Exp.RawUpdate -> Cmd msg
-        , receive : ((Exp.RawUpdate -> Msg) -> Sub Msg)
-        , attached : State
-        }
+        ( ClientId ->
+            { toFragment : Path -> Maybe Fragment
+            , send : Exp.RawUpdate -> Cmd msg
+            , receive : ((Exp.RawUpdate -> Msg) -> Sub Msg)
+            , attached : State
+            }
+        )
 
 
 map : (msgA -> msgB) -> Detach msgA -> Detach msgB
-map f (Detach d) =
+map f (Detach dfn) =
     Detach
-        { toFragment = d.toFragment
-        , send = d.send >> Cmd.map f
-        , receive = d.receive
-        , attached = d.attached
-        }
+        (\id ->
+            let d = dfn id
+            in
+                { toFragment = d.toFragment
+                , send = d.send >> Cmd.map f
+                , receive = d.receive
+                , attached = d.attached
+                }
+        )
 
 
 never : Detach msg
 never =
     Detach
-        { toFragment = always Nothing
-        , send = always Cmd.none
-        , receive = always Sub.none
-        , attached = attachedAtRoot
-        }
+        (\_ ->
+            { toFragment = always Nothing
+            , send = always Cmd.none
+            , receive = always Sub.none
+            , attached = attachedAtRoot
+            })
+
+
+nextClientId : Cmd Msg
+nextClientId =
+    Random.generate SetClientId HashId.generator
 
 
 detached : State
@@ -58,8 +76,8 @@ attachedAtRoot : State
 attachedAtRoot = AttachedAt Path.start
 
 
-getFragment : Path -> Detach msg -> Maybe Fragment
-getFragment path (Detach { toFragment }) = toFragment path
+getFragment : ( ClientId, Path ) -> Detach msg -> Maybe Fragment
+getFragment ( id, path ) (Detach f) = (f id |> .toFragment) path
 
 
 root : String
@@ -88,25 +106,26 @@ make
     -> Detach msg
 make state sendPort receivePort =
     Detach
-        { toFragment = formFragment
-        , send = sendPort
-        , receive = receivePort
-        , attached = state
-        }
+        (\clientId ->
+            { toFragment = formFragment
+            , send = sendPort
+            , receive = receivePort
+            , attached = state
+            })
 
 
 -- extract : Url -> List Path
 -- extract
 
 
-send : Detach msg -> Path -> Property msg -> Cmd msg
-send (Detach d) path =
-    d.send << Exp.encodeUpdate path
+send : ( ClientId, Detach msg ) -> Path -> Property msg -> Cmd msg
+send ( clientId, Detach f ) path =
+    (f clientId |> .send) << Exp.encodeUpdate path
 
 
-receive : Detach msg -> Sub Msg
-receive (Detach d) =
-    d.receive ReceiveRaw
+receive : ( ClientId, Detach msg ) -> Sub Msg
+receive ( clientId, Detach f ) =
+    (f clientId |> .receive) ReceiveRaw
 
 
 fromUrl : Url -> State
@@ -125,8 +144,9 @@ fromUrl { fragment } =
         Nothing -> Detached
 
 
-isAttached : Detach msg -> Maybe Path
-isAttached (Detach { attached }) = stateToMaybe attached
+isAttached : ( ClientId, Detach msg ) -> Maybe Path
+isAttached ( clientId, Detach f) =
+    f clientId |> .attached |> stateToMaybe
 
 
 stateToMaybe : State -> Maybe Path

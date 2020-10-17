@@ -1,5 +1,6 @@
 module Gui.Msg exposing (..)
 
+import HashId exposing (HashId)
 
 import Gui.Path exposing (Path)
 import Gui.Mouse exposing (MouseAction)
@@ -16,3 +17,4 @@ type Msg
     | TextInput Path String
     | Detach Path
     | ReceiveRaw Exp.RawUpdate
+    | SetClientId HashId
