@@ -57,9 +57,9 @@ property (DeepLevel deep) =
             )
 
 
-handler : Random.Generator ( a -> () )
+handler : Random.Generator (Maybe ( a -> () ))
 handler =
-    Random.constant <| always ()
+    Random.constant <| Just <| always ()
 
 
 roundBy : Int -> Float -> Float
@@ -116,14 +116,14 @@ coordinate =
 text : Random.Generator ( Control () ( TextState, String ) () )
 text =
     Random.constant
-        <| Control () ( Ready, "" ) <| always ()
+        <| Control () ( Ready, "" ) <| Just <| always ()
 
 
 button : Random.Generator ( Control ( Maybe Gui.Icon ) () () )
 button =
     Random.uniform Nothing [ Just Arrow, Just Export, Just Regenerate, Just Arm, Just Goose ]
         |> Random.map (Maybe.map (sourceOf >> Gui.Icon))
-        |> Random.map (\icon -> Control icon () <| always ())
+        |> Random.map (\icon -> Control icon () <| Just <| always ())
 
 
 controls : DeepLevel -> Random.Generator ( Array ( Label, Builder () ) )
@@ -226,6 +226,7 @@ toggle =
                 Control
                     ()
                     tState
+                    <| Just
                     <| always ()
             )
 
