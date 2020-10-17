@@ -1,6 +1,6 @@
 module Gui.Gui exposing
     ( Gui, Flow(..)
-    , view, update, init, subscriptions, run
+    , view, update, init, subscriptions, run, Message
     , map, over
     , detachable, encode, applyRaw, initRaw
     )
@@ -19,7 +19,7 @@ See `example/Basic` in the sources for a full example, here are the important ex
 
     import Gui.Gui as Tron
 
-    type Msg = MyMsgOne | MyMsgTwo | ... | ToTron Tron.Msg
+    type Msg = MyMsgOne | MyMsgTwo | ... | ToTron Tron.Message
 
     init _ =
         let
@@ -49,7 +49,7 @@ See `example/Basic` in the sources for a full example, here are the important ex
             MyMsgTwo -> ...
             ... -> ...
             ToTron guiMsg ->
-                case gui |> Tron.update guiMsg of
+                case gui |> Gui.update guiMsg of
                     ( nextGui, cmds ) ->
                         ( ( myModel, nextGui )
                         , cmds
@@ -66,7 +66,7 @@ If you need features that exceed Basic functionality like detachable parts or co
 @docs init, update, view, subscriptions, run
 
 # Styling
-@docs Flow
+@docs Flow, Theme
 
 # Common Helpers
 @docs map, over
@@ -126,6 +126,9 @@ type alias Gui msg =
     }
 
 
+type alias Message = Msg
+
+
 moves : Mouse.Position -> MouseAction
 moves = Gui.Mouse.Move
 ups : Mouse.Position -> MouseAction
@@ -155,7 +158,7 @@ map f model =
 {-| Initialize Tron from `Builder msg`. See `Gui.Build` module for documentation on how
 to build your GUI from the model, usually it is something like:
 
-    type Msg = MyMsgOne Int | MyMsgTwo Bool | ... | ToTron Tron.Msg
+    type Msg = MyMsgOne Int | MyMsgTwo Bool | ... | ToTron Gui.Message
 
     for : MyModel -> Builder MyMsg
     for myModel =
@@ -169,7 +172,7 @@ to build your GUI from the model, usually it is something like:
             myModel = MyModel.init -- init your model
             ( gui, guiEffect ) =
                 for myModel -- create a `Builder MyMsg` from your model
-                    |> Tron.init -- and immediately create the GUI
+                    |> Gui.init -- and immediately create the GUI
         in
             (
                 ( myModel
@@ -178,7 +181,7 @@ to build your GUI from the model, usually it is something like:
             , guiEffect |> Cmd.map ToTron -- map the messages of GUI to itself
             )
 
-Tron GUI needs some side-effect initialization, like do a keyboard focus or get the current window size, that's why it also produces `Cmd Tron.Msg`. Feel free to `Cmd.batch` it with your effects.
+Tron GUI needs some side-effect initialization, like do a keyboard focus or get the current window size, that's why it also produces `Cmd Gui.Message`. Feel free to `Cmd.batch` it with your effects.
 -}
 init : Builder msg -> ( Gui msg, Cmd Msg )
 init root =
@@ -193,7 +196,7 @@ initRaw root = Gui TopToBottom ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init root Detach.ne
 
 {-| Perform the effects needed for initialization. Call it if you don't use the visual part of Tron (i.e. for `dat.gui`) or when you re-create the GUI.
 
-Tron GUI needs some side-effect initialization, like do a keyboard focus or get the current window size, that's why it produces `Cmd Tron.Msg`.
+Tron GUI needs some side-effect initialization, like do a keyboard focus or get the current window size, that's why it produces `Cmd Gui.Message`.
 -}
 run : Cmd Msg
 run =
@@ -236,7 +239,23 @@ encode = .tree >> Exp.encode
 --     over <| Gui.Property.map f prop
 
 
-{-|
+{-| The usual `update` function, but for `Gui msg` (where `msg` is your message in your application), and it consumes `Gui.Message`.
+
+Install it into your `update` function similarly to:
+
+    type Msg = MyMsgOne | MyMsgTwo | ... | ToTron Gui.Message
+
+    update msg ( myModel, gui ) =
+        case msg of
+            MyMsgOne -> ...
+            MyMsgTwo -> ...
+            ... -> ...
+            ToTron guiMsg ->
+                case gui |> Gui.update guiMsg of
+                    ( nextGui, cmds ) ->
+                        ( ( myModel, nextGui )
+                        , cmds
+                        )
 -}
 update
     :  Msg
@@ -617,12 +636,12 @@ layout gui =
 {-| Subscribe the updates of the GUI, so it would resize with the window,
 track mouse etc.
 
-`Sub.map` it to the message that will wrap `Tron.Msg` and send it to `update`:
+`Sub.map` it to the message that will wrap `Gui.Message` and send it to `update`:
 
     subscriptions ( myModel, gui ) =
         Sub.batch
             [ ...
-            , Tron.subscribe gui |> Sub.map ToTron
+            , Gui.subscribe gui |> Sub.map ToTron
             ]
 -}
 subscriptions : Gui msg -> Sub Msg
@@ -634,17 +653,15 @@ subscriptions gui =
         ]
 
 
--- port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
-
 {-| Build the corresponding structure for Tron GUI.
 
 Use it in your `view` function, just `Html.map` it to the message
-that will wrap `Tron.Msg` and send it to `update`:
+that will wrap `Gui.Message` and send it to `update`:
 
     view ( myModel, gui ) =
         Html.div [ ]
             [ gui
-                |> Tron.view Tron.Light
+                |> Gui.view Tron.Light
                 |> Html.map ToTron
             , MyApp.view myModel
             ]
