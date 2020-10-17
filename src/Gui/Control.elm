@@ -7,12 +7,13 @@ import Task
 
 
 type Control setup value msg =
-    Control setup value (value -> msg)
+    Control setup value (Maybe (value -> msg))
 
 
 map : (msgA -> msgB) -> Control setup value msgA -> Control setup value msgB
 map f (Control setup val handler) =
-    Control setup val (f << handler)
+    Control setup val
+        (handler |> Maybe.map ((<<) f))
 
 
 update : (v -> v) -> Control s v msg -> Control s v msg
@@ -23,18 +24,22 @@ update f (Control state current handler) =
 -- call control handler with its current value
 call : Control s v msg -> Cmd msg
 call (Control _ current handler) =
-    callHandler handler current
+    handler
+        |> Maybe.map (callHandler current)
+        |> Maybe.withDefault Cmd.none
 
 
-callHandler : (value -> msg) -> value -> Cmd msg
-callHandler handler current =
-    Task.succeed current
+callHandler : value -> (value -> msg) -> Cmd msg
+callHandler value handler =
+    Task.succeed value
         |> Task.perform handler
 
 
 callWith : Control s v msg -> v -> Cmd msg
 callWith (Control _ _ handler) val =
-    callHandler handler val
+    handler
+        |> Maybe.map (callHandler val)
+        |> Maybe.withDefault Cmd.none
 
 
 getValue : Control s v msg -> v

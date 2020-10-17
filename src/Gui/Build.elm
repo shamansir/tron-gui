@@ -98,15 +98,11 @@ Actually it is just an alias for the nested row of controls, always expanded.
                 )
             ]
 
-            <| always NoOp
-
-Handler receives the state of the group, like if it is exapanded or collapsed or detached, but usually it's fine just to make it `always NoOp`.
-
 -}
-root : List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
+root : List (Label, Builder msg) -> Builder msg
 root props =
     nestIn ( 1, List.length <| List.filter (Tuple.second >> isGhost >> not) props ) props
-        >> expand
+        |> expand
 
 
 {-| `float` creates a control over a rational number value, with a minimum, maximum and a step.
@@ -118,6 +114,7 @@ float : Axis -> Float -> ( Float -> msg ) -> Builder msg
 float axis default =
     Number
         << Control axis default -- RoundBy 2
+        << Just
 
 
 {-| `int` creates a control over an integer number value, with a minimum, maximum and a step.
@@ -147,6 +144,7 @@ xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Builde
 xy axes default =
     Coordinate
         << Control axes default
+        << Just
 
 
 {-| `input` creates a control over a value which can be translated to `String` and parsed from `String`. It is just a helper over `text` control.
@@ -174,7 +172,7 @@ input toString fromString default toMsg =
         <| Control
             ()
             ( Ready, toString default)
-            (Tuple.second >> fromString >> Maybe.withDefault default >> toMsg)
+            (Just <| Tuple.second >> fromString >> Maybe.withDefault default >> toMsg)
 
 
 {-| `text` creates a control over a `String` value.
@@ -187,7 +185,7 @@ text default handler =
         <| Control
             ()
             (Ready, default)
-            (Tuple.second >> handler)
+            (Just <| Tuple.second >> handler)
 
 
 {-| `color` creates a control over a color, for the moment it is Hue/Saturation in 2D space, same as `xy`, but with different representation, but we may improve it later. Or you may change it to `choice` with your own palette.
@@ -202,6 +200,7 @@ color default =
         << Control
             ()
             default
+        << Just
 
 
 {-| `button` creates a control over a _unit_ `()` value. Type science aside, when you receive the unit value `()` in the handler, it just means that this button was pushed.
@@ -214,6 +213,7 @@ button =
         << Control
             Nothing
             ()
+        << Just
 
 
 {-| Create an `Icon` from its URL or filename.
@@ -234,6 +234,7 @@ button1 icon_ =
         << Control
             (Just icon_)
             ()
+        << Just
 
 
 {-| `toggle` creates a control over a boolean value.
@@ -246,7 +247,7 @@ toggle default toMsg =
         <| Control
             ()
             (boolToToggle default)
-            (toggleToBool >> toMsg)
+            (Just <| toggleToBool >> toMsg)
 
 
 {-| `toggle1` creates a control over a boolean value. But to make it friendlier, there's a `ToggleState` type to represent it.
@@ -268,6 +269,7 @@ toggle1 default =
         << Control
             ()
             default
+        << Just
 
 
 {-| `nest` lets you group other controls (including other `nest`ings) under a button which expands a group. Also, this group can be _detached_ if GUI is confugured so.
@@ -289,10 +291,8 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
             , Builder.float { min = 0, max = 255, step = 0.1 } model.blue <| AdjustColor Blue
             )
         ]
-
-        <| always NoOp
 -}
-nest : List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
+nest : List (Label, Builder msg) -> Builder msg
 nest items =
     nestIn (findShape items) items
 
@@ -304,8 +304,8 @@ nest items =
         [ ... ]
         <| always NoOp
 -}
-nestIn : Shape -> List (Label, Builder msg) -> (GroupState -> msg) -> Builder msg
-nestIn shape items handler =
+nestIn : Shape -> List (Label, Builder msg) -> Builder msg
+nestIn shape items =
     Group
         <| Control
             ( shape
@@ -314,7 +314,7 @@ nestIn shape items handler =
             ( Collapsed
             , Nothing
             )
-            (Tuple.first >> handler)
+            Nothing -- (Tuple.first >> handler)
 
 
 {-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Thanks to Elm rich type system, you are not limited to strings, the option can have any type. But since we also translate these values to HTML and JSON, you need to specify the converter to `String` and from it. Also, since we don't ask for `comparable` type here, you are asked to provide comparison function.
@@ -417,7 +417,7 @@ choiceIn shape toLabel options current compare toMsg =
                         |> Selected
                     )
                 )
-                (Tuple.second >> Tuple.second >> callByIndex)
+                (Just <| Tuple.second >> Tuple.second >> callByIndex)
 
 
 {-| `strings` is a helper to create `choice` over string values.

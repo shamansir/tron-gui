@@ -188,7 +188,7 @@ map f prop =
                             (Tuple.mapSecond <| map f)
                     )
                     state
-                    (f << handler)
+                    (handler |> Maybe.map ((<<) f))
         Group (Control ( shape, items ) state handler) ->
             Group <|
                 Control
@@ -198,7 +198,7 @@ map f prop =
                             (Tuple.mapSecond <| map f)
                     )
                     state
-                    (f << handler)
+                    (handler |> Maybe.map ((<<) f))
 
 
 fold : (Path -> Property msg -> a -> a) -> a -> Property msg -> a

@@ -61,7 +61,6 @@ for model =
                     Switch
           )
         ]
-        (always NoOp)
 
 
 nestedButtons : Choice -> Property Msg
@@ -74,7 +73,6 @@ nestedButtons curChoice =
         , ( "d", Gui.button <| always <| Pressed D )
         , ( "color", colorNest )
         ]
-        (always NoOp)
 
 
 colorNest : Property Msg
@@ -92,7 +90,6 @@ colorNest =
             , ( "green", colorCompKnob ChangeGreen )
             , ( "blue", colorCompKnob ChangeBlue )
             ]
-            (always NoOp)
 
 
 choiceToLabel : Choice -> Property.Label
