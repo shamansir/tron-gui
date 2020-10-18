@@ -205,7 +205,6 @@ run =
     Cmd.batch
         [ focus NoOp
         , fromWindow Reflow
-        , Detach.nextClientId
         ]
 
 
@@ -580,7 +579,9 @@ notifyUpdate : Detach msg -> ( Path, Property msg ) -> Cmd msg
 notifyUpdate detach ( path, prop ) =
     Cmd.batch
         [ Property.call prop
-        , Detach.send detach path prop
+        , case gui.client of
+            Just clientId -> Detach.send ( clientId, detach ) path prop
+            Nothing -> Cmd.none
         ]
 
 
@@ -626,14 +627,18 @@ boundsFromSize ( width, height ) ( gridWidthInCells, gridHeightInCells ) =
 
 getRootPath : Gui msg -> Path
 getRootPath gui =
-    gui.detach
-        |> Detach.isAttached
-        |> Maybe.withDefault Path.start
+    case gui.client of
+        Just clientId ->
+            Detach.isAttached ( clientId, gui.detach )
+                |> Maybe.withDefault Path.start
+        Nothing ->
+            Path.start
 
 
 layout : Gui msg -> ( Property msg, Layout )
 layout gui =
-    case Detach.isAttached gui.detach
+    case gui.client
+        |> Maybe.andThen (\clientId -> Detach.isAttached ( clientId, gui.detach ))
         |> Maybe.andThen
             (\path ->
                 gui.tree
@@ -661,7 +666,9 @@ subscriptions : Gui msg -> Sub Msg
 subscriptions gui =
     Sub.batch
         [ trackMouse
-        , Detach.receive gui.detach
+        , case gui.client of
+            Just clientId -> Detach.receive ( clientId, gui.detach )
+            Nothing -> Sub.none
         , Browser.onResize <| \w h -> Reflow ( w, h )
         ]
 
@@ -683,11 +690,14 @@ Use `Theme` from `Gui.Style` to set it to `Dark` or `Light` theme.
 -}
 view : Style.Theme -> Gui msg -> Html Msg
 view theme gui =
-    let
-        bounds =
-            boundsFromSize gui.viewport gui.size
-    in
-    case layout gui of
-        ( root, theLayout ) ->
-            theLayout
-                |> Layout.view theme bounds gui.detach root
+    case gui.client of
+        Just clientId ->
+            let
+                bounds =
+                    boundsFromSize gui.viewport gui.size
+            in
+            case layout gui of
+                ( root, theLayout ) ->
+                    theLayout
+                        |> Layout.view theme bounds ( clientId, gui.detach ) root
+        Nothing -> Html.div [] []
