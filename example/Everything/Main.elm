@@ -61,6 +61,7 @@ type alias Model =
     , theme : Style.Theme
     , gui : Tron.Gui Msg
     , example : Example
+    , url : Url
     }
 
 
@@ -70,13 +71,14 @@ init url _ =
         initialModel = Default.init
         ( gui, startGui ) =
             initialModel
-                |> defaultGui (Detach.fromUrl url)
+                |> defaultGui url
     in
         (
             { mode = TronGui
             , example = initialModel
             , theme = Style.Light
             , gui = gui
+            , url = url
             }
         , startGui
         )
@@ -130,7 +132,7 @@ update msg model =
         ( ChangeMode TronGui, _ ) ->
             let
                 ( gui, startGui ) =
-                    model.example |> defaultGui Detach.attachedAtRoot
+                    model.example |> defaultGui model.url
             in
                 (
                     { model
@@ -199,7 +201,7 @@ update msg model =
         ( TriggerDefault, _ ) ->
             let
                 ( gui, startGui ) =
-                    Default.init |> defaultGui Detach.attachedAtRoot
+                    Default.init |> defaultGui model.url
             in
                 (
                     { model
@@ -243,20 +245,26 @@ main =
         }
 
 
-defaultGui : Detach.State -> Default.Model -> ( Gui Msg, Cmd Msg )
-defaultGui detachState model =
+defaultGui : Url -> Default.Model -> ( Gui Msg, Cmd Msg )
+defaultGui url model =
     let
         ( gui, startGui ) =
             DefaultGui.for model
                 |> Gui.init
-    in
-        ( gui
-            |> Gui.detachable
-                    detachState
+        ( nextGui, launchDetachable )
+            = gui
+                |> Gui.detachable
+                    url
                     sendUpdateToWs
                     receieveUpdateFromWs
+    in
+        ( nextGui
             |> Gui.map ToDefault
-        , startGui |> Cmd.map ToTron
+        , Cmd.batch
+            [ startGui
+            , launchDetachable
+            ]
+            |> Cmd.map ToTron
         )
 
 

@@ -123,7 +123,6 @@ type alias Gui msg =
     , mouse : MouseState
     , tree : Builder msg
     , detach : Detach msg
-    , client : Maybe ClientId
     }
 
 
@@ -153,7 +152,6 @@ map f gui =
     , mouse = gui.mouse
     , tree = gui.tree |> Gui.Property.map f
     , detach = gui.detach |> Detach.map f
-    , client = gui.client
     }
 
 
@@ -193,7 +191,7 @@ init root =
 
 
 initRaw : Builder msg -> Gui msg
-initRaw root = Gui TopToBottom ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init root Detach.never Nothing
+initRaw root = Gui TopToBottom ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init root Detach.never
 
 
 {-| Perform the effects needed for initialization. Call it if you don't use the visual part of Tron (i.e. for `dat.gui`) or when you re-create the GUI.
@@ -213,19 +211,24 @@ run =
 _*_ — _detachable GUI_ in the context of Web Application means that you may move parts of your user interface to another browser window, tab, or even another device, such as a phone, a tablet, TV, VR glasses or whatever has a browser inside nowadays.
 
 For a detailed example, see `example/Detachable` in the sources.
-
-TODO: explain ports and `State` here.
 -}
 detachable
-     : Detach.State
+     : Url
     -> (Exp.RawUpdate -> Cmd msg)
     -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
     -> Gui msg
-    -> Gui msg
-detachable state send receive gui =
-    { gui
-    | detach = Detach.make state send receive
-    }
+    -> ( Gui msg, Cmd Msg )
+detachable url send receive gui =
+    let
+        ( detach, detachEffects )
+            = Detach.make url send receive
+    in
+        (
+            { gui
+            | detach = detach
+            }
+        , detachEffects
+        )
 
 
 {-| While keeping another options intact, replace the GUI structure completely.
@@ -354,6 +357,16 @@ update msg gui =
                 , nextRoot
                     |> Exp.update (Exp.fromPort rawUpdate)
                 )
+
+        SetClientId clientId ->
+            (
+                { gui
+                | detach =
+                    gui.detach
+                        |> Detach.setClientId clientId
+                }
+            , Cmd.none
+            )
 
 
 applyRaw
@@ -579,9 +592,7 @@ notifyUpdate : Detach msg -> ( Path, Property msg ) -> Cmd msg
 notifyUpdate detach ( path, prop ) =
     Cmd.batch
         [ Property.call prop
-        , case gui.client of
-            Just clientId -> Detach.send ( clientId, detach ) path prop
-            Nothing -> Cmd.none
+        , Detach.send detach path prop
         ]
 
 
@@ -627,18 +638,13 @@ boundsFromSize ( width, height ) ( gridWidthInCells, gridHeightInCells ) =
 
 getRootPath : Gui msg -> Path
 getRootPath gui =
-    case gui.client of
-        Just clientId ->
-            Detach.isAttached ( clientId, gui.detach )
-                |> Maybe.withDefault Path.start
-        Nothing ->
-            Path.start
+    Detach.isAttached gui.detach
+        |> Maybe.withDefault Path.start
 
 
 layout : Gui msg -> ( Property msg, Layout )
 layout gui =
-    case gui.client
-        |> Maybe.andThen (\clientId -> Detach.isAttached ( clientId, gui.detach ))
+    case Detach.isAttached gui.detach
         |> Maybe.andThen
             (\path ->
                 gui.tree
@@ -666,9 +672,7 @@ subscriptions : Gui msg -> Sub Msg
 subscriptions gui =
     Sub.batch
         [ trackMouse
-        , case gui.client of
-            Just clientId -> Detach.receive ( clientId, gui.detach )
-            Nothing -> Sub.none
+        , Detach.receive gui.detach
         , Browser.onResize <| \w h -> Reflow ( w, h )
         ]
 
@@ -690,14 +694,11 @@ Use `Theme` from `Gui.Style` to set it to `Dark` or `Light` theme.
 -}
 view : Style.Theme -> Gui msg -> Html Msg
 view theme gui =
-    case gui.client of
-        Just clientId ->
-            let
-                bounds =
-                    boundsFromSize gui.viewport gui.size
-            in
-            case layout gui of
-                ( root, theLayout ) ->
-                    theLayout
-                        |> Layout.view theme bounds ( clientId, gui.detach ) root
-        Nothing -> Html.div [] []
+    let
+        bounds =
+            boundsFromSize gui.viewport gui.size
+    in
+    case layout gui of
+        ( root, theLayout ) ->
+            theLayout
+                |> Layout.view theme bounds gui.detach root
