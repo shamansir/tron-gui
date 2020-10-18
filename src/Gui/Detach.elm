@@ -25,43 +25,47 @@ type State
 
 type Detach msg =
     Detach
-        ( ClientId ->
-            { toFragment : Path -> Maybe Fragment
-            , send : Exp.RawUpdate -> Cmd msg
-            , receive : ((Exp.RawUpdate -> Msg) -> Sub Msg)
-            , attached : State
-            }
-        )
+        { toFragment : Path -> Maybe Fragment
+        , send : Exp.RawUpdate -> Cmd msg
+        , receive : ((Exp.RawUpdate -> Msg) -> Sub Msg)
+        , attached : State
+        , client : Maybe ClientId
+        }
 
 
 map : (msgA -> msgB) -> Detach msgA -> Detach msgB
-map f (Detach dfn) =
+map f (Detach d) =
     Detach
-        (\id ->
-            let d = dfn id
-            in
-                { toFragment = d.toFragment
-                , send = d.send >> Cmd.map f
-                , receive = d.receive
-                , attached = d.attached
-                }
-        )
+        { toFragment = d.toFragment
+        , send = d.send >> Cmd.map f
+        , receive = d.receive
+        , attached = d.attached
+        , client = d.client
+        }
 
 
 never : Detach msg
 never =
     Detach
-        (\_ ->
-            { toFragment = always Nothing
-            , send = always Cmd.none
-            , receive = always Sub.none
-            , attached = attachedAtRoot
-            })
+        { toFragment = always Nothing
+        , send = always Cmd.none
+        , receive = always Sub.none
+        , attached = attachedAtRoot
+        , client = Nothing
+        }
 
 
 nextClientId : Cmd Msg
 nextClientId =
     Random.generate SetClientId HashId.generator
+
+
+setClientId : ClientId -> Detach msg -> Detach msg
+setClientId clientId (Detach d) =
+    Detach
+        { d
+        | client = Just clientId
+        }
 
 
 detached : State
@@ -76,8 +80,8 @@ attachedAtRoot : State
 attachedAtRoot = AttachedAt Path.start
 
 
-getFragment : ( ClientId, Path ) -> Detach msg -> Maybe Fragment
-getFragment ( id, path ) (Detach f) = (f id |> .toFragment) path
+getFragment : Path -> Detach msg -> Maybe Fragment
+getFragment path (Detach d) = d.toFragment path
 
 
 root : String
@@ -100,32 +104,34 @@ fragmentToString (Fragment str) = "#" ++ str
 
 
 make
-     : State
+     : Url
     -> (Exp.RawUpdate -> Cmd msg)
     -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
-    -> Detach msg
-make state sendPort receivePort =
-    Detach
-        (\clientId ->
-            { toFragment = formFragment
-            , send = sendPort
-            , receive = receivePort
-            , attached = state
-            })
+    -> ( Detach msg, Cmd Msg )
+make url sendPort receivePort =
+    ( Detach
+        { toFragment = formFragment
+        , send = sendPort
+        , receive = receivePort
+        , attached = Detached
+        , client = Nothing
+        }
+    , Cmd.none
+    )
 
 
 -- extract : Url -> List Path
 -- extract
 
 
-send : ( ClientId, Detach msg ) -> Path -> Property msg -> Cmd msg
-send ( clientId, Detach f ) path =
-    (f clientId |> .send) << Exp.encodeUpdate path
+send : Detach msg -> Path -> Property msg -> Cmd msg
+send (Detach d) path =
+    d.send << Exp.encodeUpdate path
 
 
-receive : ( ClientId, Detach msg ) -> Sub Msg
-receive ( clientId, Detach f ) =
-    (f clientId |> .receive) ReceiveRaw
+receive : Detach msg -> Sub Msg
+receive (Detach d) =
+    d.receive ReceiveRaw
 
 
 fromUrl : Url -> State
@@ -144,9 +150,9 @@ fromUrl { fragment } =
         Nothing -> Detached
 
 
-isAttached : ( ClientId, Detach msg ) -> Maybe Path
-isAttached ( clientId, Detach f) =
-    f clientId |> .attached |> stateToMaybe
+isAttached : Detach msg -> Maybe Path
+isAttached (Detach d) =
+    d.attached |> stateToMaybe
 
 
 stateToMaybe : State -> Maybe Path

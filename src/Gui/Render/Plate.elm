@@ -38,15 +38,15 @@ back theme bounds =
 controls
     :  Style.Theme
     -> Style.Tone
-    -> ( ClientId, Detach msg )
+    -> Detach msg
     -> Bounds
     -> Label
     -> Path
     -> Svg Msg
-controls theme tone (clientId, detachFn )  bounds label path =
+controls theme tone detachFn bounds label path =
     Svg.g
         [ ]
-        [ case detachFn |> getFragment ( clientId, path ) of
+        [ case detachFn |> getFragment path of
             Just fragment ->
                 Svg.g
                     [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++

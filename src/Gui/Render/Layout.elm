@@ -94,7 +94,7 @@ viewPlateBack theme pixelBounds =
                 Plate.back theme pixelBounds
 
 
-viewPlateControls : Theme -> Tone -> ( ClientId, Detach msg ) -> Bounds -> Label -> Path -> Svg Msg
+viewPlateControls : Theme -> Tone -> Detach msg -> Bounds -> Label -> Path -> Svg Msg
 viewPlateControls theme tone detach pixelBounds label path =
     positionAt_ pixelBounds <|
         case mode of
@@ -104,8 +104,8 @@ viewPlateControls theme tone detach pixelBounds label path =
                 Plate.controls theme tone detach pixelBounds label path
 
 
-view : Style.Theme -> Bounds -> ( ClientId, Detach msg ) -> Property msg -> Layout -> Html Msg
-view theme bounds ( clientId, detach ) root layout =
+view : Style.Theme -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
+view theme bounds detach root layout =
     let
 
         keyDownHandler_ =
@@ -113,7 +113,7 @@ view theme bounds ( clientId, detach ) root layout =
                 <| Json.map KeyDown HE.keyCode
 
         rootPath =
-            Detach.isAttached ( clientId, detach )
+            Detach.isAttached detach
                 |> Maybe.withDefault Path.start
         tones = Style.assignTones root
 
@@ -178,13 +178,13 @@ view theme bounds ( clientId, detach ) root layout =
                         Just ( label, _ ) ->
                             viewPlateControls
                                 theme (toneOf path)
-                                ( clientId, detach )
+                                detach
                                 plateBounds
                                 label path
                         Nothing ->
                             viewPlateControls
                                 theme (toneOf path)
-                                ( clientId, detach )
+                                detach
                                 plateBounds
                                 "" path
                 )
@@ -221,7 +221,7 @@ view theme bounds ( clientId, detach ) root layout =
                     , Svg.g [] cellsRendered
                     , Svg.g [] platesControlsRendered
 
-                    , case detach |> Detach.getFragment ( clientId, rootPath ) of
+                    , case detach |> Detach.getFragment rootPath of
                         Just fragment ->
 
                             Svg.g
