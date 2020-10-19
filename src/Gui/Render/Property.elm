@@ -23,7 +23,7 @@ import Gui.Render.Style exposing (..)
 import Gui.Render.Style as Style exposing (text)
 
 
-gap = 6
+gap = 10
 
 
 borderRadius = 10
@@ -118,7 +118,7 @@ knob theme tone center value =
                 [ SA.d d
                 , SA.fill "none"
                 , SA.stroke stroke
-                , SA.strokeWidth "2.5"
+                , SA.strokeWidth "2"
                 , SA.strokeLinecap "round"
                 ]
                 []
@@ -174,21 +174,21 @@ button theme tone maybeIcon center =
                 Svg.image
                     [ SA.xlinkHref <| iconUrl
                     , SA.class "button--icon"
-                    , SA.width "35px"
-                    , SA.height "35px"
-                    , SA.x "18"
-                    , SA.y "15"
+                    , SA.width "40px"
+                    , SA.height "40px"
+                    , SA.x <| String.fromFloat (center.x - 20)
+                    , SA.y <| String.fromFloat (center.y - 20)
                     ]
                     []
         Nothing ->
             Svg.rect
                 [ SA.x <| String.fromFloat (center.x - 10)
-                , SA.y <| String.fromFloat (center.y - 12)
+                , SA.y <| String.fromFloat (center.y - 10)
                 , SA.width "20"
                 , SA.height "20"
                 , SA.fill "none"
                 , SA.stroke <| Color.toCssString <| colorFor theme tone
-                , SA.strokeWidth "2.5"
+                , SA.strokeWidth "2"
                 , SA.strokeLinecap "round"
                 , SA.rx "3"
                 , SA.ry "3"
@@ -199,17 +199,11 @@ button theme tone maybeIcon center =
 
 color : Theme -> Tone -> Color -> { x : Float, y : Float } -> Svg msg
 color theme tone value center =
-    Svg.rect
-        [ SA.x <| String.fromFloat (center.x - 10)
-        , SA.y <| String.fromFloat (center.y - 12)
-        , SA.width "20"
-        , SA.height "20"
+    Svg.circle
+        [ SA.cx <| String.fromFloat center.x
+        , SA.cy <| String.fromFloat center.y
+        , SA.r "15"
         , SA.fill <| Color.toCssString value
-        , SA.stroke <| Color.toCssString <| colorFor theme tone
-        , SA.strokeWidth "2.5"
-        , SA.strokeLinecap "round"
-        , SA.rx "3"
-        , SA.ry "3"
         ]
         [
         ]
@@ -221,12 +215,12 @@ toggle theme tone state center =
     Svg.circle
         [ SA.cx <| String.fromFloat center.x
         , SA.cy <| String.fromFloat center.y
-        , SA.r "10"
+        , SA.r "13"
         , SA.fill <| case state of
             TurnedOn -> Color.toCssString <| colorFor theme tone
             TurnedOff -> "none"
         , SA.stroke <| Color.toCssString <| colorFor theme tone
-        , SA.strokeWidth "2.5"
+        , SA.strokeWidth "2"
         ]
         [
         ]
@@ -236,27 +230,36 @@ coord : Theme -> Tone -> { x : Float, y : Float } -> ( Float, Float ) -> Svg msg
 coord theme tone center ( valueX, valueY ) =
     Svg.g
         []
-        [ Svg.rect
-            [ SA.x <| String.fromFloat (center.x - 10)
-            , SA.y <| String.fromFloat (center.y - 12)
-            , SA.width "20"
-            , SA.height "20"
+        [ Svg.line
+            [ SA.x1 "5"
+            , SA.y1 <| String.fromFloat center.y
+            , SA.x2 "85"
+            , SA.y2 <| String.fromFloat center.y
+            , SA.stroke <| Color.toCssString <| colorFor theme tone
+            , SA.opacity "0.2"
+            , SA.strokeWidth "1"
+            , SA.strokeLinecap "round"
+            ]
+            []
+        , Svg.line
+            [ SA.x1 <| String.fromFloat center.x
+            , SA.y1 "5"
+            , SA.x2 <| String.fromFloat center.x
+            , SA.y2 "85"
+            , SA.stroke <| Color.toCssString <| colorFor theme tone
+            , SA.opacity "0.2"
+            , SA.strokeWidth "1"
+            , SA.strokeLinecap "round"
+            ]
+            []
+        , Svg.circle
+            [ SA.cx <| String.fromFloat <| center.x + ((valueX - 0.5) * 60)
+            , SA.cy <| String.fromFloat <| center.y + ((valueY - 0.5) * 60)
+            , SA.fill <| Color.toCssString <| colorFor theme tone
             , SA.fill "none"
             , SA.stroke <| Color.toCssString <| colorFor theme tone
-            , SA.strokeWidth "2.5"
-            , SA.strokeLinecap "round"
-            , SA.strokeDasharray "2.5 15 5 15 5 15 5 15 2.5"
-            -- , SA.rx "3"
-            -- , SA.ry "3"
-            ]
-            [
-            ]
-        , Svg.circle
-            [ SA.cx <| String.fromFloat <| center.x + ((valueX - 0.5) * 20)
-            , SA.cy <| String.fromFloat <| center.y - 2 + ((valueY - 0.5) * 20)
-            , SA.fill <| Color.toCssString <| colorFor theme tone
-            , SA.stroke "none"
-            , SA.r "3"
+            , SA.strokeWidth "2"
+            , SA.r "5"
             ]
             []
         ]
@@ -276,7 +279,7 @@ text theme tone ( editing, value ) onInput center =
             Svg.text_
                 [ SA.dominantBaseline "middle"
                 , SA.textAnchor "middle"
-                , SA.fontSize "13px"
+                , SA.fontSize "16px"
                 , SA.fontFamily fontFamily
                 , SA.x <| String.fromFloat center.x
                 , SA.y <| String.fromFloat <| center.y + 1
@@ -292,13 +295,18 @@ text theme tone ( editing, value ) onInput center =
                 ]
                 [ Html.input
                     [ HA.style "max-width" <| String.fromFloat (cellWidth - gap * 2) ++ "px"
-                    , HA.style "height" "21px"
+                    , HA.style "height" "25px"
                     , HA.style "position" "relative"
                     , HA.style "left" <| String.fromFloat gap ++ "px"
                     , HA.style "top" <| String.fromFloat (center.y - 12) ++ "px"
                     , HA.style "outline" "none"
-                    , HA.style "border" "1px solid lightblue"
+                    , HA.style "border" "none"
+                    , HA.style "background-color" "transparent"
+                    , HA.style "font-family" "IBM Plex Sans"
+                    , HA.style "font-size" "16px"
+                    , HA.style "text-align" "center"
                     , HA.type_ "text"
+                    , HA.placeholder "input"
                     , HE.onInput onInput
                     , HA.value value
                     ]
