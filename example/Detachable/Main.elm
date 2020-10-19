@@ -42,18 +42,23 @@ init url _ =
         ( gui, guiEffect ) =
             DefaultGui.for example
                 |> Tron.init
-
+        ( nextGui, detachableEffect ) =
+            gui
+                |> Tron.detachable
+                    url
+                    sendUpdateToWs
+                    receieveUpdateFromWs
     in
         (
             ( example
-            , gui
-                |> Tron.detachable
-                    (Detach.fromUrl url)
-                    sendUpdateToWs
-                    receieveUpdateFromWs
+            , nextGui
                 |> Tron.map ToDefault
             )
-        , guiEffect |> Cmd.map ToTron
+        , Cmd.batch
+            [ guiEffect
+            , detachableEffect
+            ]
+            |> Cmd.map ToTron
         )
 
 
