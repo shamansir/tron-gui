@@ -42,7 +42,7 @@ black = Color.rgb255 58 62 65 -- "#3a3e41"
 white = Color.white
 
 
-gray = Color.rgb255 238 238 238 -- "#eeeeee"
+gray = Color.rgb255 220 220 220 -- "#eeeeee"
 
 
 gray2 = Color.rgba 1.0 1.0 1.0 0.15

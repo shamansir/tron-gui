@@ -79,9 +79,9 @@ type Property msg
 
 
 cellWidth : Float
-cellWidth = 73
+cellWidth = 90
 cellHeight : Float
-cellHeight = 73
+cellHeight = 90
 
 
 cellMargin : Float
