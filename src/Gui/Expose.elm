@@ -1,6 +1,7 @@
 module Gui.Expose exposing (..)
 
 import Color exposing (Color)
+import HashId exposing (HashId)
 
 import Json.Decode as D
 import Json.Encode as E
@@ -46,6 +47,7 @@ type alias RawUpdate =
     { path : RawPath
     , value : E.Value
     , type_ : String
+    , client : E.Value
     }
 
 
@@ -261,57 +263,53 @@ encode : Property msg -> RawProperty
 encode = encodePropertyAt []
 
 
-encodeUpdate : Path -> Property msg -> RawUpdate
-encodeUpdate path prop =
-    case prop of
-        Nil ->
-            { path = Path.toList path
-            , value = E.null
-            , type_ = "ghost"
-            }
-        Number ( Control { min, max, step } val _ ) ->
-            { path = Path.toList path
-            , value = E.float val
-            , type_ = "slider"
-            }
-        Coordinate ( Control ( xSpec, ySpec ) ( x, y ) _ ) ->
-            { path = Path.toList path
-            , value = E.string <| String.fromFloat x ++ "|" ++ String.fromFloat y
-            , type_ = "coord"
-            }
-        Text ( Control _ ( _, val ) _ ) ->
-            { path = Path.toList path
-            , value = E.string val
-            , type_ = "text"
-            }
-        Color ( Control _ val _ ) ->
-            { path = Path.toList path
-            , value = encodeColor val
-            , type_ = "color"
-            }
-        Toggle ( Control _ val _ ) ->
-            { path = Path.toList path
-            , value = E.string
+encodeClientId : Maybe HashId -> E.Value
+encodeClientId maybeClient =
+    maybeClient |> Maybe.map (HashId.toString >> E.string) |> Maybe.withDefault E.null
+
+
+encodeUpdate : Maybe HashId -> Path -> Property msg -> RawUpdate
+encodeUpdate maybeClient path prop =
+    let
+        ( type_, value ) =
+            case prop of
+                Nil ->
+                    ( "ghost", E.null )
+                Number ( Control { min, max, step } val _ ) ->
+                    ( "slider", E.float val )
+                Coordinate ( Control ( xSpec, ySpec ) ( x, y ) _ ) ->
+                    ( "coord"
+                    , E.string <| String.fromFloat x ++ "|" ++ String.fromFloat y
+                    )
+                Text ( Control _ ( _, val ) _ ) ->
+                    ( "text", E.string val )
+                Color ( Control _ val _ ) ->
+                    ( "color", encodeColor val )
+                Toggle ( Control _ val _ ) ->
+                    ( "toggle"
+                    , E.string
                         <| case val of
                             TurnedOn -> "on"
                             TurnedOff -> "off"
-            , type_ = "toggle"
-            }
-        Action _ ->
-            { path = Path.toList path
-            , value = E.null
-            , type_ = "button"
-            }
-        Choice ( Control ( _, items ) ( state, ( _, Selected current ) ) _) ->
-            { path = Path.toList path
-            , value = E.int current
-            , type_ = "choice"
-            }
-        Group _ ->
-            { path = Path.toList path
-            , value = E.null
-            , type_ = "nest"
-            }
+                    )
+                Action _ ->
+                    ( "button"
+                    , E.null
+                    )
+                Choice ( Control ( _, items ) ( state, ( _, Selected current ) ) _) ->
+                    ( "choice"
+                    , E.int current
+                    )
+                Group _ ->
+                    ( "nest"
+                    , E.null
+                    )
+    in
+        { path = Path.toList path
+        , value = value
+        , type_ = type_
+        , client = encodeClientId maybeClient
+        }
 
 
 -- select : Path -> Gui msg -> Gui msg
