@@ -12,6 +12,14 @@ seed : String
 seed = "Tron UI v2.0"
 
 
+fromString : String -> HashId
+fromString = HashId
+
+
+toString : HashId -> String
+toString (HashId s) = s
+
+
 context : Hashids.Context
 context = Hashids.hashidsMinimum seed 8
 

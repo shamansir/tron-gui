@@ -15,6 +15,12 @@ import Gui.Msg exposing (Msg(..))
 type Fragment = Fragment String
 
 
+type Query = Query String
+
+
+type alias LocalUrl = ( Query, Fragment )
+
+
 type alias ClientId = HashId
 
 
@@ -25,7 +31,7 @@ type State
 
 type Detach msg =
     Detach
-        { toFragment : Path -> Maybe Fragment
+        { toUrl : ClientId -> Path -> Maybe LocalUrl
         , send : Exp.RawUpdate -> Cmd msg
         , receive : ((Exp.RawUpdate -> Msg) -> Sub Msg)
         , attached : State
@@ -36,7 +42,7 @@ type Detach msg =
 map : (msgA -> msgB) -> Detach msgA -> Detach msgB
 map f (Detach d) =
     Detach
-        { toFragment = d.toFragment
+        { toUrl = d.toUrl
         , send = d.send >> Cmd.map f
         , receive = d.receive
         , attached = d.attached
@@ -47,7 +53,7 @@ map f (Detach d) =
 never : Detach msg
 never =
     Detach
-        { toFragment = always Nothing
+        { toUrl = always <| always Nothing
         , send = always Cmd.none
         , receive = always Sub.none
         , attached = attachedAtRoot
@@ -80,27 +86,31 @@ attachedAtRoot : State
 attachedAtRoot = AttachedAt Path.start
 
 
-getFragment : Path -> Detach msg -> Maybe Fragment
-getFragment path (Detach d) = d.toFragment path
+getLocalUrl : Path -> Detach msg -> Maybe LocalUrl
+getLocalUrl path (Detach d) =
+    case d.client of
+        Just clientId -> d.toUrl clientId path
+        Nothing -> Nothing
 
 
 root : String
 root = "root"
 
 
-formFragment : Path -> Maybe Fragment
-formFragment path =
-    if Path.howDeep path == 0 then Just <| Fragment root
-    else path
-        |> Path.toList
-        |> List.map String.fromInt
-        |> String.join "|"
-        |> Fragment
-        |> Just
-
-
-fragmentToString : Fragment -> String
-fragmentToString (Fragment str) = "#" ++ str
+formLocalUrl : ClientId -> Path -> Maybe LocalUrl
+formLocalUrl client path =
+    Just
+        ( Query <| HashId.toString client
+        ,
+            if Path.howDeep path == 0 then
+                Fragment root
+            else
+                path
+                |> Path.toList
+                |> List.map String.fromInt
+                |> String.join "|"
+                |> Fragment
+        )
 
 
 make
@@ -109,15 +119,20 @@ make
     -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
     -> ( Detach msg, Cmd Msg )
 make url sendPort receivePort =
-    ( Detach
-        { toFragment = formFragment
-        , send = sendPort
-        , receive = receivePort
-        , attached = Detached
-        , client = Nothing
-        }
-    , Cmd.none
-    )
+    let
+        maybeClient = clientFromUrl url
+    in
+        ( Detach
+            { toUrl = formLocalUrl
+            , send = sendPort
+            , receive = receivePort
+            , attached = fromUrl url
+            , client = maybeClient
+            }
+        , case maybeClient of
+            Nothing -> nextClientId
+            _ -> Cmd.none
+        )
 
 
 -- extract : Url -> List Path
@@ -148,6 +163,12 @@ fromUrl { fragment } =
                     |> Path.fromList
                     |> AttachedAt
         Nothing -> Detached
+
+
+clientFromUrl : Url -> Maybe ClientId
+clientFromUrl { query } =
+    query
+        |> Maybe.map HashId.fromString
 
 
 isAttached : Detach msg -> Maybe Path
