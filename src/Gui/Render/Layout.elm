@@ -221,8 +221,8 @@ view theme bounds detach root layout =
                     , Svg.g [] cellsRendered
                     , Svg.g [] platesControlsRendered
 
-                    , case detach |> Detach.getFragment rootPath of
-                        Just fragment ->
+                    , case detach |> Detach.getLocalUrl rootPath of
+                        Just localUrl ->
 
                             Svg.g
                                 [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
@@ -230,7 +230,7 @@ view theme bounds detach root layout =
                                 , HE.onClick <| Detach rootPath
                                 ]
                                 [ Svg.a
-                                    [ SA.xlinkHref <| Detach.fragmentToString fragment
+                                    [ SA.xlinkHref <| Detach.localUrlToString localUrl
                                     , SA.target "_blank"
                                     ]
                                     [ Svg.rect

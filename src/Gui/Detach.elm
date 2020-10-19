@@ -113,6 +113,11 @@ formLocalUrl client path =
         )
 
 
+localUrlToString : LocalUrl -> String
+localUrlToString ( Query query, Fragment fragment ) =
+    "?" ++ query ++ "#" ++ fragment -- TODO: use `elm/url`
+
+
 make
      : Url
     -> (Exp.RawUpdate -> Cmd msg)
@@ -141,7 +146,7 @@ make url sendPort receivePort =
 
 send : Detach msg -> Path -> Property msg -> Cmd msg
 send (Detach d) path =
-    d.send << Exp.encodeUpdate path
+    d.send << Exp.encodeUpdate d.client path
 
 
 receive : Detach msg -> Sub Msg
