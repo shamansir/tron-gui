@@ -4,6 +4,7 @@ module Gui.Detach exposing (..)
 import Url exposing (Url)
 import Url.Builder as Url
 import Random
+import Dict
 import HashId exposing (HashId)
 
 import Gui.Path as Path exposing (Path, toList)
@@ -12,13 +13,10 @@ import Gui.Property exposing (Property)
 import Gui.Msg exposing (Msg(..))
 
 
-type Fragment = Fragment String
+type alias Fragment = ( String, String )
 
 
-type Query = Query String
-
-
-type alias LocalUrl = ( Query, Fragment )
+type alias LocalUrl = List Fragment
 
 
 type alias ClientId = HashId
@@ -100,22 +98,27 @@ root = "root"
 formLocalUrl : ClientId -> Path -> Maybe LocalUrl
 formLocalUrl client path =
     Just
-        ( Query <| HashId.toString client
-        ,
-            if Path.howDeep path == 0 then
-                Fragment root
+        [ ( "client", HashId.toString client )
+        , ( "path"
+          , if Path.howDeep path == 0 then
+                root
             else
                 path
                 |> Path.toList
                 |> List.map String.fromInt
-                |> String.join "|"
-                |> Fragment
-        )
+                |> String.join "-"
+            )
+        ]
 
 
 localUrlToString : LocalUrl -> String
-localUrlToString ( Query query, Fragment fragment ) =
-    "?" ++ query ++ "#" ++ fragment -- TODO: use `elm/url`
+localUrlToString fragments =
+    let
+        encodeFragment ( k, v ) =
+            k ++ "=" ++ v
+    in
+
+    "#" ++ (String.join "&" <| List.map encodeFragment <| fragments)
 
 
 make
@@ -125,13 +128,13 @@ make
     -> ( Detach msg, Cmd Msg )
 make url sendPort receivePort =
     let
-        maybeClient = clientFromUrl url
+        ( maybeClient, state ) = fromUrl url
     in
         ( Detach
             { toUrl = formLocalUrl
             , send = sendPort
             , receive = receivePort
-            , attached = fromUrl url
+            , attached = state
             , client = maybeClient
             }
         , case maybeClient of
@@ -154,26 +157,39 @@ receive (Detach d) =
     d.receive ReceiveRaw
 
 
-fromUrl : Url -> State
+fromUrl : Url -> ( Maybe ClientId, State )
 fromUrl { fragment } =
-    case fragment of
+    let
+        extractFragment str =
+            case str |> String.split "=" of
+                k::v::_ -> Just ( k, v )
+                _ -> Nothing
+    in case fragment of
         Just str ->
-            if str == root
-            then AttachedAt Path.start
-            else
-                str
-                    |> String.split "|"
-                    |> List.map String.toInt
-                    |> List.filterMap identity
-                    |> Path.fromList
-                    |> AttachedAt
-        Nothing -> Detached
-
-
-clientFromUrl : Url -> Maybe ClientId
-clientFromUrl { query } =
-    query
-        |> Maybe.map HashId.fromString
+            let
+                fragments =
+                    str
+                        |> String.split "&"
+                        |> List.filterMap extractFragment
+                        |> Dict.fromList
+            in
+                ( fragments
+                    |> Dict.get "client"
+                    |> Maybe.map HashId.fromString
+                , case fragments |> Dict.get "path" of
+                    Just pathStr ->
+                        if pathStr == root
+                        then AttachedAt Path.start
+                        else
+                            pathStr
+                                |> String.split "-"
+                                |> List.map String.toInt
+                                |> List.filterMap identity
+                                |> Path.fromList
+                                |> AttachedAt
+                    Nothing -> Detached
+                )
+        Nothing -> ( Nothing, Detached )
 
 
 isAttached : Detach msg -> Maybe Path
