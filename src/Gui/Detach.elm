@@ -133,8 +133,7 @@ make
 make url ackPort sendPort receivePort =
     let
         ( maybeClient, state ) = fromUrl url
-    in
-        ( Detach
+        detach = Detach
             { toUrl = formLocalUrl
             , ack = ackPort
             , send = sendPort
@@ -142,9 +141,13 @@ make url ackPort sendPort receivePort =
             , attached = state
             , client = maybeClient
             }
+    in
+        ( detach
         , case maybeClient of
             Nothing -> nextClientId
-            _ -> Cmd.none
+            _ ->
+                ack detach
+                    |> Cmd.map (always NoOp)
         )
 
 
