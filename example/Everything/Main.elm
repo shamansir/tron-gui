@@ -255,6 +255,7 @@ defaultGui url model =
             = gui
                 |> Gui.detachable
                     url
+                    ackToWs
                     sendUpdateToWs
                     receieveUpdateFromWs
     in
@@ -268,11 +269,13 @@ defaultGui url model =
         )
 
 
-port updateFromDatGui : (Exp.RawUpdate -> msg) -> Sub msg
-
 port startDatGui : Exp.RawProperty -> Cmd msg
 
+port updateFromDatGui : (Exp.RawUpdate -> msg) -> Sub msg
+
 port destroyDatGui : () -> Cmd msg
+
+port ackToWs : Exp.Ack -> Cmd msg
 
 port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
 

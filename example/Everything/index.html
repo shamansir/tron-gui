@@ -28,41 +28,7 @@
             node : document.getElementById("elm-node")
         });
 
-        let socket = new WebSocket("ws://localhost:3333");
-
-        socket.onopen = function(e) {
-            console.info("[open] Connection established");
-            console.info("Sending to server");
-            //socket.send("My name is John");
-            console.log
-
-            const package = JSON.stringify({ uuid : update.client, code: 'ACK' });
-            console.log('send ACK to WS', package);
-            socket.send(package);
-        };
-
-        socket.onmessage = function(event) {
-            console.info(`[message] Data received from server: ${event.data}`);
-            const package = JSON.parse(event.data);
-            if (uuid === package.uuid) {
-                app.ports.receieveUpdateFromWs.send(package.data);
-            }
-            console.log(package.uuid);
-        };
-
-        socket.onclose = function(event) {
-            if (event.wasClean) {
-                console.info(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-            } else {
-                // e.g. server process killed or network down
-                // event.code is usually 1006 in this case
-                console.info('[close] Connection died');
-            }
-        };
-
-        socket.onerror = function(error) {
-            console.info(`[error] ${error.message}`);
-        };
+        startWs(app.ports.ackToWs, app.ports.receieveUpdateFromWs, app.ports.sendUpdateToWs);
 
         let latestGui = null;
 
@@ -97,11 +63,6 @@
             latestGui = null;
         });
 
-        app.ports.sendUpdateToWs.subscribe((update) => {
-            const package = JSON.stringify({ uuid : update.client, data : update, code: 'UPD' });
-            console.log('send update to WS', package);
-            socket.send(package);
-        });
     </script>
 
 </body>

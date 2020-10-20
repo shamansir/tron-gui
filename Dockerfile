@@ -14,7 +14,7 @@ RUN npm install elm
 
 RUN chmod +x ./node_modules/elm/bin/elm
 
-RUN ./node_modules/elm/bin/elm make example/Main.elm --output=./example/app.js
+RUN ./node_modules/elm/bin/elm make example/Everything/Main.elm --output=./example/app.js
 
 FROM nginx:1.15
 
