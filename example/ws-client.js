@@ -11,7 +11,13 @@ function startWs(ackToWs, receieveUpdateFromWs, sendUpdateToWs) {
         const package = JSON.stringify({ data : update, code: 'ACK' });
         clientId = update.client;
         console.log(`[message] Client ID established: ${clientId}`);
-        socket.send(package);
+        if (socket.readyState == 1) {
+            socket.send(package);
+        } else {
+            socket.onopen = () => {
+                socket.send(package);
+            }
+        }
     });
 
     socket.onmessage = function(event) {
