@@ -9,7 +9,7 @@
     <link href="./Gui.css" rel="stylesheet" type="text/css">
     <script src="./uuid.js"></script>
     <script src="./app.js"></script>
-    <script src="./Gui.js"></script>
+    <script src="./ws-client.js"></script>
     <style>
         body {
             margin: 0;
@@ -24,52 +24,12 @@
     <div id="elm-node"></div>
     <script type="text/javascript">
 
-        //const uuid = makeUuid();
-        const uuid = "b2465319";
-
         const app = Elm.Detachable.Main.init({
             node : document.getElementById("elm-node")
         });
 
-        let socket = new WebSocket("ws://localhost:3333");
+        startWs(app.ports.ackToWs, app.ports.receieveUpdateFromWs, app.ports.sendUpdateToWs);
 
-        socket.onopen = function(e) {
-            console.info("[open] Connection established");
-            console.info("Sending to server");
-
-            const package = JSON.stringify({ uuid, code: 'ACK' });
-            console.log('send ACK to WS', package);
-            socket.send(package);
-        };
-
-        socket.onmessage = function(event) {
-            console.info(`[message] Data received from server: ${event.data}`);
-            const package = JSON.parse(event.data);
-            if (uuid === package.uuid) {
-                app.ports.receieveUpdateFromWs.send(package.data);
-            }
-            console.log(package.uuid);
-        };
-
-        socket.onclose = function(event) {
-            if (event.wasClean) {
-                console.info(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-            } else {
-                // e.g. server process killed or network down
-                // event.code is usually 1006 in this case
-                console.info('[close] Connection died');
-            }
-        };
-
-        socket.onerror = function(error) {
-            console.info(`[error] ${error.message}`);
-        };
-
-        app.ports.sendUpdateToWs.subscribe((update) => {
-            const package = JSON.stringify({ uuid, data : update, code: 'UPD' });
-            console.log('send update to WS', package);
-            socket.send(package);
-        });
     </script>
 
 </body>

@@ -214,14 +214,15 @@ For a detailed example, see `example/Detachable` in the sources.
 -}
 detachable
      : Url
+    -> (Exp.Ack -> Cmd msg)
     -> (Exp.RawUpdate -> Cmd msg)
     -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
     -> Gui msg
     -> ( Gui msg, Cmd Msg )
-detachable url send receive gui =
+detachable url ack send receive gui =
     let
         ( detach, detachEffects )
-            = Detach.make url send receive
+            = Detach.make url ack send receive
     in
         (
             { gui
@@ -359,14 +360,18 @@ update msg gui =
                 )
 
         SetClientId clientId ->
-            (
-                { gui
-                | detach =
+            let
+                nextDetach =
                     gui.detach
                         |> Detach.setClientId clientId
-                }
-            , Cmd.none
-            )
+            in
+                (
+                    { gui
+                    | detach = nextDetach
+
+                    }
+                , nextDetach |> Detach.ack
+                )
 
 
 applyRaw

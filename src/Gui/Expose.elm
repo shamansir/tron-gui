@@ -23,6 +23,9 @@ type alias RawPath = List Id
 type alias RawProperty = E.Value
 
 
+type alias RawClientId = E.Value
+
+
 type alias Id = Int
 
 
@@ -47,7 +50,12 @@ type alias RawUpdate =
     { path : RawPath
     , value : E.Value
     , type_ : String
-    , client : E.Value
+    , client : RawClientId
+    }
+
+
+type alias Ack =
+    { client : RawClientId
     }
 
 
@@ -266,6 +274,13 @@ encode = encodePropertyAt []
 encodeClientId : Maybe HashId -> E.Value
 encodeClientId maybeClient =
     maybeClient |> Maybe.map (HashId.toString >> E.string) |> Maybe.withDefault E.null
+
+
+encodeAck : Maybe HashId -> Ack
+encodeAck maybeClient =
+    { client =
+        encodeClientId maybeClient
+    }
 
 
 encodeUpdate : Maybe HashId -> Path -> Property msg -> RawUpdate

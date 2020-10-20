@@ -46,6 +46,7 @@ init url _ =
             gui
                 |> Tron.detachable
                     url
+                    ackToWs
                     sendUpdateToWs
                     receieveUpdateFromWs
     in
@@ -124,3 +125,5 @@ main =
 port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
 
 port sendUpdateToWs : Exp.RawUpdate -> Cmd msg
+
+port ackToWs : Exp.Ack -> Cmd msg
