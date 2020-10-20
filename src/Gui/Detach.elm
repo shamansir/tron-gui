@@ -30,6 +30,7 @@ type State
 type Detach msg =
     Detach
         { toUrl : ClientId -> Path -> Maybe LocalUrl
+        , ack : Exp.Ack -> Cmd msg
         , send : Exp.RawUpdate -> Cmd msg
         , receive : ((Exp.RawUpdate -> Msg) -> Sub Msg)
         , attached : State
@@ -42,6 +43,7 @@ map f (Detach d) =
     Detach
         { toUrl = d.toUrl
         , send = d.send >> Cmd.map f
+        , ack = d.ack >> Cmd.map f
         , receive = d.receive
         , attached = d.attached
         , client = d.client
@@ -52,6 +54,7 @@ never : Detach msg
 never =
     Detach
         { toUrl = always <| always Nothing
+        , ack = always Cmd.none
         , send = always Cmd.none
         , receive = always Sub.none
         , attached = attachedAtRoot
@@ -123,15 +126,17 @@ localUrlToString fragments =
 
 make
      : Url
+    -> (Exp.Ack -> Cmd msg)
     -> (Exp.RawUpdate -> Cmd msg)
     -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
     -> ( Detach msg, Cmd Msg )
-make url sendPort receivePort =
+make url ackPort sendPort receivePort =
     let
         ( maybeClient, state ) = fromUrl url
     in
         ( Detach
             { toUrl = formLocalUrl
+            , ack = ackPort
             , send = sendPort
             , receive = receivePort
             , attached = state
@@ -145,6 +150,11 @@ make url sendPort receivePort =
 
 -- extract : Url -> List Path
 -- extract
+
+
+ack : Detach msg -> Cmd msg
+ack (Detach d) =
+    d.ack <| Exp.encodeAck d.client
 
 
 send : Detach msg -> Path -> Property msg -> Cmd msg
