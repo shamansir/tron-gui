@@ -95,6 +95,10 @@ unpack : BinPack a -> List (a, Bounds)
 unpack = unfold (::) []
 
 
+unpack1 : BinPack a -> List (BinPack a, Bounds)
+unpack1 = unfold1 (::) []
+
+
 container w h = Free { width = w, height = h }
 
 

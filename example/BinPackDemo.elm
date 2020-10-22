@@ -42,7 +42,7 @@ type alias Rect =
 
 type RenderMode
     = AsIs
-    | RenderFree
+    | ShowFree
     | AsList
 
 
@@ -70,6 +70,7 @@ init =
 
 type Msg
   = NoOp
+  | ChangeMode RenderMode
   | Randomize
   | PackAll (List Rect)
   | PackOne Rect
@@ -83,7 +84,15 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     NoOp ->
-      ( model, Cmd.none )
+        ( model, Cmd.none )
+
+    ChangeMode newMode ->
+        (
+            { model
+            | mode = newMode
+            }
+        , Cmd.none
+        )
 
     Randomize ->
        (
@@ -197,25 +206,47 @@ view model =
             [ svg [ S.width "300", S.height "300" ]
                  <| List.map viewItem
                  <| BinPack.unpack model.binPack
-            , input [ H.type_ "button", onClick Randomize, H.value "Random" ] [ Html.text "Random" ]
-            , input [ H.type_ "button", onClick Clear, H.value "Clear" ] [ Html.text "Clear" ]
-            , input
-                [ H.type_ "number"
-                , onInput (String.toFloat >> Maybe.map SetNextRectWidth >> Maybe.withDefault NoOp)
-                , H.placeholder "20" ]
-                [ ]
-            , Html.text "x"
-            , input
-                [ H.type_ "number"
-                , onInput (String.toFloat >> Maybe.map SetNextRectHeight >> Maybe.withDefault NoOp)
-                , H.placeholder "20" ]
-                [ ]
-            , input
-                [ H.type_ "button"
-                , onClick (model.nextRect |> Maybe.map PackOne |> Maybe.withDefault NoOp)
-                , H.value "Add Rect"
+            , div
+                []
+                [ input
+                    [ H.type_ "button", onClick Randomize, H.value "Random" ]
+                    [ Html.text "Random" ]
+                , input
+                    [ H.type_ "button", onClick Clear, H.value "Clear" ]
+                    [ Html.text "Clear" ]
                 ]
-                [ Html.text "Add Rect" ]
+            , div
+                []
+                [ input
+                    [ H.type_ "button", onClick <| ChangeMode AsIs, H.value "Default" ]
+                    [ Html.text "Default" ]
+                , input
+                    [ H.type_ "button", onClick <| ChangeMode ShowFree, H.value "Show Free Space" ]
+                    [ Html.text "Show Free Space" ]
+                , input
+                    [ H.type_ "button", onClick <| ChangeMode AsList, H.value "As List" ]
+                    [ Html.text "As List" ]
+                ]
+            , div
+                [ ]
+                [ input
+                    [ H.type_ "number"
+                    , onInput (String.toFloat >> Maybe.map SetNextRectWidth >> Maybe.withDefault NoOp)
+                    , H.placeholder "20" ]
+                    [ ]
+                , Html.text "x"
+                , input
+                    [ H.type_ "number"
+                    , onInput (String.toFloat >> Maybe.map SetNextRectHeight >> Maybe.withDefault NoOp)
+                    , H.placeholder "20" ]
+                    [ ]
+                , input
+                    [ H.type_ "button"
+                    , onClick (model.nextRect |> Maybe.map PackOne |> Maybe.withDefault NoOp)
+                    , H.value "Add Rect"
+                    ]
+                    [ Html.text "Add Rect" ]
+                ]
             ]
 
 
