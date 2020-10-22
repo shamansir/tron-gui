@@ -1,4 +1,6 @@
 /elm-stuff
 /node_modules
 /example/app.js
+/example/index.html
+index.html
 # /example/dat.gui.min.js

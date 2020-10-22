@@ -67,6 +67,30 @@ unfold f =
     in helper 0 0
 
 
+unfold1 : ( ( BinPack a, Bounds ) -> k -> k) -> k -> BinPack a -> k
+unfold1 f =
+    let
+        helper x y v bp =
+           case bp of
+               Free r ->
+                    f ( bp,
+                        { x = x, y = y
+                        , width = r.width
+                        , height = r.height
+                        }
+                      )
+                    v
+               Node r n i ->
+                   f ( bp,
+                        { x = x, y = y
+                        , width = r.width
+                        , height = r.height
+                        }
+                      )
+                    <| helper x (y + r.height) (helper (x + r.width) y v n.right) n.below
+    in helper 0 0
+
+
 unpack : BinPack a -> List (a, Bounds)
 unpack = unfold (::) []
 
