@@ -78,25 +78,7 @@ type Property msg
     | Group (GroupControl msg)
 
 
-cellWidth : Float
-cellWidth = 90
-cellHeight : Float
-cellHeight = 90
-
-
-cellMargin : Float
-cellMargin = 5
-
-
 knobDistance = 90 * 4
-
-
-labelColor = "white"
-baseColor = "aqua"
-onColor = "green"
-offColor = "red"
-nothingColor = "darkgray"
-lineWidth = "2"
 
 
 

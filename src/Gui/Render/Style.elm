@@ -63,6 +63,23 @@ canvasBackground = Color.lightGray
 transparent = Color.rgba 0.0 0.0 0.0 0.0
 
 
+cellWidth : Float
+cellWidth = 90
+
+
+cellHeight : Float
+cellHeight = 90
+
+
+gap = 10
+
+
+borderRadius = 10
+
+
+fontFamily = "\"IBM Plex Sans\", sans-serif"
+
+
 colorFor : Theme -> Tone -> Color
 colorFor theme style =
     case style of

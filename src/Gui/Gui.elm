@@ -191,7 +191,7 @@ init root =
 
 
 initRaw : Builder msg -> Gui msg
-initRaw root = Gui TopToBottom ( -1, -1 ) ( 9, 5 ) Gui.Mouse.init root Detach.never
+initRaw root = Gui TopToBottom ( -1, -1 ) ( 0, 0 ) Gui.Mouse.init root Detach.never
 
 
 {-| Perform the effects needed for initialization. Call it if you don't use the visual part of Tron (i.e. for `dat.gui`) or when you re-create the GUI.
@@ -317,6 +317,7 @@ update msg gui =
             (
                 { gui
                 | viewport = viewport
+                , size = viewport |> sizeFromViewport gui.flow gui.tree
                 }
             , Cmd.none
             )
@@ -645,6 +646,17 @@ getRootPath : Gui msg -> Path
 getRootPath gui =
     Detach.isAttached gui.detach
         |> Maybe.withDefault Path.start
+
+
+sizeFromViewport : Flow -> Property msg -> ( Int, Int ) -> ( Int, Int )
+sizeFromViewport flow root ( widthInPixels, heightInPixels ) =
+    let
+        cellsFitHorizontally = floor <| toFloat widthInPixels / (cellWidth + gap)
+        cellsFitVertically = floor <| toFloat heightInPixels / (cellHeight + gap)
+    in
+        ( if cellsFitHorizontally > 3 then cellsFitHorizontally - 3 else cellsFitHorizontally
+        , if cellsFitVertically > 3 then cellsFitVertically - 3 else cellsFitVertically
+        )
 
 
 layout : Gui msg -> ( Property msg, Layout )

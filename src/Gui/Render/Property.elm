@@ -23,15 +23,6 @@ import Gui.Render.Style exposing (..)
 import Gui.Render.Style as Style exposing (text)
 
 
-gap = 10
-
-
-borderRadius = 10
-
-
-fontFamily = "\"IBM Plex Sans\", sans-serif"
-
-
 type Placement
     = AtRoot
     | OnAPlate

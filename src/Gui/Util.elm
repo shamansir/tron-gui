@@ -1,7 +1,16 @@
 module Gui.Util exposing (..)
 
 
-import Gui.Control exposing (..)
+-- import Bounds exposing (Bounds)
+
+
+-- type Shape a = Shape ( Int, Int )
+
+-- type Pixels = Pixels
+
+-- type Cells = Cells
+
+-- type BoundsIn a = BoundsIn Bounds
 
 
 align : Float -> Float
