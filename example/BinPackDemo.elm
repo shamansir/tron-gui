@@ -287,7 +287,7 @@ randomRect =
 
 random : Random.Generator (List Rect)
 random =
-    Random.int 10 60
+    Random.int 10 200
       |> Random.andThen
           (\len -> Random.list len randomRect)
 

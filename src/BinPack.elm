@@ -117,14 +117,14 @@ pack : ( { width : Float, height : Float }, a ) -> BinPack a -> Maybe (BinPack a
 pack ( rect, value ) model =
     case model of
         Free f ->
-            let
-                fits = rect.width <= f.width && rect.height <= f.height
-                pright = container (f.width - rect.width) rect.height
-                pbelow = container f.width (f.height - rect.height)
-            in
-                if fits
-                then Just <| node rect.width rect.height pright pbelow value
-                else Nothing
+            if rect.width <= f.width && rect.height <= f.height
+            then
+                Just
+                    <| let
+                        pright = container (f.width - rect.width) rect.height
+                        pbelow = container f.width (f.height - rect.height)
+                    in node rect.width rect.height pright pbelow value
+            else Nothing
         Node r n nodeValue ->
             case pack ( rect, value ) n.right of
                 Just newRight ->
