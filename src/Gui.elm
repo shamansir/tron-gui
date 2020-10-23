@@ -1,4 +1,4 @@
-module Gui.Gui exposing
+module Gui exposing
     ( Gui, Flow(..)
     , view, update, init, subscriptions, run, Message
     , map, over
