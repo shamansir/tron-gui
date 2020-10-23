@@ -655,7 +655,7 @@ sizeFromViewport flow root ( widthInPixels, heightInPixels ) =
         cellsFitVertically = floor <| toFloat heightInPixels / (cellHeight + gap)
     in
         ( if cellsFitHorizontally > 3 then cellsFitHorizontally - 3 else cellsFitHorizontally
-        , if cellsFitVertically > 3 then cellsFitVertically - 3 else cellsFitVertically
+        , if cellsFitVertically > 2 then cellsFitVertically - 2 else cellsFitVertically
         )
 
 
