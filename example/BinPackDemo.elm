@@ -2,7 +2,7 @@ module BinPackDemo exposing (..)
 
 
 import Browser
-import Html exposing (Html, button, div, text, input)
+import Html exposing (Html, button, div, text, input, ul, li)
 import Html.Attributes as H exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Random
@@ -41,9 +41,8 @@ type alias Rect =
 
 
 type RenderMode
-    = AsIs
-    | ShowFree
-    | AsList
+    = OnlyRects
+    | RectsAndFreeSpace
 
 
 type alias Model =
@@ -56,7 +55,7 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     (
-        { mode = AsIs
+        { mode = OnlyRects
         , binPack = container 0 0
         , nextRect = Nothing
         }
@@ -189,23 +188,37 @@ rectToTuple { width, height, color }
 view : Model -> Html Msg
 view model =
     let
-        viewItem (color, bounds)
-            = Svg.rect
+        rect color bounds stroke =
+            Svg.rect
                 [ S.x <| String.fromFloat bounds.x
                 , S.y <| String.fromFloat bounds.y
                 , S.width <| String.fromFloat bounds.width
                 , S.height <| String.fromFloat bounds.height
                 , S.fill color
                 , S.strokeWidth "1"
-                , S.stroke "black"
+                , S.stroke stroke
                 ]
                 []
+        viewItem (color, bounds)
+            = rect color bounds "black"
+        viewBP ( bp, bounds )
+            = case bp of
+                Node _ _ item ->
+                    viewItem ( item, bounds )
+                Free _ ->
+                    rect "yellow" bounds "red"
     in
         div
             []
-            [ svg [ S.width "300", S.height "300" ]
-                 <| List.map viewItem
-                 <| BinPack.unpack model.binPack
+            [ case model.mode of
+                OnlyRects ->
+                    svg [ S.width "300", S.height "300" ]
+                        <| List.map viewItem
+                        <| BinPack.unpack model.binPack
+                RectsAndFreeSpace ->
+                    svg [ S.width "300", S.height "300" ]
+                        <| List.map viewBP
+                        <| BinPack.unpack1 model.binPack
             , div
                 []
                 [ input
@@ -218,14 +231,11 @@ view model =
             , div
                 []
                 [ input
-                    [ H.type_ "button", onClick <| ChangeMode AsIs, H.value "Default" ]
-                    [ Html.text "Default" ]
+                    [ H.type_ "button", onClick <| ChangeMode OnlyRects, H.value "Only Rectangles" ]
+                    [ Html.text "Only Rectangles" ]
                 , input
-                    [ H.type_ "button", onClick <| ChangeMode ShowFree, H.value "Show Free Space" ]
-                    [ Html.text "Show Free Space" ]
-                , input
-                    [ H.type_ "button", onClick <| ChangeMode AsList, H.value "As List" ]
-                    [ Html.text "As List" ]
+                    [ H.type_ "button", onClick <| ChangeMode RectsAndFreeSpace, H.value "Rectangles and Free Space" ]
+                    [ Html.text "Rectangles and Free Space" ]
                 ]
             , div
                 [ ]
