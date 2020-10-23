@@ -4,7 +4,7 @@ port module DatGui.Main exposing (main)
 import Browser exposing (element)
 import Html exposing (Html, div)
 
-import Gui.Gui as Tron exposing (Gui, initRaw, view)
+import Gui as Tron exposing (Gui, initRaw, view)
 import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
 
 import Default.Main as Default

@@ -17,8 +17,8 @@ import Task as Task
 import Random
 import Url exposing (Url)
 
-import Gui.Gui exposing (Gui)
-import Gui.Gui as Gui exposing (view, detachable, subscriptions)
+import Gui exposing (Gui)
+import Gui as Gui exposing (view, detachable, subscriptions)
 import Gui.Expose as Exp exposing (Update)
 import Gui.Gui as Tron exposing (Gui)
 import Gui.Msg as Tron exposing (Msg(..))
