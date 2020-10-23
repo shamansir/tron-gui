@@ -9,8 +9,8 @@ import Html
 import Html exposing (Html)
 import Html.Attributes as Html
 
+import Gui exposing (Gui)
 import Gui.Build as Gui
-import Gui.Gui exposing (Gui)
 
 import Default.Gui as Simple
 import Default.Model exposing (..)

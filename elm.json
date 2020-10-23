@@ -1,6 +1,7 @@
 {
     "type": "package",
     "name": "shamansir/tron-gui",
+    "version": "1.0.0",
     "summary": "Tron: Minimal Universal GUI",
     "license": "BSD-3-Clause",
     "elm-version": "0.19.0 <= v < 0.20.0",
@@ -10,7 +11,8 @@
     ],
     "source-directories": [
         "src",
-        "example"
+        "example",
+        "example/Default"
     ],
     "dependencies": {
         "avh4/elm-color": "1.0.0 <= v < 2.0.0",

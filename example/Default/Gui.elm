@@ -3,8 +3,8 @@ module Default.Gui exposing (..)
 
 import Color exposing (Color)
 
+import Gui exposing (Gui)
 import Gui.Build as Gui
-import Gui.Gui exposing (Gui)
 import Gui.Property  exposing (Property)
 import Gui.Property as Property exposing (Label)
 

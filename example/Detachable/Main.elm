@@ -1,7 +1,6 @@
 port module Detachable.Main exposing (main)
 
 
-
 import Url exposing (Url)
 
 import Browser exposing (element)

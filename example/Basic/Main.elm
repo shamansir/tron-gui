@@ -5,7 +5,7 @@ import Browser exposing (element)
 import Html exposing (Html, div)
 import Html.Attributes as Attr exposing (class)
 
-import Gui.Gui as Tron exposing (Gui, init, view, update, subscriptions)
+import Gui as Tron exposing (Gui, init, view, update, subscriptions)
 import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Render.Style as Tron exposing (Theme(..))
 
