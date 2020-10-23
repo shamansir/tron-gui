@@ -1,4 +1,10 @@
-module Gui.Build exposing (..)
+module Gui.Build exposing
+    ( Builder
+    , root
+    , none, int, float, xy, color, text, input, button, button1, toggle, toggle1
+    , nest, nestIn, choice, choice1, choiceIn, strings
+    , icon
+    )
 
 
 {-| The Builder helps you define the structure of your GUI. It is made as abstract from the representation as possible, so that any control could be changed to a better or alternative one without the requirement for you to change the definition. What you specify is the type of the value to be changed and the message to in the case of such change. Plus grouping, as deep as you want and as wide as the free space allows.
@@ -14,6 +20,10 @@ Every control may:
     * have a shape, which could be different from 1x1 in the grid;
     * be expandable to a group of any controls, contained in some shape;
     * if it's a group or nesting or choice, it can be detached if GUI configured so;
+
+
+# Builder
+@docs Builder
 
 # Root
 @docs root
@@ -38,6 +48,25 @@ import Gui.Control exposing (Control(..))
 import Gui.Util exposing (findMap)
 
 
+{-| `Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instance `Builder msg`.
+
+Use the method in the module as the helpers in building your own grid structure.
+
+When it's done, use `Gui.init` to create the user interface from your description:
+
+    Gui.init <|
+        Builder.root
+            [ ( "int", Builder.int ... )
+            , ( "float", Builder.float ... )
+            ,
+                ( "nest"
+                , Builder.nest
+                    [ ( "button", Builder.button ... )
+                    , ...
+                    ]
+                )
+            ]
+-}
 type alias Builder msg = Property msg
 
 

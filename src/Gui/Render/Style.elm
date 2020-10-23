@@ -11,6 +11,13 @@ import Gui.Path as Path exposing (Path, toString)
 import Gui.Focus exposing (Focused(..))
 
 
+type Flow
+    = TopToBottom
+    | BottomToTop
+    | LeftToRight
+    | RightToLeft
+
+
 type Theme
     = Dark
     | Light

@@ -1,5 +1,5 @@
 module Gui exposing
-    ( Gui, Flow(..)
+    ( Gui
     , view, update, init, subscriptions, run, Message
     , map, over
     , detachable, encode, applyRaw, initRaw
@@ -62,11 +62,10 @@ That's enough to make your application work with Tron!
 
 If you need features that exceed Basic functionality like detachable parts or communication with JS, they can be purchased in the store. It's a joke, just lead to another examples in the `example` folder and to the `Gui.Detach` module documentation.
 
+For controlling the way GUI looks, see `Gui.Render.Style` module.
+
 # Tron GUI Lifecycle
 @docs init, update, view, subscriptions, run
-
-# Styling
-@docs Flow, Theme
 
 # Common Helpers
 @docs map, over
@@ -107,13 +106,6 @@ import Gui.Focus as Focus exposing (..)
 import Gui.Detach as Detach exposing (make, ClientId, Detach, map)
 import Gui.Expose as Exp exposing (..)
 import Gui.Build exposing (..)
-
-
-type Flow
-    = TopToBottom
-    | BottomToTop
-    | LeftToRight
-    | RightToLeft
 
 
 type alias Gui msg =
