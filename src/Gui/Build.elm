@@ -13,13 +13,13 @@ This way works the optional connection with `dat.gui`: `dat.gui` operates over t
 
 Every control may:
 
-    * have a setup to define how it behaves, for example min/max values and step for knobs;
-    * have a default/current value, which is usually just taken from your model, from a correspodning field;
-    * have a handler, which receives the new value and produces your message with it;
-    * have a String label;
-    * have a shape, which could be different from 1x1 in the grid;
-    * be expandable to a group of any controls, contained in some shape;
-    * if it's a group or nesting or choice, it can be detached if GUI configured so;
+* have a setup to define how it behaves, for example min/max values and step for knobs;
+* have a default/current value, which is usually just taken from your model, from a correspodning field;
+* have a handler, which receives the new value and produces your message with it;
+* have a String label;
+* have a shape, which could be different from 1x1 in the grid;
+* be expandable to a group of any controls, contained in some shape;
+* if it's a group or nesting or choice, it can be detached if GUI configured so;
 
 
 # Builder

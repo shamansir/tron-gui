@@ -7,14 +7,14 @@ It provides the friendly API for you to easily describe your interface using a m
 
 For the moment, the provided controls are:
 
-    * number knob, with step;
-    * XY controller;
-    * text control;
-    * color control;
-    * toggle control;
-    * button, can have an icon;
-    * choice control — a panel with options;
-    * group control — a panel with any other controls;
+* number knob, with step;
+* XY control;
+* text control;
+* color control;
+* toggle control;
+* button, can have some icon or none;
+* choice control — a panel with options;
+* group control — a panel with any other controls;
 
 The whole interface or its parts can be "detached" to another browser window or even device. This feature requires a simple WebSocket server though, so it's optional, but we provide a full example of such feature.
 
@@ -119,7 +119,7 @@ choiceToLabel c =
 
 See `example/` folder for more examples:
 
-    * `example/Basic` is just the interface for the above description;
-    * `example/Detachable` the demo of how the interface can be detached at any nesting (if you run the provided WebScocket server before running the example);
-    * `example/DatGui` is about how easy it is to replace Tron GUI with `dat.gui`;
-    * `example/Everything` — all of the above, plus randomly generating interface structures;
+* `example/Basic` is just the interface for the above description;
+* `example/Detachable` the demo of how the interface can be detached at any nesting (if you run the provided WebScocket server before running the example);
+* `example/DatGui` is about how easy it is to replace Tron GUI with `dat.gui`;
+* `example/Everything` — all of the above, plus randomly generating interface structures;

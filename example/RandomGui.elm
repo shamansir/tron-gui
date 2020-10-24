@@ -4,7 +4,7 @@ module RandomGui exposing (generator)
 import Random
 import Array exposing (Array)
 
-import Gui.Gui exposing (Gui)
+import Gui exposing (Gui)
 import Gui.Control exposing (Control(..))
 import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, expand)
 import Gui.Property as Gui exposing

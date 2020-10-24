@@ -10,14 +10,14 @@ module Gui exposing
 
 When you have defined the structure of you GUI using `Gui.Build` module and got the `Builder msg` (where `msg` is the `Msg` of your application) in response, use:
 
-    * `init` function to wrap a `Gui msg` over it;
-    * `subscribe` to make GUI receive all the mouse/keyboard information it requires;
-    * `update` to pass inner messages to the GUI;
-    * `view` to render it;
+* `init` function to wrap a `Gui msg` over it;
+* `subscribe` to make GUI receive all the mouse/keyboard information it requires;
+* `update` to pass inner messages to the GUI;
+* `view` to render it;
 
 See `example/Basic` in the sources for a full example, here are the important excerpts from it:
 
-    import Gui.Gui as Tron
+    import Gui as Tron
 
     type Msg = MyMsgOne | MyMsgTwo | ... | ToTron Tron.Message
 
@@ -118,7 +118,7 @@ import Gui.Build exposing (..)
 to fire all the messages you pass to it in definition. This is similar to how you pass messages in handlers of `Html msg` or `Svg msg`, though in this case `Gui msg` is somewhat a huge component and has its own model and update cycle.
 
 Use `init` to create an instance of `Gui msg`. See the example in the head of the module and `example/` folder for more details.
-|-}
+-}
 type alias Gui msg =
     { flow : Flow
     , viewport : ( Int, Int ) -- in pixels
