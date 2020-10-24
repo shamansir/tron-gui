@@ -1,18 +1,15 @@
 {
     "type": "package",
     "name": "shamansir/tron-gui",
-    "version": "1.0.0",
     "summary": "Tron: Minimal Universal GUI",
     "license": "BSD-3-Clause",
-    "elm-version": "0.19.0 <= v < 0.20.0",
+    "version": "1.0.1",
     "exposed-modules": [
         "Gui",
         "Gui.Build",
         "Gui.Render.Style"
     ],
-    "source-directories": [
-        "src"
-    ],
+    "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
         "avh4/elm-color": "1.0.0 <= v < 2.0.0",
         "elm/browser": "1.0.2 <= v < 2.0.0",
@@ -24,6 +21,5 @@
         "elm/url": "1.0.0 <= v < 2.0.0",
         "pdamoc/elm-hashids": "1.0.4 <= v < 2.0.0"
     },
-    "test-dependencies": {
-    }
+    "test-dependencies": {}
 }
