@@ -20,7 +20,8 @@ import Gui.Render.Util exposing (..)
 import Gui.Render.Util as Svg exposing (none)
 import Gui.Render.Util as Util exposing (arrow)
 import Gui.Render.Style exposing (..)
-import Gui.Render.Style as Style exposing (text)
+import Gui.Render.StyleLogic exposing (..)
+import Gui.Render.StyleLogic as Style exposing (text)
 
 
 type Placement

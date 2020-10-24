@@ -12,6 +12,8 @@ import Gui.Property exposing (Label)
 
 import Gui.Render.Style exposing (..)
 import Gui.Render.Style as Style
+import Gui.Render.StyleLogic exposing (..)
+import Gui.Render.StyleLogic as Style
 import Gui.Render.Util exposing (arrow, rotate, scale)
 
 
