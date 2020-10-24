@@ -64,8 +64,11 @@ If you need features that exceed Basic functionality like detachable parts or co
 
 For controlling the way GUI looks, see `Gui.Render.Style` module.
 
+# Core
+@docs Gui
+
 # Tron GUI Lifecycle
-@docs init, update, view, subscriptions, run
+@docs init, update, view, subscriptions, run, Message
 
 # Common Helpers
 @docs map, over
@@ -109,6 +112,13 @@ import Gui.Expose as Exp exposing (..)
 import Gui.Build exposing (..)
 
 
+{-| `Gui msg` is what manages your user interface and the way it looks.
+
+`msg` here is the root message type of your application, so that `Gui msg` would be able
+to fire all the messages you pass to it in definition. This is similar to how you pass messages in handlers of `Html msg` or `Svg msg`, though in this case `Gui msg` is somewhat a huge component and has its own model and update cycle.
+
+Use `init` to create an instance of `Gui msg`. See the example in the head of the module and `example/` folder for more details.
+|-}
 type alias Gui msg =
     { flow : Flow
     , viewport : ( Int, Int ) -- in pixels
@@ -119,6 +129,10 @@ type alias Gui msg =
     }
 
 
+{-| GUI inner message, similar to the ones in your application.
+
+You don't need it's constructors, only pass it to some `ToTron` wrapping message as in the example above.
+|-}
 type alias Message = Msg
 
 
@@ -183,8 +197,19 @@ init root =
     )
 
 
+{-| `initRaw` is needed only for the cases of replacing Tron interface with `dat.gui` or any other JS interpretation. See `example/DatGui` for reference.
+
+Since `init builder` is just:
+
+    ( initRaw builder
+    , run
+    ) -> ( Tron.Gui msg, Cmd Tron.Message )
+
+`dat.gui` doesn't need any side-effects that are produced with `run`, that's why `initRaw` is used there.
+|-}
 initRaw : Builder msg -> Gui msg
 initRaw root = Gui TopToBottom ( -1, -1 ) ( 0, 0 ) Gui.Mouse.init root Detach.never
+-- TODO: get rid of initRaw
 
 
 {-| Perform the effects needed for initialization. Call it if you don't use the visual part of Tron (i.e. for `dat.gui`) or when you re-create the GUI.
@@ -368,6 +393,10 @@ update msg gui =
                 )
 
 
+{-| `applyRaw` is needed only for the cases of replacing Tron interface with `dat.gui` or any other JS interpretation. See `example/DatGui` for reference.
+
+It receives the RAW value update (from port in JSON format, for example) and applies it to the GUI so that the proper user message is fired from the handler.
+|-}
 applyRaw
      : Exp.RawUpdate
     -> Gui msg

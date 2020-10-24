@@ -12,6 +12,14 @@ import Gui.Path as Path exposing (Path, toString)
 import Gui.Focus exposing (Focused(..))
 
 
+type Tone
+    = None
+    | Green
+    | Pink
+    | Yellow
+    | Aqua
+
+
 green = Color.rgb255 0 204 71 -- "#00cc47"
 
 
