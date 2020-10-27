@@ -64,6 +64,8 @@ If you need features that exceed Basic functionality like detachable parts or co
 
 For controlling the way GUI looks, see `Gui.Render.Style` module.
 
+NB: Don't forget to copy `src/Gui.css` to your application to make GUI look and behave properly.
+
 # Core
 @docs Gui
 

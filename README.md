@@ -1,7 +1,9 @@
 # Tron GUI
 
 
-Tron GUI is a minimal interface for your application.
+[`tron-gui`](https://package.elm-lang.org/packages/shamansir/tron-gui/) (the package in Elm package library).
+
+Tron GUI is a minimal interface for your web application.
 
 It provides the friendly API for you to easily describe your interface using a mimimal number of smartly picked and designed controls and by nesting them.
 
