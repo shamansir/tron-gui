@@ -32,7 +32,7 @@ Every control may:
 @docs none, int, float, xy, color, text, input, button, button1, toggle, toggle1
 
 # Groups
-@docs nest, nestIn, choice, choice1, choiceIn, strings
+@docs nest, nestIn, choice, choice1, choiceIn, strings, stringsIn
 
 # Icons
 @docs icon
@@ -463,6 +463,30 @@ strings
     -> Builder msg
 strings options current toMsg =
     choice
+        identity
+        options
+        current
+        ((==))
+        toMsg
+
+
+{-| `stringsIn` is a helper to create `choice` over string values, but in a given shape.
+
+    Builder.stringsIn
+        ( 5, 10 )
+        greekChildrenNames
+        model.currentChildName
+        ChangeChildName
+-}
+stringsIn
+    :  Shape
+    -> List String
+    -> String
+    -> ( String -> msg )
+    -> Builder msg
+stringsIn shape options current toMsg  =
+    choiceIn
+        shape
         identity
         options
         current

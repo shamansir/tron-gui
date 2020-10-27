@@ -67,7 +67,7 @@ For controlling the way GUI looks, see `Gui.Render.Style` module.
 # Core
 @docs Gui
 
-# Tron GUI Lifecycle
+# Lifecycle
 @docs init, update, view, subscriptions, run, Message
 
 # Common Helpers
@@ -132,7 +132,7 @@ type alias Gui msg =
 {-| GUI inner message, similar to the ones in your application.
 
 You don't need it's constructors, only pass it to some `ToTron` wrapping message as in the example above.
-|-}
+-}
 type alias Message = Msg
 
 
@@ -206,7 +206,7 @@ Since `init builder` is just:
     ) -> ( Tron.Gui msg, Cmd Tron.Message )
 
 `dat.gui` doesn't need any side-effects that are produced with `run`, that's why `initRaw` is used there.
-|-}
+-}
 initRaw : Builder msg -> Gui msg
 initRaw root = Gui TopToBottom ( -1, -1 ) ( 0, 0 ) Gui.Mouse.init root Detach.never
 -- TODO: get rid of initRaw
@@ -396,7 +396,7 @@ update msg gui =
 {-| `applyRaw` is needed only for the cases of replacing Tron interface with `dat.gui` or any other JS interpretation. See `example/DatGui` for reference.
 
 It receives the RAW value update (from port in JSON format, for example) and applies it to the GUI so that the proper user message is fired from the handler.
-|-}
+-}
 applyRaw
      : Exp.RawUpdate
     -> Gui msg
@@ -647,6 +647,10 @@ fromWindow passSize =
                 , floor d.viewport.height
                 )
             )
+
+
+getViewport : Gui msg -> ( Int, Int )
+getViewport = .viewport
 
 
 boundsFromSize : ( Int, Int ) -> ( Int, Int ) -> Bounds
