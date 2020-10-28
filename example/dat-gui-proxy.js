@@ -14,7 +14,7 @@ const lastPropName = (path) => {
 const sendProxy = (origSend) => {
   return (property) => {
     return (value) => {
-        origSend({ path : property.path, type_ : property.type, value });
+        origSend({ path : property.path, type_ : property.type, value, client: null });
     };
   }
 };
