@@ -210,7 +210,8 @@ Since `init builder` is just:
 `dat.gui` doesn't need any side-effects that are produced with `run`, that's why `initRaw` is used there.
 -}
 initRaw : Builder msg -> Gui msg
-initRaw root = Gui TopToBottom ( -1, -1 ) ( 0, 0 ) Gui.Mouse.init root Detach.never
+initRaw root =
+    Gui TopToBottom ( -1, -1 ) ( 0, 0 ) Gui.Mouse.init root Detach.never
 -- TODO: get rid of initRaw
 
 
@@ -252,7 +253,19 @@ detachable url ack send receive gui =
         )
 
 
-{-| While keeping another options intact, replace the GUI structure completely.
+{-| While keeping other options intact, replace the GUI structure completely.
+
+It is useful if the model updated externally, you want to re-build UI using this model,
+but you don't need/want to notify anyone about the updated values or perform initial effects.
+
+If you have a function like:
+
+    for : MyModel -> Builder MyMsg
+    for = ...
+
+..as in the `init` example. Then using `over` in `update` is just:
+
+    gui |> Gui.over (for nextModel)
 -}
 over : Builder msg -> Gui msg -> Gui msg
 over prop gui =

@@ -2,7 +2,7 @@ module Gui.Build exposing
     ( Builder
     , root
     , none, int, float, xy, color, text, input, button, button1, toggle, toggle1
-    , nest, nestIn, choice, choice1, choiceIn, strings
+    , nest, nestIn, choice, choice1, choice2, choiceIn, strings
     , icon
     )
 
@@ -405,7 +405,60 @@ choiceIn
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Builder msg
-choiceIn shape toLabel options current compare toMsg =
+choiceIn shape toLabel =
+    choiceHelper
+        shape
+        (\callByIndex index val ->
+            ( toLabel val
+            , button <| always <| callByIndex <| Selected index
+            )
+        )
+
+
+{-| `choice2` is the same as `choice`, but allows user define icons for buttons.
+
+    Builder.choice2
+        (\waveShape ->
+            case waveShape of
+                Sine -> ( "sine", icon "sine.svg" )
+                Square -> ( "square", icon "square.svg" )
+                Triangle -> ( "triangle", icon "triangle.svg" )
+                Saw -> ( "saw", icon "saw.svg" )
+        )
+        [ Sine, Square, Triangle, Saw ]
+        model.waveShape
+        (==) -- equality operator usually works for sum types, but be accurate
+        ChangeWaveShape
+-}
+choice2
+    : Shape
+    -> ( a -> ( Label, Icon ) )
+    -> List a
+    -> a
+    -> ( a -> a -> Bool )
+    -> ( a -> msg )
+    -> Builder msg
+choice2 shape toLabelAndIcon =
+    choiceHelper
+        shape
+        (\callByIndex index val ->
+            let ( label, theIcon ) = toLabelAndIcon val
+            in
+                ( label
+                , button1 theIcon <| always <| callByIndex <| Selected index
+                )
+        )
+
+
+choiceHelper
+     : Shape
+    -> ( (Selected -> msg) -> Int -> a -> ( Label, Builder msg ) )
+    -> List a
+    -> a
+    -> ( a -> a -> Bool )
+    -> ( a -> msg )
+    -> Builder msg
+choiceHelper shape toBuilder options current compare toMsg =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
         callByIndex (Selected indexToCall) =
@@ -423,13 +476,7 @@ choiceIn shape toLabel options current compare toMsg =
             <| Control
                 ( shape
                 , options
-                    |> List.map toLabel
-                    |> List.indexedMap
-                        (\index label ->
-                            ( label
-                            , button <| always <| callByIndex <| Selected index
-                            )
-                        )
+                    |> List.indexedMap (toBuilder callByIndex)
                     |> Array.fromList
                 )
                 ( Collapsed
