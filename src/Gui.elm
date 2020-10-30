@@ -123,8 +123,7 @@ Use `init` to create an instance of `Gui msg`. See the example in the head of th
 -}
 type alias Gui msg =
     { flow : Flow
-    , viewport : ( Int, Int ) -- in pixels
-    , size : ( Int, Int ) -- in cells
+    , viewport : ( Int, Int )
     , mouse : MouseState
     , tree : Builder msg
     , detach : Detach msg
@@ -157,7 +156,6 @@ map : (msgA -> msgB) -> Gui msgA -> Gui msgB
 map f gui =
     { flow = gui.flow
     , viewport = gui.viewport
-    , size = gui.size
     , mouse = gui.mouse
     , tree = gui.tree |> Gui.Property.map f
     , detach = gui.detach |> Detach.map f
@@ -211,7 +209,7 @@ Since `init builder` is just:
 -}
 initRaw : Builder msg -> Gui msg
 initRaw root =
-    Gui TopToBottom ( -1, -1 ) ( 0, 0 ) Gui.Mouse.init root Detach.never
+    Gui TopToBottom ( -1, -1 ) Gui.Mouse.init root Detach.never
 -- TODO: get rid of initRaw
 
 
@@ -350,7 +348,6 @@ update msg gui =
             (
                 { gui
                 | viewport = viewport
-                , size = viewport |> sizeFromViewport gui.flow gui.tree
                 }
             , Cmd.none
             )
@@ -453,8 +450,11 @@ handleMouse mouseAction gui =
         nextMouseState =
             gui.mouse
                 |> Gui.Mouse.apply mouseAction
+        size =
+            gui.viewport
+                |> sizeFromViewport gui.flow gui.tree
         bounds =
-            boundsFromSize gui.viewport gui.size
+            boundsFromSize gui.viewport size
         theLayout =
             layout gui |> Tuple.second
 
@@ -702,6 +702,11 @@ sizeFromViewport flow root ( widthInPixels, heightInPixels ) =
 
 layout : Gui msg -> ( Property msg, Layout )
 layout gui =
+    let
+        size =
+            gui.viewport
+                |> sizeFromViewport gui.flow gui.tree
+    in
     case Detach.isAttached gui.detach
         |> Maybe.andThen
             (\path ->
@@ -710,9 +715,9 @@ layout gui =
                     |> Maybe.map (Tuple.pair path)
             ) of
         Nothing ->
-            ( gui.tree, Layout.pack gui.size gui.tree )
+            ( gui.tree, Layout.pack size gui.tree )
         Just ( attachedPath, root ) ->
-            ( root, Layout.pack1 gui.size attachedPath root )
+            ( root, Layout.pack1 size attachedPath root )
 
 
 {-| Subscribe the updates of the GUI, so it would resize with the window,
@@ -753,10 +758,13 @@ Use `Theme` from `Gui.Style` to set it to `Dark` or `Light` theme.
 view : Style.Theme -> Gui msg -> Html Msg
 view theme gui =
     let
+        size =
+            gui.viewport
+                |> sizeFromViewport gui.flow gui.tree
         bounds =
-            boundsFromSize gui.viewport gui.size
+            boundsFromSize gui.viewport size
     in
     case layout gui of
         ( root, theLayout ) ->
             theLayout
-                |> Layout.view theme bounds gui.detach root
+                |> Layout.view theme gui.flow bounds gui.detach root
