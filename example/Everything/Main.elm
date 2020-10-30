@@ -24,6 +24,7 @@ import Gui as Tron exposing (Gui)
 import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Mouse exposing (Position)
 import Gui.Render.Style as Style exposing (..)
+import Gui.Render.StyleLogic as Style exposing (..)
 import Gui.Build as Tron exposing (Builder)
 import Gui.Detach as Detach exposing (fromUrl)
 
@@ -38,6 +39,7 @@ import RandomGui as Gui exposing (generator)
 type Msg
     = NoOp
     | ChangeMode Mode
+    | ChangeFlow Flow
     | FromDatGui Exp.RawUpdate
     | ToTron Tron.Msg
     | ToDefault Default.Msg
@@ -77,7 +79,6 @@ init url _ =
             { mode = TronGui
             , example = initialModel
             , theme = Style.Light
-            , flow = Style.Flow
             , gui = gui
             , url = url
             }
@@ -106,6 +107,18 @@ view { mode, gui, example, theme } =
         , Html.button
             [ Html.onClick SwitchTheme ]
             [ Html.text "Theme" ]
+        , Html.button
+            [ Html.onClick <| ChangeFlow TopToBottom ]
+            [ Html.text "Top to Bottom" ]
+        , Html.button
+            [ Html.onClick <| ChangeFlow BottomToTop ]
+            [ Html.text "Bottom to Top" ]
+        , Html.button
+            [ Html.onClick <| ChangeFlow LeftToRight ]
+            [ Html.text "Left to Right" ]
+        , Html.button
+            [ Html.onClick <| ChangeFlow RightToLeft ]
+            [ Html.text "Right to Left" ]
         , case mode of
             DatGui -> Html.div [] []
             TronGui ->
@@ -165,11 +178,15 @@ update msg model =
                     , cmds
                     )
 
+        ( ToTron _, DatGui ) -> ( model, Cmd.none )
+
         ( FromDatGui guiUpdate, DatGui ) ->
             ( model
             , model.gui
                 |> Tron.applyRaw guiUpdate
             )
+
+        ( FromDatGui _, TronGui ) -> ( model, Cmd.none )
 
         ( TriggerRandom, _ ) ->
             ( model
@@ -219,7 +236,15 @@ update msg model =
             , Cmd.none
             )
 
-        _ -> ( model, Cmd.none )
+        ( ChangeFlow newFlow, _ ) ->
+            (
+                { model
+                | gui = model.gui |> Gui.reflow newFlow
+                }
+            , Cmd.none
+            )
+
+        ( NoOp, _ ) -> ( model, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg

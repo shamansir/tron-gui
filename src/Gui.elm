@@ -3,6 +3,7 @@ module Gui exposing
     , view, update, init, subscriptions, run, Message
     , map, over
     , detachable, encode, applyRaw, initRaw
+    , reflow
     )
 
 
@@ -221,7 +222,7 @@ run : Cmd Msg
 run =
     Cmd.batch
         [ focus NoOp
-        , fromWindow Reflow
+        , fromWindow ViewportChanged
         ]
 
 
@@ -344,7 +345,7 @@ update msg gui =
             in
                 handleKeyDown keyCode curFocus gui
 
-        Reflow viewport ->
+        ViewportChanged viewport ->
             (
                 { gui
                 | viewport = viewport
@@ -668,6 +669,17 @@ getViewport : Gui msg -> ( Int, Int )
 getViewport = .viewport
 
 
+{-| Change flow direction of the GUI to `TopToBottom`, `BottomToTop`, `RightToLeft` or `LeftToRight`.
+
+See `Style.Flow` for values.
+-}
+reflow : Flow -> Gui msg -> Gui msg
+reflow flow gui =
+    { gui
+    | flow = flow
+    }
+
+
 boundsFromSize : ( Int, Int ) -> ( Int, Int ) -> Bounds
 boundsFromSize ( width, height ) ( gridWidthInCells, gridHeightInCells ) =
     let
@@ -736,7 +748,7 @@ subscriptions gui =
     Sub.batch
         [ trackMouse
         , Detach.receive gui.detach
-        , Browser.onResize <| \w h -> Reflow ( w, h )
+        , Browser.onResize <| \w h -> ViewportChanged ( w, h )
         ]
 
 
