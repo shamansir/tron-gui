@@ -77,6 +77,7 @@ init url _ =
             { mode = TronGui
             , example = initialModel
             , theme = Style.Light
+            , flow = Style.Flow
             , gui = gui
             , url = url
             }

@@ -105,8 +105,8 @@ viewPlateControls theme tone detach pixelBounds label path =
                 Plate.controls theme tone detach pixelBounds label path
 
 
-view : Style.Theme -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
-view theme bounds detach root layout =
+view : Style.Theme -> Style.Flow -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
+view theme flow bounds detach root layout =
     let
 
         keyDownHandler_ =
@@ -120,6 +120,15 @@ view theme bounds detach root layout =
 
         toneOf path =
             tones |> Dict.get (Path.toString path) |> Maybe.withDefault None
+
+        adaptToFlow locBounds =
+            case flow of
+                Style.TopToBottom -> locBounds
+                Style.BottomToTop ->
+                    { locBounds
+                    | y = bounds.height - locBounds.y
+                    }
+                _ -> locBounds
 
         ( plates, cells ) =
             BinPack.unfold
