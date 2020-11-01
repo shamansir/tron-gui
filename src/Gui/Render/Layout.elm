@@ -126,7 +126,7 @@ view theme flow bounds detach root layout =
                 Style.TopToBottom -> locBounds
                 Style.BottomToTop ->
                     { locBounds
-                    | y = bounds.height - locBounds.y
+                    | y = bounds.height - locBounds.y - locBounds.height
                     }
                 _ -> locBounds
 
@@ -161,7 +161,7 @@ view theme flow bounds detach root layout =
 
         ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
 
-            ( plates1 |> List.map (Tuple.second >> viewPlateBack theme)
+            ( plates1 |> List.map (Tuple.second >> adaptToFlow >> viewPlateBack theme)
 
             , cells1 |> List.map
                 (\(path, propertyBounds) ->
@@ -175,7 +175,7 @@ view theme flow bounds detach root layout =
                                 theme
                                 (toneOf path)
                                 path
-                                propertyBounds
+                                (adaptToFlow propertyBounds)
                                 (focused root path)
                                 prop
                         Nothing -> Nothing
@@ -189,13 +189,13 @@ view theme flow bounds detach root layout =
                             viewPlateControls
                                 theme (toneOf path)
                                 detach
-                                plateBounds
+                                (adaptToFlow plateBounds)
                                 label path
                         Nothing ->
                             viewPlateControls
                                 theme (toneOf path)
                                 detach
-                                plateBounds
+                                (adaptToFlow plateBounds)
                                 "" path
                 )
             )
