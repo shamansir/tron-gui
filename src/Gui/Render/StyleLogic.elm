@@ -7,6 +7,8 @@ import Color exposing (Color)
 import Gui.Render.Style exposing (..)
 
 
+import Gui.Mouse exposing (Position)
+import Bounds exposing (Bounds)
 import Gui.Property as Property exposing (Property(..))
 import Gui.Path as Path exposing (Path, toString)
 import Gui.Focus exposing (Focused(..))
@@ -183,3 +185,22 @@ focusColor theme focused =
                 if n == 0 then rgb 1.0 1.0 1.0
                 else if n == 1 then rgb 0.95 0.95 0.95
                 else ... -}
+
+
+-- TODO: make bounds to be bounded to pariticular units
+toGridCoords : Bounds -> Position -> Position
+toGridCoords bounds pos =
+    { x = (pos.x - bounds.x) / cellWidth
+    , y = (pos.y - bounds.y) / cellHeight
+    }
+
+
+adaptToFlow : Flow -> Bounds -> Bounds -> Bounds
+adaptToFlow flow outerBounds innerBounds =
+    case flow of
+        TopToBottom -> innerBounds
+        BottomToTop ->
+            { innerBounds
+            | y = outerBounds.height - innerBounds.y - innerBounds.height
+            }
+        _ -> innerBounds
