@@ -193,14 +193,3 @@ toGridCoords bounds pos =
     { x = (pos.x - bounds.x) / cellWidth
     , y = (pos.y - bounds.y) / cellHeight
     }
-
-
-adaptToFlow : Flow -> Bounds -> Bounds -> Bounds
-adaptToFlow flow outerBounds innerBounds =
-    case flow of
-        TopToBottom -> innerBounds
-        BottomToTop ->
-            { innerBounds
-            | y = outerBounds.height - innerBounds.y - innerBounds.height
-            }
-        _ -> innerBounds
