@@ -117,18 +117,10 @@ view theme flow bounds detach root layout =
             Detach.isAttached detach
                 |> Maybe.withDefault Path.start
         tones = Style.assignTones root
+        adaptToFlow_ = adaptToFlow flow bounds
 
         toneOf path =
             tones |> Dict.get (Path.toString path) |> Maybe.withDefault None
-
-        adaptToFlow locBounds =
-            case flow of
-                Style.TopToBottom -> locBounds
-                Style.BottomToTop ->
-                    { locBounds
-                    | y = bounds.height - locBounds.y - locBounds.height
-                    }
-                _ -> locBounds
 
         ( plates, cells ) =
             BinPack.unfold
@@ -161,7 +153,7 @@ view theme flow bounds detach root layout =
 
         ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
 
-            ( plates1 |> List.map (Tuple.second >> adaptToFlow >> viewPlateBack theme)
+            ( plates1 |> List.map (Tuple.second >> adaptToFlow_ >> viewPlateBack theme)
 
             , cells1 |> List.map
                 (\(path, propertyBounds) ->
@@ -175,7 +167,7 @@ view theme flow bounds detach root layout =
                                 theme
                                 (toneOf path)
                                 path
-                                (adaptToFlow propertyBounds)
+                                (adaptToFlow_ propertyBounds)
                                 (focused root path)
                                 prop
                         Nothing -> Nothing
@@ -189,13 +181,13 @@ view theme flow bounds detach root layout =
                             viewPlateControls
                                 theme (toneOf path)
                                 detach
-                                (adaptToFlow plateBounds)
+                                (adaptToFlow_ plateBounds)
                                 label path
                         Nothing ->
                             viewPlateControls
                                 theme (toneOf path)
                                 detach
-                                (adaptToFlow plateBounds)
+                                (adaptToFlow_ plateBounds)
                                 "" path
                 )
             )

@@ -434,14 +434,6 @@ trackMouse =
     |> Sub.map ApplyMouse
 
 
--- TODO: make bounds to be bounded to pariticular units
-toGridCoords : Bounds -> Flow -> Position -> Position
-toGridCoords bounds flow pos =
-    { x = (pos.x - bounds.x) / cellWidth
-    , y = (pos.y - bounds.y) / cellHeight
-    }
-
-
 handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd msg )
 handleMouse mouseAction gui =
     let
@@ -461,7 +453,7 @@ handleMouse mouseAction gui =
 
         findPathAt pos =
             pos
-                |> toGridCoords bounds gui.flow
+                |> Style.toGridCoords bounds
                 |> Layout.find theLayout
 
         findCellAt pos =
