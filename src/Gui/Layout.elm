@@ -1,15 +1,17 @@
-module Gui.Layout exposing (..)
+module Gui.Layout exposing (Cell(..), init, pack, pack1)
 
 
 import Array exposing (..)
 import Json.Decode as Json
 
 
+import Bounds exposing (Bounds)
 import Gui.Control exposing (Control(..))
 import Gui.Path as Path exposing (Path)
 import Gui.Property exposing (..)
 import Gui.Property as Property exposing (fold)
 import BinPack exposing (..)
+import Gui.Render.Style exposing (Flow(..))
 
 
 type Cell
@@ -17,7 +19,7 @@ type Cell
     | Plate Path (BinPack Path)
 
 
-type alias Layout = BinPack Cell
+type alias Layout = ( Flow, ( Int, Int ), BinPack Cell )
 
 
 {-
@@ -33,46 +35,63 @@ type Position a = Position { x : Float, y : Float }
 -}
 
 
-init : ( Int, Int ) -> Layout
-init ( maxCellsByX, maxCellsByY )
+init : Flow -> ( Int, Int ) -> Layout
+init flow size
+    = ( flow, size, initBinPack size )
+
+
+initBinPack : ( Int, Int ) -> BinPack a
+initBinPack ( maxCellsByX, maxCellsByY )
     = container (toFloat maxCellsByX) (toFloat maxCellsByY)
 
 
 find : Layout -> { x : Float, y : Float } -> Maybe Path
-find layout pos =
-    case layout |> BinPack.find pos of
-        Just ( One path, _ ) ->
-            Just path
-        Just ( Plate _ innerLayout, bounds ) ->
-            BinPack.find
-                { x = pos.x - bounds.x
-                , y = pos.y - bounds.y
-                }
-                innerLayout
-                |> Maybe.map Tuple.first
-        Nothing ->
-            Nothing
+find ( flow, size, layout ) pos =
+    let
+        adaptedPos = adaptPosToFlow flow size pos
+    in
+        case layout |> BinPack.find adaptedPos of
+            Just ( One path, _ ) ->
+                Just path
+            Just ( Plate _ innerLayout, bounds ) ->
+                BinPack.find
+                    { x = adaptedPos.x - bounds.x
+                    , y = adaptedPos.y - bounds.y
+                    }
+                    innerLayout
+                    |> Maybe.map Tuple.first
+            Nothing ->
+                Nothing
 
 
-pack : ( Int, Int ) -> Property msg -> Layout
-pack size = pack1 size Path.start
+pack : Flow -> ( Int, Int ) -> Property msg -> Layout
+pack flow size = pack1 flow size Path.start
 
 
-pack1 : ( Int, Int ) -> Path -> Property msg -> Layout
-pack1 size rootPath prop =
+pack1 : Flow -> ( Int, Int ) -> Path -> Property msg -> Layout
+pack1 flow size rootPath prop =
     case prop of
         Nil ->
-            init size
+            init flow size
         Group (Control (shape, items) _ _) ->
-            packItemsAtRoot size rootPath shape items
+            ( flow
+            , size
+            , packItemsAtRoot size rootPath shape items
+            )
         Choice (Control (shape, items) _ _) ->
-            packItemsAtRoot size rootPath shape items
+            ( flow
+            , size
+            , packItemsAtRoot size rootPath shape items
+            )
         _ ->
-            init size
+            ( flow
+            , size
+            , initBinPack size
                 |> BinPack.pack1 ( { width = 1, height = 1 }, One <| Path.start )
+            )
 
 
-packItemsAtRoot : ( Int, Int ) -> Path -> Shape -> Array (Label, Property msg) -> Layout
+packItemsAtRoot : ( Int, Int ) -> Path -> Shape -> Array (Label, Property msg) -> BinPack Cell
 packItemsAtRoot size rp shape items =
     let
         rootPath = Path.toList rp
@@ -86,7 +105,7 @@ packItemsAtRoot size rp shape items =
                             then layout |> packOne (rootPath ++ [index])
                             else layout
                     )
-                    (init size)
+                    (initBinPack size)
 
         packOne path =
             BinPack.pack1
@@ -120,13 +139,13 @@ packItemsAtRoot size rp shape items =
                 )
 
         packGroupControl
-                : List Int
-            -> Layout
+            :  List Int
+            -> BinPack Cell
             -> Control
                     ( Shape, Array ( Label, Property msg ) )
                     ( GroupState, a )
                     msg
-            -> Layout
+            -> BinPack Cell
         packGroupControl path layout (Control ( innerShape, innerItems ) (grpState, _) _) =
             case grpState of
                 Expanded ->
@@ -161,3 +180,25 @@ packItemsAtRoot size rp shape items =
 
     in
         items |> packPlatesOf rootPath firstLevel
+
+
+adaptToFlow : Flow -> Bounds -> Bounds -> Bounds
+adaptToFlow flow outerBounds innerBounds =
+    case flow of
+        TopToBottom -> innerBounds
+        BottomToTop ->
+            { innerBounds
+            | y = outerBounds.height - innerBounds.y - innerBounds.height
+            }
+        _ -> innerBounds
+
+
+adaptPosToFlow : Flow -> ( Int, Int ) -> { x : Float, y : Float } -> { x : Float, y : Float }
+adaptPosToFlow flow ( width, height ) ({ x, y } as pos) =
+    case flow of
+        TopToBottom -> pos
+        BottomToTop ->
+            { pos
+            | y = toFloat height - y
+            }
+        _ -> pos
