@@ -1,5 +1,5 @@
 module Gui.Render.Style exposing
-    ( Flow(..), Theme(..) )
+    ( Flow(..), CellShape(..), Theme(..) )
 
 
 {-| Style module defines the ways to configure the GUI look
@@ -21,6 +21,15 @@ type Flow
     | BottomToTop
     | LeftToRight
     | RightToLeft
+
+
+type CellShape
+    = Full_Full
+    | Half_Half
+    | Half_Full
+    | Full_Half
+    | Twice_Half
+    | Half_Twice
 
 
 {-| Dark or Light theme, each of those could be useful for different situation.

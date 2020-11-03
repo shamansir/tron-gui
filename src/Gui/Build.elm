@@ -46,6 +46,7 @@ import Gui.Control exposing (..)
 import Gui.Property exposing (..)
 import Gui.Control exposing (Control(..))
 import Gui.Util exposing (findMap)
+import Gui.Render.Style exposing (CellShape(..))
 
 
 {-| `Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instance `Builder msg`.
@@ -130,7 +131,12 @@ Actually it is just an alias for the nested row of controls, always expanded.
 -}
 root : List (Label, Builder msg) -> Builder msg
 root props =
-    nest ( 1, List.length <| List.filter (Tuple.second >> isGhost >> not) props ) props
+    nest
+        ( 1, props
+                |> List.filter (Tuple.second >> isGhost >> not)
+                |> List.length )
+        Full_Full
+        props
         |> expand
 
 
@@ -321,11 +327,11 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
             )
         ]
 -}
-nest : Shape -> List (Label, Builder msg) -> Builder msg
-nest shape items =
+nest : Shape -> CellShape -> List (Label, Builder msg) -> Builder msg
+nest shape cellShape items =
     Group
         <| Control
-            ( shape
+            ( ( shape, cellShape )
             , Array.fromList items
             )
             ( Collapsed
@@ -352,15 +358,16 @@ nest shape items =
 -}
 choice
      : Shape
+    -> CellShape
     -> ( a -> Label )
     -> List a
     -> a
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Builder msg
-choice shape toLabel =
+choice shape cellShape toLabel =
     choiceHelper
-        shape
+        ( shape, cellShape )
         (\callByIndex index val ->
             ( toLabel val
             , button <| always <| callByIndex <| Selected index
@@ -379,13 +386,14 @@ choice shape toLabel =
 -}
 choice1
      : Shape
+    -> CellShape
     -> ( comparable -> Label )
     -> List comparable
     -> comparable
     -> ( comparable -> msg )
     -> Builder msg
-choice1 shape f items v =
-    choice shape f items v (==)
+choice1 shape cellShape f items v =
+    choice shape cellShape f items v (==)
 
 
 {-| `choice2` is the same as `choice`, but allows user define icons for buttons.
@@ -405,15 +413,16 @@ choice1 shape f items v =
 -}
 choiceIcons
     : Shape
+    -> CellShape
     -> ( a -> ( Label, Icon ) )
     -> List a
     -> a
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Builder msg
-choiceIcons shape toLabelAndIcon =
+choiceIcons shape cellShape toLabelAndIcon =
     choiceHelper
-        shape
+        ( shape, cellShape )
         (\callByIndex index val ->
             let ( label, theIcon ) = toLabelAndIcon val
             in
@@ -424,7 +433,7 @@ choiceIcons shape toLabelAndIcon =
 
 
 choiceHelper
-     : Shape
+     : ( Shape, CellShape )
     -> ( (Selected -> msg) -> Int -> a -> ( Label, Builder msg ) )
     -> List a
     -> a
@@ -486,6 +495,7 @@ strings
 strings shape options current toMsg =
     choice
         shape
+        Half_Twice
         identity
         options
         current

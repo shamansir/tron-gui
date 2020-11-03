@@ -11,7 +11,7 @@ import Gui.Path as Path exposing (Path)
 import Gui.Property exposing (..)
 import Gui.Property as Property exposing (fold)
 import BinPack exposing (..)
-import Gui.Render.Style exposing (Flow(..))
+import Gui.Render.Style exposing (Flow(..), CellShape(..))
 
 
 type Cell_ a
@@ -81,12 +81,12 @@ pack1 flow size rootPath prop =
     case prop of
         Nil ->
             init flow size
-        Group (Control (shape, items) _ _) ->
+        Group (Control ( ( shape, _ ), items) _ _) ->
             ( flow
             , size
             , packItemsAtRoot (adaptSizeToFlow flow size) rootPath shape items
             )
-        Choice (Control (shape, items) _ _) ->
+        Choice (Control ( (shape, _ ), items) _ _) ->
             ( flow
             , size
             , packItemsAtRoot (adaptSizeToFlow flow size) rootPath shape items
@@ -126,13 +126,15 @@ packItemsAtRoot size rp shape items =
                 , One_ <| Path.fromList path
                 )
 
-        packOne1 path =
+        packOneSub path cellShape =
             BinPack.pack1
-                ( { width = 1, height = 1 }
+                ( case cellSizeFromShape cellShape of
+                    ( cw, ch ) ->
+                        { width = cw, height = ch }
                 , Path.fromList path
                 )
 
-        packMany path (w, h) plateItems =
+        packMany path (w, h) cellShape plateItems =
             BinPack.pack1
                 (
                     { width = toFloat w
@@ -143,7 +145,7 @@ packItemsAtRoot size rp shape items =
                     <| Array.foldl
                         (\(index, ( _, innerProp)) plateLayout ->
                             if not <| isGhost innerProp
-                                then packOne1 (path ++ [index]) plateLayout
+                                then packOneSub (path ++ [index]) cellShape plateLayout
                                 else plateLayout
                         )
                         (BinPack.container (toFloat w) (toFloat h))
@@ -155,11 +157,14 @@ packItemsAtRoot size rp shape items =
             :  List Int
             -> BinPack (Cell_ Path)
             -> Control
-                    ( Shape, Array ( Label, Property msg ) )
+                    ( ( Shape, CellShape ), Array ( Label, Property msg ) )
                     ( GroupState, a )
                     msg
             -> BinPack (Cell_ Path)
-        packGroupControl path layout (Control ( innerShape, innerItems ) (grpState, _) _) =
+        packGroupControl
+            path
+            layout
+            (Control ( ( innerShape, cellShape ), innerItems ) (grpState, _) _) =
             case grpState of
                 Expanded ->
                     let
@@ -168,6 +173,7 @@ packItemsAtRoot size rp shape items =
                                 |> packMany
                                     path
                                     innerShape
+                                    cellShape
                                     innerItems
                     in
                         packPlatesOf path withPlate innerItems
@@ -280,3 +286,15 @@ adaptSizeToFlow flow ( w, h ) =
         BottomToTop -> ( w, h )
         LeftToRight -> ( h, w )
         RightToLeft -> ( h, w )
+
+
+cellSizeFromShape : CellShape -> ( Float, Float )
+cellSizeFromShape cs =
+    case cs of
+       Full_Full -> ( 1.0, 1.0 )
+       Half_Half -> ( 0.5, 0.5 )
+       Half_Full -> ( 0.5, 1.0 )
+       Full_Half -> ( 1.0, 0.5 )
+       Twice_Half -> ( 2.0, 0.5 )
+       Half_Twice -> ( 0.5, 2.0 )
+
