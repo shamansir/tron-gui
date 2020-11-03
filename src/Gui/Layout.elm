@@ -250,20 +250,27 @@ adaptBoundsToFlow flow ( width, height ) innerBounds =
         RightToLeft ->
             { width = innerBounds.height
             , height = innerBounds.width
-            , x = toFloat width - innerBounds.y - innerBounds.height
+            , x = toFloat height - innerBounds.y - innerBounds.height
             , y = innerBounds.x
             }
 
 
 adaptPosToFlow : Flow -> ( Int, Int ) -> { x : Float, y : Float } -> { x : Float, y : Float }
-adaptPosToFlow flow ( width, height ) ({ x, y } as pos) =
+adaptPosToFlow flow ( width, height ) { x, y } =
     case flow of
-        TopToBottom -> pos
+        TopToBottom -> { x = x, y = y }
         BottomToTop ->
-            { pos
-            | y = toFloat height - y
+            { x = x
+            , y = toFloat height - y
             }
-        _ -> pos
+        LeftToRight ->
+            { x = y
+            , y = x
+            }
+        RightToLeft ->
+            { x = y
+            , y = toFloat width - x
+            }
 
 
 adaptSizeToFlow : Flow -> ( Int, Int ) -> ( Int, Int )
