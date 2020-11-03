@@ -28,7 +28,19 @@ type BinPack a
         }
 
 
-fold : (a -> b -> b) -> b -> BinPack a -> b
+map : ( a -> b ) -> BinPack a -> BinPack b
+map f bp =
+    case bp of
+        Node size { right, below } v ->
+            Node size
+                { right = map f right
+                , below = map f below
+                }
+                (f v)
+        Free size -> Free size
+
+
+fold : ( a -> b -> b ) -> b -> BinPack a -> b
 fold f =
     fold1
         (\bp prev ->
@@ -38,7 +50,7 @@ fold f =
         )
 
 
-fold1 : (BinPack a -> b -> b) -> b -> BinPack a -> b
+fold1 : ( BinPack a -> b -> b ) -> b -> BinPack a -> b
 fold1 f i bp =
     case bp of
         Node _ { right, below } _ ->
@@ -50,7 +62,7 @@ fold1 f i bp =
         Free _ -> f bp i
 
 
-unfold : ( ( a, Bounds ) -> k -> k) -> k -> BinPack a -> k
+unfold : ( ( a, Bounds ) -> k -> k ) -> k -> BinPack a -> k
 unfold f =
     let
         helper x y v bp =
@@ -67,7 +79,7 @@ unfold f =
     in helper 0 0
 
 
-unfold1 : ( ( BinPack a, Bounds ) -> k -> k) -> k -> BinPack a -> k
+unfold1 : ( ( BinPack a, Bounds ) -> k -> k ) -> k -> BinPack a -> k
 unfold1 f =
     let
         helper x y v bp =
