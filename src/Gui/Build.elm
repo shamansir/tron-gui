@@ -2,7 +2,7 @@ module Gui.Build exposing
     ( Builder
     , root
     , none, int, float, xy, color, text, input, button, button1, toggle, toggle1
-    , nest, nestIn, choice, choice1, choice2, choiceIn, strings
+    , nest, choice, choice1, choiceIcons, strings
     , icon
     )
 
@@ -130,7 +130,7 @@ Actually it is just an alias for the nested row of controls, always expanded.
 -}
 root : List (Label, Builder msg) -> Builder msg
 root props =
-    nestIn ( 1, List.length <| List.filter (Tuple.second >> isGhost >> not) props ) props
+    nest ( 1, List.length <| List.filter (Tuple.second >> isGhost >> not) props ) props
         |> expand
 
 
@@ -306,7 +306,7 @@ toggle1 default =
 Handler receives the state of the group, like if it is exapanded or collapsed or detached, but usually it's fine just to make it `always NoOp`.
 
     Builder.nest
-
+        ( 5, 4 ) -- the wanted shape of the nesting, i.e. 5 cells width x 4 cells height
         [
             ( "red"
             , Builder.float { min = 0, max = 255, step = 0.1 } model.red <| AdjustColor Red
@@ -321,20 +321,8 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
             )
         ]
 -}
-nest : List (Label, Builder msg) -> Builder msg
-nest items =
-    nestIn (findShape items) items
-
-
-{-| `nestIn` is the same as `nest`, but lets you define the shape in which items will be grouped, instead of automatic calculations.
-
-    Builder.nest
-        (5, 5)
-        [ ... ]
-        <| always NoOp
--}
-nestIn : Shape -> List (Label, Builder msg) -> Builder msg
-nestIn shape items =
+nest : Shape -> List (Label, Builder msg) -> Builder msg
+nest shape items =
     Group
         <| Control
             ( shape
@@ -349,6 +337,7 @@ nestIn shape items =
 {-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Thanks to Elm rich type system, you are not limited to strings, the option can have any type. But since we also translate these values to HTML and JSON, you need to specify the converter to `String` and from it. Also, since we don't ask for `comparable` type here, you are asked to provide comparison function.
 
     Builder.choice
+        ( 5, 4 ) -- the wanted shape of the nesting, i.e. 5 cells width x 4 cells height
         (\waveShape ->
             case waveShape of
                 Sine -> "sine"
@@ -362,42 +351,6 @@ nestIn shape items =
         ChangeWaveShape
 -}
 choice
-     : ( a -> Label )
-    -> List a
-    -> a
-    -> ( a -> a -> Bool )
-    -> ( a -> msg )
-    -> Builder msg
-choice f items =
-    choiceIn (findShape items) f items
-
-
-{-| `choice1` is the same as `choice`, but works with `comparable` values.
-
-    Builder.choice1
-        String.fromInteger
-        [ 128, 256, 512 ]
-        model.bitrate
-        (String.toInteger >> Maybe.withDefault 128 >> ChangeBitrate)
--}
-choice1
-     : ( comparable -> Label )
-    -> List comparable
-    -> comparable
-    -> ( comparable -> msg )
-    -> Builder msg
-choice1 f items v =
-    choiceIn (findShape items) f items v (==)
-
-
-{-| `choiceIn` is the same as `choice`, but lets you define the shape in which items will be grouped, instead of automatic calculations.
-
-    Builder.choiceIn
-        ( 5, 4 )
-        [ ... ]
-        ...
--}
-choiceIn
      : Shape
     -> ( a -> Label )
     -> List a
@@ -405,7 +358,7 @@ choiceIn
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Builder msg
-choiceIn shape toLabel =
+choice shape toLabel =
     choiceHelper
         shape
         (\callByIndex index val ->
@@ -413,6 +366,26 @@ choiceIn shape toLabel =
             , button <| always <| callByIndex <| Selected index
             )
         )
+
+
+{-| `choice1` is the same as `choice`, but works with `comparable` values.
+
+    Builder.choice1
+        ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
+        String.fromInteger
+        [ 128, 256, 512 ]
+        model.bitrate
+        (String.toInteger >> Maybe.withDefault 128 >> ChangeBitrate)
+-}
+choice1
+     : Shape
+    -> ( comparable -> Label )
+    -> List comparable
+    -> comparable
+    -> ( comparable -> msg )
+    -> Builder msg
+choice1 shape f items v =
+    choice shape f items v (==)
 
 
 {-| `choice2` is the same as `choice`, but allows user define icons for buttons.
@@ -430,7 +403,7 @@ choiceIn shape toLabel =
         (==) -- equality operator usually works for sum types, but be accurate
         ChangeWaveShape
 -}
-choice2
+choiceIcons
     : Shape
     -> ( a -> ( Label, Icon ) )
     -> List a
@@ -438,7 +411,7 @@ choice2
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Builder msg
-choice2 shape toLabelAndIcon =
+choiceIcons shape toLabelAndIcon =
     choiceHelper
         shape
         (\callByIndex index val ->
@@ -499,40 +472,19 @@ choiceHelper shape toBuilder options current compare toMsg =
 {-| `strings` is a helper to create `choice` over string values.
 
     Builder.strings
+        ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
         greekChildrenNames
         model.currentChildName
         ChangeChildName
 -}
 strings
-     : List String
-    -> String
-    -> ( String -> msg )
-    -> Builder msg
-strings options current toMsg =
-    choice
-        identity
-        options
-        current
-        ((==))
-        toMsg
-
-
-{-| `stringsIn` is a helper to create `choice` over string values, but in a given shape.
-
-    Builder.stringsIn
-        ( 5, 10 )
-        greekChildrenNames
-        model.currentChildName
-        ChangeChildName
--}
-stringsIn
-    :  Shape
+     : Shape
     -> List String
     -> String
     -> ( String -> msg )
     -> Builder msg
-stringsIn shape options current toMsg  =
-    choiceIn
+strings shape options current toMsg =
+    choice
         shape
         identity
         options

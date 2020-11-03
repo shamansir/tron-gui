@@ -122,15 +122,6 @@ view theme flow bounds detach root layout =
         toneOf path =
             tones |> Dict.get (Path.toString path) |> Maybe.withDefault None
 
-        adaptToFlow locBounds =
-            case flow of
-                Style.TopToBottom -> locBounds
-                Style.BottomToTop ->
-                    { locBounds
-                    | y = bounds.height - locBounds.y
-                    }
-                _ -> locBounds
-
         ( plates, cells ) =
             Layout.unfold
                 (\cell ( prevPlates, prevCells ) ->
