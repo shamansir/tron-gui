@@ -12,6 +12,8 @@ import Gui.Path as Path
 import Gui.Control exposing (..)
 import Gui.Control as Control exposing (..)
 
+import Gui.Render.Style exposing (CellShape)
+
 
 type alias Label = String
 
@@ -53,14 +55,14 @@ type TextState
 
 type alias GroupControl msg =
     Control
-        ( Shape, Array ( Label, Property msg ) )
+        ( ( Shape, CellShape ), Array ( Label, Property msg ) )
         ( GroupState, Maybe FocusAt )
         msg
 
 
 type alias ChoiceControl msg =
     Control
-        ( Shape, Array ( Label, Property msg ) ) -- FIXME: Control ( Maybe Icon ) () msg
+        ( ( Shape, CellShape ), Array ( Label, Property msg ) )
         ( GroupState, ( Maybe FocusAt, Selected ) )
         msg
 
@@ -530,12 +532,14 @@ toggleOff prop =
         _ -> prop
 
 
+{-
 reshape : Shape -> Property msg -> Property msg
 reshape shape prop =
     case prop of
         Group ( Control ( _, items ) ( expanded, focus ) handler ) ->
             Group ( Control ( shape, items ) ( expanded, focus ) handler )
         _ -> prop
+-}
 
 
 isGhost : Property msg -> Bool

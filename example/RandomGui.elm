@@ -10,6 +10,7 @@ import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, 
 import Gui.Property as Gui exposing
     ( Label, ToggleState(..), GroupState(..), Icon(..), TextState(..) )
 import Gui.Build exposing (Builder)
+import Gui.Render.Style exposing (CellShape(..))
 
 
 type DeepLevel = DeepLevel Int
@@ -165,7 +166,11 @@ choice deep =
                     Control
                     (Random.map2
                         Tuple.pair
-                        (shape <| Array.length cs)
+                        (Random.map2
+                            Tuple.pair
+                            (shape <| Array.length cs)
+                            (Random.constant Full_Full)
+                        )
                         (Random.constant cs)
                     )
                     (Random.map2
@@ -188,7 +193,11 @@ group deep =
                     Control
                     (Random.map2
                         Tuple.pair
-                        (shape <| Array.length cs)
+                        (Random.map2
+                            Tuple.pair
+                            (shape <| Array.length cs)
+                            (Random.constant Full_Full)
+                        )
                         (Random.constant cs)
                     )
                     (Random.map2

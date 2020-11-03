@@ -7,6 +7,7 @@ import Gui exposing (Gui)
 import Gui.Build as Gui
 import Gui.Property  exposing (Property)
 import Gui.Property as Property exposing (Label)
+import Gui.Render.Style exposing (CellShape(..))
 
 
 import Default.Model exposing (..)
@@ -45,6 +46,7 @@ for model =
         , ( "choice",
                 Gui.choice
                     ( 1, 4 )
+                    Full_Full
                     choiceToLabel
                     choices
                     model.choice
@@ -68,6 +70,7 @@ nestedButtons : Choice -> Property Msg
 nestedButtons curChoice =
     Gui.nest
         ( 2, 3 )
+        Full_Full
         [ ( "a", Gui.button <| always <| Pressed A )
         , ( "b", Gui.button <| always <| Pressed B )
         , ( "c", Gui.button <| always <| Pressed C )
@@ -87,6 +90,7 @@ colorNest =
     in
         Gui.nest
             ( 1, 3 )
+            Full_Full
             [ ( "red", colorCompKnob ChangeRed )
             , ( "green", colorCompKnob ChangeGreen )
             , ( "blue", colorCompKnob ChangeBlue )
