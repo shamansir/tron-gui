@@ -1,4 +1,4 @@
-module Gui.Layout exposing (Cell(..), init, pack, pack1)
+module Gui.Layout exposing (Layout, Cell(..), init, pack, pack1, unfold)
 
 
 import Array exposing (..)
@@ -14,12 +14,17 @@ import BinPack exposing (..)
 import Gui.Render.Style exposing (Flow(..))
 
 
-type Cell
-    = One Path
-    | Plate Path (BinPack Path)
+type Cell_ a
+    = One_ a
+    | Many_ a (BinPack a)
 
 
-type alias Layout = ( Flow, ( Int, Int ), BinPack Cell )
+type Cell a
+    = One a
+    | Many a (List a)
+
+
+type alias Layout = ( Flow, ( Int, Int ), BinPack (Cell_ Path) )
 
 
 {-
@@ -51,9 +56,9 @@ find ( flow, size, layout ) pos =
         adaptedPos = adaptPosToFlow flow size pos
     in
         case layout |> BinPack.find adaptedPos of
-            Just ( One path, _ ) ->
+            Just ( One_ path, _ ) ->
                 Just path
-            Just ( Plate _ innerLayout, bounds ) ->
+            Just ( Many_ _ innerLayout, bounds ) ->
                 BinPack.find
                     { x = adaptedPos.x - bounds.x
                     , y = adaptedPos.y - bounds.y
@@ -87,11 +92,16 @@ pack1 flow size rootPath prop =
             ( flow
             , size
             , initBinPack size
-                |> BinPack.pack1 ( { width = 1, height = 1 }, One <| Path.start )
+                |> BinPack.pack1 ( { width = 1, height = 1 }, One_ <| Path.start )
             )
 
 
-packItemsAtRoot : ( Int, Int ) -> Path -> Shape -> Array (Label, Property msg) -> BinPack Cell
+packItemsAtRoot
+    :  ( Int, Int )
+    -> Path
+    -> Shape
+    -> Array (Label, Property msg)
+    -> BinPack (Cell_ Path)
 packItemsAtRoot size rp shape items =
     let
         rootPath = Path.toList rp
@@ -110,7 +120,7 @@ packItemsAtRoot size rp shape items =
         packOne path =
             BinPack.pack1
                 ( { width = 1, height = 1 }
-                , One <| Path.fromList path
+                , One_ <| Path.fromList path
                 )
 
         packOne1 path =
@@ -119,13 +129,13 @@ packItemsAtRoot size rp shape items =
                 , Path.fromList path
                 )
 
-        packPlate path (w, h) plateItems =
+        packMany path (w, h) plateItems =
             BinPack.pack1
                 (
                     { width = toFloat w
                     , height = toFloat h
                     }
-                , Plate
+                , Many_
                     (Path.fromList path)
                     <| Array.foldl
                         (\(index, ( _, innerProp)) plateLayout ->
@@ -140,19 +150,19 @@ packItemsAtRoot size rp shape items =
 
         packGroupControl
             :  List Int
-            -> BinPack Cell
+            -> BinPack (Cell_ Path)
             -> Control
                     ( Shape, Array ( Label, Property msg ) )
                     ( GroupState, a )
                     msg
-            -> BinPack Cell
+            -> BinPack (Cell_ Path)
         packGroupControl path layout (Control ( innerShape, innerItems ) (grpState, _) _) =
             case grpState of
                 Expanded ->
                     let
                         withPlate
                             = layout
-                                |> packPlate
+                                |> packMany
                                     path
                                     innerShape
                                     innerItems
@@ -182,7 +192,33 @@ packItemsAtRoot size rp shape items =
         items |> packPlatesOf rootPath firstLevel
 
 
-adaptToFlow : Flow -> Bounds -> Bounds -> Bounds
+unfold : ( Cell ( Path, Bounds ) -> a -> a ) -> a -> Layout -> a
+unfold f def ( _, _, bp ) =
+    BinPack.unfold
+        (\(c, bounds) prev ->
+            case c of
+                One_ path -> f (One ( path, bounds )) prev
+                Many_ path innerBp ->
+                    f (Many ( path, bounds )
+                        <| List.map
+                            (Tuple.mapSecond <| Bounds.shift bounds)
+                        <| BinPack.unfold
+                            (::)
+                            []
+                            innerBp
+                      )
+                      prev
+        )
+        def
+        bp
+
+
+toList : Layout -> List ( Cell (Path, Bounds) )
+toList =
+    unfold (::) []
+
+
+adaptToFlow : Flow ->  { a | width : Float, height : Float } -> Bounds -> Bounds
 adaptToFlow flow outerBounds innerBounds =
     case flow of
         TopToBottom -> innerBounds
