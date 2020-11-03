@@ -434,14 +434,6 @@ trackMouse =
     |> Sub.map ApplyMouse
 
 
--- TODO: make bounds to be bounded to pariticular units
-toGridCoords : Bounds -> Flow -> Position -> Position
-toGridCoords bounds flow pos =
-    { x = (pos.x - bounds.x) / cellWidth
-    , y = (pos.y - bounds.y) / cellHeight
-    }
-
-
 handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd msg )
 handleMouse mouseAction gui =
     let
@@ -453,7 +445,7 @@ handleMouse mouseAction gui =
                 |> Gui.Mouse.apply mouseAction
         size =
             gui.viewport
-                |> sizeFromViewport gui.flow gui.tree
+                |> sizeFromViewport gui.tree
         bounds =
             boundsFromSize gui.viewport size
         theLayout =
@@ -461,7 +453,7 @@ handleMouse mouseAction gui =
 
         findPathAt pos =
             pos
-                |> toGridCoords bounds gui.flow
+                |> Style.toGridCoords bounds
                 |> Layout.find theLayout
 
         findCellAt pos =
@@ -701,8 +693,8 @@ getRootPath gui =
         |> Maybe.withDefault Path.start
 
 
-sizeFromViewport : Flow -> Property msg -> ( Int, Int ) -> ( Int, Int )
-sizeFromViewport flow root ( widthInPixels, heightInPixels ) =
+sizeFromViewport : Property msg -> ( Int, Int ) -> ( Int, Int )
+sizeFromViewport root ( widthInPixels, heightInPixels ) =
     let
         cellsFitHorizontally = floor <| toFloat widthInPixels / (cellWidth + gap)
         cellsFitVertically = floor <| toFloat heightInPixels / (cellHeight + gap)
@@ -717,7 +709,7 @@ layout gui =
     let
         size =
             gui.viewport
-                |> sizeFromViewport gui.flow gui.tree
+                |> sizeFromViewport gui.tree
     in
     case Detach.isAttached gui.detach
         |> Maybe.andThen
@@ -727,9 +719,9 @@ layout gui =
                     |> Maybe.map (Tuple.pair path)
             ) of
         Nothing ->
-            ( gui.tree, Layout.pack size gui.tree )
+            ( gui.tree, Layout.pack gui.flow size gui.tree )
         Just ( attachedPath, root ) ->
-            ( root, Layout.pack1 size attachedPath root )
+            ( root, Layout.pack1 gui.flow size attachedPath root )
 
 
 {-| Subscribe the updates of the GUI, so it would resize with the window,
@@ -772,7 +764,7 @@ view theme gui =
     let
         size =
             gui.viewport
-                |> sizeFromViewport gui.flow gui.tree
+                |> sizeFromViewport gui.tree
         bounds =
             boundsFromSize gui.viewport size
     in

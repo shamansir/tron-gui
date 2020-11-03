@@ -22,6 +22,7 @@ import Gui.Property exposing (..)
 import Gui.Property as Property exposing (find)
 import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
+import Gui.Layout as Layout exposing (unfold)
 import Gui.Focus exposing (Focused(..), focused)
 import Gui.Detach exposing (ClientId, Detach)
 import Gui.Detach as Detach exposing (isAttached)
@@ -131,23 +132,18 @@ view theme flow bounds detach root layout =
                 _ -> locBounds
 
         ( plates, cells ) =
-            BinPack.unfold
-                (\( cell, cellBounds ) ( prevPlates, prevCells ) ->
+            Layout.unfold
+                (\cell ( prevPlates, prevCells ) ->
                     case cell of
 
-                        One path ->
+                        One ( path, cellBounds ) ->
                             ( prevPlates
                             , ( path, cellBounds ) :: prevCells
                             )
 
-                        Plate originPath plateLayout ->
-                            ( ( originPath, cellBounds ) :: prevPlates
-                            , BinPack.unfold
-                                (\( path, propBounds ) pPrevCells ->
-                                    ( path, B.shift cellBounds propBounds ) :: pPrevCells
-                                )
-                                prevCells
-                                plateLayout
+                        Many ( originPath, plateBounds ) innerCells ->
+                            ( ( originPath, plateBounds ) :: prevPlates
+                            , innerCells ++ prevCells
                             )
 
                 )
