@@ -22,6 +22,7 @@ import Gui.Property exposing (..)
 import Gui.Property as Property exposing (find)
 import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
+import Gui.Layout as Layout exposing (unfold)
 import Gui.Focus exposing (Focused(..), focused)
 import Gui.Detach exposing (ClientId, Detach)
 import Gui.Detach as Detach exposing (isAttached)
@@ -117,29 +118,23 @@ view theme flow bounds detach root layout =
             Detach.isAttached detach
                 |> Maybe.withDefault Path.start
         tones = Style.assignTones root
-        adaptToFlow_ = adaptToFlow flow bounds
 
         toneOf path =
             tones |> Dict.get (Path.toString path) |> Maybe.withDefault None
 
         ( plates, cells ) =
-            BinPack.unfold
-                (\( cell, cellBounds ) ( prevPlates, prevCells ) ->
+            Layout.unfold
+                (\cell ( prevPlates, prevCells ) ->
                     case cell of
 
-                        One path ->
+                        One ( path, cellBounds ) ->
                             ( prevPlates
                             , ( path, cellBounds ) :: prevCells
                             )
 
-                        Plate originPath plateLayout ->
-                            ( ( originPath, cellBounds ) :: prevPlates
-                            , BinPack.unfold
-                                (\( path, propBounds ) pPrevCells ->
-                                    ( path, B.shift cellBounds propBounds ) :: pPrevCells
-                                )
-                                prevCells
-                                plateLayout
+                        Many ( originPath, plateBounds ) innerCells ->
+                            ( ( originPath, plateBounds ) :: prevPlates
+                            , innerCells ++ prevCells
                             )
 
                 )
@@ -153,7 +148,7 @@ view theme flow bounds detach root layout =
 
         ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
 
-            ( plates1 |> List.map (Tuple.second >> adaptToFlow_ >> viewPlateBack theme)
+            ( plates1 |> List.map (Tuple.second >> viewPlateBack theme)
 
             , cells1 |> List.map
                 (\(path, propertyBounds) ->
@@ -167,7 +162,7 @@ view theme flow bounds detach root layout =
                                 theme
                                 (toneOf path)
                                 path
-                                (adaptToFlow_ propertyBounds)
+                                propertyBounds
                                 (focused root path)
                                 prop
                         Nothing -> Nothing
@@ -181,13 +176,13 @@ view theme flow bounds detach root layout =
                             viewPlateControls
                                 theme (toneOf path)
                                 detach
-                                (adaptToFlow_ plateBounds)
+                                plateBounds
                                 label path
                         Nothing ->
                             viewPlateControls
                                 theme (toneOf path)
                                 detach
-                                (adaptToFlow_ plateBounds)
+                                plateBounds
                                 "" path
                 )
             )

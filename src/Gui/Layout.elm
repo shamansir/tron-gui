@@ -1,4 +1,4 @@
-module Gui.Layout exposing (Layout, Cell(..), init, pack, pack1, unfold)
+module Gui.Layout exposing (Layout, Cell(..), init, pack, pack1, unfold, find, toList)
 
 
 import Array exposing (..)
@@ -193,38 +193,46 @@ packItemsAtRoot size rp shape items =
 
 
 unfold : ( Cell ( Path, Bounds ) -> a -> a ) -> a -> Layout -> a
-unfold f def ( _, _, bp ) =
+unfold f def ( flow, size, bp ) =
     BinPack.unfold
         (\(c, bounds) prev ->
             case c of
-                One_ path -> f (One ( path, bounds )) prev
+                One_ path ->
+                    f
+                        ( One ( path, adaptToFlow flow size bounds ) )
+                        prev
+
                 Many_ path innerBp ->
-                    f (Many ( path, bounds )
-                        <| List.map
-                            (Tuple.mapSecond <| Bounds.shift bounds)
-                        <| BinPack.unfold
-                            (::)
-                            []
-                            innerBp
-                      )
-                      prev
+                    f
+                        ( Many
+                            ( path, bounds )
+                            <| List.map
+                                (Tuple.mapSecond
+                                    <| adaptToFlow flow size << Bounds.shift bounds
+                                )
+                            <| BinPack.unfold
+                                (::)
+                                []
+                                innerBp
+                        )
+                        prev
         )
         def
         bp
 
 
-toList : Layout -> List ( Cell (Path, Bounds) )
+toList : Layout -> List ( Cell ( Path, Bounds ) )
 toList =
     unfold (::) []
 
 
-adaptToFlow : Flow ->  { a | width : Float, height : Float } -> Bounds -> Bounds
-adaptToFlow flow outerBounds innerBounds =
+adaptToFlow : Flow -> ( Int, Int ) -> Bounds -> Bounds
+adaptToFlow flow ( width, height ) innerBounds =
     case flow of
         TopToBottom -> innerBounds
         BottomToTop ->
             { innerBounds
-            | y = outerBounds.height - innerBounds.y - innerBounds.height
+            | y = toFloat height - innerBounds.y - innerBounds.height
             }
         _ -> innerBounds
 
