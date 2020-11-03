@@ -41,8 +41,11 @@ type Position a = Position { x : Float, y : Float }
 
 
 init : Flow -> ( Int, Int ) -> Layout
-init flow size
-    = ( flow, size, initBinPack size )
+init flow size =
+    ( flow
+    , size
+    , initBinPack <| adaptSizeToFlow flow size
+    )
 
 
 initBinPack : ( Int, Int ) -> BinPack a
@@ -81,17 +84,17 @@ pack1 flow size rootPath prop =
         Group (Control (shape, items) _ _) ->
             ( flow
             , size
-            , packItemsAtRoot size rootPath shape items
+            , packItemsAtRoot (adaptSizeToFlow flow size) rootPath shape items
             )
         Choice (Control (shape, items) _ _) ->
             ( flow
             , size
-            , packItemsAtRoot size rootPath shape items
+            , packItemsAtRoot (adaptSizeToFlow flow size) rootPath shape items
             )
         _ ->
             ( flow
             , size
-            , initBinPack size
+            , initBinPack (adaptSizeToFlow flow size)
                 |> BinPack.pack1 ( { width = 1, height = 1 }, One_ <| Path.start )
             )
 
@@ -194,31 +197,35 @@ packItemsAtRoot size rp shape items =
 
 unfold : ( Cell ( Path, Bounds ) -> a -> a ) -> a -> Layout -> a
 unfold f def ( flow, size, bp ) =
-    BinPack.unfold
-        (\(c, bounds) prev ->
-            case c of
-                One_ path ->
-                    f
-                        ( One ( path, adaptToFlow flow size bounds ) )
-                        prev
+    let
+        adaptBounds =
+            adaptBoundsToFlow flow <| adaptSizeToFlow flow size
+    in
+        BinPack.unfold
+            (\( c, bounds ) prev ->
+                case c of
+                    One_ path ->
+                        f
+                            ( One ( path, adaptBounds bounds ) )
+                            prev
 
-                Many_ path innerBp ->
-                    f
-                        ( Many
-                            ( path, bounds )
-                            <| List.map
-                                (Tuple.mapSecond
-                                    <| adaptToFlow flow size << Bounds.shift bounds
-                                )
-                            <| BinPack.unfold
-                                (::)
-                                []
-                                innerBp
-                        )
-                        prev
-        )
-        def
-        bp
+                    Many_ path innerBp ->
+                        f
+                            ( Many
+                                ( path, adaptBounds bounds )
+                                <| List.map
+                                    (Tuple.mapSecond
+                                        <| adaptBounds << Bounds.shift bounds
+                                    )
+                                <| BinPack.unfold
+                                    (::)
+                                    []
+                                    innerBp
+                            )
+                            prev
+            )
+            def
+            bp
 
 
 toList : Layout -> List ( Cell ( Path, Bounds ) )
@@ -226,15 +233,26 @@ toList =
     unfold (::) []
 
 
-adaptToFlow : Flow -> ( Int, Int ) -> Bounds -> Bounds
-adaptToFlow flow ( width, height ) innerBounds =
+adaptBoundsToFlow : Flow -> ( Int, Int ) -> Bounds -> Bounds
+adaptBoundsToFlow flow ( width, height ) innerBounds =
     case flow of
         TopToBottom -> innerBounds
         BottomToTop ->
             { innerBounds
             | y = toFloat height - innerBounds.y - innerBounds.height
             }
-        _ -> innerBounds
+        LeftToRight ->
+            { width = innerBounds.height
+            , height = innerBounds.width
+            , x = innerBounds.y
+            , y = innerBounds.x
+            }
+        RightToLeft ->
+            { width = innerBounds.height
+            , height = innerBounds.width
+            , x = toFloat width - innerBounds.y - innerBounds.height
+            , y = innerBounds.x
+            }
 
 
 adaptPosToFlow : Flow -> ( Int, Int ) -> { x : Float, y : Float } -> { x : Float, y : Float }
@@ -246,3 +264,12 @@ adaptPosToFlow flow ( width, height ) ({ x, y } as pos) =
             | y = toFloat height - y
             }
         _ -> pos
+
+
+adaptSizeToFlow : Flow -> ( Int, Int ) -> ( Int, Int )
+adaptSizeToFlow flow ( w, h ) =
+    case flow of
+        TopToBottom -> ( w, h )
+        BottomToTop -> ( w, h )
+        LeftToRight -> ( h, w )
+        RightToLeft -> ( h, w )
