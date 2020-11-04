@@ -87,8 +87,8 @@ view placement theme tone path bounds focus ( label, prop ) =
         , Svg.text_
             [ SA.textAnchor "middle"
             , SA.dominantBaseline "middle"
-            , SA.x <| String.fromFloat (cellWidth / 2)
-            , SA.y <| String.fromFloat (cellWidth / 5 * 4)
+            , SA.x <| String.fromFloat (bounds.width / 2)
+            , SA.y <| String.fromFloat (bounds.height / 5 * 4)
             , SA.fontSize "13px"
             , SA.fontFamily fontFamily
             , SA.fill <| Color.toCssString <| Style.text theme
@@ -112,23 +112,23 @@ knob theme tone bounds value =
                 []
         radiusA = (bounds.width * 0.27) - 1
         radiusB = bounds.height * 0.27
-        center = { x = bounds.width / 2, y = bounds.height / 2 }
+        ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
     in
         Svg.g
             []
             [ path (colorFor theme tone |> Color.toCssString)
                 <| describeArc
-                    center
+                    { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle 0, to = toAngle value }
             , path (knobLine theme |> Color.toCssString)
                 <| describeArc
-                    center
+                    { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle value, to = toAngle 1 }
             , path (colorFor theme tone |> Color.toCssString)
                 <| describeMark
-                    center
+                    { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     (toAngle value)
             ]
@@ -137,15 +137,24 @@ knob theme tone bounds value =
 coord : Theme -> Tone -> Bounds -> ( Float, Float ) -> Svg msg
 coord theme tone bounds ( valueX, valueY ) =
     let
-        center = { x = bounds.width / 2, y = bounds.height / 2 }
+        ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
+        ( left, top ) = ( gap / 2, gap / 2 )
+        ( right, bottom ) =
+            ( bounds.width - gap / 2, bounds.height - gap / 2 )
+        circleRadius = (max bounds.width bounds.height) / 18
+        innerGap = circleRadius * 2
+        ( circleX, circleY ) =
+            ( left + innerGap + (valueX * (right - left - innerGap * 2))
+            , top + innerGap + (valueY * (bottom - top - innerGap * 2))
+            )
     in
     Svg.g
         []
         [ Svg.line
-            [ SA.x1 "5"
-            , SA.y1 <| String.fromFloat center.y
-            , SA.x2 "85"
-            , SA.y2 <| String.fromFloat center.y
+            [ SA.x1 <| String.fromFloat left
+            , SA.y1 <| String.fromFloat cy
+            , SA.x2 <| String.fromFloat right
+            , SA.y2 <| String.fromFloat cy
             , SA.stroke <| Color.toCssString <| colorFor theme tone
             , SA.opacity "0.2"
             , SA.strokeWidth "1"
@@ -153,10 +162,10 @@ coord theme tone bounds ( valueX, valueY ) =
             ]
             []
         , Svg.line
-            [ SA.x1 <| String.fromFloat center.x
-            , SA.y1 "5"
-            , SA.x2 <| String.fromFloat center.x
-            , SA.y2 "85"
+            [ SA.x1 <| String.fromFloat cx
+            , SA.y1 <| String.fromFloat top
+            , SA.x2 <| String.fromFloat cx
+            , SA.y2 <| String.fromFloat bottom
             , SA.stroke <| Color.toCssString <| colorFor theme tone
             , SA.opacity "0.2"
             , SA.strokeWidth "1"
@@ -164,13 +173,13 @@ coord theme tone bounds ( valueX, valueY ) =
             ]
             []
         , Svg.circle
-            [ SA.cx <| String.fromFloat <| center.x + ((valueX - 0.5) * 60)
-            , SA.cy <| String.fromFloat <| center.y + ((valueY - 0.5) * 60)
+            [ SA.cx <| String.fromFloat circleX
+            , SA.cy <| String.fromFloat circleY
             , SA.fill <| Color.toCssString <| colorFor theme tone
             , SA.fill "none"
             , SA.stroke <| Color.toCssString <| colorFor theme tone
             , SA.strokeWidth "2"
-            , SA.r "5"
+            , SA.r <| String.fromFloat circleRadius
             ]
             []
         ]
@@ -186,7 +195,7 @@ text
     -> Svg msg
 text theme tone ( editing, value ) onInput bounds =
     let
-        center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
+        ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
     in case editing of
         Ready ->
             Svg.text_
@@ -194,8 +203,8 @@ text theme tone ( editing, value ) onInput bounds =
                 , SA.textAnchor "middle"
                 , SA.fontSize "16px"
                 , SA.fontFamily fontFamily
-                , SA.x <| String.fromFloat center.x
-                , SA.y <| String.fromFloat <| center.y + 1
+                , SA.x <| String.fromFloat cx
+                , SA.y <| String.fromFloat <| cy + 1
                 ]
                 [ Svg.text <|
                     if String.length value <= 6 then
@@ -211,7 +220,7 @@ text theme tone ( editing, value ) onInput bounds =
                     , HA.style "height" "25px"
                     , HA.style "position" "relative"
                     , HA.style "left" <| String.fromFloat gap ++ "px"
-                    , HA.style "top" <| String.fromFloat (center.y - 12) ++ "px"
+                    , HA.style "top" <| String.fromFloat (cy - 12) ++ "px"
                     , HA.style "outline" "none"
                     , HA.style "border" "none"
                     , HA.style "background-color" "transparent"
@@ -230,10 +239,10 @@ text theme tone ( editing, value ) onInput bounds =
 toggle : Theme -> Tone -> ToggleState -> Bounds -> Svg msg
 toggle theme tone state bounds =
     let
-        center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
+        ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
     in Svg.circle
-        [ SA.cx <| String.fromFloat center.x
-        , SA.cy <| String.fromFloat center.y
+        [ SA.cx <| String.fromFloat cx
+        , SA.cy <| String.fromFloat cy
         , SA.r "13"
         , SA.fill <| case state of
             TurnedOn -> Color.toCssString <| colorFor theme tone
@@ -248,7 +257,7 @@ toggle theme tone state bounds =
 button : Theme -> Tone -> Maybe Icon -> Bounds -> Svg msg
 button theme tone maybeIcon bounds =
     let
-        center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
+        ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
     in case maybeIcon of
         Just (Icon icon) ->
             let
@@ -258,22 +267,27 @@ button theme tone maybeIcon bounds =
                         Light -> "light"
                 iconUrl =
                     "./assets/" ++ icon ++ "_" ++ postfix ++ ".svg"
+                ( iconWidth, iconHeight ) = ( bounds.width / 2.25, bounds.height / 2.25 )
+                ( iconX, iconY ) = ( cx - iconWidth / 2, cy - iconHeight / 2)
             in
                 Svg.image
                     [ SA.xlinkHref <| iconUrl
                     , SA.class "button--icon"
-                    , SA.width "40px"
-                    , SA.height "40px"
-                    , SA.x <| String.fromFloat (center.x - 20)
-                    , SA.y <| String.fromFloat (center.y - 20)
+                    , SA.width <| String.fromFloat iconWidth ++ "px"
+                    , SA.height <| String.fromFloat iconHeight ++ "px"
+                    , SA.x <| String.fromFloat iconX
+                    , SA.y <| String.fromFloat iconY
                     ]
                     []
         Nothing ->
-            Svg.rect
-                [ SA.x <| String.fromFloat (center.x - 10)
-                , SA.y <| String.fromFloat (center.y - 10)
-                , SA.width "20"
-                , SA.height "20"
+            let
+                ( rectWidth, rectHeight ) = ( bounds.width / 4.5, bounds.height / 4.5 )
+                ( rectX, rectY ) = ( cx - rectWidth / 2, cy - rectHeight / 2 )
+            in Svg.rect
+                [ SA.x <| String.fromFloat rectX
+                , SA.y <| String.fromFloat rectY
+                , SA.width <| String.fromFloat rectWidth
+                , SA.height <| String.fromFloat rectHeight
                 , SA.fill "none"
                 , SA.stroke <| Color.toCssString <| colorFor theme tone
                 , SA.strokeWidth "2"
