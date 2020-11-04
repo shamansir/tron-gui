@@ -53,7 +53,7 @@ for model =
                     compareChoices
                     Choose )
         , ( "nest",
-                nestedButtons model.buttonPressed
+                allControlsNest model
           )
         , ( "button",
                 Gui.button1 (Gui.icon "export") (always NoOp)
@@ -94,6 +94,67 @@ colorNest =
             [ ( "red", colorCompKnob ChangeRed )
             , ( "green", colorCompKnob ChangeGreen )
             , ( "blue", colorCompKnob ChangeBlue )
+            ]
+
+
+allControlsNest : Model -> Property Msg
+allControlsNest model =
+    let
+        colorCompKnob msg =
+            Gui.float
+                { min = 0, max = 255, step = 1 }
+                0
+                msg
+    in
+        Gui.nest
+            ( 3, 3 )
+            Half_Half
+            [ ( "ghost", Gui.none )
+            , ( "int",
+                    Gui.int
+                        { min = -20, max = 20, step = 5 }
+                        model.int
+                        ChangeInt )
+            , ( "float",
+                    Gui.float
+                        { min = -10.5, max = 10.5, step = 0.5 }
+                        model.float
+                        ChangeFloat )
+            , ( "xy",
+                    Gui.xy
+                        ( { min = -20, max = 20, step = 5 }
+                        , { min = -20, max = 20, step = 5 }
+                        )
+                        model.xy
+                        ChangeXY )
+            , ( "text",
+                    Gui.text
+                        model.string
+                        ChangeString )
+            , ( "color",
+                    Gui.color
+                        model.color
+                        ChangeColor )
+            , ( "choice",
+                    Gui.choice
+                        ( 1, 4 )
+                        Full_Full
+                        choiceToLabel
+                        choices
+                        model.choice
+                        compareChoices
+                        Choose )
+            , ( "nest",
+                    nestedButtons model.buttonPressed
+            )
+            , ( "button",
+                    Gui.button1 (Gui.icon "export") (always NoOp)
+            )
+            , ( "toggle",
+                    Gui.toggle
+                        model.toggle
+                        Switch
+            )
             ]
 
 
