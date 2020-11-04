@@ -169,7 +169,7 @@ choice deep =
                         (Random.map2
                             Tuple.pair
                             (shape <| Array.length cs)
-                            (Random.constant Full_Full)
+                            (Random.constant Full)
                         )
                         (Random.constant cs)
                     )
@@ -196,7 +196,7 @@ group deep =
                         (Random.map2
                             Tuple.pair
                             (shape <| Array.length cs)
-                            (Random.constant Full_Full)
+                            (Random.constant Full)
                         )
                         (Random.constant cs)
                     )

@@ -24,12 +24,12 @@ type Flow
 
 
 type CellShape
-    = Full_Full
-    | Half_Half
-    | Half_Full
-    | Full_Half
-    | Twice_Half
-    | Half_Twice
+    = Full
+    | Half
+    | HalfByOne
+    | OneByHalf
+    | TwiceByHalf
+    | HalfByTwice
 
 
 {-| Dark or Light theme, each of those could be useful for different situation.

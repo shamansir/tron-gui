@@ -135,7 +135,7 @@ root props =
         ( 1, props
                 |> List.filter (Tuple.second >> isGhost >> not)
                 |> List.length )
-        Full_Full
+        Full
         props
         |> expand
 
@@ -495,7 +495,7 @@ strings
 strings shape options current toMsg =
     choice
         shape
-        Half_Twice
+        HalfByTwice
         identity
         options
         current

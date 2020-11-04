@@ -291,10 +291,10 @@ adaptSizeToFlow flow ( w, h ) =
 cellSizeFromShape : CellShape -> ( Float, Float )
 cellSizeFromShape cs =
     case cs of
-       Full_Full -> ( 1.0, 1.0 )
-       Half_Half -> ( 0.5, 0.5 )
-       Half_Full -> ( 0.5, 1.0 )
-       Full_Half -> ( 1.0, 0.5 )
-       Twice_Half -> ( 2.0, 0.5 )
-       Half_Twice -> ( 0.5, 2.0 )
+       Full -> ( 1.0, 1.0 )
+       Half -> ( 0.5, 0.5 )
+       HalfByOne -> ( 0.5, 1.0 )
+       OneByHalf -> ( 1.0, 0.5 )
+       TwiceByHalf -> ( 2.0, 0.5 )
+       HalfByTwice -> ( 0.5, 2.0 )
 
