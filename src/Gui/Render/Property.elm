@@ -55,39 +55,35 @@ view placement theme tone path bounds focus ( label, prop ) =
                 , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
                 ]
                 []
-        , let
-            cellCenter = { x = cellWidth / 2, y = cellHeight / 2 }
-            cellShiftedCenter = { x = cellWidth / 2, y = (cellHeight / 2) - 3 }
-        in
-            case prop of
-                Number (Control { min, max } value _) ->
-                    knob
-                        theme
-                        tone
-                        cellCenter
-                        <| (value - min) / (max - min)
-                Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
-                    coord
-                        theme
-                        tone
-                        cellCenter
-                        <|
-                            ( (xValue - xAxis.min) / (xAxis.max - xAxis.min)
-                            , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
-                            )
-                Text (Control _ value _) ->
-                    text theme tone value (TextInput path) cellShiftedCenter
-                Toggle (Control _ value _) ->
-                    toggle theme tone value cellShiftedCenter
-                Action (Control maybeIcon _ _) ->
-                    button theme tone maybeIcon cellShiftedCenter
-                Color (Control _ value _) ->
-                    color theme tone value cellShiftedCenter
-                Choice (Control _ ( expanded, _ ) _) ->
-                    arrow theme tone expanded cellShiftedCenter
-                Group (Control _ ( expanded, _ ) _) ->
-                    arrow theme tone expanded cellShiftedCenter
-                _ -> Svg.none
+        , case prop of
+            Number (Control { min, max } value _) ->
+                knob
+                    theme
+                    tone
+                    bounds
+                    <| (value - min) / (max - min)
+            Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
+                coord
+                    theme
+                    tone
+                    bounds
+                    <|
+                        ( (xValue - xAxis.min) / (xAxis.max - xAxis.min)
+                        , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
+                        )
+            Text (Control _ value _) ->
+                text theme tone value (TextInput path) bounds
+            Toggle (Control _ value _) ->
+                toggle theme tone value bounds
+            Action (Control maybeIcon _ _) ->
+                button theme tone maybeIcon bounds
+            Color (Control _ value _) ->
+                color theme tone value bounds
+            Choice (Control _ ( expanded, _ ) _) ->
+                arrow theme tone expanded bounds
+            Group (Control _ ( expanded, _ ) _) ->
+                arrow theme tone expanded bounds
+            _ -> Svg.none
         , Svg.text_
             [ SA.textAnchor "middle"
             , SA.dominantBaseline "middle"
@@ -101,8 +97,8 @@ view placement theme tone path bounds focus ( label, prop ) =
         ]
 
 
-knob : Theme -> Tone -> { x : Float, y : Float } -> Float -> Svg msg
-knob theme tone center value =
+knob : Theme -> Tone -> Bounds -> Float -> Svg msg
+knob theme tone bounds value =
     let
         toAngle v = (-120) + (v * 120 * 2)
         path stroke d =
@@ -114,8 +110,9 @@ knob theme tone center value =
                 , SA.strokeLinecap "round"
                 ]
                 []
-        radiusA = radiusB - 1
-        radiusB = cellWidth * 0.27
+        radiusA = (bounds.width * 0.27) - 1
+        radiusB = bounds.height * 0.27
+        center = { x = bounds.width / 2, y = bounds.height / 2 }
     in
         Svg.g
             []
@@ -137,89 +134,11 @@ knob theme tone center value =
             ]
 
 
-arrow : Theme -> Tone -> GroupState -> { x : Float, y : Float } -> Svg msg
-arrow theme tone groupState center =
-    Svg.g
-        [ SA.style <|
-            "transform: "
-                ++ "translate(" ++ String.fromFloat (center.x - (14 * 0.7)) ++ "px,"
-                                ++ String.fromFloat (center.y - (14 * 0.7)) ++ "px)"
-        ]
-        [ Util.arrow (colorFor theme tone) (scale 0.7) <| case groupState of
-                Expanded -> rotate 180
-                Detached -> rotate 45
-                Collapsed -> rotate 0
-        ]
-
-button : Theme -> Tone -> Maybe Icon -> { x : Float, y : Float } -> Svg msg
-button theme tone maybeIcon center =
-    case maybeIcon of
-        Just (Icon icon) ->
-            let
-                postfix =
-                    case theme of
-                        Dark -> "dark"
-                        Light -> "light"
-                iconUrl =
-                    "./assets/" ++ icon ++ "_" ++ postfix ++ ".svg"
-            in
-                Svg.image
-                    [ SA.xlinkHref <| iconUrl
-                    , SA.class "button--icon"
-                    , SA.width "40px"
-                    , SA.height "40px"
-                    , SA.x <| String.fromFloat (center.x - 20)
-                    , SA.y <| String.fromFloat (center.y - 20)
-                    ]
-                    []
-        Nothing ->
-            Svg.rect
-                [ SA.x <| String.fromFloat (center.x - 10)
-                , SA.y <| String.fromFloat (center.y - 10)
-                , SA.width "20"
-                , SA.height "20"
-                , SA.fill "none"
-                , SA.stroke <| Color.toCssString <| colorFor theme tone
-                , SA.strokeWidth "2"
-                , SA.strokeLinecap "round"
-                , SA.rx "3"
-                , SA.ry "3"
-                ]
-                [
-                ]
-
-
-color : Theme -> Tone -> Color -> { x : Float, y : Float } -> Svg msg
-color theme tone value center =
-    Svg.circle
-        [ SA.cx <| String.fromFloat center.x
-        , SA.cy <| String.fromFloat center.y
-        , SA.r "15"
-        , SA.fill <| Color.toCssString value
-        ]
-        [
-        ]
-
-
-
-toggle : Theme -> Tone -> ToggleState -> { x : Float, y : Float } -> Svg msg
-toggle theme tone state center =
-    Svg.circle
-        [ SA.cx <| String.fromFloat center.x
-        , SA.cy <| String.fromFloat center.y
-        , SA.r "13"
-        , SA.fill <| case state of
-            TurnedOn -> Color.toCssString <| colorFor theme tone
-            TurnedOff -> "none"
-        , SA.stroke <| Color.toCssString <| colorFor theme tone
-        , SA.strokeWidth "2"
-        ]
-        [
-        ]
-
-
-coord : Theme -> Tone -> { x : Float, y : Float } -> ( Float, Float ) -> Svg msg
-coord theme tone center ( valueX, valueY ) =
+coord : Theme -> Tone -> Bounds -> ( Float, Float ) -> Svg msg
+coord theme tone bounds ( valueX, valueY ) =
+    let
+        center = { x = bounds.width / 2, y = bounds.height / 2 }
+    in
     Svg.g
         []
         [ Svg.line
@@ -263,10 +182,12 @@ text
     -> Tone
     -> ( TextState, String )
     -> (String -> msg)
-    -> { x : Float, y : Float }
+    -> Bounds
     -> Svg msg
-text theme tone ( editing, value ) onInput center =
-    case editing of
+text theme tone ( editing, value ) onInput bounds =
+    let
+        center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
+    in case editing of
         Ready ->
             Svg.text_
                 [ SA.dominantBaseline "middle"
@@ -304,6 +225,95 @@ text theme tone ( editing, value ) onInput center =
                     ]
                     [ ]
                 ]
+
+
+toggle : Theme -> Tone -> ToggleState -> Bounds -> Svg msg
+toggle theme tone state bounds =
+    let
+        center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
+    in Svg.circle
+        [ SA.cx <| String.fromFloat center.x
+        , SA.cy <| String.fromFloat center.y
+        , SA.r "13"
+        , SA.fill <| case state of
+            TurnedOn -> Color.toCssString <| colorFor theme tone
+            TurnedOff -> "none"
+        , SA.stroke <| Color.toCssString <| colorFor theme tone
+        , SA.strokeWidth "2"
+        ]
+        [
+        ]
+
+
+button : Theme -> Tone -> Maybe Icon -> Bounds -> Svg msg
+button theme tone maybeIcon bounds =
+    let
+        center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
+    in case maybeIcon of
+        Just (Icon icon) ->
+            let
+                postfix =
+                    case theme of
+                        Dark -> "dark"
+                        Light -> "light"
+                iconUrl =
+                    "./assets/" ++ icon ++ "_" ++ postfix ++ ".svg"
+            in
+                Svg.image
+                    [ SA.xlinkHref <| iconUrl
+                    , SA.class "button--icon"
+                    , SA.width "40px"
+                    , SA.height "40px"
+                    , SA.x <| String.fromFloat (center.x - 20)
+                    , SA.y <| String.fromFloat (center.y - 20)
+                    ]
+                    []
+        Nothing ->
+            Svg.rect
+                [ SA.x <| String.fromFloat (center.x - 10)
+                , SA.y <| String.fromFloat (center.y - 10)
+                , SA.width "20"
+                , SA.height "20"
+                , SA.fill "none"
+                , SA.stroke <| Color.toCssString <| colorFor theme tone
+                , SA.strokeWidth "2"
+                , SA.strokeLinecap "round"
+                , SA.rx "3"
+                , SA.ry "3"
+                ]
+                [
+                ]
+
+
+color : Theme -> Tone -> Color -> Bounds -> Svg msg
+color theme tone value bounds =
+    let
+        center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
+    in Svg.circle
+        [ SA.cx <| String.fromFloat center.x
+        , SA.cy <| String.fromFloat center.y
+        , SA.r "15"
+        , SA.fill <| Color.toCssString value
+        ]
+        [
+        ]
+
+
+arrow : Theme -> Tone -> GroupState -> Bounds-> Svg msg
+arrow theme tone groupState bounds =
+    let
+        center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
+    in Svg.g
+        [ SA.style <|
+            "transform: "
+                ++ "translate(" ++ String.fromFloat (center.x - (14 * 0.7)) ++ "px,"
+                                ++ String.fromFloat (center.y - (14 * 0.7)) ++ "px)"
+        ]
+        [ Util.arrow (colorFor theme tone) (scale 0.7) <| case groupState of
+                Expanded -> rotate 180
+                Detached -> rotate 45
+                Collapsed -> rotate 0
+        ]
 
 
 makeClass : Property msg -> String
