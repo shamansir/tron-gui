@@ -196,12 +196,16 @@ text
 text theme tone ( editing, value ) onInput bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
+        fontSize = bounds.width / 6
+        lineHeight = fontSize * 1.6
+        topShift = cy - lineHeight / 2
+        maxWidth = bounds.width - gap * 2
     in case editing of
         Ready ->
             Svg.text_
                 [ SA.dominantBaseline "middle"
                 , SA.textAnchor "middle"
-                , SA.fontSize "16px"
+                , SA.fontSize <| String.fromFloat fontSize ++ "px"
                 , SA.fontFamily fontFamily
                 , SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat <| cy + 1
@@ -212,20 +216,20 @@ text theme tone ( editing, value ) onInput bounds =
                     else (value |> String.left 6) ++ ".." ]
         Editing ->
             Svg.foreignObject
-                [ HA.style "width" <| String.fromFloat cellWidth ++ "px"
-                , HA.style "height" <| String.fromFloat cellHeight ++ "px"
+                [ HA.style "width" <| String.fromFloat bounds.width  ++ "px"
+                , HA.style "height" <| String.fromFloat bounds.height  ++ "px"
                 ]
                 [ Html.input
-                    [ HA.style "max-width" <| String.fromFloat (cellWidth - gap * 2) ++ "px"
-                    , HA.style "height" "25px"
+                    [ HA.style "max-width" <| String.fromFloat maxWidth ++ "px"
+                    , HA.style "height" <| String.fromFloat lineHeight ++ "px"
                     , HA.style "position" "relative"
                     , HA.style "left" <| String.fromFloat gap ++ "px"
-                    , HA.style "top" <| String.fromFloat (cy - 12) ++ "px"
+                    , HA.style "top" <| String.fromFloat topShift ++ "px"
                     , HA.style "outline" "none"
                     , HA.style "border" "none"
                     , HA.style "background-color" "transparent"
                     , HA.style "font-family" "IBM Plex Sans"
-                    , HA.style "font-size" "16px"
+                    , HA.style "font-size" <| String.fromFloat fontSize ++ "px"
                     , HA.style "text-align" "center"
                     , HA.type_ "text"
                     , HA.placeholder "input"
@@ -240,10 +244,11 @@ toggle : Theme -> Tone -> ToggleState -> Bounds -> Svg msg
 toggle theme tone state bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
+        radius = bounds.width / 7
     in Svg.circle
         [ SA.cx <| String.fromFloat cx
         , SA.cy <| String.fromFloat cy
-        , SA.r "13"
+        , SA.r <| String.fromFloat radius
         , SA.fill <| case state of
             TurnedOn -> Color.toCssString <| colorFor theme tone
             TurnedOff -> "none"
@@ -303,10 +308,11 @@ color : Theme -> Tone -> Color -> Bounds -> Svg msg
 color theme tone value bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
+        radius = bounds.width / 6
     in Svg.circle
         [ SA.cx <| String.fromFloat center.x
         , SA.cy <| String.fromFloat center.y
-        , SA.r "15"
+        , SA.r <| String.fromFloat radius
         , SA.fill <| Color.toCssString value
         ]
         [
@@ -317,13 +323,15 @@ arrow : Theme -> Tone -> GroupState -> Bounds-> Svg msg
 arrow theme tone groupState bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
+        scaleV = bounds.width / 127
     in Svg.g
         [ SA.style <|
             "transform: "
-                ++ "translate(" ++ String.fromFloat (center.x - (14 * 0.7)) ++ "px,"
-                                ++ String.fromFloat (center.y - (14 * 0.7)) ++ "px)"
+                ++ "translate(" ++ String.fromFloat (center.x - (14 * scaleV)) ++ "px,"
+                                ++ String.fromFloat (center.y - (14 * scaleV)) ++ "px)"
         ]
-        [ Util.arrow (colorFor theme tone) (scale 0.7) <| case groupState of
+        [ Util.arrow (colorFor theme tone) (scale scaleV)
+            <| case groupState of
                 Expanded -> rotate 180
                 Detached -> rotate 45
                 Collapsed -> rotate 0
