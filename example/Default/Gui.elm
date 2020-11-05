@@ -53,6 +53,7 @@ for model =
                     compareChoices
                     Choose )
         , ( "nest",
+                -- nestedButtons model.buttonPressed
                 allControlsNest model
           )
         , ( "button",
@@ -107,8 +108,8 @@ allControlsNest model =
                 msg
     in
         Gui.nest
-            ( 3, 3 )
-            Half
+            ( 3, 4 )
+            Full
             [ ( "ghost", Gui.none )
             , ( "int",
                     Gui.int
@@ -154,6 +155,9 @@ allControlsNest model =
                     Gui.toggle
                         model.toggle
                         Switch
+            )
+            , ( "sqbutton",
+                    Gui.button (always NoOp)
             )
             ]
 
