@@ -8,7 +8,7 @@ import Bounds exposing (Bounds)
 import Gui.Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
 import Gui.Detach exposing (ClientId, Detach, getLocalUrl, localUrlToString)
-import Gui.Property exposing (Label)
+import Gui.Property exposing (Label, Property)
 
 import Gui.Render.Style exposing (..)
 import Gui.Render.Style as Style
@@ -38,14 +38,14 @@ back theme bounds =
 
 
 controls
-    :  Style.Theme
+    :  Detach msg
+    -> Style.Theme
     -> Style.Tone
-    -> Detach msg
-    -> Bounds
-    -> Label
     -> Path
+    -> Bounds
+    -> ( Label, Property msg )
     -> Svg Msg
-controls theme tone detachFn bounds label path =
+controls detachFn theme tone path bounds ( label, prop ) =
     Svg.g
         [ ]
         [ case detachFn |> getLocalUrl path of

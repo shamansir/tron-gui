@@ -59,9 +59,10 @@ viewProperty
     -> Path
     -> Bounds
     -> Focused
+    -> CellShape
     -> ( Label, Property msg )
     -> Svg Msg
-viewProperty placement theme tone path pixelBounds focus ( label, prop ) =
+viewProperty placement theme tone path pixelBounds focus cellShape ( label, prop ) =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -80,7 +81,7 @@ viewProperty placement theme tone path pixelBounds focus ( label, prop ) =
                         <| propertyDebug ( label, prop )
                     ]
             Fancy ->
-                Property.view placement theme tone path pixelBounds focus ( label, prop )
+                Property.view placement theme tone path pixelBounds focus cellShape ( label, prop )
 
 
 viewPlateBack : Theme -> Bounds -> Svg Msg
@@ -96,14 +97,21 @@ viewPlateBack theme pixelBounds =
                 Plate.back theme pixelBounds
 
 
-viewPlateControls : Theme -> Tone -> Detach msg -> Bounds -> Label -> Path -> Svg Msg
-viewPlateControls theme tone detach pixelBounds label path =
+viewPlateControls
+     : Detach msg
+    -> Theme
+    -> Tone
+    -> Path
+    -> Bounds
+    -> ( Label, Property msg )
+    -> Svg Msg
+viewPlateControls detach theme tone path pixelBounds  ( label, source )  =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g [ ] [ ]
             Fancy ->
-                Plate.controls theme tone detach pixelBounds label path
+                Plate.controls detach theme tone path pixelBounds ( label, source )
 
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
@@ -212,18 +220,22 @@ view theme flow bounds detach root layout =
                         cell.path
                         cell.bounds
                         (focused root cell.path)
+                        ( cell.parent
+                            |> Maybe.andThen Property.getCellShape
+                            |> Maybe.withDefault Full
+                        )
                         ( cell.label, cell.source )
                 )
 
             , plates |> List.map
                 (\plate ->
                     viewPlateControls
+                        detach
                         theme
                         (toneOf plate.path)
-                        detach
-                        plate.bounds
-                        plate.label
                         plate.path
+                        plate.bounds
+                        ( plate.label, plate.source )
                 )
             )
 
