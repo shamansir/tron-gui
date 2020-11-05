@@ -76,7 +76,6 @@ type Property msg
     | Toggle (Control () ToggleState msg)
     | Action (Control ( Maybe Icon ) () msg)
     | Choice (ChoiceControl msg)
-    -- | ChoiceItem (Control ( Maybe Icon ) () msg)
     | Group (GroupControl msg)
 
 

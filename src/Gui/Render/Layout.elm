@@ -106,6 +106,77 @@ viewPlateControls theme tone detach pixelBounds label path =
                 Plate.controls theme tone detach pixelBounds label path
 
 
+collectPlatesAndCells -- FIXME: a complicated function, split into many
+    :  ( Path, Property msg )
+    -> Layout
+    ->
+        ( List
+            { path : Path
+            , label : String
+            , bounds : Bounds
+            , source : Property msg
+            }
+        , List
+            { path : Path
+            , label : String
+            , bounds : Bounds
+            , parent : Maybe (Property msg)
+            , source : Property msg
+            }
+        )
+collectPlatesAndCells ( rootPath, root ) =
+    Layout.unfold
+        (\cell ( prevPlates, prevCells ) ->
+            case cell of
+
+                One ( cellPath, cellBounds ) ->
+                    ( prevPlates
+                    , case root |> Property.find1 (Path.sub rootPath cellPath) of
+                        Just ( label, source ) ->
+                            { path = cellPath
+                            , label = label
+                            , parent = Nothing
+                            , bounds = B.multiplyBy cellWidth cellBounds
+                            , source = source
+                            } :: prevCells
+                        Nothing -> prevCells
+                    )
+
+                Many ( originPath, plateBounds ) innerCells ->
+
+                    case root |> Property.find1 (Path.sub rootPath originPath) of
+                        Just ( label, source ) ->
+                            (
+                                { path = originPath
+                                , label = label
+                                , bounds = B.multiplyBy cellWidth plateBounds
+                                , source = source
+                                } :: prevPlates
+                            ,
+                                (innerCells
+                                    |> List.map
+                                        (\( cellPath, cellBounds ) ->
+                                            case root
+                                                |> Property.find1 (Path.sub rootPath cellPath) of
+                                                Just ( cellLabel, cellSource ) ->
+                                                    { path = cellPath
+                                                    , label = cellLabel
+                                                    , parent = Just source
+                                                    , bounds = B.multiplyBy cellWidth cellBounds
+                                                    , source = cellSource
+                                                    } |> Just
+                                                Nothing -> Nothing
+                                        )
+                                    |> List.filterMap identity
+                                ) ++ prevCells
+                            )
+                        Nothing -> ( prevPlates, prevCells )
+
+
+        )
+        ( [], [] )
+
+
 view : Style.Theme -> Style.Flow -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
 view theme flow bounds detach root layout =
     let
@@ -123,67 +194,36 @@ view theme flow bounds detach root layout =
             tones |> Dict.get (Path.toString path) |> Maybe.withDefault None
 
         ( plates, cells ) =
-            Layout.unfold
-                (\cell ( prevPlates, prevCells ) ->
-                    case cell of
-
-                        One ( path, cellBounds ) ->
-                            ( prevPlates
-                            , ( path, cellBounds ) :: prevCells
-                            )
-
-                        Many ( originPath, plateBounds ) innerCells ->
-                            ( ( originPath, plateBounds ) :: prevPlates
-                            , innerCells ++ prevCells
-                            )
-
-                )
-                ( [], [] )
-                layout
-
-        ( plates1, cells1 ) =
-            ( plates |> List.map (Tuple.mapSecond <| B.multiplyBy cellWidth)
-            , cells |> List.map (Tuple.mapSecond <| B.multiplyBy cellWidth)
-            )
+            collectPlatesAndCells ( rootPath, root ) layout
 
         ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
 
-            ( plates1 |> List.map (Tuple.second >> viewPlateBack theme)
+            ( plates |> List.map (.bounds >> viewPlateBack theme)
 
-            , cells1 |> List.map
-                (\(path, propertyBounds) ->
-                    case root |> Property.find1 (Path.sub rootPath path) of
-                        Just prop -> Just <|
-                            viewProperty
-                                (if (Path.sub rootPath path |> Path.howDeep) == 1
-                                    then AtRoot
-                                    else OnAPlate
-                                )
-                                theme
-                                (toneOf path)
-                                path
-                                propertyBounds
-                                (focused root path)
-                                prop
-                        Nothing -> Nothing
+            , cells |> List.map
+                (\cell ->
+                    viewProperty
+                        (if (Path.sub rootPath cell.path |> Path.howDeep) == 1
+                            then AtRoot
+                            else OnAPlate
+                        )
+                        theme
+                        (toneOf cell.path)
+                        cell.path
+                        cell.bounds
+                        (focused root cell.path)
+                        ( cell.label, cell.source )
                 )
-                |> List.filterMap identity
 
-            , plates1 |> List.map
-                (\(path, plateBounds) ->
-                    case root |> Property.find1 (Path.sub rootPath path) of
-                        Just ( label, _ ) ->
-                            viewPlateControls
-                                theme (toneOf path)
-                                detach
-                                plateBounds
-                                label path
-                        Nothing ->
-                            viewPlateControls
-                                theme (toneOf path)
-                                detach
-                                plateBounds
-                                "" path
+            , plates |> List.map
+                (\plate ->
+                    viewPlateControls
+                        theme
+                        (toneOf plate.path)
+                        detach
+                        plate.bounds
+                        plate.label
+                        plate.path
                 )
             )
 
