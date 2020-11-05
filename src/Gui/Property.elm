@@ -585,3 +585,13 @@ withItem id f ( Control ( shape, items ) state handler ) =
         )
         state
         handler
+
+
+getCellShape : Property msg -> Maybe CellShape
+getCellShape prop =
+    case prop of
+        Choice (Control ( ( _, cellShape ), _ ) _ _ ) ->
+            Just cellShape
+        Group (Control ( ( _, cellShape ), _ ) _ _ ) ->
+            Just cellShape
+        _ -> Nothing

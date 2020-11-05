@@ -29,8 +29,17 @@ type Placement
     | OnAPlate
 
 
-view : Placement -> Theme -> Tone -> Path -> Bounds -> Focused -> ( Label, Property msg ) -> Svg Msg
-view placement theme tone path bounds focus ( label, prop ) =
+view
+     : Placement
+    -> Theme
+    -> Tone
+    -> Path
+    -> Bounds
+    -> Focused
+    -> CellShape
+    -> ( Label, Property msg )
+    -> Svg Msg
+view placement theme tone path bounds focus cellShape ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
         , HA.style "pointer-events" "all"
