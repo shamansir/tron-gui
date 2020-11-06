@@ -229,13 +229,17 @@ view theme flow bounds detach root layout =
 
             , plates |> List.map
                 (\plate ->
-                    viewPlateControls
-                        detach
-                        theme
-                        (toneOf plate.path)
-                        plate.path
-                        plate.bounds
-                        ( plate.label, plate.source )
+                    case plate.source |> Property.getCellShape of
+                        Just Full ->
+                            viewPlateControls
+                                detach
+                                theme
+                                (toneOf plate.path)
+                                plate.path
+                                plate.bounds
+                                ( plate.label, plate.source )
+                        _ ->
+                            Svg.g [] []
                 )
             )
 

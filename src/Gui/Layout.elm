@@ -297,4 +297,5 @@ cellSizeFromShape cs =
        OneByHalf -> ( 1.0, 0.5 )
        TwiceByHalf -> ( 2.0, 0.5 )
        HalfByTwice -> ( 0.5, 2.0 )
+       TwiceByTwice -> ( 2.0, 2.0 )
 

@@ -30,6 +30,7 @@ type CellShape
     | OneByHalf
     | TwiceByHalf
     | HalfByTwice
+    | TwiceByTwice
 
 
 {-| Dark or Light theme, each of those could be useful for different situation.
