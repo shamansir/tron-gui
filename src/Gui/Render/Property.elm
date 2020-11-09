@@ -85,7 +85,7 @@ view placement theme tone path bounds focus cellShape ( label, prop ) =
             Toggle (Control _ value _) ->
                 toggle theme tone value bounds
             Action (Control maybeIcon _ _) ->
-                button theme tone maybeIcon bounds
+                button theme tone maybeIcon cellShape label bounds
             Color (Control _ value _) ->
                 color theme tone value bounds
             Choice (Control _ ( expanded, _ ) _) ->
@@ -93,16 +93,19 @@ view placement theme tone path bounds focus cellShape ( label, prop ) =
             Group (Control _ ( expanded, _ ) _) ->
                 arrow theme tone expanded bounds
             _ -> Svg.none
-        , Svg.text_
-            [ SA.textAnchor "middle"
-            , SA.dominantBaseline "middle"
-            , SA.x <| String.fromFloat (bounds.width / 2)
-            , SA.y <| String.fromFloat (bounds.height / 5 * 4)
-            , SA.fontSize "13px"
-            , SA.fontFamily fontFamily
-            , SA.fill <| Color.toCssString <| Style.text theme
-            ]
-            [ Svg.text label ]
+        , case cellShape of
+            Full ->
+                Svg.text_
+                    [ SA.textAnchor "middle"
+                    , SA.dominantBaseline "middle"
+                    , SA.x <| String.fromFloat (bounds.width / 2)
+                    , SA.y <| String.fromFloat (bounds.height / 5 * 4)
+                    , SA.fontSize "13px"
+                    , SA.fontFamily fontFamily
+                    , SA.fill <| Color.toCssString <| Style.text theme
+                    ]
+                    [ Svg.text label ]
+            _ -> Svg.none
         ]
 
 
@@ -268,10 +271,19 @@ toggle theme tone state bounds =
         ]
 
 
-button : Theme -> Tone -> Maybe Icon -> Bounds -> Svg msg
-button theme tone maybeIcon bounds =
+button : Theme -> Tone -> Maybe Icon -> CellShape -> Label -> Bounds -> Svg msg
+button theme tone maybeIcon cellShape label bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
+        textLabel _ =
+            Svg.text_
+                [ SA.x <| String.fromFloat cx
+                , SA.y <| String.fromFloat cy
+                , HA.style "text-anchor" "middle"
+                , HA.style "dominant-baseline" "central"
+                , HA.style "font-family" fontFamily
+                ]
+                [ Svg.text label ]
     in case maybeIcon of
         Just (Icon icon) ->
             let
@@ -282,35 +294,53 @@ button theme tone maybeIcon bounds =
                 iconUrl =
                     "./assets/" ++ icon ++ "_" ++ postfix ++ ".svg"
                 ( iconWidth, iconHeight ) = ( bounds.width / 2.25, bounds.height / 2.25 )
-                ( iconX, iconY ) = ( cx - iconWidth / 2, cy - iconHeight / 2)
+                ( iconX, iconY ) =
+                    case cellShape of
+                        TwiceByHalf ->
+                            ( -1 * gap, cy - iconHeight / 2)
+                        _ ->
+                            ( cx - iconWidth / 2, cy - iconHeight / 2 )
             in
-                Svg.image
-                    [ SA.xlinkHref <| iconUrl
-                    , SA.class "button--icon"
-                    , SA.width <| String.fromFloat iconWidth ++ "px"
-                    , SA.height <| String.fromFloat iconHeight ++ "px"
-                    , SA.x <| String.fromFloat iconX
-                    , SA.y <| String.fromFloat iconY
+                Svg.g
+                    [ ]
+                    [
+                        Svg.image
+                        [ SA.xlinkHref <| iconUrl
+                        , SA.class "button--icon"
+                        , SA.width <| String.fromFloat iconWidth ++ "px"
+                        , SA.height <| String.fromFloat iconHeight ++ "px"
+                        , SA.x <| String.fromFloat iconX
+                        , SA.y <| String.fromFloat iconY
+                        ]
+                        []
+                    , case cellShape of
+                        TwiceByHalf ->
+                            textLabel ()
+                        _ -> Svg.none
                     ]
-                    []
         Nothing ->
-            let
-                ( rectWidth, rectHeight ) = ( bounds.width / 4.5, bounds.height / 4.5 )
-                ( rectX, rectY ) = ( cx - rectWidth / 2, cy - rectHeight / 2 )
-            in Svg.rect
-                [ SA.x <| String.fromFloat rectX
-                , SA.y <| String.fromFloat rectY
-                , SA.width <| String.fromFloat rectWidth
-                , SA.height <| String.fromFloat rectHeight
-                , SA.fill "none"
-                , SA.stroke <| Color.toCssString <| colorFor theme tone
-                , SA.strokeWidth "2"
-                , SA.strokeLinecap "round"
-                , SA.rx "3"
-                , SA.ry "3"
-                ]
-                [
-                ]
+            case cellShape of
+                TwiceByHalf ->
+                    textLabel ()
+                _ ->
+                    let
+                        ( rectWidth, rectHeight ) = ( bounds.width / 4.5, bounds.height / 4.5 )
+                        ( rectX, rectY ) = ( cx - rectWidth / 2, cy - rectHeight / 2 )
+                    in
+                        Svg.rect
+                        [ SA.x <| String.fromFloat rectX
+                        , SA.y <| String.fromFloat rectY
+                        , SA.width <| String.fromFloat rectWidth
+                        , SA.height <| String.fromFloat rectHeight
+                        , SA.fill "none"
+                        , SA.stroke <| Color.toCssString <| colorFor theme tone
+                        , SA.strokeWidth "2"
+                        , SA.strokeLinecap "round"
+                        , SA.rx "3"
+                        , SA.ry "3"
+                        ]
+                        [
+                        ]
 
 
 color : Theme -> Tone -> Color -> Bounds -> Svg msg

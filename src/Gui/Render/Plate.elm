@@ -15,6 +15,7 @@ import Gui.Render.Style as Style
 import Gui.Render.StyleLogic exposing (..)
 import Gui.Render.StyleLogic as Style
 import Gui.Render.Util exposing (arrow, rotate, scale)
+import Gui.Render.Util as Svg exposing (none)
 
 
 import Svg exposing (Svg)
@@ -70,7 +71,7 @@ controls detachFn theme tone path bounds ( label, prop ) =
                         , detach theme tone
                         ]
                     ]
-            Nothing -> Svg.g [] []
+            Nothing -> Svg.none
         , Svg.text_
             [ SA.x <| String.fromFloat <| bounds.width / 2
             , SA.y <| String.fromFloat <| gap + 1

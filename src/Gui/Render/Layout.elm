@@ -28,6 +28,7 @@ import Gui.Detach exposing (ClientId, Detach)
 import Gui.Detach as Detach exposing (isAttached)
 
 import Gui.Render.Util exposing (..)
+import Gui.Render.Util as Svg exposing (none)
 import Gui.Render.Debug exposing (..)
 import Gui.Render.Property as Property exposing (..)
 import Gui.Render.Plate as Plate exposing (..)
@@ -239,7 +240,7 @@ view theme flow bounds detach root layout =
                                 plate.bounds
                                 ( plate.label, plate.source )
                         _ ->
-                            Svg.g [] []
+                            Svg.none
                 )
             )
 
@@ -298,7 +299,7 @@ view theme flow bounds detach root layout =
                                     ]
                                 ]
 
-                        Nothing -> Svg.g [] []
+                        Nothing -> Svg.none
                     ]
                 ]
 
