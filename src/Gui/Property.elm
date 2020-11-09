@@ -17,7 +17,9 @@ import Gui.Render.Style exposing (CellShape)
 
 type alias Label = String
 
+
 type Icon = Icon String
+
 
 type alias Shape = ( Int, Int )
 
@@ -53,6 +55,12 @@ type TextState
     | Editing
 
 
+type Face
+    = Default
+    | WithIcon Icon
+    | WithColor Color
+
+
 type alias GroupControl msg =
     Control
         ( ( Shape, CellShape ), Array ( Label, Property msg ) )
@@ -74,7 +82,7 @@ type Property msg
     | Text (Control () ( TextState, String ) msg)
     | Color (Control () Color msg)
     | Toggle (Control () ToggleState msg)
-    | Action (Control ( Maybe Icon ) () msg)
+    | Action (Control Face () msg)
     | Choice (ChoiceControl msg)
     | Group (GroupControl msg)
 

@@ -8,7 +8,7 @@ import Gui exposing (Gui)
 import Gui.Control exposing (Control(..))
 import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, expand)
 import Gui.Property as Gui exposing
-    ( Label, ToggleState(..), GroupState(..), Icon(..), TextState(..) )
+    ( Label, ToggleState(..), GroupState(..), Icon(..), TextState(..), Face(..) )
 import Gui.Build exposing (Builder)
 import Gui.Render.Style exposing (CellShape(..))
 
@@ -120,10 +120,10 @@ text =
         <| Control () ( Ready, "" ) <| Just <| always ()
 
 
-button : Random.Generator ( Control ( Maybe Gui.Icon ) () () )
+button : Random.Generator ( Control Face () () )
 button =
     Random.uniform Nothing [ Just Arrow, Just Export, Just Regenerate, Just Arm, Just Goose ]
-        |> Random.map (Maybe.map (sourceOf >> Gui.Icon))
+        |> Random.map (Maybe.map (sourceOf >> Gui.Icon >> WithIcon) >> Maybe.withDefault Default)
         |> Random.map (\icon -> Control icon () <| Just <| always ())
 
 
@@ -244,7 +244,7 @@ sourceOf : Icon -> String
 sourceOf icon =
     case icon of
         Arm -> "arm"
-        Arrow -> "arm"
+        Arrow -> "arrow"
         Export -> "export"
         Regenerate -> "regenerate"
         Goose -> "cai"

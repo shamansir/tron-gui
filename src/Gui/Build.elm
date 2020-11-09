@@ -246,7 +246,7 @@ button : (() -> msg) -> Builder msg
 button =
     Action
         << Control
-            Nothing
+            Default
             ()
         << Just
 
@@ -267,7 +267,7 @@ button1 : Icon -> (() -> msg) -> Builder msg
 button1 icon_ =
     Action
         << Control
-            (Just icon_)
+            (WithIcon icon_)
             ()
         << Just
 

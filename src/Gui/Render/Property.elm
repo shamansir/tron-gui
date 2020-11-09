@@ -259,8 +259,8 @@ toggle theme tone state bounds =
         ]
 
 
-button : Theme -> Tone -> Maybe Icon -> CellShape -> Label -> Bounds -> Svg msg
-button theme tone maybeIcon cellShape label bounds =
+button : Theme -> Tone -> Face -> CellShape -> Label -> Bounds -> Svg msg
+button theme tone face cellShape label bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
         textLabel _ =
@@ -271,8 +271,31 @@ button theme tone maybeIcon cellShape label bounds =
                 , SA.fill <| Color.toCssString <| Style.text theme
                 ]
                 [ Svg.text label ]
-    in case maybeIcon of
-        Just (Icon icon) ->
+    in case face of
+        Default ->
+            case cellShape of
+                TwiceByHalf ->
+                    textLabel ()
+                _ ->
+                    let
+                        ( rectWidth, rectHeight ) = ( bounds.width / 4.5, bounds.height / 4.5 )
+                        ( rectX, rectY ) = ( cx - rectWidth / 2, cy - rectHeight / 2 )
+                    in
+                        Svg.rect
+                            [ SA.x <| String.fromFloat rectX
+                            , SA.y <| String.fromFloat rectY
+                            , SA.width <| String.fromFloat rectWidth
+                            , SA.height <| String.fromFloat rectHeight
+                            , SA.fill "none"
+                            , SA.stroke <| Color.toCssString <| colorFor theme tone
+                            , SA.strokeWidth "2"
+                            , SA.strokeLinecap "round"
+                            , SA.rx "3"
+                            , SA.ry "3"
+                            ]
+                            [
+                            ]
+        WithIcon (Icon icon) ->
             let
                 postfix =
                     case theme of
@@ -305,29 +328,22 @@ button theme tone maybeIcon cellShape label bounds =
                             textLabel ()
                         _ -> Svg.none
                     ]
-        Nothing ->
-            case cellShape of
-                TwiceByHalf ->
-                    textLabel ()
-                _ ->
-                    let
-                        ( rectWidth, rectHeight ) = ( bounds.width / 4.5, bounds.height / 4.5 )
-                        ( rectX, rectY ) = ( cx - rectWidth / 2, cy - rectHeight / 2 )
-                    in
-                        Svg.rect
-                            [ SA.x <| String.fromFloat rectX
-                            , SA.y <| String.fromFloat rectY
-                            , SA.width <| String.fromFloat rectWidth
-                            , SA.height <| String.fromFloat rectHeight
-                            , SA.fill "none"
-                            , SA.stroke <| Color.toCssString <| colorFor theme tone
-                            , SA.strokeWidth "2"
-                            , SA.strokeLinecap "round"
-                            , SA.rx "3"
-                            , SA.ry "3"
-                            ]
-                            [
-                            ]
+        WithColor theColor ->
+            let
+                ( rectWidth, rectHeight ) = ( bounds.width, bounds.height )
+                ( rectX, rectY ) = ( cx - rectWidth / 2, cy - rectHeight / 2 )
+            in
+                Svg.rect
+                    [ SA.x <| String.fromFloat rectX
+                    , SA.y <| String.fromFloat rectY
+                    , SA.width <| String.fromFloat rectWidth
+                    , SA.height <| String.fromFloat rectHeight
+                    , SA.fill <| Color.toCssString theColor
+                    , SA.rx "3"
+                    , SA.ry "3"
+                    ]
+                    [
+                    ]
 
 
 color : Theme -> Tone -> Color -> Bounds -> Svg msg
