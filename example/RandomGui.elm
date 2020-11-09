@@ -3,6 +3,7 @@ module RandomGui exposing (generator)
 
 import Random
 import Array exposing (Array)
+import Color exposing (..)
 
 import Gui exposing (Gui)
 import Gui.Control exposing (Control(..))
@@ -41,7 +42,7 @@ property (DeepLevel deep) =
                     1 -> number |> Random.map Number
                     2 -> coordinate |> Random.map Coordinate
                     3 -> text |> Random.map Text
-                    4 -> text |> Random.map Text -- TODO: color
+                    4 -> color |> Random.map Color
                     5 -> toggle |> Random.map Toggle
                     6 -> button |> Random.map Action
                     7 ->
@@ -117,7 +118,16 @@ coordinate =
 text : Random.Generator ( Control () ( TextState, String ) () )
 text =
     Random.constant
-        <| Control () ( Ready, "" ) <| Just <| always ()
+        <| Control () ( Ready, "foobar" ) <| Just <| always ()
+
+
+color : Random.Generator (Control () Color ())
+color =
+    Random.map3
+        Control
+        (Random.constant ())
+        randomColor
+        handler
 
 
 button : Random.Generator ( Control Face () () )
@@ -248,3 +258,12 @@ sourceOf icon =
         Export -> "export"
         Regenerate -> "regenerate"
         Goose -> "cai"
+
+
+randomColor : Random.Generator Color
+randomColor =
+    Random.map3
+        Color.rgb
+        (Random.float 0 1)
+        (Random.float 0 1)
+        (Random.float 0 1)
