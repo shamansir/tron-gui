@@ -34,7 +34,7 @@ generator =
 
 property : DeepLevel -> Random.Generator (Builder ())
 property (DeepLevel deep) =
-    Random.int 0 8
+    Random.int 1 8
         |> Random.andThen
             (\n ->
                 case n of
@@ -222,7 +222,7 @@ group deep =
 shape : Int -> Random.Generator Gui.Shape
 shape toFit =
     Random.int 1 toFit
-        |> Random.map (\v -> ( v, (toFit // v) + 1 ))
+        |> Random.map (\v -> ( v, (toFit // v) + (if toFit - (toFit // v * toFit) > 0 then 1 else 0) ))
 
 
 toggleState : Random.Generator ToggleState
