@@ -244,14 +244,28 @@ view theme flow bounds detach root layout =
                 )
             )
 
+        detachButtonPos =
+            case flow of
+                TopToBottom -> ( gap, gap )
+                BottomToTop -> ( gap, bounds.height - cellHeight + gap )
+                LeftToRight -> ( gap, gap )
+                RightToLeft -> ( bounds.width - cellWidth + gap, gap )
+
         makeClass =
             "gui noselect "
                 ++ (case mode of
                     Debug -> "gui--debug "
                     _ -> "")
-                ++ (case theme of
-                    Dark -> "--dark"
-                    Light -> "--light")
+                ++ " gui--" ++ (case theme of
+                    Dark -> "gui--dark"
+                    Light -> "gui--light")
+                ++ " gui--" ++
+                    (case flow of
+                        TopToBottom -> "--ttb"
+                        BottomToTop -> "--btt"
+                        LeftToRight -> "--ltr"
+                        RightToLeft -> "--rtl"
+                    )
 
     in
         div [ HA.id rootId
@@ -286,7 +300,7 @@ view theme flow bounds detach root layout =
                                     Style.None
                                     rootPath
                                     localUrl
-                                    ( gap, gap )
+                                    detachButtonPos
                                 ]
 
                         Nothing -> Svg.none
