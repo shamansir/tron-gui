@@ -293,7 +293,7 @@ encodeUpdate maybeClient path prop =
                 Number ( Control { min, max, step } val _ ) ->
                     ( "slider", E.float val )
                 Coordinate ( Control ( xSpec, ySpec ) ( x, y ) _ ) ->
-                    ( "coord"
+                    ( "xy"
                     , E.string <| String.fromFloat x ++ "|" ++ String.fromFloat y
                     )
                 Text ( Control _ ( _, val ) _ ) ->
@@ -336,7 +336,7 @@ valueDecoder type_ =
     case type_ of
         "ghost" -> D.succeed Other
         "slider" -> D.float |> D.map FromSlider
-        "coord" -> decodeCoord |> D.map FromXY
+        "xy" -> decodeCoord |> D.map FromXY
         "text" -> D.string |> D.map FromInput
         "color" -> decodeColor |> D.map FromColor
         "choice" -> D.int |> D.map FromChoice

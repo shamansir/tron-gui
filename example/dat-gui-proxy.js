@@ -21,15 +21,15 @@ const sendProxy = (origSend) => {
 
 const toCssColor = (rgbaStr) => {
   let rgba = rgbaStr.split(',');
-  return 'rgba(' + (rgba[0] * 255) + ',' + (rgba[1] * 255) + ',' + (rgba[2] * 255) + ',' + rgba[3] + ')';
+  return 'rgba(' + (rgba[0] * 255) + ',' + (rgba[1] * 255) + ',' + (rgba[2] * 255) + ',' + (rgba[3] || 1) + ')';
 }
 
 const fromCssColor = (css) => {
   let rgba = css.slice(5,-1).split(',');
-  console.log((parseFloat(rgba[0]) / 255) + ',' + (parseFloat(rgba[1]) / 255) + ',' + (parseFloat(rgba[2]) / 255) + ',' + parseFloat(rgba[4]));
   return (parseFloat(rgba[0]) / 255) + ',' + (parseFloat(rgba[1]) / 255) + ',' + (parseFloat(rgba[2]) / 255) + ',' + parseFloat(rgba[3]);
 }
 
+const XY_SEP = '|';
 
 const applyDefinition = (config, definition, send) => {
 
@@ -47,6 +47,9 @@ const applyDefinition = (config, definition, send) => {
       config[propName] = (property.current == 'on');
     } else if (property.type == 'color') {
       config[propName] = toCssColor(property.current);
+    } else if (property.type == 'xy') {
+      config[propName + '_x'] = property.current.x;
+      config[propName + '_y'] = property.current.y;
     } else if (property.type != 'ghost') {
       config[propName] = property.current;
     }
@@ -121,6 +124,26 @@ function start(document, definition, origSend) {
       const sender = send(property);
       slider.onFinishChange((value) => {
         sender(value);
+      });
+
+    } else if (property.type == 'xy') {
+      const sliderX = root.add(config, propName + '_x')
+        .min(property.minX)
+        .max(property.maxX)
+        .step(property.stepX)
+        .name(label + ' (x)');
+      const sender = send(property);
+      sliderX.onFinishChange((value) => {
+        sender(value + XY_SEP + (config[propName + '_y'] || '0'));
+      });
+
+      const sliderY = root.add(config, propName + '_y')
+        .min(property.minY)
+        .max(property.maxY)
+        .step(property.stepY)
+        .name(label + ' (y)');
+      sliderY.onFinishChange((value) => {
+        sender((config[propName + '_x'] || '0') + XY_SEP + value);
       });
 
     } else if (property.type == 'text') {
