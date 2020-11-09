@@ -61,16 +61,19 @@ type Face
     | WithColor Color
 
 
+type alias Properties msg = Array ( Label, Property msg )
+
+
 type alias GroupControl msg =
     Control
-        ( ( Shape, CellShape ), Array ( Label, Property msg ) )
+        ( ( Shape, CellShape ), Properties msg )
         ( GroupState, Maybe FocusAt )
         msg
 
 
 type alias ChoiceControl msg =
     Control
-        ( ( Shape, CellShape ), Array ( Label, Property msg ) )
+        ( ( Shape, CellShape ), Properties msg )
         ( GroupState, ( Maybe FocusAt, Selected ) )
         msg
 

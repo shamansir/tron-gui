@@ -1,8 +1,8 @@
 module Gui.Build exposing
     ( Builder
     , root
-    , none, int, float, xy, color, text, input, button, button1, toggle, toggle1
-    , nest, choice, choice1, choiceIcons, strings
+    , none, int, float, xy, color, text, input, button, buttonWith, toggle
+    , nest, choice, choiceAuto, choiceIcons, strings
     , icon
     )
 
@@ -21,6 +21,9 @@ Every control may:
 * be expandable to a group of any controls, contained in some shape;
 * if it's a group or nesting or choice, it can be detached if GUI configured so;
 
+# Shapes
+
+For `choice...` and `nest...` items you are required to specify both shape of the panel (in cells) and shape of every cell (they only can be all of one shape). Shape of the panel depends on the shape of its inner cells. If it's `Full` (default), no worries. Else, if it's `TwiceByHalf` (2.0 x 0.5), for example, and the panel shape is still specified in full cells, so to place six such items in one column, you'll need to give panel a shape of 2 x 3: 1*2.0 x 6*0.5.
 
 # Builder
 @docs Builder
@@ -29,10 +32,10 @@ Every control may:
 @docs root
 
 # Items
-@docs none, int, float, xy, color, text, input, button, button1, toggle, toggle1
+@docs none, int, float, xy, color, text, input, button, buttonWith, toggle
 
 # Groups
-@docs nest, nestIn, choice, choice1, choiceIn, strings, stringsIn
+@docs nest, choice, choiceIcons, choiceAuto, strings
 
 # Icons
 @docs icon
@@ -105,19 +108,19 @@ Actually it is just an alias for the nested row of controls, always expanded.
 
                     [
                         ( "sine"
-                        , Builder.button1
+                        , Builder.buttonWith
                             (Builder.icon "sineewave.svg")
                             (always <| ChangeShape Sine)
                         )
                     ,
                         ( "square"
-                        , Builder.button1
+                        , Builder.buttonWith
                             (Builder.icon "squarewave.svg")
                             (always <| ChangeShape Square)
                         )
                     ,
                         ( "saw"
-                        , Builder.button1
+                        , Builder.buttonWith
                             (Builder.icon "sawwave.svg")
                             (always <| ChangeShape Saw)
                         )
@@ -263,8 +266,8 @@ icon = Icon
 
     Builder.button (Builder.icon "red-button.svg") <| always DoABang
 -}
-button1 : Icon -> (() -> msg) -> Builder msg
-button1 icon_ =
+buttonWith : Icon -> (() -> msg) -> Builder msg
+buttonWith icon_ =
     Action
         << Control
             (WithIcon icon_)
@@ -283,28 +286,6 @@ toggle default toMsg =
             ()
             (boolToToggle default)
             (Just <| toggleToBool >> toMsg)
-
-
-{-| `toggle1` creates a control over a boolean value. But to make it friendlier, there's a `ToggleState` type to represent it.
-
-    Builder.toggle1
-        (case model.lightOn of
-            LightOn -> ToggleOn
-            LightOff -> ToggleOff
-        )
-        (\nextState ->
-            case nextState of
-                ToggleOn -> Switch LightOn
-                ToggleOff -> Switch LightOff
-        )
--}
-toggle1 : ToggleState -> (ToggleState -> msg) -> Builder msg
-toggle1 default =
-    Toggle
-        << Control
-            ()
-            default
-        << Just
 
 
 {-| `nest` lets you group other controls (including other `nest`ings) under a button which expands a group. Also, this group can be _detached_ if GUI is confugured so.
@@ -340,7 +321,7 @@ nest shape cellShape items =
             Nothing -- (Tuple.first >> handler)
 
 
-{-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Thanks to Elm rich type system, you are not limited to strings, the option can have any type. But since we also translate these values to HTML and JSON, you need to specify the converter to `String` and from it. Also, since we don't ask for `comparable` type here, you are asked to provide comparison function.
+{-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Thanks to Elm rich type system, you are not limited to strings, the option can have any type. But since we also translate these values to HTML and JSON, you need to specify the converter to `String` and from it. Also, since we don't ask for `comparable` type here, you are asked to provide a comparison function.
 
     Builder.choice
         ( 5, 4 ) -- the wanted shape of the nesting, i.e. 5 cells width x 4 cells height
@@ -355,6 +336,8 @@ nest shape cellShape items =
         model.waveShape
         (==) -- equality operator usually works for sum types, but be accurate
         ChangeWaveShape
+
+See also: `Builder.strings`, `Builder.palette`
 -}
 choice
      : Shape
@@ -375,28 +358,7 @@ choice shape cellShape toLabel =
         )
 
 
-{-| `choice1` is the same as `choice`, but works with `comparable` values.
-
-    Builder.choice1
-        ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
-        String.fromInteger
-        [ 128, 256, 512 ]
-        model.bitrate
-        (String.toInteger >> Maybe.withDefault 128 >> ChangeBitrate)
--}
-choice1
-     : Shape
-    -> CellShape
-    -> ( comparable -> Label )
-    -> List comparable
-    -> comparable
-    -> ( comparable -> msg )
-    -> Builder msg
-choice1 shape cellShape f items v =
-    choice shape cellShape f items v (==)
-
-
-{-| `choice2` is the same as `choice`, but allows user define icons for buttons.
+{-| `choiceIcons` is the same as `choice`, but allows user to define icons for buttons.
 
     Builder.choice2
         (\waveShape ->
@@ -427,9 +389,30 @@ choiceIcons shape cellShape toLabelAndIcon =
             let ( label, theIcon ) = toLabelAndIcon val
             in
                 ( label
-                , button1 theIcon <| always <| callByIndex <| Selected index
+                , buttonWith theIcon <| always <| callByIndex <| Selected index
                 )
         )
+
+
+{-| `choiceAuto` is the same as `choice`, but works with `comparable` values.
+
+    Builder.choiceAuto
+        ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
+        String.fromInteger
+        [ 128, 256, 512 ]
+        model.bitrate
+        (String.toInteger >> Maybe.withDefault 128 >> ChangeBitrate)
+-}
+choiceAuto
+     : Shape
+    -> CellShape
+    -> ( comparable -> Label )
+    -> List comparable
+    -> comparable
+    -> ( comparable -> msg )
+    -> Builder msg
+choiceAuto shape cellShape f items v =
+    choice shape cellShape f items v (==)
 
 
 choiceHelper
@@ -481,21 +464,23 @@ choiceHelper shape toBuilder options current compare toMsg =
 {-| `strings` is a helper to create `choice` over string values.
 
     Builder.strings
-        ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
         greekChildrenNames
         model.currentChildName
         ChangeChildName
 -}
 strings
-     : Shape
-    -> List String
+     : List String
     -> String
     -> ( String -> msg )
     -> Builder msg
-strings shape options current toMsg =
+strings options current toMsg =
     choice
-        shape
-        HalfByTwice
+        ( 2
+        , if (modBy 2 <| List.length options) == 0
+            then List.length options // 2
+            else List.length options // 2 + 1
+        )
+        TwiceByHalf
         identity
         options
         current

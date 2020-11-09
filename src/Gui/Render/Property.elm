@@ -244,7 +244,7 @@ toggle : Theme -> Tone -> ToggleState -> Bounds -> Svg msg
 toggle theme tone state bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
-        radius = bounds.width / 7
+        radius = ( min bounds.width bounds.height) / 7
     in Svg.circle
         [ SA.cx <| String.fromFloat cx
         , SA.cy <| String.fromFloat cy
