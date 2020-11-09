@@ -208,7 +208,7 @@ text
 text theme tone ( editing, value ) onInput bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
-        fontSize = bounds.width / 6
+        fontSize = (min bounds.width bounds.height) / 6
         lineHeight = fontSize * 1.6
         topShift = cy - lineHeight / 2
         maxWidth = bounds.width - gap * 2
@@ -347,7 +347,7 @@ color : Theme -> Tone -> Color -> Bounds -> Svg msg
 color theme tone value bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
-        radius = bounds.width / 6
+        radius = (min bounds.width bounds.height) / 6
     in Svg.circle
         [ SA.cx <| String.fromFloat center.x
         , SA.cy <| String.fromFloat center.y
@@ -362,7 +362,7 @@ arrow : Theme -> Tone -> GroupState -> Bounds-> Svg msg
 arrow theme tone groupState bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
-        scaleV = bounds.width / 127
+        scaleV = (min bounds.width bounds.height) / 127
     in Svg.g
         [ SA.style <|
             "transform: "
