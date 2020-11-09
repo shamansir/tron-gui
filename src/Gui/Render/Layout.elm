@@ -271,32 +271,22 @@ view theme flow bounds detach root layout =
 
                 [ Svg.g
                     []
-                    [ Svg.g [] platesBacksRendered
-                    , Svg.g [] cellsRendered
-                    , Svg.g [] platesControlsRendered
+                    [ Svg.g [ SA.class "grid__backs" ] platesBacksRendered
+                    , Svg.g [ SA.class "grid__cells" ] cellsRendered
+                    , Svg.g [ SA.class "grid__plate-controls" ] platesControlsRendered
 
                     , case detach |> Detach.getLocalUrl rootPath of
                         Just localUrl ->
 
                             Svg.g
-                                [ SA.style <| " pointer-events: all; cursor: pointer; transform: translate(" ++
-                                String.fromFloat gap ++ "px," ++ String.fromFloat gap ++ "px);"
-                                , HE.onClick <| Detach rootPath
+                                [ SA.class "grid__detach"
                                 ]
-                                [ Svg.a
-                                    [ SA.xlinkHref <| Detach.localUrlToString localUrl
-                                    , SA.target "_blank"
-                                    ]
-                                    [ Svg.rect
-                                        [ SA.fill "transparent"
-                                        , SA.x "0"
-                                        , SA.y "2.5"
-                                        , SA.width "10"
-                                        , SA.height "10"
-                                        ]
-                                        []
-                                    , Plate.detach theme Style.None
-                                    ]
+                                [ Plate.detachButton
+                                    theme
+                                    Style.None
+                                    rootPath
+                                    localUrl
+                                    ( gap, gap )
                                 ]
 
                         Nothing -> Svg.none

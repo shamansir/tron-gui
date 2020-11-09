@@ -42,9 +42,7 @@ view
 view placement theme tone path bounds focus cellShape ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
-        , HA.style "pointer-events" "all"
-        , HA.style "cursor" "pointer"
-        , SA.class <| makeClass prop
+        , SA.class <| makeClass tone cellShape <| prop
         ]
         [
             Svg.rect
@@ -96,12 +94,9 @@ view placement theme tone path bounds focus cellShape ( label, prop ) =
         , case cellShape of
             Full ->
                 Svg.text_
-                    [ SA.textAnchor "middle"
-                    , SA.dominantBaseline "middle"
+                    [ SA.class "cell__label"
                     , SA.x <| String.fromFloat (bounds.width / 2)
                     , SA.y <| String.fromFloat (bounds.height / 5 * 4)
-                    , SA.fontSize "13px"
-                    , SA.fontFamily fontFamily
                     , SA.fill <| Color.toCssString <| Style.text theme
                     ]
                     [ Svg.text label ]
@@ -153,7 +148,7 @@ coord theme tone bounds ( valueX, valueY ) =
         ( left, top ) = ( gap / 2, gap / 2 )
         ( right, bottom ) =
             ( bounds.width - gap / 2, bounds.height - gap / 2 )
-        circleRadius = (max bounds.width bounds.height) / 18
+        circleRadius = (min bounds.width bounds.height) / 18
         innerGap = circleRadius * 2
         ( circleX, circleY ) =
             ( left + innerGap + (valueX * (right - left - innerGap * 2))
@@ -215,12 +210,10 @@ text theme tone ( editing, value ) onInput bounds =
     in case editing of
         Ready ->
             Svg.text_
-                [ SA.dominantBaseline "middle"
-                , SA.textAnchor "middle"
-                , SA.fontSize <| String.fromFloat fontSize ++ "px"
-                , SA.fontFamily fontFamily
+                [ SA.fontSize <| String.fromFloat fontSize ++ "px"
                 , SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat <| cy + 1
+                , SA.class "text--ready"
                 ]
                 [ Svg.text <|
                     if String.length value <= 6 then
@@ -230,19 +223,14 @@ text theme tone ( editing, value ) onInput bounds =
             Svg.foreignObject
                 [ HA.style "width" <| String.fromFloat bounds.width  ++ "px"
                 , HA.style "height" <| String.fromFloat bounds.height  ++ "px"
+                , SA.class "text--edit"
                 ]
                 [ Html.input
                     [ HA.style "max-width" <| String.fromFloat maxWidth ++ "px"
                     , HA.style "height" <| String.fromFloat lineHeight ++ "px"
-                    , HA.style "position" "relative"
                     , HA.style "left" <| String.fromFloat gap ++ "px"
                     , HA.style "top" <| String.fromFloat topShift ++ "px"
-                    , HA.style "outline" "none"
-                    , HA.style "border" "none"
-                    , HA.style "background-color" "transparent"
-                    , HA.style "font-family" "IBM Plex Sans"
                     , HA.style "font-size" <| String.fromFloat fontSize ++ "px"
-                    , HA.style "text-align" "center"
                     , HA.type_ "text"
                     , HA.placeholder "input"
                     , HE.onInput onInput
@@ -279,9 +267,8 @@ button theme tone maybeIcon cellShape label bounds =
             Svg.text_
                 [ SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat cy
-                , HA.style "text-anchor" "middle"
-                , HA.style "dominant-baseline" "central"
-                , HA.style "font-family" fontFamily
+                , SA.class "button__label"
+                , SA.fill <| Color.toCssString <| Style.text theme
                 ]
                 [ Svg.text label ]
     in case maybeIcon of
@@ -306,7 +293,7 @@ button theme tone maybeIcon cellShape label bounds =
                     [
                         Svg.image
                         [ SA.xlinkHref <| iconUrl
-                        , SA.class "button--icon"
+                        , SA.class "button__icon"
                         , SA.width <| String.fromFloat iconWidth ++ "px"
                         , SA.height <| String.fromFloat iconHeight ++ "px"
                         , SA.x <| String.fromFloat iconX
@@ -328,19 +315,19 @@ button theme tone maybeIcon cellShape label bounds =
                         ( rectX, rectY ) = ( cx - rectWidth / 2, cy - rectHeight / 2 )
                     in
                         Svg.rect
-                        [ SA.x <| String.fromFloat rectX
-                        , SA.y <| String.fromFloat rectY
-                        , SA.width <| String.fromFloat rectWidth
-                        , SA.height <| String.fromFloat rectHeight
-                        , SA.fill "none"
-                        , SA.stroke <| Color.toCssString <| colorFor theme tone
-                        , SA.strokeWidth "2"
-                        , SA.strokeLinecap "round"
-                        , SA.rx "3"
-                        , SA.ry "3"
-                        ]
-                        [
-                        ]
+                            [ SA.x <| String.fromFloat rectX
+                            , SA.y <| String.fromFloat rectY
+                            , SA.width <| String.fromFloat rectWidth
+                            , SA.height <| String.fromFloat rectHeight
+                            , SA.fill "none"
+                            , SA.stroke <| Color.toCssString <| colorFor theme tone
+                            , SA.strokeWidth "2"
+                            , SA.strokeLinecap "round"
+                            , SA.rx "3"
+                            , SA.ry "3"
+                            ]
+                            [
+                            ]
 
 
 color : Theme -> Tone -> Color -> Bounds -> Svg msg
@@ -377,15 +364,20 @@ arrow theme tone groupState bounds =
         ]
 
 
-makeClass : Property msg -> String
-makeClass prop =
-    "cell " ++ case prop of
-        Nil -> "ghost"
-        Number _ -> "number"
-        Coordinate _ -> "coord"
-        Text _ -> "text"
-        Color _ -> "color"
-        Toggle _ -> "toggle"
-        Action _ -> "button"
-        Choice _ -> "choice"
-        Group _ -> "group"
+makeClass : Tone -> CellShape -> Property msg -> String
+makeClass tone shape prop =
+    "cell"
+        ++ " cell--" ++
+            ( case prop of
+                Nil -> "ghost"
+                Number _ -> "number"
+                Coordinate _ -> "coord"
+                Text _ -> "text"
+                Color _ -> "color"
+                Toggle _ -> "toggle"
+                Action _ -> "button"
+                Choice _ -> "choice"
+                Group _ -> "group"
+            )
+        ++ " cell--" ++ toneToModifier tone
+        ++ " cell--" ++ shapeToModifier shape

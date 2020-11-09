@@ -75,9 +75,6 @@ gap = 10
 borderRadius = 10
 
 
-fontFamily = "\"IBM Plex Sans\", sans-serif"
-
-
 colorFor : Theme -> Tone -> Color
 colorFor theme style =
     case style of
@@ -85,10 +82,14 @@ colorFor theme style =
         Pink -> pink
         Yellow -> yellow
         Aqua -> aqua
-        None ->
-            case theme of
-                Dark -> white
-                Light -> black
+        None -> themeColorFor theme
+
+
+themeColorFor : Theme -> Color
+themeColorFor theme =
+    case theme of
+        Dark -> white
+        Light -> black
 
 
 next : Tone -> Tone
@@ -111,6 +112,7 @@ background theme =
 text : Theme -> Color
 text _ =
     Color.rgb255 144 144 144
+
 
 knobLine : Theme -> Color
 knobLine theme =
@@ -193,3 +195,25 @@ toGridCoords bounds pos =
     { x = (pos.x - bounds.x) / cellWidth
     , y = (pos.y - bounds.y) / cellHeight
     }
+
+
+toneToModifier : Tone -> String
+toneToModifier tone =
+    case tone of
+        Green -> "tone-1"
+        Pink -> "tone-2"
+        Yellow -> "tone-3"
+        Aqua -> "tone-4"
+        None -> "no-tone"
+
+
+shapeToModifier : CellShape -> String
+shapeToModifier shape =
+    case shape of
+       Full -> "full"
+       Half -> "half"
+       TwiceByHalf -> "twice-by-half"
+       HalfByTwice -> "half-by-twice"
+       HalfByOne -> "half-by-one"
+       OneByHalf -> "one-by-half"
+       TwiceByTwice -> "twice-by-twice"

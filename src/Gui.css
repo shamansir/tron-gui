@@ -19,6 +19,15 @@
     /* width: 60%; */
 }
 
+.grid text {
+    font-family: \"IBM Plex Sans\", sans-serif;
+}
+
+.detach-panel, .collapse-panel {
+    pointer-events: all;
+    cursor: pointer;
+}
+
 .gui:focus {
     outline: none;
 }
@@ -40,12 +49,12 @@
     pointer-events: all;
 }
 
-.cell.hole, .cell.ghost {
+.cell--hole, .cell--ghost {
     pointer-events: none;
 }
 
 
-.gui.--light .cell.button .button--icon {
+.gui.--light .cell--button .button__icon {
     stroke: black !important;
 }
 
@@ -160,6 +169,30 @@
     dominant-baseline: hanging;
 }
 
+.cell__label {
+    text-anchor: middle;
+    dominant-baseline: middle;
+    font-size: 13px;
+}
+
+.cell--button .button__label {
+    text-anchor: middle;
+    dominant-baseline: central;
+}
+
+.cell--text text {
+    text-anchor: middle;
+    dominant-baseline: central;
+}
+
+.cell--text .text--edit input {
+    position: relative;
+    outline: none;
+    border: none;
+    background-color: transparent;
+    font-family: \"IBM Plex Sans\", sans-serif;
+    text-align: center;
+}
 
 .plate--debug {
     position: fixed;
@@ -168,4 +201,13 @@
     box-sizing: border-box;
     font-size: 10px;
     dominant-baseline: hanging;
+}
+
+.plate-controls__title {
+    dominant-baseline: hanging;
+    text-transform: uppercase;
+    font-size: 9px;
+    text-anchor: middle;
+    line-height: 3vh;
+    letter-spacing: 1px;
 }
