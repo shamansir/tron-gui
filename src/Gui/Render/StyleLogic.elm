@@ -114,6 +114,14 @@ text _ =
     Color.rgb255 144 144 144
 
 
+textHilite : Theme -> Color
+textHilite theme =
+    case theme of
+        Dark -> Color.white
+        Light -> Color.black
+
+
+
 knobLine : Theme -> Color
 knobLine theme =
     case theme of

@@ -257,6 +257,7 @@ text theme tone ( editing, value ) onInput bounds =
                 , SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat <| cy + 1
                 , SA.class "text--ready"
+                , SA.fill <| Color.toCssString <| Style.textHilite theme
                 ]
                 [ Svg.text <|
                     if String.length value <= 6 then
@@ -274,6 +275,7 @@ text theme tone ( editing, value ) onInput bounds =
                     , HA.style "left" <| String.fromFloat gap ++ "px"
                     , HA.style "top" <| String.fromFloat topShift ++ "px"
                     , HA.style "font-size" <| String.fromFloat fontSize ++ "px"
+                    , HA.style "color" <| Color.toCssString <| Style.textHilite theme
                     , HA.type_ "text"
                     , HA.placeholder "input"
                     , HE.onInput onInput
@@ -316,9 +318,9 @@ button theme tone face selected cellShape label bounds =
                 [ SA.x <| String.fromFloat labelX
                 , SA.y <| String.fromFloat labelY
                 , SA.class "button__label"
-                , SA.fill <| case selected of
-                    Usual -> Color.toCssString <| Style.text theme
-                    Selected -> "black"
+                , SA.fill <| Color.toCssString <| case selected of
+                    Usual -> Style.text theme
+                    Selected -> Style.textHilite theme
                 ]
                 [ Svg.text label ]
     in case face of
@@ -332,7 +334,7 @@ button theme tone face selected cellShape label bounds =
                                 "transform: "
                                     ++ "translate(" ++ String.fromFloat gap ++ "px,"
                                                     ++ String.fromFloat (cy - 4) ++ "px)" ]
-                            [ Util.arrow Color.black (scale 0.5) (rotate 90)
+                            [ Util.arrow (Style.textHilite theme) (scale 0.5) (rotate 90)
                             ]
                         -- , textLabel ( bounds.width / 2.25 + gap, cy )
                         , textLabel ()
