@@ -16,6 +16,7 @@ import Gui.Path as Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
 import Gui.Focus exposing (Focused(..))
 import Gui.Control exposing (Control(..))
+import Gui.Render.Transform exposing (..)
 import Gui.Render.Util exposing (..)
 import Gui.Render.Util as Svg exposing (none)
 import Gui.Render.Util as Util exposing (arrow)
@@ -65,7 +66,9 @@ view placement theme tone path bounds focus selected maybeSelectedInside cellSha
             []
         , viewProperty
             theme tone path bounds focus selected maybeSelectedInside cellShape ( label, prop )
-        , viewLabel theme cellShape bounds label
+        , case prop  of
+            Action _ -> Svg.none
+            _ -> viewLabel theme cellShape bounds label
         ]
 
 
@@ -129,14 +132,14 @@ viewProperty
             text theme tone value (TextInput path) bounds
         Toggle (Control _ value _) ->
             toggle theme tone value bounds
-        Action (Control maybeIcon _ _) ->
-            button theme tone maybeIcon cellShape label bounds
+        Action (Control face _ _) ->
+            button theme tone face selected cellShape label bounds
         Color (Control _ value _) ->
             color theme tone value bounds
         Choice (Control _ ( expanded, _ ) _) ->
             case maybeSelectedInside of
-                Just ( _, theSelectedProp ) ->
-                    viewProperty theme tone path bounds focus Usual Nothing cellShape ( label, theSelectedProp )
+                Just theSelectedProp ->
+                    viewProperty theme tone path bounds focus Selected Nothing cellShape theSelectedProp
                 Nothing ->
                     arrow theme tone expanded bounds
         Group (Control _ ( expanded, _ ) _) ->
@@ -299,42 +302,42 @@ toggle theme tone state bounds =
         ]
 
 
-button : Theme -> Tone -> Face -> CellShape -> Label -> Bounds -> Svg msg
-button theme tone face cellShape label bounds =
+button : Theme -> Tone -> Face -> Selected -> CellShape -> Label -> Bounds -> Svg msg
+button theme tone face selected cellShape label bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
+        ( labelX, labelY ) =
+            case cellShape of
+                Full -> ( cx, cy )
+                TwiceByHalf -> ( 30, cy + 2 )
+                _ -> ( cx, cy )
         textLabel _ =
             Svg.text_
-                [ SA.x <| String.fromFloat cx
-                , SA.y <| String.fromFloat cy
+                [ SA.x <| String.fromFloat labelX
+                , SA.y <| String.fromFloat labelY
                 , SA.class "button__label"
-                , SA.fill <| Color.toCssString <| Style.text theme
+                , SA.fill <| case selected of
+                    Usual -> Color.toCssString <| Style.text theme
+                    Selected -> "black"
                 ]
                 [ Svg.text label ]
     in case face of
         Default ->
-            case cellShape of
-                TwiceByHalf ->
-                    textLabel ()
-                _ ->
-                    let
-                        ( rectWidth, rectHeight ) = ( bounds.width / 4.5, bounds.height / 4.5 )
-                        ( rectX, rectY ) = ( cx - rectWidth / 2, cy - rectHeight / 2 )
-                    in
-                        Svg.rect
-                            [ SA.x <| String.fromFloat rectX
-                            , SA.y <| String.fromFloat rectY
-                            , SA.width <| String.fromFloat rectWidth
-                            , SA.height <| String.fromFloat rectHeight
-                            , SA.fill "none"
-                            , SA.stroke <| Color.toCssString <| colorFor theme tone
-                            , SA.strokeWidth "2"
-                            , SA.strokeLinecap "round"
-                            , SA.rx "3"
-                            , SA.ry "3"
+            case ( selected, cellShape ) of
+                ( Selected, TwiceByHalf ) ->
+                    Svg.g
+                        []
+                        [ Svg.g
+                            [ SA.style <|
+                                "transform: "
+                                    ++ "translate(" ++ String.fromFloat gap ++ "px,"
+                                                    ++ String.fromFloat (cy - 4) ++ "px)" ]
+                            [ Util.arrow Color.black (scale 0.5) (rotate 90)
                             ]
-                            [
-                            ]
+                        -- , textLabel ( bounds.width / 2.25 + gap, cy )
+                        , textLabel ()
+                        ]
+                _ -> textLabel ()
         WithIcon (Icon icon) ->
             let
                 postfix =
@@ -347,9 +350,9 @@ button theme tone face cellShape label bounds =
                 ( iconX, iconY ) =
                     case cellShape of
                         TwiceByHalf ->
-                            ( -1 * gap, cy - iconHeight / 2)
+                            ( -23, cy - iconHeight / 2 + 1 )
                         _ ->
-                            ( cx - iconWidth / 2, cy - iconHeight / 2 )
+                            ( cx - iconWidth / 2, cy - iconHeight / 2 + 1 )
             in
                 Svg.g
                     [ ]
@@ -401,7 +404,7 @@ color theme tone value bounds =
         ]
 
 
-arrow : Theme -> Tone -> GroupState -> Bounds-> Svg msg
+arrow : Theme -> Tone -> GroupState -> Bounds -> Svg msg
 arrow theme tone groupState bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }

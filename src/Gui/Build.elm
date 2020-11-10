@@ -247,11 +247,7 @@ color default =
 -}
 button : (() -> msg) -> Builder msg
 button =
-    Action
-        << Control
-            Default
-            ()
-        << Just
+    buttonByFace Default
 
 
 {-| Create an `Icon` from its URL or filename.
@@ -268,9 +264,15 @@ icon = Icon
 -}
 buttonWith : Icon -> (() -> msg) -> Builder msg
 buttonWith icon_ =
+    buttonByFace <| WithIcon icon_
+
+
+-- not exposed
+buttonByFace : Face -> (() -> msg) -> Builder msg
+buttonByFace face =
     Action
         << Control
-            (WithIcon icon_)
+            face
             ()
         << Just
 
@@ -501,11 +503,14 @@ palette
     -> Color
     -> (Color -> msg)
     -> Builder msg
-palette shape options current toMsg =
-    choice
-        shape
-        Half
-        Color.toCssString
+palette shape options current =
+    choiceHelper
+        ( shape, Half )
+        (\callByIndex index val ->
+            ( Color.toCssString val
+            , buttonByFace (WithColor val) <| always <| callByIndex <| SelectedAt index
+            )
+        )
         options
         current
         (\cv1 cv2 ->
@@ -516,8 +521,6 @@ palette shape options current toMsg =
                     (c1.green == c2.green) &&
                     (c1.alpha == c2.alpha)
         )
-        toMsg
-
 
 
 findShape : List a -> ( Int, Int )

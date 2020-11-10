@@ -14,7 +14,8 @@ import Gui.Render.Style exposing (..)
 import Gui.Render.Style as Style
 import Gui.Render.StyleLogic exposing (..)
 import Gui.Render.StyleLogic as Style
-import Gui.Render.Util exposing (arrow, rotate, scale)
+import Gui.Render.Transform exposing (rotate, scale)
+import Gui.Render.Util exposing (arrow)
 import Gui.Render.Util as Svg exposing (none)
 
 

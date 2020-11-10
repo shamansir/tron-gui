@@ -5,6 +5,7 @@ import Color exposing (Color)
 import Svg exposing (Svg)
 import Svg.Attributes as SA
 import Url exposing (Url)
+import Gui.Render.Transform exposing (..)
 import Gui.Render.Style exposing (Theme)
 
 
@@ -108,21 +109,6 @@ describeMark center { radiusA, radiusB } angleInDegrees =
         [ "M", String.fromFloat start.x, String.fromFloat start.y
         , "L", String.fromFloat end.x, String.fromFloat end.y
         ] |> String.join " "
-
-
-type Transform a = Transform Float
-
-
-type Rotate = Rotate
-type Scale = Scale
-
-
-rotate : Float -> Transform Rotate
-rotate = Transform
-
-
-scale : Float -> Transform Scale
-scale = Transform
 
 
 arrow : Color -> Transform Scale -> Transform Rotate -> Svg msg
