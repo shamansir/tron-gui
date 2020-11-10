@@ -61,10 +61,11 @@ viewProperty
     -> Bounds
     -> Focused
     -> Selected
+    -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
     -> Svg Msg
-viewProperty placement theme tone path pixelBounds focus selected cellShape ( label, prop ) =
+viewProperty placement theme tone path pixelBounds focus selected maybeSelectedInside cellShape ( label, prop ) =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -91,6 +92,7 @@ viewProperty placement theme tone path pixelBounds focus selected cellShape ( la
                     pixelBounds
                     focus
                     selected
+                    maybeSelectedInside
                     cellShape
                     ( label, prop )
 
@@ -239,6 +241,7 @@ view theme flow bounds detach root layout =
                             then Selected
                             else Usual
                         )
+                        (getSelected cell.source)
                         ( cell.parent
                             |> Maybe.andThen Property.getCellShape
                             |> Maybe.withDefault Full

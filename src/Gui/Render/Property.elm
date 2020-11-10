@@ -37,72 +37,111 @@ view
     -> Bounds
     -> Focused
     -> Selected
+    -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
     -> Svg Msg
-view placement theme tone path bounds focus selected cellShape ( label, prop ) =
+view placement theme tone path bounds focus selected maybeSelectedInside cellShape ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
         , SA.class <| makeClass tone cellShape <| prop
         ]
-        [
-            Svg.rect
-                [ SA.fill
-                    <| Color.toCssString
-                    <| case focusColor theme focus of
-                        Just focusColor -> focusColor
-                        Nothing ->
-                            case placement of
-                                AtRoot -> background theme
-                                OnAPlate -> transparent
-                , SA.x <| String.fromFloat (gap / 2)
-                , SA.y <| String.fromFloat (gap / 2)
-                , SA.rx <| String.fromFloat borderRadius
-                , SA.ry <| String.fromFloat borderRadius
-                , SA.width <| String.fromFloat (bounds.width - gap) ++ "px"
-                , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
-                ]
-                []
-        , case prop of
-            Number (Control { min, max } value _) ->
-                knob
-                    theme
-                    tone
-                    bounds
-                    <| (value - min) / (max - min)
-            Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
-                coord
-                    theme
-                    tone
-                    bounds
-                    <|
-                        ( (xValue - xAxis.min) / (xAxis.max - xAxis.min)
-                        , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
-                        )
-            Text (Control _ value _) ->
-                text theme tone value (TextInput path) bounds
-            Toggle (Control _ value _) ->
-                toggle theme tone value bounds
-            Action (Control maybeIcon _ _) ->
-                button theme tone maybeIcon cellShape label bounds
-            Color (Control _ value _) ->
-                color theme tone value bounds
-            Choice (Control _ ( expanded, _ ) _) ->
-                arrow theme tone expanded bounds
-            Group (Control _ ( expanded, _ ) _) ->
-                arrow theme tone expanded bounds
-            _ -> Svg.none
-        , case cellShape of
-            Full ->
-                Svg.text_
-                    [ SA.class "cell__label"
-                    , SA.x <| String.fromFloat (bounds.width / 2)
-                    , SA.y <| String.fromFloat (bounds.height / 5 * 4)
-                    , SA.fill <| Color.toCssString <| Style.text theme
-                    ]
-                    [ Svg.text label ]
-            _ -> Svg.none
+        [ Svg.rect
+            [ SA.fill
+                <| Color.toCssString
+                <| case focusColor theme focus of
+                    Just focusColor -> focusColor
+                    Nothing ->
+                        case placement of
+                            AtRoot -> background theme
+                            OnAPlate -> transparent
+            , SA.x <| String.fromFloat (gap / 2)
+            , SA.y <| String.fromFloat (gap / 2)
+            , SA.rx <| String.fromFloat borderRadius
+            , SA.ry <| String.fromFloat borderRadius
+            , SA.width <| String.fromFloat (bounds.width - gap) ++ "px"
+            , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
+            ]
+            []
+        , viewProperty
+            theme tone path bounds focus selected maybeSelectedInside cellShape ( label, prop )
+        , viewLabel theme cellShape bounds label
         ]
+
+
+viewLabel
+    :  Theme
+    -> CellShape
+    -> Bounds
+    -> Label
+    -> Svg msg
+viewLabel theme cellShape bounds label =
+    case cellShape of
+        Full ->
+            Svg.text_
+                [ SA.class "cell__label"
+                , SA.x <| String.fromFloat (bounds.width / 2)
+                , SA.y <| String.fromFloat (bounds.height / 5 * 4)
+                , SA.fill <| Color.toCssString <| Style.text theme
+                ]
+                [ Svg.text label ]
+        _ -> Svg.none
+
+
+viewProperty
+     : Theme
+    -> Tone
+    -> Path
+    -> Bounds
+    -> Focused
+    -> Selected
+    -> Maybe ( Label, Property msg )
+    -> CellShape
+    -> ( Label, Property msg )
+    -> Svg Msg
+viewProperty
+    theme
+    tone
+    path
+    bounds
+    focus
+    selected
+    maybeSelectedInside
+    cellShape
+    ( label, prop ) =
+    case prop of
+        Number (Control { min, max } value _) ->
+            knob
+                theme
+                tone
+                bounds
+                <| (value - min) / (max - min)
+        Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
+            coord
+                theme
+                tone
+                bounds
+                <|
+                    ( (xValue - xAxis.min) / (xAxis.max - xAxis.min)
+                    , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
+                    )
+        Text (Control _ value _) ->
+            text theme tone value (TextInput path) bounds
+        Toggle (Control _ value _) ->
+            toggle theme tone value bounds
+        Action (Control maybeIcon _ _) ->
+            button theme tone maybeIcon cellShape label bounds
+        Color (Control _ value _) ->
+            color theme tone value bounds
+        Choice (Control _ ( expanded, _ ) _) ->
+            case maybeSelectedInside of
+                Just ( _, theSelectedProp ) ->
+                    viewProperty theme tone path bounds focus Usual Nothing cellShape ( label, theSelectedProp )
+                Nothing ->
+                    arrow theme tone expanded bounds
+        Group (Control _ ( expanded, _ ) _) ->
+            arrow theme tone expanded bounds
+        _ -> Svg.none
 
 
 knob : Theme -> Tone -> Bounds -> Float -> Svg msg

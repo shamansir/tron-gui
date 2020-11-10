@@ -608,6 +608,14 @@ getCellShape prop =
         _ -> Nothing
 
 
+getSelected : Property msg -> Maybe ( Label, Property msg )
+getSelected prop =
+    case prop of
+        Choice (Control ( _, props ) ( _, ( _, SelectedAt selectedAt ) ) _ ) ->
+            props |> Array.get selectedAt
+        _ -> Nothing
+
+
 isSelected : Property msg -> Int -> Bool
 isSelected prop index =
     case prop of
