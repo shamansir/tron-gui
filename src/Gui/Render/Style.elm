@@ -9,6 +9,9 @@ module Gui.Render.Style exposing
 
 # Theme
 @docs Theme
+
+# Cell Shape
+@docs CellShape
 -}
 
 
@@ -23,6 +26,23 @@ type Flow
     | RightToLeft
 
 
+{-| Dark or Light theme, each of those could be useful for different situation.
+-}
+type Theme
+    = Dark
+    | Light
+
+
+{-| Cell Shape is the place it takes in nested panels. Considering the default shape as 1x1 (`Full`), the meaning of each value is:
+
+* `Full` — 1x1
+* `Half` — 0.5x0.5
+* `HalfByOne` — 0.5x1
+* `OneByHalf` — 1x0.5
+* `TwiceByHalf` — 2x0.5
+* `HalfByTwice` — 0.5x2
+* `TwiceByTwice` - 2x2
+-}
 type CellShape
     = Full
     | Half
@@ -31,10 +51,3 @@ type CellShape
     | TwiceByHalf
     | HalfByTwice
     | TwiceByTwice
-
-
-{-| Dark or Light theme, each of those could be useful for different situation.
--}
-type Theme
-    = Dark
-    | Light

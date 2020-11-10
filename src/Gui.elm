@@ -73,6 +73,9 @@ NB: Don't forget to copy `src/Gui.css` to your application to make GUI look and 
 # Lifecycle
 @docs init, update, view, subscriptions, run, Message
 
+# Flow
+@docs reflow
+
 # Common Helpers
 @docs map, over
 
