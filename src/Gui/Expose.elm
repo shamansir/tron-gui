@@ -77,7 +77,7 @@ updateProperty value property =
         ( Action control, FromButton ) ->
             () |> callWith control
         ( Choice ( Control _ ( expanded, ( focus, _ ) ) _ as control), FromChoice i ) ->
-            ( expanded, ( focus, Selected i ) )
+            ( expanded, ( focus, SelectedAt i ) )
                 |> callWith control
         ( Group _, _ ) ->
             Cmd.none
@@ -121,7 +121,7 @@ applyProperty value prop =
             control
                 |> Control.update
                     (\( expanded, ( focus, _) )
-                        -> ( expanded, ( focus, Selected i ) )
+                        -> ( expanded, ( focus, SelectedAt i ) )
                     )
                 |> Choice
         ( Group _, _ ) ->
@@ -218,7 +218,7 @@ encodePropertyAt path property =
                 , ( "path", encodeRawPath path )
                 ]
 
-        Choice ( Control ( _, items ) ( state, ( _, Selected current ) ) _) ->
+        Choice ( Control ( _, items ) ( state, ( _, SelectedAt current ) ) _) ->
             E.object
                 [ ( "type", E.string "choice" )
                 , ( "path", encodeRawPath path )
@@ -311,7 +311,7 @@ encodeUpdate maybeClient path prop =
                     ( "button"
                     , E.null
                     )
-                Choice ( Control ( _, items ) ( state, ( _, Selected current ) ) _) ->
+                Choice ( Control ( _, items ) ( state, ( _, SelectedAt current ) ) _) ->
                     ( "choice"
                     , E.int current
                     )

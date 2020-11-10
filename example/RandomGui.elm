@@ -187,7 +187,7 @@ choice deep =
                         Tuple.pair
                         expandState
                         (Random.map (Tuple.pair Nothing)
-                            <| Random.map Gui.Selected
+                            <| Random.map Gui.SelectedAt
                             <| Random.int 0 <| Array.length cs - 1)
                     )
                     handler

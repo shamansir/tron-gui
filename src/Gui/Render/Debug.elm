@@ -74,7 +74,7 @@ propertyDebug ( label, prop )  =
                         Just (FocusAt focus) -> String.fromInt focus
                         _ -> "none"
                 ]
-        Choice (Control _ ( state, ( maybeFocus, Selected selected ) ) _ ) ->
+        Choice (Control _ ( state, ( maybeFocus, SelectedAt selected ) ) _ ) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " choice: "
                 , textAt 5 20

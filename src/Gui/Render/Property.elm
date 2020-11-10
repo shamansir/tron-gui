@@ -36,10 +36,11 @@ view
     -> Path
     -> Bounds
     -> Focused
+    -> Selected
     -> CellShape
     -> ( Label, Property msg )
     -> Svg Msg
-view placement theme tone path bounds focus cellShape ( label, prop ) =
+view placement theme tone path bounds focus selected cellShape ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
         , SA.class <| makeClass tone cellShape <| prop

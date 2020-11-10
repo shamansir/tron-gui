@@ -47,7 +47,7 @@ type ToggleState
 type FocusAt = FocusAt Int
 
 
-type Selected = Selected Int
+type SelectedAt = SelectedAt Int
 
 
 type TextState
@@ -74,7 +74,7 @@ type alias GroupControl msg =
 type alias ChoiceControl msg =
     Control
         ( ( Shape, CellShape ), Properties msg )
-        ( GroupState, ( Maybe FocusAt, Selected ) )
+        ( GroupState, ( Maybe FocusAt, SelectedAt ) )
         msg
 
 
@@ -426,7 +426,7 @@ updateTextAt path newValue =
 
 select : Int -> ChoiceControl msg -> ChoiceControl msg
 select index (Control (shape, items) ( expanded, ( focus, _ ) ) handler) =
-    Control (shape, items) ( expanded, ( focus, Selected index ) ) handler
+    Control (shape, items) ( expanded, ( focus, SelectedAt index ) ) handler
 
 
 -- updateAndExecute : (v -> v) -> Control s v msg -> ( Control s v msg, msg )
@@ -606,3 +606,11 @@ getCellShape prop =
         Group (Control ( ( _, cellShape ), _ ) _ _ ) ->
             Just cellShape
         _ -> Nothing
+
+
+isSelected : Property msg -> Int -> Bool
+isSelected prop index =
+    case prop of
+        Choice (Control _ ( _, ( _, SelectedAt selectedAt ) ) _ ) ->
+            index == selectedAt
+        _ -> False

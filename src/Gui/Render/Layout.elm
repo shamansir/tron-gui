@@ -60,10 +60,11 @@ viewProperty
     -> Path
     -> Bounds
     -> Focused
+    -> Selected
     -> CellShape
     -> ( Label, Property msg )
     -> Svg Msg
-viewProperty placement theme tone path pixelBounds focus cellShape ( label, prop ) =
+viewProperty placement theme tone path pixelBounds focus selected cellShape ( label, prop ) =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -82,7 +83,16 @@ viewProperty placement theme tone path pixelBounds focus cellShape ( label, prop
                         <| propertyDebug ( label, prop )
                     ]
             Fancy ->
-                Property.view placement theme tone path pixelBounds focus cellShape ( label, prop )
+                Property.view
+                    placement
+                    theme
+                    tone
+                    path
+                    pixelBounds
+                    focus
+                    selected
+                    cellShape
+                    ( label, prop )
 
 
 viewPlateBack : Theme -> Bounds -> Svg Msg
@@ -131,6 +141,7 @@ collectPlatesAndCells -- FIXME: a complicated function, split into many
             , bounds : Bounds
             , parent : Maybe (Property msg)
             , source : Property msg
+            , index : Maybe Int
             }
         )
 collectPlatesAndCells ( rootPath, root ) =
@@ -147,6 +158,7 @@ collectPlatesAndCells ( rootPath, root ) =
                             , parent = Nothing
                             , bounds = B.multiplyBy cellWidth cellBounds
                             , source = source
+                            , index = Nothing
                             } :: prevCells
                         Nothing -> prevCells
                     )
@@ -163,8 +175,8 @@ collectPlatesAndCells ( rootPath, root ) =
                                 } :: prevPlates
                             ,
                                 (innerCells
-                                    |> List.map
-                                        (\( cellPath, cellBounds ) ->
+                                    |> List.indexedMap
+                                        (\index ( cellPath, cellBounds ) ->
                                             case root
                                                 |> Property.find1 (Path.sub rootPath cellPath) of
                                                 Just ( cellLabel, cellSource ) ->
@@ -173,6 +185,7 @@ collectPlatesAndCells ( rootPath, root ) =
                                                     , parent = Just source
                                                     , bounds = B.multiplyBy cellWidth cellBounds
                                                     , source = cellSource
+                                                    , index = Just index
                                                     } |> Just
                                                 Nothing -> Nothing
                                         )
@@ -221,6 +234,11 @@ view theme flow bounds detach root layout =
                         cell.path
                         cell.bounds
                         (focused root cell.path)
+                        ( if Maybe.map2 isSelected cell.parent cell.index
+                                |> Maybe.withDefault False
+                            then Selected
+                            else Usual
+                        )
                         ( cell.parent
                             |> Maybe.andThen Property.getCellShape
                             |> Maybe.withDefault Full

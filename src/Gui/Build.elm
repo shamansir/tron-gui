@@ -353,7 +353,7 @@ choice shape cellShape toLabel =
         ( shape, cellShape )
         (\callByIndex index val ->
             ( toLabel val
-            , button <| always <| callByIndex <| Selected index
+            , button <| always <| callByIndex <| SelectedAt index
             )
         )
 
@@ -389,7 +389,7 @@ choiceIcons shape cellShape toLabelAndIcon =
             let ( label, theIcon ) = toLabelAndIcon val
             in
                 ( label
-                , buttonWith theIcon <| always <| callByIndex <| Selected index
+                , buttonWith theIcon <| always <| callByIndex <| SelectedAt index
                 )
         )
 
@@ -417,7 +417,7 @@ choiceAuto shape cellShape f items v =
 
 choiceHelper
      : ( Shape, CellShape )
-    -> ( (Selected -> msg) -> Int -> a -> ( Label, Builder msg ) )
+    -> ( (SelectedAt -> msg) -> Int -> a -> ( Label, Builder msg ) )
     -> List a
     -> a
     -> ( a -> a -> Bool )
@@ -426,7 +426,7 @@ choiceHelper
 choiceHelper shape toBuilder options current compare toMsg =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
-        callByIndex (Selected indexToCall) =
+        callByIndex (SelectedAt indexToCall) =
             indexedOptions
                 |> findMap
                     (\(index, option) ->
@@ -455,7 +455,7 @@ choiceHelper shape toBuilder options current compare toMsg =
                                     else Nothing
                             )
                         |> Maybe.withDefault 0
-                        |> Selected
+                        |> SelectedAt
                     )
                 )
                 (Just <| Tuple.second >> Tuple.second >> callByIndex)

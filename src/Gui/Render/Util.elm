@@ -8,6 +8,11 @@ import Url exposing (Url)
 import Gui.Render.Style exposing (Theme)
 
 
+type Selected
+    = Usual
+    | Selected
+
+
 none : Svg msg
 none = Svg.text ""
 
