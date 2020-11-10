@@ -2,7 +2,7 @@ module Gui.Build exposing
     ( Builder
     , root
     , none, int, float, xy, color, text, input, button, buttonWith, toggle
-    , nest, choice, choiceAuto, choiceIcons, strings
+    , nest, choice, choiceAuto, choiceIcons, strings, palette
     , icon
     )
 
@@ -35,7 +35,7 @@ For `choice...` and `nest...` items you are required to specify both shape of th
 @docs none, int, float, xy, color, text, input, button, buttonWith, toggle
 
 # Groups
-@docs nest, choice, choiceIcons, choiceAuto, strings
+@docs nest, choice, choiceIcons, choiceAuto, strings, palette
 
 # Icons
 @docs icon
@@ -486,6 +486,38 @@ strings options current toMsg =
         current
         ((==))
         toMsg
+
+
+{-| `palette` is a helper to create `choice` over color values.
+
+    Builder.palette
+        greekChildrenNames
+        model.currentChildName
+        ChangeChildName
+-}
+palette
+     : Shape
+    -> List Color
+    -> Color
+    -> (Color -> msg)
+    -> Builder msg
+palette shape options current toMsg =
+    choice
+        shape
+        Half
+        Color.toCssString
+        options
+        current
+        (\cv1 cv2 ->
+            case ( cv1 |> Color.toRgba, cv2 |> Color.toRgba ) of
+                ( c1, c2 ) ->
+                    (c1.red == c2.red) &&
+                    (c1.blue == c2.blue) &&
+                    (c1.green == c2.green) &&
+                    (c1.alpha == c2.alpha)
+        )
+        toMsg
+
 
 
 findShape : List a -> ( Int, Int )
