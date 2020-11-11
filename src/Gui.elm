@@ -169,6 +169,9 @@ map f gui =
 {-| Initialize Tron from `Builder msg`. See `Gui.Build` module for documentation on how
 to build your GUI from the model, usually it is something like:
 
+    import Gui exposing (Gui)
+    import Gui.Build as Builder exposing (..)
+
     type Msg = MyMsgOne Int | MyMsgTwo Bool | ... | ToTron Gui.Message
 
     for : MyModel -> Builder MyMsg
@@ -178,6 +181,7 @@ to build your GUI from the model, usually it is something like:
         , ...
         ]
 
+    init : flags -> ( ( MyModel, Gui MyMsg ), Cmd MyMsg )
     init _ =
         let
             myModel = MyModel.init -- init your model

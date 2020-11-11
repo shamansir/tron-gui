@@ -53,11 +53,11 @@ for model =
                     compareChoices
                     Choose )
         , ( "nest",
-                -- nestedButtons model.buttonPressed
-                allControlsNest model
+                nestedButtons model.buttonPressed
+                -- allControlsNest model
           )
         , ( "button",
-                Gui.button1 (Gui.icon "export") (always NoOp)
+                Gui.buttonWith (Gui.icon "export") (always NoOp)
           )
         , ( "toggle",
                 Gui.toggle
@@ -149,7 +149,7 @@ allControlsNest model =
                     nestedButtons model.buttonPressed
             )
             , ( "button",
-                    Gui.button1 (Gui.icon "export") (always NoOp)
+                    Gui.buttonWith (Gui.icon "export") (always NoOp)
             )
             , ( "toggle",
                     Gui.toggle

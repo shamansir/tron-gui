@@ -1,9 +1,10 @@
 module Gui.Build exposing
-    ( Builder
+    ( Builder, Set
     , root
     , none, int, float, xy, color, text, input, button, buttonWith, toggle
     , nest, choice, choiceAuto, choiceIcons, strings, palette
     , icon
+    , map
     )
 
 
@@ -25,8 +26,16 @@ Every control may:
 
 For `choice...` and `nest...` items you are required to specify both shape of the panel (in cells) and shape of every cell (they only can be all of one shape). Shape of the panel depends on the shape of its inner cells. If it's `Full` (default), no worries. Else, if it's `TwiceByHalf` (2.0 x 0.5), for example, and the panel shape is still specified in full cells, so to place six such items in one column, you'll need to give panel a shape of 2 x 3: 1*2.0 x 6*0.5.
 
+# The Naming
+
+In the examples below, we use `Builder.` as a prefix in the places where we reference functions from this module. This assumes that you did something like this in your code:
+
+    import Gui.Build as Builder exposing (..)
+
+However, it is ok to use any name you like, for sure. Be it `Gui.` or `Def.` or whatever...
+
 # Builder
-@docs Builder
+@docs Builder, Set
 
 # Root
 @docs root
@@ -39,6 +48,9 @@ For `choice...` and `nest...` items you are required to specify both shape of th
 
 # Icons
 @docs icon
+
+# Common Helpers
+@docs map
 
 -}
 
@@ -70,8 +82,64 @@ When it's done, use `Gui.init` to create the user interface from your descriptio
                     ]
                 )
             ]
+
+Using `Builder msg` together with `Builder.map` you may build your GUI from several modules with different messages.
+
+    Gui.init <|
+        Builder.root
+            [ ( "one", ModuleOne.gui model.moduleOne |> Builder.map ModuleOne )
+            , ( "two", ModuleTwo.gui model.moduleTwo |> Builder.map ModuleTwo )
+            , ( "three", ModuleThree.gui model.moduleThree |> Builder.map ModuleThree )
+            ]
+
+It is recommended to use `Gui.init` separately in your application's `init` function, though, and prepare your UI in another one, like:
+
+    for : MyModel -> Builder MyMsg
+    for model =
+        Builder.root
+            ...
+
+    init : ( ( MyModel, Gui MyMsg ), Cmd MyMsg )
+    init =
+        let
+            myModel = MyModel.init -- init your model
+            ( gui, guiEffect ) =
+                for myModel -- create a `Builder MyMsg` from your model
+                    |> Gui.init -- and immediately create the GUI
+        in
+            (
+                ( myModel
+                , gui -- store GUI in your model, as one would do with a component model
+                )
+            , guiEffect |> Cmd.map ToTron -- map the messages of GUI to itself
+            )
+
+See `Gui` module documentation and examples in the source code.
+
+See also: `Builder.Set`.
 -}
 type alias Builder msg = Property msg
+
+
+{-| `Set msg` is just the list of components' definitions together with their labels. It is what
+`Builder.root` and `Builder.nest` get as an argument. `Set msg` is exposed as a separate type to help you in the cases where you build your GUI from several modules, but want to join them in a single panel rather than nesting every module separately.
+
+    Builder.nest
+        ( 10, 10 )
+        Full
+        <| (ModuleOne.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleOne))
+            ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleTwo))
+            ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleThree))
+
+See also: `Builder.map`.
+-}
+type alias Set msg = List ( Label, Builder msg )
+
+
+{-| The usual `map` function which allows you to substitute the messages sent through the components. Also, using
+-}
+map : (msgA -> msgB) -> Builder msgA -> Builder msgB
+map = Gui.Property.map
 
 
 {-| Similar to `Cmd.none`, `Sub.none` etc., makes it easier to use expressions in the definition.
@@ -132,7 +200,7 @@ Actually it is just an alias for the nested row of controls, always expanded.
             ]
 
 -}
-root : List (Label, Builder msg) -> Builder msg
+root : Set msg -> Builder msg
 root props =
     nest
         ( 1, props
@@ -310,7 +378,7 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
             )
         ]
 -}
-nest : Shape -> CellShape -> List (Label, Builder msg) -> Builder msg
+nest : Shape -> CellShape -> Set msg -> Builder msg
 nest shape cellShape items =
     Group
         <| Control
