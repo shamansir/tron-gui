@@ -111,7 +111,7 @@ main =
     Browser.application
         { init = always init
         , view = \model ->
-            { title = "Tron 2.0"
+            { title = "Tron GUI"
             , body = [ view model ]
             }
         , subscriptions = subscriptions
