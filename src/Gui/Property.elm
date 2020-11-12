@@ -21,7 +21,7 @@ type alias Label = String
 type Icon = Icon String
 
 
-type alias Shape = ( Int, Int )
+type alias Shape = ( Float, Float )
 
 
 type alias Axis =
@@ -559,8 +559,8 @@ isGhost prop =
         _ -> False
 
 
-noGhosts : Array (Property msg) -> Array (Property msg)
-noGhosts = Array.filter (not << isGhost)
+noGhosts : List (Property msg) -> List (Property msg)
+noGhosts = List.filter (not << isGhost)
 
 
 call : Property msg -> Cmd msg

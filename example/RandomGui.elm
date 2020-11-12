@@ -223,6 +223,7 @@ shape : Int -> Random.Generator Gui.Shape
 shape toFit =
     Random.int 1 toFit
         |> Random.map (\v -> ( v, (toFit // v) + (if toFit - (toFit // v * toFit) > 0 then 1 else 0) ))
+        |> Random.map (Tuple.mapBoth toFloat toFloat)
 
 
 toggleState : Random.Generator ToggleState
