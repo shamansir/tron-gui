@@ -1,11 +1,14 @@
+* `Builder.labels`;
+* Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
+
 ### 3.0.0
 
 * `Builder.map` and `Builder.Set`;
-* Style & Examples fixes;
 
 ### 2.0.0
 
 * Support cell shapes other than 1x1;
+* Support different flows: `TopToBottom`, `BottomToTop`, `LeftToRight`, `RightToLeft`;
 * Calculate the grid size dynamically;
 * `Gui.reflow` to allow to force custom size of the grid;
 * _Choice_ component shows the selected item instead the expanding control;

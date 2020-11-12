@@ -717,6 +717,7 @@ layout gui =
         size =
             gui.viewport
                 |> sizeFromViewport gui.tree
+                |> Tuple.mapBoth toFloat toFloat
     in
     case Detach.isAttached gui.detach
         |> Maybe.andThen

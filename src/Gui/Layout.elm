@@ -24,7 +24,7 @@ type Cell a
     | Many a (List a)
 
 
-type alias Layout = ( Flow, ( Int, Int ), BinPack (Cell_ Path) )
+type alias Layout = ( Flow, ( Float, Float ), BinPack (Cell_ Path) )
 
 
 {-
@@ -40,7 +40,7 @@ type Position a = Position { x : Float, y : Float }
 -}
 
 
-init : Flow -> ( Int, Int ) -> Layout
+init : Flow -> ( Float, Float ) -> Layout
 init flow size =
     ( flow
     , size
@@ -48,9 +48,9 @@ init flow size =
     )
 
 
-initBinPack : ( Int, Int ) -> BinPack a
+initBinPack : ( Float, Float ) -> BinPack a
 initBinPack ( maxCellsByX, maxCellsByY )
-    = container (toFloat maxCellsByX) (toFloat maxCellsByY)
+    = container maxCellsByX maxCellsByY
 
 
 find : Layout -> { x : Float, y : Float } -> Maybe Path
@@ -72,11 +72,11 @@ find ( flow, size, layout ) pos =
                 Nothing
 
 
-pack : Flow -> ( Int, Int ) -> Property msg -> Layout
+pack : Flow -> ( Float, Float ) -> Property msg -> Layout
 pack flow size = pack1 flow size Path.start
 
 
-pack1 : Flow -> ( Int, Int ) -> Path -> Property msg -> Layout
+pack1 : Flow -> ( Float, Float ) -> Path -> Property msg -> Layout
 pack1 flow size rootPath prop =
     case prop of
         Nil ->
@@ -100,7 +100,7 @@ pack1 flow size rootPath prop =
 
 
 packItemsAtRoot
-    :  ( Int, Int )
+    :  ( Float, Float )
     -> Path
     -> Shape
     -> Array (Label, Property msg)
@@ -137,8 +137,8 @@ packItemsAtRoot size rp shape items =
         packMany path (w, h) cellShape plateItems =
             BinPack.pack1
                 (
-                    { width = toFloat w
-                    , height = toFloat h
+                    { width = w
+                    , height = h
                     }
                 , Many_
                     (Path.fromList path)
@@ -148,7 +148,7 @@ packItemsAtRoot size rp shape items =
                                 then packOneSub (path ++ [index]) cellShape plateLayout
                                 else plateLayout
                         )
-                        (BinPack.container (toFloat w) (toFloat h))
+                        (BinPack.container w h)
                     <| Array.indexedMap Tuple.pair
                     <| plateItems
                 )
@@ -239,13 +239,13 @@ toList =
     unfold (::) []
 
 
-adaptBoundsToFlow : Flow -> ( Int, Int ) -> Bounds -> Bounds
+adaptBoundsToFlow : Flow -> ( Float, Float ) -> Bounds -> Bounds
 adaptBoundsToFlow flow ( width, height ) innerBounds =
     case flow of
         TopToBottom -> innerBounds
         BottomToTop ->
             { innerBounds
-            | y = toFloat height - innerBounds.y - innerBounds.height
+            | y = height - innerBounds.y - innerBounds.height
             }
         LeftToRight ->
             { width = innerBounds.height
@@ -256,18 +256,18 @@ adaptBoundsToFlow flow ( width, height ) innerBounds =
         RightToLeft ->
             { width = innerBounds.height
             , height = innerBounds.width
-            , x = toFloat height - innerBounds.y - innerBounds.height
+            , x = height - innerBounds.y - innerBounds.height
             , y = innerBounds.x
             }
 
 
-adaptPosToFlow : Flow -> ( Int, Int ) -> { x : Float, y : Float } -> { x : Float, y : Float }
+adaptPosToFlow : Flow -> ( Float, Float ) -> { x : Float, y : Float } -> { x : Float, y : Float }
 adaptPosToFlow flow ( width, height ) { x, y } =
     case flow of
         TopToBottom -> { x = x, y = y }
         BottomToTop ->
             { x = x
-            , y = toFloat height - y
+            , y = height - y
             }
         LeftToRight ->
             { x = y
@@ -275,11 +275,11 @@ adaptPosToFlow flow ( width, height ) { x, y } =
             }
         RightToLeft ->
             { x = y
-            , y = toFloat width - x
+            , y = width - x
             }
 
 
-adaptSizeToFlow : Flow -> ( Int, Int ) -> ( Int, Int )
+adaptSizeToFlow : Flow -> ( Float, Float ) -> ( Float, Float )
 adaptSizeToFlow flow ( w, h ) =
     case flow of
         TopToBottom -> ( w, h )

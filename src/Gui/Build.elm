@@ -2,9 +2,9 @@ module Gui.Build exposing
     ( Builder, Set
     , root
     , none, int, float, xy, color, text, input, button, buttonWith, toggle
-    , nest, choice, choiceAuto, choiceIcons, strings, palette
+    , nest, choice, choiceAuto, choiceIcons, strings, labels, labelsAuto, palette
     , icon
-    , map
+    , map, mapSet
     )
 
 
@@ -50,7 +50,7 @@ However, it is ok to use any name you like, for sure. Be it `Gui.` or `Def.` or 
 @docs icon
 
 # Common Helpers
-@docs map
+@docs map, mapSet
 
 -}
 
@@ -62,6 +62,8 @@ import Gui.Property exposing (..)
 import Gui.Control exposing (Control(..))
 import Gui.Util exposing (findMap)
 import Gui.Render.Style exposing (CellShape(..))
+import Gui.Render.Shape exposing (Shape)
+import Gui.Render.Shape as Shape exposing (find, rows, cols)
 
 
 {-| `Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instance `Builder msg`.
@@ -136,10 +138,17 @@ See also: `Builder.map`.
 type alias Set msg = List ( Label, Builder msg )
 
 
-{-| The usual `map` function which allows you to substitute the messages sent through the components. Also, using
+{-| The usual `map` function which allows you to substitute the messages sent through the components.
 -}
 map : (msgA -> msgB) -> Builder msgA -> Builder msgB
 map = Gui.Property.map
+
+
+
+{-| The usual `map` function which allows you to substitute the messages sent through the components in a `Set`.
+-}
+mapSet : (msgA -> msgB) -> Set msgA -> Set msgB
+mapSet = List.map << Tuple.mapSecond << map
 
 
 {-| Similar to `Cmd.none`, `Sub.none` etc., makes it easier to use expressions in the definition.
@@ -177,19 +186,19 @@ Actually it is just an alias for the nested row of controls, always expanded.
                     [
                         ( "sine"
                         , Builder.buttonWith
-                            (Builder.icon "sineewave.svg")
+                            (Builder.icon "sinewave")
                             (always <| ChangeShape Sine)
                         )
                     ,
                         ( "square"
                         , Builder.buttonWith
-                            (Builder.icon "squarewave.svg")
+                            (Builder.icon "squarewave")
                             (always <| ChangeShape Square)
                         )
                     ,
                         ( "saw"
                         , Builder.buttonWith
-                            (Builder.icon "sawwave.svg")
+                            (Builder.icon "sawwave")
                             (always <| ChangeShape Saw)
                         )
                     ]
@@ -203,9 +212,7 @@ Actually it is just an alias for the nested row of controls, always expanded.
 root : Set msg -> Builder msg
 root props =
     nest
-        ( 1, props
-                |> List.filter (Tuple.second >> isGhost >> not)
-                |> List.length )
+        (Shape.rows 1)
         Full
         props
         |> expand
@@ -320,7 +327,9 @@ button =
 
 {-| Create an `Icon` from its URL or filename.
 
-    Builder.icon "assets/myicon.svg"
+    Builder.icon "myicon"
+
+NB: Icons are expected to be SVG only (for now) and to be accessible from `./assets/{icon}_{theme}.svg`. So you are free to put them in some directory inside `assets`, but every icon needs to have `_dark` and `_light` variants. This is debatable and could be changed in later versions.
 -}
 icon : String -> Icon
 icon = Icon
@@ -382,7 +391,7 @@ nest : Shape -> CellShape -> Set msg -> Builder msg
 nest shape cellShape items =
     Group
         <| Control
-            ( ( shape, cellShape )
+            ( ( findShape cellShape shape items, cellShape )
             , Array.fromList items
             )
             ( Collapsed
@@ -493,7 +502,7 @@ choiceHelper
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Builder msg
-choiceHelper shape toBuilder options current compare toMsg =
+choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
         callByIndex (SelectedAt indexToCall) =
@@ -506,13 +515,14 @@ choiceHelper shape toBuilder options current compare toMsg =
                     )
                 |> Maybe.map toMsg
                 |> Maybe.withDefault (toMsg current)
+        set =
+            options
+                |> List.indexedMap (toBuilder callByIndex)
     in
         Choice
             <| Control
-                ( shape
-                , options
-                    |> List.indexedMap (toBuilder callByIndex)
-                    |> Array.fromList
+                ( ( findShape cellShape shape set, cellShape )
+                , set |> Array.fromList
                 )
                 ( Collapsed
                 ,
@@ -545,11 +555,7 @@ strings
     -> Builder msg
 strings options current toMsg =
     choice
-        ( 2
-        , if (modBy 2 <| List.length options) == 0
-            then List.length options // 2
-            else List.length options // 2 + 1
-        )
+        (cols 1)
         TwiceByHalf
         identity
         options
@@ -558,12 +564,40 @@ strings options current toMsg =
         toMsg
 
 
+labels
+     : ( a -> Label )
+    -> List a
+    -> a
+    -> ( a -> a -> Bool )
+    -> ( a -> msg )
+    -> Builder msg
+labels toLabel options current compare toMsg =
+    choice
+        (cols 1)
+        TwiceByHalf
+        toLabel
+        options
+        current
+        compare
+        toMsg
+
+
+labelsAuto
+     : ( comparable -> Label )
+    -> List comparable
+    -> comparable
+    -> ( comparable -> msg )
+    -> Builder msg
+labelsAuto toLabel options current toMsg =
+    labels toLabel options current (==) toMsg
+
+
 {-| `palette` is a helper to create `choice` over color values.
 
     Builder.palette
-        greekChildrenNames
-        model.currentChildName
-        ChangeChildName
+        [ Color.aqua, Color.rouge, Color.vanilla ]
+        model.iceCreamColor
+        RepaintIceCream
 -}
 palette
      : Shape
@@ -591,6 +625,8 @@ palette shape options current =
         )
 
 
-findShape : List a -> ( Int, Int )
-findShape items =
-    ( 1, List.length items )
+findShape : CellShape -> Shape -> Set a -> ( Float, Float )
+findShape cellShape shape =
+    List.map Tuple.second
+        >> noGhosts
+        >> Shape.find cellShape shape
