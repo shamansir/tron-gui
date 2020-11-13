@@ -1,4 +1,4 @@
-module Gui.Render.Shape exposing
+module Gui.Style.Shape exposing
     ( Shape
     , auto, rows, cols
     , by
@@ -6,7 +6,7 @@ module Gui.Render.Shape exposing
     )
 
 
-import Gui.Render.Style exposing (CellShape(..))
+import Gui.Style.CellShape exposing (CellShape(..), numify)
 
 
 type Shape
@@ -36,7 +36,7 @@ find : CellShape -> Shape -> List a -> ( Float, Float )
 find cellShape shape items =
     let
         ( cellXMultiplier, cellYMultiplier ) =
-            cellSizeFromShape cellShape
+            numify cellShape
         otherSide n =
             if (modBy n <| List.length items) == 0
                 then List.length items // n
@@ -64,15 +64,3 @@ find cellShape shape items =
         ) |> Tuple.mapBoth
             (\c -> toFloat c * cellXMultiplier)
             (\r -> toFloat r * cellYMultiplier)
-
-
-cellSizeFromShape : CellShape -> ( Float, Float )
-cellSizeFromShape cs =
-    case cs of
-       Full -> ( 1.0, 1.0 )
-       Half -> ( 0.5, 0.5 )
-       HalfByOne -> ( 0.5, 1.0 )
-       OneByHalf -> ( 1.0, 0.5 )
-       TwiceByHalf -> ( 2.0, 0.5 )
-       HalfByTwice -> ( 0.5, 2.0 )
-       TwiceByTwice -> ( 2.0, 2.0 )
