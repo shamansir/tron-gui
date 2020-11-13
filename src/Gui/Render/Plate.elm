@@ -19,6 +19,7 @@ import Gui.Style.Logic exposing (..)
 import Gui.Style.Selected exposing (Selected(..))
 import Gui.Style.Placement exposing (Placement(..))
 import Gui.Style.Tone as Tone
+import Gui.Style.Cell as Cell
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
@@ -34,12 +35,12 @@ back : Style -> Bounds -> Svg Msg
 back style bounds =
     Svg.rect
         [ SA.fill <| Color.toCssString <| Tone.back style state
-        , SA.x <| String.fromFloat (gap / 2)
-        , SA.y <| String.fromFloat (gap / 2)
-        , SA.rx <| String.fromFloat borderRadius
-        , SA.ry <| String.fromFloat borderRadius
-        , SA.width <| String.fromFloat (bounds.width - gap) ++ "px"
-        , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
+        , SA.x <| String.fromFloat (Cell.gap / 2)
+        , SA.y <| String.fromFloat (Cell.gap / 2)
+        , SA.rx <| String.fromFloat Cell.borderRadius
+        , SA.ry <| String.fromFloat Cell.borderRadius
+        , SA.width <| String.fromFloat (bounds.width - Cell.gap) ++ "px"
+        , SA.height <| String.fromFloat (bounds.height - Cell.gap) ++ "px"
         ]
         []
 
@@ -60,19 +61,19 @@ controls detachFn ( ( _, tone ) as style ) path bounds ( label, prop ) =
                     style
                     path
                     localUrl
-                    ( gap, gap )
+                    ( Cell.gap, Cell.gap )
             Nothing -> Svg.none
         , Svg.text_
             [ SA.class "plate-controls__title"
             , SA.x <| String.fromFloat <| bounds.width / 2
-            , SA.y <| String.fromFloat <| gap + 1
+            , SA.y <| String.fromFloat <| Cell.gap + 1
             , SA.fill <| Color.toCssString <| Tone.text style state
             ]
             [ Svg.text label ]
         , collapseButton
             style
             path
-            ( bounds.width - gap - 10, gap )
+            ( bounds.width - Cell.gap - 10, Cell.gap )
         ]
 
 

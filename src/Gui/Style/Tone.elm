@@ -33,6 +33,10 @@ type Tone
     | Aqua
 
 
+none : Tone
+none = None
+
+
 back : ( Theme, Tone ) -> ( Placement, Focused, Selected ) -> Color
 back ( theme, _ ) =
     Theme.back theme

@@ -61,9 +61,10 @@ import Gui.Control exposing (..)
 import Gui.Property exposing (..)
 import Gui.Control exposing (Control(..))
 import Gui.Util exposing (findMap)
-import Gui.Render.Style exposing (CellShape(..))
-import Gui.Render.Shape exposing (Shape)
-import Gui.Render.Shape as Shape exposing (find, rows, cols)
+import Gui.Style.CellShape exposing (CellShape)
+import Gui.Style.CellShape as CS
+import Gui.Style.Shape exposing (Shape)
+import Gui.Style.Shape as Shape exposing (find, rows, cols)
 
 
 {-| `Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instance `Builder msg`.
@@ -213,7 +214,7 @@ root : Set msg -> Builder msg
 root props =
     nest
         (Shape.rows 1)
-        Full
+        CS.single
         props
         |> expand
 
@@ -556,7 +557,7 @@ strings
 strings options current toMsg =
     choice
         (cols 1)
-        TwiceByHalf
+        CS.twiceByHalf
         identity
         options
         current
@@ -574,7 +575,7 @@ labels
 labels toLabel options current compare toMsg =
     choice
         (cols 1)
-        TwiceByHalf
+        CS.twiceByHalf
         toLabel
         options
         current
@@ -607,7 +608,7 @@ palette
     -> Builder msg
 palette shape options current =
     choiceHelper
-        ( shape, Half )
+        ( shape, CS.half )
         (\callByIndex index val ->
             ( Color.toCssString val
             , buttonByFace (WithColor val) <| always <| callByIndex <| SelectedAt index

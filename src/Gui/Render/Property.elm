@@ -31,6 +31,7 @@ import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Theme as Theme exposing (toString)
 import Gui.Style.Placement exposing (Placement)
 import Gui.Style.Selected exposing (Selected(..))
+import Gui.Style.Cell as Cell
 
 
 view
@@ -51,12 +52,12 @@ view ( ( theme, tone ) as style ) state path bounds maybeSelectedInside cellShap
             [ SA.fill
                 <| Color.toCssString
                 <| Tone.back style state
-            , SA.x <| String.fromFloat (gap / 2)
-            , SA.y <| String.fromFloat (gap / 2)
-            , SA.rx <| String.fromFloat borderRadius
-            , SA.ry <| String.fromFloat borderRadius
-            , SA.width <| String.fromFloat (bounds.width - gap) ++ "px"
-            , SA.height <| String.fromFloat (bounds.height - gap) ++ "px"
+            , SA.x <| String.fromFloat (Cell.gap / 2)
+            , SA.y <| String.fromFloat (Cell.gap / 2)
+            , SA.rx <| String.fromFloat Cell.borderRadius
+            , SA.ry <| String.fromFloat Cell.borderRadius
+            , SA.width <| String.fromFloat (bounds.width - Cell.gap) ++ "px"
+            , SA.height <| String.fromFloat (bounds.height - Cell.gap) ++ "px"
             ]
             []
         , viewProperty
@@ -187,9 +188,9 @@ coord : Style -> State -> Bounds -> ( Float, Float ) -> Svg msg
 coord style state bounds ( valueX, valueY ) =
     let
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
-        ( left, top ) = ( gap / 2, gap / 2 )
+        ( left, top ) = ( Cell.gap / 2, Cell.gap / 2 )
         ( right, bottom ) =
-            ( bounds.width - gap / 2, bounds.height - gap / 2 )
+            ( bounds.width - Cell.gap / 2, bounds.height - Cell.gap / 2 )
         circleRadius = (min bounds.width bounds.height) / 18
         innerGap = circleRadius * 2
         ( circleX, circleY ) =
@@ -248,7 +249,7 @@ text style state ( editing, value ) onInput bounds =
         fontSize = (min bounds.width bounds.height) / 6
         lineHeight = fontSize * 1.6
         topShift = cy - lineHeight / 2
-        maxWidth = bounds.width - gap * 2
+        maxWidth = bounds.width - Cell.gap * 2
     in case editing of
         Ready ->
             Svg.text_
@@ -271,7 +272,7 @@ text style state ( editing, value ) onInput bounds =
                 [ Html.input
                     [ HA.style "max-width" <| String.fromFloat maxWidth ++ "px"
                     , HA.style "height" <| String.fromFloat lineHeight ++ "px"
-                    , HA.style "left" <| String.fromFloat gap ++ "px"
+                    , HA.style "left" <| String.fromFloat Cell.gap ++ "px"
                     , HA.style "top" <| String.fromFloat topShift ++ "px"
                     , HA.style "font-size" <| String.fromFloat fontSize ++ "px"
                     , HA.style "color" <| Color.toCssString <| Tone.text style state
@@ -329,7 +330,7 @@ button ( ( theme, tone ) as style ) ( ( _, _, selected ) as state ) face cellSha
                             [ Svg.g
                                 [ SA.style <|
                                     "transform: "
-                                        ++ "translate(" ++ String.fromFloat gap ++ "px,"
+                                        ++ "translate(" ++ String.fromFloat Cell.gap ++ "px,"
                                                         ++ String.fromFloat (cy - 4) ++ "px)" ]
                                 [ Util.arrow (Tone.text style state) (scale 0.5) (rotate 90)
                                 ]

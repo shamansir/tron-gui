@@ -47,7 +47,7 @@ for model =
         , ( "choice",
                 Gui.choice
                     ( cols 1 )
-                    Full
+                    single
                     choiceToLabel
                     choices
                     model.choice
@@ -72,7 +72,7 @@ nestedButtons : Choice -> Property Msg
 nestedButtons curChoice =
     Gui.nest
         ( cols 2 )
-        Full
+        single
         [ ( "a", Gui.button <| always <| Pressed A )
         , ( "b", Gui.button <| always <| Pressed B )
         , ( "c", Gui.button <| always <| Pressed C )
@@ -92,7 +92,7 @@ colorNest =
     in
         Gui.nest
             ( cols 1 )
-            Full
+            single
             [ ( "red", colorCompKnob ChangeRed )
             , ( "green", colorCompKnob ChangeGreen )
             , ( "blue", colorCompKnob ChangeBlue )
@@ -110,7 +110,7 @@ allControlsNest model =
     in
         Gui.nest
             ( rows 4 )
-            Full
+            single
             [ ( "ghost", Gui.none )
             , ( "int",
                     Gui.int
@@ -140,7 +140,7 @@ allControlsNest model =
             , ( "choice",
                     Gui.choice
                         ( cols 1 )
-                        Full
+                        single
                         choiceToLabel
                         choices
                         model.choice
