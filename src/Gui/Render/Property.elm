@@ -33,12 +33,6 @@ import Gui.Style.Placement exposing (Placement)
 import Gui.Style.Selected exposing (Selected(..))
 
 
-type alias Style = ( Theme, Tone )
-
-
-type alias State = ( Placement, Focused, Selected )
-
-
 view
      : Style
     -> State
@@ -67,7 +61,7 @@ view ( ( theme, tone ) as style ) state path bounds maybeSelectedInside cellShap
             []
         , viewProperty
             style state path bounds maybeSelectedInside cellShape ( label, prop )
-        , case prop  of
+        , case prop of
             Action _ -> Svg.none
             _ -> viewLabel style state cellShape bounds label
         ]
