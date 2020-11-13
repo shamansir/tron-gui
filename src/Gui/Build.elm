@@ -24,7 +24,11 @@ Every control may:
 
 # Shapes
 
-For `choice...` and `nest...` items you are required to specify both shape of the panel (in cells) and shape of every cell (they only can be all of one shape). Shape of the panel depends on the shape of its inner cells. If it's `Full` (default), no worries. Else, if it's `TwiceByHalf` (2.0 x 0.5), for example, and the panel shape is still specified in full cells, so to place six such items in one column, you'll need to give panel a shape of 2 x 3: 1*2.0 x 6*0.5.
+For `choice...` and `nest...` items you are required to specify both the shape of the panel (in cells) and shape of every cell (they only can be all of one shape).
+
+Shape of the panel may be requested to be calculated automatically (`Shape.auto`) or asked to have the desired number of rows (`Shape.rows 3`) or columns (`Shape.columns 1`) and so auto-calculate the other side, or specified manually using `by` function (`Shape.by 4 3`).
+
+Cell shapes are usually just 1x1 (`CellShape.single`), but in some specific cases you may want controls to be twice smaller (`CellShape.half`) or horizontal (`CellShape.oneByTwice`) or vertical (`CellShape.twiceByOne`). Some controls take completely another form when their cell shape is changed.
 
 # The Naming
 
@@ -128,8 +132,8 @@ type alias Builder msg = Property msg
 `Builder.root` and `Builder.nest` get as an argument. `Set msg` is exposed as a separate type to help you in the cases where you build your GUI from several modules, but want to join them in a single panel rather than nesting every module separately.
 
     Builder.nest
-        ( 10, 10 )
-        Full
+        Shape.auto -- we want the plate size to be calculate autimatically
+        CellShape.single -- usual 1x1 shape of a cell
         <| (ModuleOne.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleOne))
             ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleTwo))
             ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleThree))
@@ -373,7 +377,8 @@ toggle default toMsg =
 Handler receives the state of the group, like if it is exapanded or collapsed or detached, but usually it's fine just to make it `always NoOp`.
 
     Builder.nest
-        ( 5, 4 ) -- the wanted shape of the nesting, i.e. 5 cells width x 4 cells height
+        ( cols 1 ) -- we want the plate to have one column
+        CellShape.single -- usual 1x1 shape of a cell
         [
             ( "red"
             , Builder.float { min = 0, max = 255, step = 0.1 } model.red <| AdjustColor Red
@@ -387,6 +392,8 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
             , Builder.float { min = 0, max = 255, step = 0.1 } model.blue <| AdjustColor Blue
             )
         ]
+
+See also: `Style.Shape`, `Style.CellShape`
 -}
 nest : Shape -> CellShape -> Set msg -> Builder msg
 nest shape cellShape items =
@@ -404,7 +411,8 @@ nest shape cellShape items =
 {-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Thanks to Elm rich type system, you are not limited to strings, the option can have any type. But since we also translate these values to HTML and JSON, you need to specify the converter to `String` and from it. Also, since we don't ask for `comparable` type here, you are asked to provide a comparison function.
 
     Builder.choice
-        ( 5, 4 ) -- the wanted shape of the nesting, i.e. 5 cells width x 4 cells height
+        ( cols 1 ) -- we want the plate to have one column
+        CellShape.single -- usual 1x1 shape of a cell
         (\waveShape ->
             case waveShape of
                 Sine -> "sine"
@@ -417,7 +425,7 @@ nest shape cellShape items =
         (==) -- equality operator usually works for sum types, but be accurate
         ChangeWaveShape
 
-See also: `Builder.strings`, `Builder.palette`
+See also: `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
 choice
      : Shape
@@ -454,7 +462,7 @@ choice shape cellShape toLabel =
         ChangeWaveShape
 -}
 choiceIcons
-    : Shape
+     : Shape
     -> CellShape
     -> ( a -> ( Label, Icon ) )
     -> List a

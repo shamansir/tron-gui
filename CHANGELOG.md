@@ -1,4 +1,11 @@
+### 4.0.0
+
+* Now there is a `Style.Shape` module that helps to define the shape of the plate in a friendly method, like only by specifying the required number of rows or columns (and no adjustment to cell shape is required anymore);
+* All the style modules are moved to `Style.*` package and properly separated;
 * `Builder.labels`;
+
+TODO:
+
 * Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
 
 ### 3.0.0
