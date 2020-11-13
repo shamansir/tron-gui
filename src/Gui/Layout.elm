@@ -11,7 +11,9 @@ import Gui.Path as Path exposing (Path)
 import Gui.Property exposing (..)
 import Gui.Property as Property exposing (fold)
 import BinPack exposing (..)
-import Gui.Render.Style exposing (Flow(..), CellShape(..))
+import Gui.Style.Flow exposing (Flow(..))
+import Gui.Style.CellShape exposing (CellShape)
+import Gui.Style.CellShape as CS
 
 
 type Cell_ a
@@ -128,7 +130,7 @@ packItemsAtRoot size rp shape items =
 
         packOneSub path cellShape =
             BinPack.pack1
-                ( case cellSizeFromShape cellShape of
+                ( case CS.numify cellShape of
                     ( cw, ch ) ->
                         { width = cw, height = ch }
                 , Path.fromList path
@@ -286,16 +288,4 @@ adaptSizeToFlow flow ( w, h ) =
         BottomToTop -> ( w, h )
         LeftToRight -> ( h, w )
         RightToLeft -> ( h, w )
-
-
-cellSizeFromShape : CellShape -> ( Float, Float )
-cellSizeFromShape cs =
-    case cs of
-       Full -> ( 1.0, 1.0 )
-       Half -> ( 0.5, 0.5 )
-       HalfByOne -> ( 0.5, 1.0 )
-       OneByHalf -> ( 1.0, 0.5 )
-       TwiceByHalf -> ( 2.0, 0.5 )
-       HalfByTwice -> ( 0.5, 2.0 )
-       TwiceByTwice -> ( 2.0, 2.0 )
 

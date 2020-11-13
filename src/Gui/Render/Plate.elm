@@ -10,12 +10,15 @@ import Gui.Msg exposing (Msg(..))
 import Gui.Detach exposing (ClientId, Detach, getLocalUrl, localUrlToString, LocalUrl)
 import Gui.Property exposing (Label, Property)
 
-import Gui.Render.StyleLogic exposing (..)
-import Gui.Render.StyleLogic as Style
 import Gui.Render.Transform exposing (rotate, scale)
-import Gui.Render.Util exposing (arrow)
+import Gui.Render.Util exposing (arrow, Style, State)
 import Gui.Render.Util as Svg exposing (none)
 
+import Gui.Focus exposing (Focused(..))
+import Gui.Style.Logic exposing (..)
+import Gui.Style.Selected exposing (Selected(..))
+import Gui.Style.Placement exposing (Placement(..))
+import Gui.Style.Tone as Tone
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
@@ -23,10 +26,14 @@ import Html.Attributes as HA
 import Html.Events as HE
 
 
-back : Style.Theme -> Bounds -> Svg Msg
-back theme bounds =
+state : State
+state = ( AtRoot, NotFocused, Usual )
+
+
+back : Style -> Bounds -> Svg Msg
+back style bounds =
     Svg.rect
-        [ SA.fill <| Color.toCssString <| Style.background theme
+        [ SA.fill <| Color.toCssString <| Tone.back style state
         , SA.x <| String.fromFloat (gap / 2)
         , SA.y <| String.fromFloat (gap / 2)
         , SA.rx <| String.fromFloat borderRadius
@@ -39,20 +46,18 @@ back theme bounds =
 
 controls
     :  Detach msg
-    -> Style.Theme
-    -> Style.Tone
+    -> Style
     -> Path
     -> Bounds
     -> ( Label, Property msg )
     -> Svg Msg
-controls detachFn theme tone path bounds ( label, prop ) =
+controls detachFn ( ( _, tone ) as style ) path bounds ( label, prop ) =
     Svg.g
         [ SA.class <| "plate-controls plate-controls--" ++ toneToModifier tone ]
         [ case detachFn |> getLocalUrl path of
             Just localUrl ->
                 detachButton
-                    theme
-                    tone
+                    style
                     path
                     localUrl
                     ( gap, gap )
@@ -61,29 +66,28 @@ controls detachFn theme tone path bounds ( label, prop ) =
             [ SA.class "plate-controls__title"
             , SA.x <| String.fromFloat <| bounds.width / 2
             , SA.y <| String.fromFloat <| gap + 1
-            , SA.fill <| Color.toCssString <| Style.text theme
+            , SA.fill <| Color.toCssString <| Tone.text style state
             ]
             [ Svg.text label ]
         , collapseButton
-            theme
-            tone
+            style
             path
             ( bounds.width - gap - 10, gap )
         ]
 
 
-detach : Style.Theme -> Style.Tone -> Svg msg
-detach theme tone =
-    arrow (Style.colorFor theme tone) (scale 0.35) (rotate 45)
+detach : Style -> Svg msg
+detach style =
+    arrow (Tone.lines style state) (scale 0.35) (rotate 45)
 
 
-collapse : Style.Theme -> Style.Tone -> Svg msg
-collapse theme tone =
-    arrow (Style.colorFor theme tone) (scale 0.35) (rotate 180)
+collapse : Style -> Svg msg
+collapse style =
+    arrow (Tone.lines style state) (scale 0.35) (rotate 180)
 
 
-collapseButton : Style.Theme -> Style.Tone -> Path -> ( Float, Float ) -> Svg Msg
-collapseButton theme tone path (x, y) =
+collapseButton : Style -> Path -> ( Float, Float ) -> Svg Msg
+collapseButton style path (x, y) =
     Svg.g
         [ SA.class "collapse-panel"
         , SA.style <| "transform: translate(" ++
@@ -99,12 +103,12 @@ collapseButton theme tone path (x, y) =
             , SA.height "10"
             ]
             []
-        , collapse theme tone
+        , collapse style
         ]
 
 
-detachButton : Style.Theme -> Style.Tone -> Path -> LocalUrl -> ( Float, Float ) -> Svg Msg
-detachButton theme tone path localUrl (x, y) =
+detachButton : Style -> Path -> LocalUrl -> ( Float, Float ) -> Svg Msg
+detachButton style path localUrl (x, y) =
     Svg.g
         [ SA.class "detach-panel"
         , SA.style <| "transform: translate(" ++
@@ -123,6 +127,6 @@ detachButton theme tone path localUrl (x, y) =
                 , SA.height "10"
                 ]
                 []
-            , detach theme tone
+            , detach style
             ]
         ]
