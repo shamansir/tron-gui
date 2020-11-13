@@ -1,15 +1,18 @@
 module AFrame.Render.Layout exposing (..)
 
 import Html exposing (Html)
+import Html.Events exposing (..)
 
 import Color
 
 import AFrame exposing (scene)
+import AFrame.Primitives.Camera exposing (camera)
+import AFrame.Primitives.Cursor exposing (cursor)
 import AFrame.Primitives exposing (box)
 import AFrame.Primitives.Attributes as A exposing (..)
 
 import Gui exposing (Gui)
-import Gui.Msg exposing (Msg)
+import Gui.Msg exposing (Msg(..))
 import Gui.Style.Theme exposing (Theme)
 import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (Cell(..), pack, unfold)
@@ -36,6 +39,7 @@ view theme gui =
                 , A.depth 1
                 , A.width (bounds.width * 0.9)
                 , A.height (bounds.height * 0.9)
+                , onClick <| Click path
                 ]
                 []
             ]
@@ -46,12 +50,13 @@ view theme gui =
                 Many ( parentPath, parentBounds ) innerCells ->
                     viewControl ( parentPath, parentBounds ) ++
                         (innerCells |> List.map viewControl |> List.concat)
-
+        renderedCells =
+            List.concat
+                <| List.map viewCell
+                <| Layout.toList layout
     in
         scene
             []
-            <| List.concat
-            <| List.map viewCell
-            <| Layout.toList layout
+            <| camera [] [ cursor [] [] ] :: renderedCells
 
 

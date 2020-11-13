@@ -54,7 +54,7 @@ view ( example, gui ) =
         [ gui
             |> AFrame.view Tron.light
             |> Html.map ToTron
-        , Default.view example
+        --, Default.view example
         ]
 
 
