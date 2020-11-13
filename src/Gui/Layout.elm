@@ -11,7 +11,8 @@ import Gui.Path as Path exposing (Path)
 import Gui.Property exposing (..)
 import Gui.Property as Property exposing (fold)
 import BinPack exposing (..)
-import Gui.Style.Flow exposing (Flow(..))
+import Gui.Style.Flow exposing (Flow)
+import Gui.Style.Flow as Flow
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS
 
@@ -46,7 +47,7 @@ init : Flow -> ( Float, Float ) -> Layout
 init flow size =
     ( flow
     , size
-    , initBinPack <| adaptSizeToFlow flow size
+    , initBinPack <| Flow.adaptSize flow size
     )
 
 
@@ -58,7 +59,7 @@ initBinPack ( maxCellsByX, maxCellsByY )
 find : Layout -> { x : Float, y : Float } -> Maybe Path
 find ( flow, size, layout ) pos =
     let
-        adaptedPos = adaptPosToFlow flow size pos
+        adaptedPos = Flow.adaptPosition flow size pos
     in
         case layout |> BinPack.find adaptedPos of
             Just ( One_ path, _ ) ->
@@ -86,17 +87,17 @@ pack1 flow size rootPath prop =
         Group (Control ( ( shape, _ ), items) _ _) ->
             ( flow
             , size
-            , packItemsAtRoot (adaptSizeToFlow flow size) rootPath shape items
+            , packItemsAtRoot (Flow.adaptSize flow size) rootPath shape items
             )
         Choice (Control ( (shape, _ ), items) _ _) ->
             ( flow
             , size
-            , packItemsAtRoot (adaptSizeToFlow flow size) rootPath shape items
+            , packItemsAtRoot (Flow.adaptSize flow size) rootPath shape items
             )
         _ ->
             ( flow
             , size
-            , initBinPack (adaptSizeToFlow flow size)
+            , initBinPack (Flow.adaptSize flow size)
                 |> BinPack.pack1 ( { width = 1, height = 1 }, One_ <| Path.start )
             )
 
@@ -207,7 +208,7 @@ unfold : ( Cell ( Path, Bounds ) -> a -> a ) -> a -> Layout -> a
 unfold f def ( flow, size, bp ) =
     let
         adaptBounds =
-            adaptBoundsToFlow flow <| adaptSizeToFlow flow size
+            Flow.adaptBounds flow <| Flow.adaptSize flow size
     in
         BinPack.unfold
             (\( c, bounds ) prev ->
@@ -239,53 +240,4 @@ unfold f def ( flow, size, bp ) =
 toList : Layout -> List ( Cell ( Path, Bounds ) )
 toList =
     unfold (::) []
-
-
-adaptBoundsToFlow : Flow -> ( Float, Float ) -> Bounds -> Bounds
-adaptBoundsToFlow flow ( width, height ) innerBounds =
-    case flow of
-        TopToBottom -> innerBounds
-        BottomToTop ->
-            { innerBounds
-            | y = height - innerBounds.y - innerBounds.height
-            }
-        LeftToRight ->
-            { width = innerBounds.height
-            , height = innerBounds.width
-            , x = innerBounds.y
-            , y = innerBounds.x
-            }
-        RightToLeft ->
-            { width = innerBounds.height
-            , height = innerBounds.width
-            , x = height - innerBounds.y - innerBounds.height
-            , y = innerBounds.x
-            }
-
-
-adaptPosToFlow : Flow -> ( Float, Float ) -> { x : Float, y : Float } -> { x : Float, y : Float }
-adaptPosToFlow flow ( width, height ) { x, y } =
-    case flow of
-        TopToBottom -> { x = x, y = y }
-        BottomToTop ->
-            { x = x
-            , y = height - y
-            }
-        LeftToRight ->
-            { x = y
-            , y = x
-            }
-        RightToLeft ->
-            { x = y
-            , y = width - x
-            }
-
-
-adaptSizeToFlow : Flow -> ( Float, Float ) -> ( Float, Float )
-adaptSizeToFlow flow ( w, h ) =
-    case flow of
-        TopToBottom -> ( w, h )
-        BottomToTop -> ( w, h )
-        LeftToRight -> ( h, w )
-        RightToLeft -> ( h, w )
 

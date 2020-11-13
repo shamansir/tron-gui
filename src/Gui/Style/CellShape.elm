@@ -1,5 +1,6 @@
 module Gui.Style.CellShape exposing
     ( CellShape
+    , default
     , single, half, halfByOne, oneByHalf, twiceByHalf, halfByTwice, twiceByTwice
     , isHorizontal, isVertical, isSquare, isLargeSquare
     , numify, toString
@@ -36,6 +37,13 @@ type Unit
 {-|
 -}
 type CellShape = CellShape Unit Unit
+
+
+{-|
+-}
+default : CellShape
+default = single
+
 
 {-|
 -}
@@ -121,6 +129,13 @@ isSquare cs =
     case cs of
         CellShape Single Single -> True
         CellShape Twice Twice -> True
+        _ -> False
+
+
+isSmallSquare : CellShape -> Bool
+isSmallSquare cs =
+    case cs of
+        CellShape Single Single -> True
         _ -> False
 
 

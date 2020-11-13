@@ -23,10 +23,12 @@ import Gui.Expose as Exp exposing (Update)
 import Gui as Tron exposing (Gui)
 import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Mouse exposing (Position)
-import Gui.Render.Style as Style exposing (..)
-import Gui.Render.StyleLogic as Style exposing (..)
 import Gui.Build as Tron exposing (Builder)
 import Gui.Detach as Detach exposing (fromUrl)
+import Gui.Style.Theme exposing (Theme)
+import Gui.Style.Theme as Theme
+import Gui.Style.Flow exposing (Flow)
+import Gui.Style.Flow as Flow
 
 import Default.Main as Default
 import Default.Model as Default
@@ -60,7 +62,7 @@ type Mode
 
 type alias Model =
     { mode : Mode
-    , theme : Style.Theme
+    , theme : Theme
     , gui : Tron.Gui Msg
     , example : Example
     , url : Url
@@ -78,7 +80,7 @@ init url _ =
         (
             { mode = TronGui
             , example = initialModel
-            , theme = Style.Light
+            , theme = Theme.light
             , gui = gui
             , url = url
             }
@@ -89,9 +91,7 @@ init url _ =
 view : Model -> Html Msg
 view { mode, gui, example, theme } =
     Html.div
-        [ Attr.class <| "example " ++ case theme of
-            Style.Dark -> "--dark"
-            Style.Light -> "--light" ]
+        [ Attr.class <| "example --" ++ Theme.toString theme ]
         [ Html.button
             [ Html.onClick <| ChangeMode TronGui ]
             [ Html.text "Tron" ]
@@ -108,16 +108,16 @@ view { mode, gui, example, theme } =
             [ Html.onClick SwitchTheme ]
             [ Html.text "Theme" ]
         , Html.button
-            [ Html.onClick <| ChangeFlow TopToBottom ]
+            [ Html.onClick <| ChangeFlow Flow.topToBottom ]
             [ Html.text "Top to Bottom" ]
         , Html.button
-            [ Html.onClick <| ChangeFlow BottomToTop ]
+            [ Html.onClick <| ChangeFlow Flow.bottomToTop ]
             [ Html.text "Bottom to Top" ]
         , Html.button
-            [ Html.onClick <| ChangeFlow LeftToRight ]
+            [ Html.onClick <| ChangeFlow Flow.leftToRight ]
             [ Html.text "Left to Right" ]
         , Html.button
-            [ Html.onClick <| ChangeFlow RightToLeft ]
+            [ Html.onClick <| ChangeFlow Flow.rightToLeft ]
             [ Html.text "Right to Left" ]
         , case mode of
             DatGui -> Html.div [] []
@@ -231,7 +231,7 @@ update msg model =
         ( SwitchTheme, _ ) ->
             (
                 { model
-                | theme = Style.switch model.theme
+                | theme = Theme.switch model.theme
                 }
             , Cmd.none
             )

@@ -188,3 +188,10 @@ focused root path =
                 _ -> NotFocused
     in
         helper (Path.toList path) -1 root
+
+
+toString : Focused -> String
+toString focus =
+    case focus of
+        FocusedBy level -> "focus--" ++ String.fromInt level
+        NotFocused -> ""

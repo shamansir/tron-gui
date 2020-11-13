@@ -24,6 +24,7 @@ import Gui.Msg exposing (..)
 import Gui.Layout exposing (..)
 import Gui.Layout as Layout exposing (unfold)
 import Gui.Focus exposing (Focused(..), focused)
+import Gui.Focus as Focus exposing (toString)
 import Gui.Detach exposing (ClientId, Detach)
 import Gui.Detach as Detach exposing (isAttached)
 
@@ -32,7 +33,18 @@ import Gui.Render.Util as Svg exposing (none)
 import Gui.Render.Debug exposing (..)
 import Gui.Render.Property as Property exposing (..)
 import Gui.Render.Plate as Plate exposing (..)
+
 import Gui.Style.Logic as Style exposing (..)
+import Gui.Style.CellShape exposing (CellShape)
+import Gui.Style.CellShape as CS exposing (..)
+import Gui.Style.Theme exposing (Theme)
+import Gui.Style.Theme as Theme exposing (toString)
+import Gui.Style.Flow exposing (Flow)
+import Gui.Style.Flow as Flow exposing (firstCellAt, toString)
+import Gui.Style.Placement exposing (Placement(..))
+import Gui.Style.Selected exposing (Selected(..))
+import Gui.Style.Tone as Tone exposing (none)
+import Gui.Style.Cell as Cell
 
 
 type alias GridView = Html Msg
@@ -53,18 +65,22 @@ mode = Fancy
 
 
 viewProperty
-    :  Property.Placement
-    -> Style.Theme
-    -> Tone
+    :  Style
+    -> State
     -> Path
     -> Bounds
-    -> Focused
-    -> Selected
     -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
     -> Svg Msg
-viewProperty placement theme tone path pixelBounds focus selected maybeSelectedInside cellShape ( label, prop ) =
+viewProperty
+    style
+    ( ( _, focus, _ ) as state )
+    path
+    pixelBounds
+    maybeSelectedInside
+    cellShape
+    ( label, prop ) =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -75,29 +91,23 @@ viewProperty placement theme tone path pixelBounds focus selected maybeSelectedI
                     <| List.map (Svg.map <| always NoOp)
                     <| [ rect_ "white" pixelBounds
                     , boundsDebug pixelBounds -- FIXME: were in cells before, not in pixels
-                    , textAt 5 20
-                        <| case focus of
-                            FocusedBy level -> "focused " ++ String.fromInt level
-                            NotFocused -> ""
+                    , textAt 5 20 <| Focus.toString focus
                     , positionAt 0 30
                         <| propertyDebug ( label, prop )
                     ]
             Fancy ->
                 Property.view
-                    placement
-                    theme
-                    tone
+                    style
+                    state
                     path
                     pixelBounds
-                    focus
-                    selected
                     maybeSelectedInside
                     cellShape
                     ( label, prop )
 
 
-viewPlateBack : Theme -> Bounds -> Svg Msg
-viewPlateBack theme pixelBounds =
+viewPlateBack : Style -> Bounds -> Svg Msg
+viewPlateBack style pixelBounds =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -106,24 +116,23 @@ viewPlateBack theme pixelBounds =
                     , boundsDebug pixelBounds
                     ]
             Fancy ->
-                Plate.back theme pixelBounds
+                Plate.back style pixelBounds
 
 
 viewPlateControls
      : Detach msg
-    -> Theme
-    -> Tone
+    -> Style
     -> Path
     -> Bounds
     -> ( Label, Property msg )
     -> Svg Msg
-viewPlateControls detach theme tone path pixelBounds  ( label, source )  =
+viewPlateControls detach style path pixelBounds  ( label, source )  =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g [ ] [ ]
             Fancy ->
-                Plate.controls detach theme tone path pixelBounds ( label, source )
+                Plate.controls detach style path pixelBounds ( label, source )
 
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
@@ -157,7 +166,7 @@ collectPlatesAndCells ( rootPath, root ) =
                             { path = cellPath
                             , label = label
                             , parent = Nothing
-                            , bounds = B.multiplyBy cellWidth cellBounds
+                            , bounds = B.multiplyBy Cell.width cellBounds
                             , source = source
                             , index = Nothing
                             } :: prevCells
@@ -171,7 +180,7 @@ collectPlatesAndCells ( rootPath, root ) =
                             (
                                 { path = originPath
                                 , label = label
-                                , bounds = B.multiplyBy cellWidth plateBounds
+                                , bounds = B.multiplyBy Cell.width plateBounds
                                 , source = source
                                 } :: prevPlates
                             ,
@@ -184,7 +193,7 @@ collectPlatesAndCells ( rootPath, root ) =
                                                     { path = cellPath
                                                     , label = cellLabel
                                                     , parent = Just source
-                                                    , bounds = B.multiplyBy cellWidth cellBounds
+                                                    , bounds = B.multiplyBy Cell.width cellBounds
                                                     , source = cellSource
                                                     , index = Just index
                                                     } |> Just
@@ -200,7 +209,7 @@ collectPlatesAndCells ( rootPath, root ) =
         ( [], [] )
 
 
-view : Style.Theme -> Style.Flow -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
+view : Theme -> Flow -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
 view theme flow bounds detach root layout =
     let
 
@@ -214,78 +223,65 @@ view theme flow bounds detach root layout =
         tones = Style.assignTones root
 
         toneOf path =
-            tones |> Dict.get (Path.toString path) |> Maybe.withDefault None
+            tones |> Dict.get (Path.toString path) |> Maybe.withDefault Tone.none
 
         ( plates, cells ) =
             collectPlatesAndCells ( rootPath, root ) layout
 
         ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
 
-            ( plates |> List.map (.bounds >> viewPlateBack theme)
+            ( plates |> List.map (.bounds >> viewPlateBack ( theme, Tone.none ) )
 
             , cells |> List.map
                 (\cell ->
                     viewProperty
-                        (if (Path.sub rootPath cell.path |> Path.howDeep) == 1
+                        ( theme, toneOf cell.path )
+                        ( if (Path.sub rootPath cell.path |> Path.howDeep) == 1
                             then AtRoot
                             else OnAPlate
-                        )
-                        theme
-                        (toneOf cell.path)
-                        cell.path
-                        cell.bounds
-                        (focused root cell.path)
-                        ( if Maybe.map2 isSelected cell.parent cell.index
+                        , focused root cell.path
+                        , if Maybe.map2 isSelected cell.parent cell.index
                                 |> Maybe.withDefault False
                             then Selected
                             else Usual
                         )
+                        cell.path
+                        cell.bounds
                         (getSelected cell.source)
                         ( cell.parent
                             |> Maybe.andThen Property.getCellShape
-                            |> Maybe.withDefault Full
+                            |> Maybe.withDefault CS.default
                         )
                         ( cell.label, cell.source )
                 )
 
             , plates |> List.map
                 (\plate ->
-                    case plate.source |> Property.getCellShape of
-                        Just Full ->
-                            viewPlateControls
-                                detach
-                                theme
-                                (toneOf plate.path)
-                                plate.path
-                                plate.bounds
-                                ( plate.label, plate.source )
-                        _ ->
-                            Svg.none
+                    if plate.source
+                        |> Property.getCellShape
+                        |> Maybe.withDefault CS.default
+                        |> CS.isSquare then
+                        viewPlateControls
+                            detach
+                            ( theme, toneOf plate.path )
+                            plate.path
+                            plate.bounds
+                            ( plate.label, plate.source )
+                    else Svg.none
                 )
             )
 
         detachButtonPos =
-            case flow of
-                TopToBottom -> ( gap, gap )
-                BottomToTop -> ( gap, bounds.height - cellHeight + gap )
-                LeftToRight -> ( gap, gap )
-                RightToLeft -> ( bounds.width - cellWidth + gap, gap )
+            case Flow.firstCellAt flow bounds of
+                ( x, y ) -> ( x + Cell.gap, y + Cell.gap )
 
         makeClass =
             "gui noselect "
                 ++ (case mode of
                     Debug -> "gui--debug "
                     _ -> "")
-                ++ " gui--" ++ (case theme of
-                    Dark -> "gui--dark"
-                    Light -> "gui--light")
-                ++ " gui--" ++
-                    (case flow of
-                        TopToBottom -> "--ttb"
-                        BottomToTop -> "--btt"
-                        LeftToRight -> "--ltr"
-                        RightToLeft -> "--rtl"
-                    )
+                ++ " gui--" ++ Theme.toString theme
+                ++ " gui--" ++ Flow.toString flow
 
     in
         div [ HA.id rootId
@@ -316,8 +312,7 @@ view theme flow bounds detach root layout =
                                 [ SA.class "grid__detach"
                                 ]
                                 [ Plate.detachButton
-                                    theme
-                                    Style.None
+                                    ( theme, Tone.none )
                                     rootPath
                                     localUrl
                                     detachButtonPos

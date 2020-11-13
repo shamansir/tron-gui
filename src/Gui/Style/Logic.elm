@@ -4,12 +4,14 @@ module Gui.Style.Logic exposing (..)
 import Dict exposing (Dict)
 
 import Color exposing (Color)
+
 import Gui.Style.Shape exposing (Shape(..))
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CellShape exposing (toString)
 import Gui.Style.Tone exposing (Tone(..))
 import Gui.Style.Tone as Tone exposing (toString, next)
 import Gui.Style.Theme exposing (Theme)
+import Gui.Style.Cell as Cell
 
 
 import Gui.Mouse exposing (Position)
@@ -33,19 +35,6 @@ import Gui.Focus exposing (Focused(..))
 
 -- transparent = Color.rgba 0.0 0.0 0.0 0.0
 
-
-cellWidth : Float
-cellWidth = 90
-
-
-cellHeight : Float
-cellHeight = 90
-
-
-gap = 10
-
-
-borderRadius = 10
 
 
 assignTones : Property msg -> Dict String Tone -- List ( Path, Tone )
@@ -96,8 +85,8 @@ assignTones =
 -- TODO: make bounds to be bounded to pariticular units
 toGridCoords : Bounds -> Position -> Position
 toGridCoords bounds pos =
-    { x = (pos.x - bounds.x) / cellWidth
-    , y = (pos.y - bounds.y) / cellHeight
+    { x = (pos.x - bounds.x) / Cell.width
+    , y = (pos.y - bounds.y) / Cell.height
     }
 
 

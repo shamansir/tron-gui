@@ -105,8 +105,6 @@ import Gui.Property as Property exposing (call, find)
 import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (..)
 import Gui.Msg exposing (..)
-import Gui.Render.Style as Style exposing (..)
-import Gui.Render.StyleLogic as Style exposing (..)
 import Gui.Render.Layout as Layout exposing (..)
 import Gui.Mouse exposing (..)
 import Gui.Mouse as Mouse exposing (..)
@@ -115,6 +113,11 @@ import Gui.Util exposing (..)
 import Gui.Focus as Focus exposing (..)
 import Gui.Detach as Detach exposing (make, ClientId, Detach, map)
 import Gui.Expose as Exp exposing (..)
+import Gui.Style.Flow exposing (Flow)
+import Gui.Style.Flow as Flow exposing (..)
+import Gui.Style.Theme exposing (Theme)
+import Gui.Style.Logic as Style exposing (..)
+import Gui.Style.Cell as Cell exposing (..)
 import Gui.Build exposing (..)
 
 
@@ -217,7 +220,7 @@ Since `init builder` is just:
 -}
 initRaw : Builder msg -> Gui msg
 initRaw root =
-    Gui TopToBottom ( -1, -1 ) Gui.Mouse.init root Detach.never
+    Gui Flow.topToBottom ( -1, -1 ) Gui.Mouse.init root Detach.never
 -- TODO: get rid of initRaw
 
 
@@ -683,8 +686,8 @@ boundsFromSize : ( Int, Int ) -> ( Int, Int ) -> Bounds
 boundsFromSize ( width, height ) ( gridWidthInCells, gridHeightInCells ) =
     let
         ( gridWidthInPx, gridHeightInPx ) =
-            ( cellWidth * toFloat gridWidthInCells
-            , cellHeight * toFloat gridHeightInCells
+            ( Cell.width * toFloat gridWidthInCells
+            , Cell.height * toFloat gridHeightInCells
             )
     in
         { x = (toFloat width / 2) - (gridWidthInPx / 2)
@@ -703,8 +706,8 @@ getRootPath gui =
 sizeFromViewport : Property msg -> ( Int, Int ) -> ( Int, Int )
 sizeFromViewport root ( widthInPixels, heightInPixels ) =
     let
-        cellsFitHorizontally = floor <| toFloat widthInPixels / (cellWidth + gap)
-        cellsFitVertically = floor <| toFloat heightInPixels / (cellHeight + gap)
+        cellsFitHorizontally = floor <| toFloat widthInPixels / (Cell.width + Cell.gap)
+        cellsFitVertically = floor <| toFloat heightInPixels / (Cell.height + Cell.gap)
     in
         ( if cellsFitHorizontally > 3 then cellsFitHorizontally - 3 else cellsFitHorizontally
         , if cellsFitVertically > 2 then cellsFitVertically - 2 else cellsFitVertically
@@ -767,7 +770,7 @@ that will wrap `Gui.Message` and send it to `update`:
 
 Use `Theme` from `Gui.Style` to set it to `Dark` or `Light` theme.
 -}
-view : Style.Theme -> Gui msg -> Html Msg
+view : Theme -> Gui msg -> Html Msg
 view theme gui =
     let
         size =
