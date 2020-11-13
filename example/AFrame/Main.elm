@@ -2,6 +2,7 @@ module AFrame.Main exposing (main)
 
 
 import Browser exposing (element)
+
 import Html exposing (Html, div)
 import Html.Attributes as Attr exposing (class)
 
@@ -13,6 +14,8 @@ import Default.Main as Default
 import Default.Model as Default
 import Default.Msg as Default
 import Default.Gui as DefaultGui
+
+import AFrame.Render.Layout as AFrame exposing (view)
 
 
 type Msg
@@ -49,7 +52,7 @@ view ( example, gui ) =
     Html.div
         [ ]
         [ gui
-            |> Tron.view Tron.light
+            |> AFrame.view Tron.light
             |> Html.map ToTron
         , Default.view example
         ]
