@@ -6,6 +6,7 @@ import Gui.Focus exposing (Focused)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Theme as Theme exposing (..)
 import Gui.Style.Placement exposing (Placement)
+import Gui.Style.Selected exposing (Selected)
 
 
 green = Color.rgb255 0 204 71 -- "#00cc47"
@@ -32,34 +33,29 @@ type Tone
     | Aqua
 
 
-lines : Theme -> Tone -> Color
-lines theme tone =
+back : ( Theme, Tone ) -> ( Placement, Focused, Selected ) -> Color
+back ( theme, _ ) =
+    Theme.back theme
+
+
+lines : ( Theme, Tone ) -> ( Placement, Focused, Selected ) -> Color
+lines ( theme, tone ) state =
     case tone of
         Green -> green
         Pink -> pink
         Yellow -> yellow
         Aqua -> aqua
-        None -> Theme.lines theme
+        None -> Theme.lines theme state
 
 
-secondaryLines : Theme -> Tone -> Color
-secondaryLines theme _ =
+secondaryLines : ( Theme, Tone ) -> ( Placement, Focused, Selected ) -> Color
+secondaryLines ( theme, _ ) =
     Theme.secondaryLines theme
 
 
-text : Theme -> Tone -> Color
-text theme _ =
+text : ( Theme, Tone ) -> ( Placement, Focused, Selected ) -> Color
+text ( theme, _ ) =
     Theme.text theme
-
-
-textHilite : Theme -> Tone -> Color
-textHilite theme _ =
-    Theme.textHilite theme
-
-
-focusBack : Theme -> Tone -> Placement -> Focused -> Color
-focusBack theme tone placement =
-    Theme.focusBack theme placement
 
 
 toString : Tone -> String
