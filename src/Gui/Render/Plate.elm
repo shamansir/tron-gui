@@ -10,8 +10,6 @@ import Gui.Msg exposing (Msg(..))
 import Gui.Detach exposing (ClientId, Detach, getLocalUrl, localUrlToString, LocalUrl)
 import Gui.Property exposing (Label, Property)
 
-import Gui.Render.Style exposing (..)
-import Gui.Render.Style as Style
 import Gui.Render.StyleLogic exposing (..)
 import Gui.Render.StyleLogic as Style
 import Gui.Render.Transform exposing (rotate, scale)

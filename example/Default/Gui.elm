@@ -7,8 +7,8 @@ import Gui exposing (Gui)
 import Gui.Build as Gui
 import Gui.Property  exposing (Property)
 import Gui.Property as Property exposing (Label)
-import Gui.Render.Shape exposing (..)
-import Gui.Render.Style exposing (CellShape(..))
+import Gui.Style.Shape exposing (..)
+import Gui.Style.CellShape exposing (..)
 
 
 import Default.Model exposing (..)

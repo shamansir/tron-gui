@@ -1,7 +1,8 @@
 module Gui.Style.CellShape exposing
     ( CellShape
     , single, half, halfByOne, oneByHalf, twiceByHalf, halfByTwice, twiceByTwice
-    , numify
+    , isHorizontal, isVertical, isSquare, isLargeSquare
+    , numify, toString
     )
 
 {-| # Cell Shape
@@ -20,6 +21,9 @@ Cell Shape is the place it takes in nested panels. Considering the default shape
 
 # Values
 @docs single, half, halfByOne, oneByHalf, twiceByHalf, halfByTwice, twiceByTwice
+
+# Helpers
+@docs numify, toString
 -}
 
 
@@ -90,3 +94,52 @@ numify cs =
     case cs of
         CellShape xu yu ->
             ( numifyUnit xu, numifyUnit yu )
+
+
+
+{-|
+-}
+toString : CellShape -> String
+toString cs =
+    let
+        unitToString u =
+            case u of
+                Single -> "single"
+                Half -> "half"
+                Twice -> "twice"
+    in
+    case cs of
+        CellShape rn cn ->
+            if rn == cn then
+                unitToString rn
+            else
+                unitToString rn ++ "-by-" ++ unitToString cn
+
+
+isSquare : CellShape -> Bool
+isSquare cs =
+    case cs of
+        CellShape Single Single -> True
+        CellShape Twice Twice -> True
+        _ -> False
+
+
+isLargeSquare : CellShape -> Bool
+isLargeSquare cs =
+    case cs of
+        CellShape Twice Twice -> True
+        _ -> False
+
+
+isHorizontal : CellShape -> Bool
+isHorizontal cs =
+    case cs of
+        CellShape Twice Half -> True
+        _ -> False
+
+
+isVertical : CellShape -> Bool
+isVertical cs =
+    case cs of
+        CellShape Half Twice -> True
+        _ -> False

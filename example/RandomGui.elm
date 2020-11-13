@@ -11,7 +11,7 @@ import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, 
 import Gui.Property as Gui exposing
     ( Label, ToggleState(..), GroupState(..), Icon(..), TextState(..), Face(..) )
 import Gui.Build exposing (Builder)
-import Gui.Render.Style exposing (CellShape(..))
+import Gui.Style.CellShape exposing (CellShape(..))
 
 
 type DeepLevel = DeepLevel Int

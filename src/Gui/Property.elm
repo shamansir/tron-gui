@@ -12,7 +12,7 @@ import Gui.Path as Path
 import Gui.Control exposing (..)
 import Gui.Control as Control exposing (..)
 
-import Gui.Render.Style exposing (CellShape)
+import Gui.Style.CellShape exposing (CellShape)
 
 
 type alias Label = String
