@@ -81,7 +81,8 @@ for model =
 nestedButtons : Choice -> Property Msg
 nestedButtons curChoice =
     Gui.nestIn
-        ( 2, 3 )
+        ( rows 2 )
+        Full
         [ ( "a", Gui.button <| always <| Pressed A )
         , ( "b", Gui.button <| always <| Pressed B )
         , ( "c", Gui.button <| always <| Pressed C )
@@ -100,7 +101,8 @@ colorNest =
                 msg
     in
         Gui.nestIn
-            ( 1, 3 )
+            ( cols 1 )
+            Full
             [ ( "red", colorCompKnob ChangeRed )
             , ( "green", colorCompKnob ChangeGreen )
             , ( "blue", colorCompKnob ChangeBlue )

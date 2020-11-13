@@ -5,6 +5,7 @@ import Dict exposing (Dict)
 
 import Color exposing (Color)
 import Gui.Render.Style exposing (..)
+import Gui.Render.Shape exposing (Shape(..))
 
 
 import Gui.Mouse exposing (Position)
