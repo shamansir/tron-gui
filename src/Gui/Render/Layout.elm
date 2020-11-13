@@ -32,8 +32,7 @@ import Gui.Render.Util as Svg exposing (none)
 import Gui.Render.Debug exposing (..)
 import Gui.Render.Property as Property exposing (..)
 import Gui.Render.Plate as Plate exposing (..)
-import Gui.Render.Style as Style exposing (..)
-import Gui.Render.StyleLogic as Style exposing (..)
+import Gui.Style.StyleLogic as Style exposing (..)
 
 
 type alias GridView = Html Msg

@@ -3,8 +3,6 @@ module Gui.Render.Property exposing (..)
 
 import Color exposing (Color)
 
-import Gui.Property exposing (..)
-
 import Svg exposing (Svg)
 import Svg.Attributes as SA
 import Html
@@ -12,22 +10,26 @@ import Html.Attributes as HA
 import Html.Events as HE
 
 import Bounds exposing (Bounds)
+
+import Gui.Property exposing (..)
 import Gui.Path as Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
 import Gui.Focus exposing (Focused(..))
 import Gui.Control exposing (Control(..))
+
 import Gui.Render.Transform exposing (..)
 import Gui.Render.Util exposing (..)
 import Gui.Render.Util as Svg exposing (none)
 import Gui.Render.Util as Util exposing (arrow)
-import Gui.Render.Style exposing (..)
-import Gui.Render.StyleLogic exposing (..)
-import Gui.Render.StyleLogic as Style exposing (text)
 
-
-type Placement
-    = AtRoot
-    | OnAPlate
+import Gui.Style.Logic exposing (..)
+import Gui.Style.CellShape exposing (CellShape)
+import Gui.Style.CellShape as CS exposing (..)
+import Gui.Style.Tone exposing (Tone)
+import Gui.Style.Tone as Tone exposing (..)
+import Gui.Style.Theme exposing (Theme)
+import Gui.Style.Placement exposing (Placement)
+import Gui.Style.Selected exposing (Selected(..))
 
 
 view
@@ -50,12 +52,7 @@ view placement theme tone path bounds focus selected maybeSelectedInside cellSha
         [ Svg.rect
             [ SA.fill
                 <| Color.toCssString
-                <| case focusColor theme focus of
-                    Just focusColor -> focusColor
-                    Nothing ->
-                        case placement of
-                            AtRoot -> background theme
-                            OnAPlate -> transparent
+                <| Tone.focusBack theme focus placement
             , SA.x <| String.fromFloat (gap / 2)
             , SA.y <| String.fromFloat (gap / 2)
             , SA.rx <| String.fromFloat borderRadius
@@ -74,21 +71,22 @@ view placement theme tone path bounds focus selected maybeSelectedInside cellSha
 
 viewLabel
     :  Theme
+    -> Tone
     -> CellShape
     -> Bounds
     -> Label
     -> Svg msg
-viewLabel theme cellShape bounds label =
-    case cellShape of
-        Full ->
+viewLabel theme tone cellShape bounds label =
+    if CS.isSquare cellShape
+        then
             Svg.text_
                 [ SA.class "cell__label"
                 , SA.x <| String.fromFloat (bounds.width / 2)
                 , SA.y <| String.fromFloat (bounds.height / 5 * 4)
-                , SA.fill <| Color.toCssString <| Style.text theme
+                , SA.fill <| Color.toCssString <| Tone.text theme tone
                 ]
                 [ Svg.text label ]
-        _ -> Svg.none
+        else Svg.none
 
 
 viewProperty
@@ -166,17 +164,17 @@ knob theme tone bounds value =
     in
         Svg.g
             []
-            [ path (colorFor theme tone |> Color.toCssString)
+            [ path (Tone.lines theme tone |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle 0, to = toAngle value }
-            , path (knobLine theme |> Color.toCssString)
+            , path (Tone.secondaryLines theme tone |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle value, to = toAngle 1 }
-            , path (colorFor theme tone |> Color.toCssString)
+            , path (Tone.lines theme tone |> Color.toCssString)
                 <| describeMark
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
@@ -205,7 +203,7 @@ coord theme tone bounds ( valueX, valueY ) =
             , SA.y1 <| String.fromFloat cy
             , SA.x2 <| String.fromFloat right
             , SA.y2 <| String.fromFloat cy
-            , SA.stroke <| Color.toCssString <| colorFor theme tone
+            , SA.stroke <| Color.toCssString <| Tone.lines theme tone
             , SA.opacity "0.2"
             , SA.strokeWidth "1"
             , SA.strokeLinecap "round"
@@ -216,7 +214,7 @@ coord theme tone bounds ( valueX, valueY ) =
             , SA.y1 <| String.fromFloat top
             , SA.x2 <| String.fromFloat cx
             , SA.y2 <| String.fromFloat bottom
-            , SA.stroke <| Color.toCssString <| colorFor theme tone
+            , SA.stroke <| Color.toCssString <| Tone.lines theme tone
             , SA.opacity "0.2"
             , SA.strokeWidth "1"
             , SA.strokeLinecap "round"
@@ -225,9 +223,9 @@ coord theme tone bounds ( valueX, valueY ) =
         , Svg.circle
             [ SA.cx <| String.fromFloat circleX
             , SA.cy <| String.fromFloat circleY
-            , SA.fill <| Color.toCssString <| colorFor theme tone
+            , SA.fill <| Color.toCssString <| Tone.lines theme tone
             , SA.fill "none"
-            , SA.stroke <| Color.toCssString <| colorFor theme tone
+            , SA.stroke <| Color.toCssString <| Tone.lines theme tone
             , SA.strokeWidth "2"
             , SA.r <| String.fromFloat circleRadius
             ]
@@ -257,7 +255,7 @@ text theme tone ( editing, value ) onInput bounds =
                 , SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat <| cy + 1
                 , SA.class "text--ready"
-                , SA.fill <| Color.toCssString <| Style.textHilite theme
+                , SA.fill <| Color.toCssString <| Tone.textHilite theme tone
                 ]
                 [ Svg.text <|
                     if String.length value <= 6 then
@@ -275,7 +273,7 @@ text theme tone ( editing, value ) onInput bounds =
                     , HA.style "left" <| String.fromFloat gap ++ "px"
                     , HA.style "top" <| String.fromFloat topShift ++ "px"
                     , HA.style "font-size" <| String.fromFloat fontSize ++ "px"
-                    , HA.style "color" <| Color.toCssString <| Style.textHilite theme
+                    , HA.style "color" <| Color.toCssString <| Tone.textHilite theme tone
                     , HA.type_ "text"
                     , HA.placeholder "input"
                     , HE.onInput onInput
@@ -295,9 +293,9 @@ toggle theme tone state bounds =
         , SA.cy <| String.fromFloat cy
         , SA.r <| String.fromFloat radius
         , SA.fill <| case state of
-            TurnedOn -> Color.toCssString <| colorFor theme tone
+            TurnedOn -> Color.toCssString <| Tone.lines theme tone
             TurnedOff -> "none"
-        , SA.stroke <| Color.toCssString <| colorFor theme tone
+        , SA.stroke <| Color.toCssString <| Tone.lines theme tone
         , SA.strokeWidth "2"
         ]
         [
@@ -309,10 +307,9 @@ button theme tone face selected cellShape label bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
         ( labelX, labelY ) =
-            case cellShape of
-                Full -> ( cx, cy )
-                TwiceByHalf -> ( 30, cy + 2 )
-                _ -> ( cx, cy )
+            if CS.isHorizontal cellShape
+                then ( cx, cy )
+                else ( 30, cy + 2 )
         textLabel _ =
             Svg.text_
                 [ SA.x <| String.fromFloat labelX
@@ -417,7 +414,7 @@ arrow theme tone groupState bounds =
                 ++ "translate(" ++ String.fromFloat (center.x - (14 * scaleV)) ++ "px,"
                                 ++ String.fromFloat (center.y - (14 * scaleV)) ++ "px)"
         ]
-        [ Util.arrow (colorFor theme tone) (scale scaleV)
+        [ Util.arrow (Tone.lines theme tone) (scale scaleV)
             <| case groupState of
                 Expanded -> rotate 180
                 Detached -> rotate 45

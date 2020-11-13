@@ -6,12 +6,8 @@ import Svg exposing (Svg)
 import Svg.Attributes as SA
 import Url exposing (Url)
 import Gui.Render.Transform exposing (..)
-import Gui.Render.Style exposing (Theme)
+import Gui.Style.Theme exposing (Theme)
 
-
-type Selected
-    = Usual
-    | Selected
 
 
 none : Svg msg
