@@ -182,8 +182,8 @@
     dominant-baseline: central;
 }
 
-.cell--button.cell--full .button__label,
-.cell--choice.cell--full .button__label
+.cell--button.cell--single .button__label,
+.cell--choice.cell--single .button__label
  {
     text-anchor: middle;
 }

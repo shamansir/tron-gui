@@ -257,7 +257,7 @@ text style state ( editing, value ) onInput bounds =
                 , SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat <| cy + 1
                 , SA.class "text--ready"
-                , SA.fill <| Color.toCssString <| Tone.text style state
+                , SA.fill <| Color.toCssString <| Tone.lines style state
                 ]
                 [ Svg.text <|
                     if String.length value <= 6 then
@@ -310,8 +310,8 @@ button ( ( theme, tone ) as style ) ( ( _, _, selected ) as state ) face cellSha
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
         ( labelX, labelY ) =
             if CS.isHorizontal cellShape
-                then ( cx, cy )
-                else ( 30, cy + 2 )
+                then ( 30, cy + 2 )
+                else ( cx, cy )
         textLabel _ =
             Svg.text_
                 [ SA.x <| String.fromFloat labelX
