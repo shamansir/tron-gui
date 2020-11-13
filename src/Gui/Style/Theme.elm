@@ -2,8 +2,8 @@ module Gui.Style.Theme exposing
     ( Theme
     , dark, light
     , switch
-    , back, lines, secondaryLines, text, textHilite
-    , focusBack
+    , back, lines, secondaryLines, text
+    , toString
     )
 
 {-| # Theme
@@ -59,8 +59,8 @@ switch from =
 
 {-|
 -}
-lines : Theme -> Color
-lines theme =
+lines : Theme -> ( Placement, Focused, Selected ) -> Color
+lines theme _ =
     case theme of
         Dark -> Color.white
         Light -> Color.rgb255 58 62 65 -- "#3a3e41"
@@ -68,8 +68,8 @@ lines theme =
 
 {-|
 -}
-secondaryLines : Theme -> Color
-secondaryLines theme =
+secondaryLines : Theme -> ( Placement, Focused, Selected ) -> Color
+secondaryLines theme _ =
     case theme of
         Dark -> Color.rgba 1.0 1.0 1.0 0.15
         Light -> Color.rgb255 220 220 220 -- "#eeeeee"
@@ -77,58 +77,34 @@ secondaryLines theme =
 
 {-|
 -}
-back : Theme -> Placement -> Color
-back theme placement =
+back : Theme -> ( Placement, Focused, Selected ) -> Color
+back theme ( placement, focused, _ ) =
     case placement of
         OnAPlate -> transparent
         AtRoot ->
+            case ( theme, focused ) of
+                ( Dark, NotFocused ) -> Color.rgba 0.05 0.05 0.05 0.6
+                ( Light, NotFocused ) -> Color.rgba 1.0 1.0 1.0 0.8
+                ( Dark, FocusedBy _ ) -> Color.rgb 0.2 0.2 0.2
+                ( Light, FocusedBy _ ) -> Color.rgb 1.0 1.0 1.0
+
+
+{-|
+-}
+text : Theme -> ( Placement, Focused, Selected ) -> Color
+text theme ( _, _, selected ) =
+    case selected of
+        Usual -> Color.rgb255 144 144 144
+        Selected ->
             case theme of
-                Dark -> Color.rgba 0.05 0.05 0.05 0.6
-                Light -> Color.rgba 1.0 1.0 1.0 0.8
+                Dark -> Color.white
+                Light -> Color.black
 
 
-{-|
--}
-text : Theme -> Color
-text _ =
-    Color.rgb255 144 144 144
+-- TODO: `label`?
 
-
-{-|
--}
-textHilite : Theme -> Color
-textHilite theme =
+toString : Theme -> String
+toString theme =
     case theme of
-        Dark -> Color.white
-        Light -> Color.black
-
-
-{-
-focusLines : Theme -> Focused -> Color
-focusLines theme =
-    always <| lines theme
-
-
-focusSecondaryLines : Theme -> Focused -> Color
-focusSecondaryLines theme =
-    always <| secondaryLines theme
--}
-
-
-{-|
--}
-focusBack : Theme -> Placement -> Focused -> Color
-focusBack theme placement focused =
-    case focused of
-        NotFocused ->
-            back theme placement
-        FocusedBy n ->
-            case theme of
-                Light ->
-                    Color.rgb 1.0 1.0 1.0
-                Dark ->
-                    Color.rgb 0.2 0.2 0.2
-                {-
-                if n == 0 then rgb 1.0 1.0 1.0
-                else if n == 1 then rgb 0.95 0.95 0.95
-                else ... -}
+        Dark -> "dark"
+        Light -> "light"
