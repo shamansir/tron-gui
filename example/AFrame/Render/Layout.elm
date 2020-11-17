@@ -44,7 +44,7 @@ view theme gui =
         viewControl ( path, bounds ) =
             [ box
                 [ A.color Color.black
-                , A.position (xOffset + bounds.x) (yOffset + bounds.y) z
+                , A.position (xOffset + bounds.x) (yOffset + bounds.y * -1) z
                 , A.depth 0.1
                 , A.width (bounds.width * 0.9)
                 , A.height (bounds.height * 0.9)
@@ -53,16 +53,15 @@ view theme gui =
                 []
             ]
         viewPlate ( path, bounds ) innerCells =
-            [ box
+            {- [ box
                 [ A.color Color.red
-                , A.position (xOffset + bounds.x) (yOffset + bounds.y) (z - 0.01)
+                , A.position (xOffset + bounds.x) (yOffset + bounds.y * -1) (z - 0.01)
                 , A.depth 0.1
                 , A.width bounds.width
                 , A.height bounds.height
-                , onClick <| Click path
                 ]
                 []
-            ] ++ (innerCells |> List.map viewControl |> List.concat)
+            ] ++ -} (innerCells |> List.map viewControl |> List.concat)
         viewCell cell =
             case cell of
                 One ( path, bounds ) ->
