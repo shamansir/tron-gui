@@ -9,8 +9,15 @@ import Color exposing (Color)
 
 import Gui.Path exposing (Path)
 import Gui.Path as Path
-import Gui.Control exposing (..)
 import Gui.Control as Control exposing (..)
+import Gui.Control as Core exposing (Control)
+
+import Gui.Control.Button as Button exposing (..)
+import Gui.Control.Number as Number exposing (..)
+import Gui.Control.XY as XY exposing (..)
+import Gui.Control.Text as Text exposing (..)
+import Gui.Control.Color as Color exposing (..)
+import Gui.Control.Toggle as Toggle exposing (..)
 
 import Gui.Style.CellShape exposing (CellShape)
 
@@ -18,19 +25,7 @@ import Gui.Style.CellShape exposing (CellShape)
 type alias Label = String
 
 
-type Icon = Icon String
-
-
 type alias Shape = ( Float, Float )
-
-
-type alias Axis =
-    { min : Float
-    , max : Float
-    , step : Float
-    -- , roundBy : Int
-    -- , default : Float
-    }
 
 
 type GroupState
@@ -39,40 +34,24 @@ type GroupState
     | Detached
 
 
-type ToggleState
-    = TurnedOn
-    | TurnedOff
-
-
 type FocusAt = FocusAt Int
 
 
 type SelectedAt = SelectedAt Int
 
 
-type TextState
-    = Ready
-    | Editing
-
-
-type Face
-    = Default
-    | WithIcon Icon
-    | WithColor Color
-
-
 type alias Properties msg = Array ( Label, Property msg )
 
 
 type alias GroupControl msg =
-    Control
+    Core.Control
         ( ( Shape, CellShape ), Properties msg )
         ( GroupState, Maybe FocusAt )
         msg
 
 
 type alias ChoiceControl msg =
-    Control
+    Core.Control
         ( ( Shape, CellShape ), Properties msg )
         ( GroupState, ( Maybe FocusAt, SelectedAt ) )
         msg
@@ -80,12 +59,12 @@ type alias ChoiceControl msg =
 
 type Property msg
     = Nil
-    | Number (Control Axis Float msg)
-    | Coordinate (Control ( Axis, Axis ) ( Float, Float ) msg)
-    | Text (Control () ( TextState, String ) msg)
-    | Color (Control () Color msg)
-    | Toggle (Control () ToggleState msg)
-    | Action (Control Face () msg)
+    | Number (Number.Control msg)
+    | Coordinate (XY.Control msg)
+    | Text (Text.Control msg)
+    | Color (Color.Control msg)
+    | Toggle (Toggle.Control msg)
+    | Action (Button.Control msg)
     | Choice (ChoiceControl msg)
     | Group (GroupControl msg)
 
@@ -379,40 +358,14 @@ executeAt path root =
         Nothing -> []
 
 
-doToggle : Control setup ToggleState msg -> Control setup ToggleState msg
-doToggle =
-    update
-        <| \current ->
-            case current of
-                TurnedOff -> TurnedOn
-                TurnedOn -> TurnedOff
-
-
-ensureEditing : Control setup ( TextState, a ) msg -> Control setup ( TextState, a ) msg
-ensureEditing =
-    update
-        <| \(_, v) -> ( Editing, v )
-
-
-finishEditing : Control setup ( TextState, a ) msg -> Control setup ( TextState, a ) msg
-finishEditing =
-    update
-        <| \(_, v) -> ( Ready, v )
-
 
 finishEditingAt : Path -> Property msg -> Property msg
 finishEditingAt path =
     updateAt path <|
         \prop ->
             case prop of
-                Text control -> Text <| finishEditing control
+                Text control -> Text <| Text.finishEditing control
                 _ -> prop
-
-
-updateText : String -> Control setup ( a, String ) msg -> Control setup ( a, String ) msg
-updateText newValue =
-    update
-        <| \(s, v) -> ( s, newValue )
 
 
 updateTextAt : Path -> String -> Property msg -> Property msg
@@ -430,20 +383,6 @@ select index (Control (shape, items) ( expanded, ( focus, _ ) ) handler) =
 
 
 -- updateAndExecute : (v -> v) -> Control s v msg -> ( Control s v msg, msg )
-
-
-toggleToBool : ToggleState -> Bool
-toggleToBool state =
-    case state of
-        TurnedOn -> True
-        TurnedOff -> False
-
-
-boolToToggle : Bool -> ToggleState
-boolToToggle bool =
-    case bool of
-        True -> TurnedOn
-        False -> TurnedOff
 
 
 expand : Property msg -> Property msg
@@ -580,8 +519,8 @@ call prop =
 withItem
      : Int
     -> (Property msg -> Property msg)
-    -> Control ( a, Array ( b, Property msg ) ) value msg
-    -> Control ( a, Array ( b, Property msg ) ) value msg
+    -> Core.Control ( a, Array ( b, Property msg ) ) value msg
+    -> Core.Control ( a, Array ( b, Property msg ) ) value msg
 withItem id f ( Control ( shape, items ) state handler ) =
     Control
         ( shape
