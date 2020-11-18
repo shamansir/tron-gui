@@ -400,7 +400,7 @@ color _ _ value bounds =
         ]
 
 
-arrow : Style -> State -> GroupState -> Bounds -> Svg msg
+arrow : Style -> State -> NestState -> Bounds -> Svg msg
 arrow style state groupState bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }

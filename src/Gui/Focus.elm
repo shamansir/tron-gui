@@ -2,7 +2,7 @@ module Gui.Focus exposing (..)
 
 
 import Gui.Path as Path exposing (Path)
-import Gui.Control exposing (..)
+import Gui.Control.Nest exposing (FocusAt)
 import Gui.Property exposing (..)
 
 import Array

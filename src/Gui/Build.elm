@@ -60,6 +60,7 @@ However, it is ok to use any name you like, for sure. Be it `Gui.` or `Def.` or 
 
 import Array
 import Color exposing (Color)
+import Axis exposing (Axis)
 
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)
@@ -69,6 +70,12 @@ import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS
 import Gui.Style.Shape exposing (Shape)
 import Gui.Style.Shape as Shape exposing (find, rows, cols)
+
+-- TODO: make controls init themselves, so get rid of these imports below
+import Gui.Control.Text exposing (TextState(..))
+import Gui.Control.Button exposing (Face(..), Icon(..))
+import Gui.Control.Toggle exposing (boolToToggle, toggleToBool)
+import Gui.Control.Nest exposing (NestState(..), SelectedAt(..))
 
 
 {-| `Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instance `Builder msg`.
@@ -289,7 +296,7 @@ input toString fromString default toMsg =
     Text
         <| Control
             ()
-            ( Ready, toString default)
+            ( Ready, toString default )
             (Just <| Tuple.second >> fromString >> Maybe.withDefault default >> toMsg)
 
 
@@ -302,7 +309,7 @@ text default handler =
     Text
         <| Control
             ()
-            (Ready, default)
+            ( Ready, default )
             (Just <| Tuple.second >> handler)
 
 
