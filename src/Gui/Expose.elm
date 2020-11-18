@@ -16,6 +16,11 @@ import Gui.Property exposing (..)
 import Gui.Path exposing (Path)
 import Gui.Path as Path exposing (toList)
 
+-- TODO: make controls expose themselves, so get rid of these imports below
+import Gui.Control.Text as Text exposing (TextState(..))
+import Gui.Control.Toggle as Toggle exposing (ToggleState(..))
+import Gui.Control.Nest as Nest exposing (NestState(..), SelectedAt(..))
+
 
 type alias RawPath = List Id
 

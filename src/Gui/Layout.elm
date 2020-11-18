@@ -16,6 +16,8 @@ import Gui.Style.Flow as Flow
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS
 
+import Gui.Control.Nest exposing (Shape, NestState(..))
+
 
 type Cell_ a
     = One_ a
@@ -161,7 +163,7 @@ packItemsAtRoot size rp shape items =
             -> BinPack (Cell_ Path)
             -> Control
                     ( ( Shape, CellShape ), Array ( Label, Property msg ) )
-                    ( GroupState, a )
+                    ( NestState, a )
                     msg
             -> BinPack (Cell_ Path)
         packGroupControl

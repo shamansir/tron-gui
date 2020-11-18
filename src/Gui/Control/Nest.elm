@@ -7,10 +7,11 @@ import Gui.Control as Core exposing (Control)
 
 import Gui.Style.CellShape exposing (CellShape)
 
+
 type alias Shape = ( Float, Float )
 
 
-type GroupState
+type NestState
     = Expanded
     | Collapsed
     | Detached
@@ -22,17 +23,20 @@ type FocusAt = FocusAt Int
 type SelectedAt = SelectedAt Int
 
 
+-- TODO: move focus outside, only selection matters in the component for logic
+-- TODO: may be even (Shape, CellShape) should also be outside
+
 type alias GroupControl item msg =
     Core.Control
         ( ( Shape, CellShape ), Array item )
-        ( GroupState, Maybe FocusAt )
+        ( NestState, Maybe FocusAt )
         msg
 
 
 type alias ChoiceControl item msg =
     Core.Control
         ( ( Shape, CellShape ), Array item )
-        ( GroupState, ( Maybe FocusAt, SelectedAt ) )
+        ( NestState, ( Maybe FocusAt, SelectedAt ) )
         msg
 
 
@@ -44,11 +48,11 @@ select index (Core.Control setup ( expanded, ( focus, _ ) ) handler) =
 expand
      : Core.Control
             setup
-            ( GroupState, a )
+            ( NestState, a )
             msg
     -> Core.Control
             setup
-            ( GroupState, a )
+            ( NestState, a )
             msg
 expand (Core.Control setup ( _, a ) handler) =
     Core.Control setup ( Expanded, a ) handler
@@ -57,11 +61,11 @@ expand (Core.Control setup ( _, a ) handler) =
 collapse
      : Core.Control
             setup
-            ( GroupState, a )
+            ( NestState, a )
             msg
     -> Core.Control
             setup
-            ( GroupState, a )
+            ( NestState, a )
             msg
 collapse (Core.Control setup ( _, a ) handler) =
     Core.Control setup ( Collapsed, a ) handler
@@ -70,11 +74,11 @@ collapse (Core.Control setup ( _, a ) handler) =
 detach
      : Core.Control
             setup
-            ( GroupState, a )
+            ( NestState, a )
             msg
     -> Core.Control
             setup
-            ( GroupState, a )
+            ( NestState, a )
             msg
 detach (Core.Control setup ( _, a ) handler) =
     Core.Control setup ( Detached, a ) handler
@@ -83,10 +87,10 @@ detach (Core.Control setup ( _, a ) handler) =
 attach
      : Core.Control
             setup
-            ( GroupState, a )
+            ( NestState, a )
             msg
     -> Core.Control
             setup
-            ( GroupState, a )
+            ( NestState, a )
             msg
 attach = expand
