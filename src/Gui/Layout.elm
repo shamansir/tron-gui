@@ -86,12 +86,12 @@ pack1 flow size rootPath prop =
     case prop of
         Nil ->
             init flow size
-        Group (Control ( ( shape, _ ), items) _ _) ->
+        Group _ (Control ( ( shape, _ ), items) _ _) ->
             ( flow
             , size
             , packItemsAtRoot (Flow.adaptSize flow size) rootPath shape items
             )
-        Choice (Control ( (shape, _ ), items) _ _) ->
+        Choice _ (Control ( (shape, _ ), items) _ _) ->
             ( flow
             , size
             , packItemsAtRoot (Flow.adaptSize flow size) rootPath shape items
@@ -193,9 +193,9 @@ packItemsAtRoot size rp shape items =
                             nextPath = path ++ [index]
                         in
                         case innerProp of
-                            Choice control ->
+                            Choice _ control ->
                                 control |> packGroupControl nextPath prevLayout
-                            Group control ->
+                            Group _ control ->
                                 control |> packGroupControl nextPath prevLayout
                             _ ->
                                 prevLayout
