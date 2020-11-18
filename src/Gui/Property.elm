@@ -18,43 +18,12 @@ import Gui.Control.XY as XY exposing (..)
 import Gui.Control.Text as Text exposing (..)
 import Gui.Control.Color as Color exposing (..)
 import Gui.Control.Toggle as Toggle exposing (..)
+import Gui.Control.Nest as Nest exposing (..)
 
 import Gui.Style.CellShape exposing (CellShape)
 
 
 type alias Label = String
-
-
-type alias Shape = ( Float, Float )
-
-
-type GroupState
-    = Expanded
-    | Collapsed
-    | Detached
-
-
-type FocusAt = FocusAt Int
-
-
-type SelectedAt = SelectedAt Int
-
-
-type alias Properties msg = Array ( Label, Property msg )
-
-
-type alias GroupControl msg =
-    Core.Control
-        ( ( Shape, CellShape ), Properties msg )
-        ( GroupState, Maybe FocusAt )
-        msg
-
-
-type alias ChoiceControl msg =
-    Core.Control
-        ( ( Shape, CellShape ), Properties msg )
-        ( GroupState, ( Maybe FocusAt, SelectedAt ) )
-        msg
 
 
 type Property msg
@@ -65,8 +34,8 @@ type Property msg
     | Color (Color.Control msg)
     | Toggle (Toggle.Control msg)
     | Action (Button.Control msg)
-    | Choice (ChoiceControl msg)
-    | Group (GroupControl msg)
+    | Choice (Nest.ChoiceControl ( Label, Property msg ) msg)
+    | Group (Nest.GroupControl ( Label, Property msg ) msg)
 
 
 knobDistance = 90 * 4
@@ -281,7 +250,7 @@ execute : Property msg -> Maybe (Property msg)
 execute item =
     case item of
         Toggle toggleControl ->
-            Just <| Toggle <| doToggle toggleControl
+            Just <| Toggle <| Toggle.toggle toggleControl
         Action control ->
             -- we don't update the value since it's `()`, but we do execute it
             Just <| Action control
@@ -373,13 +342,9 @@ updateTextAt path newValue =
     updateAt path <|
         \prop ->
             case prop of
-                Text control -> Text <| updateText newValue control
+                Text control -> Text ( control |> Text.updateText newValue )
                 _ -> prop
 
-
-select : Int -> ChoiceControl msg -> ChoiceControl msg
-select index (Control (shape, items) ( expanded, ( focus, _ ) ) handler) =
-    Control (shape, items) ( expanded, ( focus, SelectedAt index ) ) handler
 
 
 -- updateAndExecute : (v -> v) -> Control s v msg -> ( Control s v msg, msg )
@@ -388,10 +353,29 @@ select index (Control (shape, items) ( expanded, ( focus, _ ) ) handler) =
 expand : Property msg -> Property msg
 expand prop =
     case prop of
-        Group ( Control setup ( _, focus ) handler ) ->
-            Group ( Control setup ( Expanded, focus ) handler )
-        Choice ( Control setup ( _, selection ) handler ) ->
-            Choice ( Control setup ( Expanded, selection ) handler )
+        Group control ->
+            Group <| Nest.expand control
+        Choice control ->
+            Choice <| Nest.expand control
+        _ -> prop
+
+collapse : Property msg -> Property msg
+collapse prop =
+    case prop of
+        Group control ->
+            Group <| Nest.collapse control
+        Choice control ->
+            Choice <| Nest.collapse control
+        _ -> prop
+
+
+detach : Property msg -> Property msg
+detach prop =
+    case prop of
+        Group control ->
+            Group <| Nest.detach control
+        Choice control ->
+            Choice <| Nest.detach control
         _ -> prop
 
 
@@ -400,45 +384,9 @@ expandAt path =
     updateAt path expand
 
 
-
-collapse : Property msg -> Property msg
-collapse prop =
-    case prop of
-        Group ( Control setup ( _, focus ) handler ) ->
-            Group ( Control setup ( Collapsed, focus ) handler )
-        Choice ( Control setup ( _, selection ) handler ) ->
-            Choice ( Control setup ( Collapsed, selection ) handler )
-        _ -> prop
-
-
-detach : Property msg -> Property msg
-detach prop =
-    case prop of
-        Group ( Control setup ( _, focus ) handler ) ->
-            Group ( Control setup ( Detached, focus ) handler )
-        Choice ( Control setup ( _, selection ) handler ) ->
-            Choice ( Control setup ( Detached, selection ) handler )
-        _ -> prop
-
-
 detachAt : Path -> Property msg -> Property msg
 detachAt path =
     updateAt path detach
-
-
-attach : Property msg -> Property msg
-attach prop =
-    case prop of
-        Group ( Control setup ( _, focus ) handler ) ->
-            Group ( Control setup ( Expanded, focus ) handler )
-        Choice ( Control setup ( _, selection ) handler ) ->
-            Choice ( Control setup ( Expanded, selection ) handler )
-        _ -> prop
-
-
-attachAt : Path -> Property msg -> Property msg
-attachAt path =
-    updateAt path attach
 
 
 detachAll : Property msg -> Property msg
@@ -448,15 +396,9 @@ detachAll =
 
 toggle : Property msg -> Property msg
 toggle prop =
-    let
-        invert current =
-            case current of
-                TurnedOff -> TurnedOn
-                TurnedOn -> TurnedOff
-    in
     case prop of
-        Toggle ( Control setup current handler ) ->
-            Toggle ( Control setup (invert current) handler )
+        Toggle control ->
+            Toggle <| Toggle.toggle control
         _ -> prop
 
 
@@ -468,16 +410,16 @@ toggleAt path =
 toggleOn : Property msg -> Property msg
 toggleOn prop =
     case prop of
-        Toggle ( Control setup _ handler ) ->
-            Toggle ( Control setup TurnedOn handler )
+        Toggle control ->
+            Toggle <| Toggle.toggleOn control
         _ -> prop
 
 
 toggleOff : Property msg -> Property msg
 toggleOff prop =
     case prop of
-        Toggle ( Control setup _ handler ) ->
-            Toggle ( Control setup TurnedOff handler )
+        Toggle control ->
+            Toggle <| Toggle.toggleOff control
         _ -> prop
 
 

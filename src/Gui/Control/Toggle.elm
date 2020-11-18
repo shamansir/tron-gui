@@ -13,13 +13,23 @@ type ToggleState
 type alias Control msg = Core.Control () ToggleState msg
 
 
-doToggle : Control msg -> Control msg
-doToggle =
+toggle : Control msg -> Control msg
+toggle =
     Control.update
         <| \current ->
             case current of
                 TurnedOff -> TurnedOn
                 TurnedOn -> TurnedOff
+
+
+toggleOn : Control msg -> Control msg
+toggleOn =
+    Control.update <| always TurnedOn
+
+
+toggleOff : Control msg -> Control msg
+toggleOff =
+    Control.update <| always TurnedOff
 
 
 toggleToBool : ToggleState -> Bool
