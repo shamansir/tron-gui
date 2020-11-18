@@ -8,6 +8,8 @@ import Color
 
 import Gui.Control exposing (Control(..))
 import Gui.Property exposing (..)
+import Gui.Control.Toggle exposing (..)
+import Gui.Control.Nest exposing (..)
 
 import Gui.Render.Util exposing (..)
 
@@ -63,7 +65,7 @@ propertyDebug ( label, prop )  =
         Action _ ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " button" ]
-        Group (Control _ ( state, maybeFocus ) _) ->
+        Group maybeFocus (Control _ ( state, _ ) _) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " nested: "
                 , textAt 5 20
@@ -74,7 +76,7 @@ propertyDebug ( label, prop )  =
                         Just (FocusAt focus) -> String.fromInt focus
                         _ -> "none"
                 ]
-        Choice (Control _ ( state, ( maybeFocus, SelectedAt selected ) ) _ ) ->
+        Choice maybeFocus (Control _ ( state, SelectedAt selected ) _ ) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " choice: "
                 , textAt 5 20

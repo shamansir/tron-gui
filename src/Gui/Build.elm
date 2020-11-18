@@ -405,12 +405,13 @@ See also: `Style.Shape`, `Style.CellShape`
 nest : Shape -> CellShape -> Set msg -> Builder msg
 nest shape cellShape items =
     Group
+        Nothing
         <| Control
             ( ( findShape cellShape shape items, cellShape )
             , Array.fromList items
             )
             ( Collapsed
-            , Nothing
+            , ()
             )
             Nothing -- (Tuple.first >> handler)
 
@@ -536,14 +537,14 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
                 |> List.indexedMap (toBuilder callByIndex)
     in
         Choice
+            Nothing
             <| Control
                 ( ( findShape cellShape shape set, cellShape )
                 , set |> Array.fromList
                 )
                 ( Collapsed
                 ,
-                    ( Nothing
-                    , indexedOptions
+                    indexedOptions
                         |> findMap
                             (\(index, option) ->
                                 if compare option current
@@ -552,9 +553,8 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
                             )
                         |> Maybe.withDefault 0
                         |> SelectedAt
-                    )
                 )
-                (Just <| Tuple.second >> Tuple.second >> callByIndex)
+                (Just <| Tuple.second >> callByIndex)
 
 
 {-| `strings` is a helper to create `choice` over string values.

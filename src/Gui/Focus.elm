@@ -2,8 +2,8 @@ module Gui.Focus exposing (..)
 
 
 import Gui.Path as Path exposing (Path)
-import Gui.Control.Nest exposing (FocusAt)
 import Gui.Property exposing (..)
+import Gui.Control.Nest as Nest exposing (..)
 
 import Array
 import Array exposing (Array)
@@ -29,10 +29,10 @@ clear =
     mapReplace
         (\_ prop ->
             case prop of
-                Group (Control setup ( expanded, _ ) handler) ->
-                    Group (Control setup ( expanded, Nothing ) handler)
-                Choice (Control setup ( expanded, ( _, selection ) ) handler) ->
-                    Choice (Control setup ( expanded, ( Nothing, selection ) ) handler)
+                Group focus control ->
+                    Group Nothing control
+                Choice _ control ->
+                    Choice Nothing control
                 _ -> prop
         )
 
@@ -69,36 +69,22 @@ on root path =
     in
         case ( Path.toList path, root ) of
             ( [], _ ) -> root
-            ( x::xs, Group (Control ( shape, items ) ( Expanded, _ ) handler) ) ->
-                let
-                    ( nextItems, nextFocus )
-                        = goDeeper items x xs
-                in
-                Group
-                    (Control
-                        ( shape
-                        , nextItems
-                        )
-                        ( Expanded
-                        , Just nextFocus
-                        )
-                        handler
-                    )
-            ( x::xs, Choice (Control ( shape, items ) ( Expanded, ( _, selection ) ) handler) ) ->
-                let
-                    ( nextItems, nextFocus )
-                        = goDeeper items x xs
-                in
-                Choice
-                    (Control
-                        ( shape
-                        , nextItems
-                        )
-                        ( Expanded
-                        , ( Just nextFocus, selection )
-                        )
-                        handler
-                    )
+            ( x::xs, Group curFocus control ) ->
+                if control |> Nest.is Expanded then
+                    case goDeeper (control |> Nest.getItems) x xs of
+                        ( nextItems, nextFocus ) ->
+                            Group
+                                (Just nextFocus)
+                                <| Nest.setItems nextItems <| control
+                else Group curFocus control
+            ( x::xs, Choice curFocus control ) ->
+                if control |> Nest.is Expanded then
+                    case goDeeper (control |> Nest.getItems) x xs of
+                        ( nextItems, nextFocus ) ->
+                            Choice
+                                (Just nextFocus)
+                                <| Nest.setItems nextItems <| control
+                else Choice curFocus control
             ( _, _ ) -> root
 
 
@@ -119,12 +105,12 @@ find root =
                         theFocus :: helper focusedItem
                     )
                 |> Maybe.withDefault []
-        helper control =
-            case control of
-                Group (Control ( _, items ) ( _, focus ) handler) ->
-                    findDeeper focus items
-                Choice (Control ( _, items ) ( _, ( focus, _ ) ) handler) ->
-                    findDeeper focus items
+        helper prop =
+            case prop of
+                Group focus control ->
+                    control |> Nest.getItems |> findDeeper focus
+                Choice focus control ->
+                    control |> Nest.getItems |> findDeeper focus
                 _ -> []
     in Path.fromList <| helper root
 
@@ -173,15 +159,15 @@ focused root path =
                     if flevel < 0
                         then NotFocused
                         else FocusedBy flevel
-                ( x::xs, Group (Control ( _, items ) ( _, Just (FocusAt focus) ) handler) ) ->
+                ( x::xs, Group (Just (FocusAt focus)) control ) ->
                     if focus == x then
-                        case items |> Array.get focus  of
+                        case control |> Nest.get focus  of
                             Just ( _, item ) -> helper xs (flevel + 1) item
                             Nothing -> NotFocused
                     else NotFocused
-                ( x::xs, Choice (Control ( _, items ) ( _, ( Just (FocusAt focus), _ ) ) handler) ) ->
+                ( x::xs, Choice (Just (FocusAt focus)) control ) ->
                     if focus == x then
-                        case items |> Array.get focus  of
+                        case control |> Nest.get focus of
                             Just ( _, item ) -> helper xs (flevel + 1) item
                             Nothing -> NotFocused
                     else NotFocused

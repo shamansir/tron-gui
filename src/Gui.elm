@@ -100,6 +100,7 @@ import Gui.Path exposing (Path)
 import Gui.Path as Path exposing (start)
 import Gui.Control exposing (..)
 import Gui.Control as Control exposing (call)
+import Gui.Control.Text as Text exposing (finishEditing)
 import Gui.Property exposing (..)
 import Gui.Property as Property exposing (call, find)
 import Gui.Layout exposing (Layout)
@@ -617,7 +618,7 @@ handleKeyDown keyCode path gui =
         13 ->
             case gui.tree |> Property.find path of
                 Just (Text control) ->
-                    let nextProp = (Text <| finishEditing control)
+                    let nextProp = (Text <| Text.finishEditing control)
                     in
                         (
                             { gui

@@ -17,6 +17,11 @@ import Gui.Msg exposing (Msg(..))
 import Gui.Focus exposing (Focused(..))
 import Gui.Control exposing (Control(..))
 
+import Gui.Control.Text exposing (TextState(..))
+import Gui.Control.Button exposing (Face(..), Icon(..))
+import Gui.Control.Toggle exposing (ToggleState(..))
+import Gui.Control.Nest as Nest exposing (getState, NestState(..))
+
 import Gui.Render.Transform exposing (..)
 import Gui.Render.Util exposing (..)
 import Gui.Render.Util as Svg exposing (none)
@@ -129,7 +134,7 @@ viewProperty
             button style state face cellShape label bounds
         Color (Control _ value _) ->
             color style state value bounds
-        Choice (Control _ ( expanded, _ ) _) ->
+        Choice _ control ->
             case maybeSelectedInside of
                 Just theSelectedProp ->
                     viewProperty
@@ -141,9 +146,9 @@ viewProperty
                         cellShape
                         theSelectedProp
                 Nothing ->
-                    arrow style state expanded bounds
-        Group (Control _ ( expanded, _ ) _) ->
-            arrow style state expanded bounds
+                    arrow style state (Nest.getState control) bounds
+        Group _ control ->
+            arrow style state (Nest.getState control) bounds
         _ -> Svg.none
 
 
@@ -431,8 +436,8 @@ makeClass tone shape prop =
                 Color _ -> "color"
                 Toggle _ -> "toggle"
                 Action _ -> "button"
-                Choice _ -> "choice"
-                Group _ -> "group"
+                Choice _ _ -> "choice"
+                Group _ _ -> "group"
             )
         ++ " cell--" ++ toneToModifier tone
         ++ " cell--" ++ shapeToModifier shape
