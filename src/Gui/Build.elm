@@ -406,9 +406,9 @@ nest : Shape -> CellShape -> Set msg -> Builder msg
 nest shape cellShape items =
     Group
         Nothing
+        ( findShape cellShape shape items, cellShape )
         <| Control
-            ( ( findShape cellShape shape items, cellShape )
-            , Array.fromList items
+            ( Array.fromList items
             )
             ( Collapsed
             , ()
@@ -538,10 +538,9 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
     in
         Choice
             Nothing
+            ( findShape cellShape shape set, cellShape )
             <| Control
-                ( ( findShape cellShape shape set, cellShape )
-                , set |> Array.fromList
-                )
+                ( set |> Array.fromList )
                 ( Collapsed
                 ,
                     indexedOptions

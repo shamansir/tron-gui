@@ -29,10 +29,10 @@ clear =
     mapReplace
         (\_ prop ->
             case prop of
-                Group focus control ->
-                    Group Nothing control
-                Choice _ control ->
-                    Choice Nothing control
+                Group focus shape control ->
+                    Group Nothing shape control
+                Choice _ shape control ->
+                    Choice Nothing shape control
                 _ -> prop
         )
 
@@ -69,22 +69,24 @@ on root path =
     in
         case ( Path.toList path, root ) of
             ( [], _ ) -> root
-            ( x::xs, Group curFocus control ) ->
+            ( x::xs, Group curFocus shape control ) ->
                 if control |> Nest.is Expanded then
                     case goDeeper (control |> Nest.getItems) x xs of
                         ( nextItems, nextFocus ) ->
                             Group
                                 (Just nextFocus)
+                                shape
                                 <| Nest.setItems nextItems <| control
-                else Group curFocus control
-            ( x::xs, Choice curFocus control ) ->
+                else Group curFocus shape control
+            ( x::xs, Choice curFocus shape control ) ->
                 if control |> Nest.is Expanded then
                     case goDeeper (control |> Nest.getItems) x xs of
                         ( nextItems, nextFocus ) ->
                             Choice
                                 (Just nextFocus)
+                                shape
                                 <| Nest.setItems nextItems <| control
-                else Choice curFocus control
+                else Choice curFocus shape control
             ( _, _ ) -> root
 
 
@@ -107,9 +109,9 @@ find root =
                 |> Maybe.withDefault []
         helper prop =
             case prop of
-                Group focus control ->
+                Group focus _ control ->
                     control |> Nest.getItems |> findDeeper focus
-                Choice focus control ->
+                Choice focus _ control ->
                     control |> Nest.getItems |> findDeeper focus
                 _ -> []
     in Path.fromList <| helper root
@@ -159,13 +161,13 @@ focused root path =
                     if flevel < 0
                         then NotFocused
                         else FocusedBy flevel
-                ( x::xs, Group (Just (FocusAt focus)) control ) ->
+                ( x::xs, Group (Just (FocusAt focus)) _ control ) ->
                     if focus == x then
                         case control |> Nest.get focus  of
                             Just ( _, item ) -> helper xs (flevel + 1) item
                             Nothing -> NotFocused
                     else NotFocused
-                ( x::xs, Choice (Just (FocusAt focus)) control ) ->
+                ( x::xs, Choice (Just (FocusAt focus)) _ control ) ->
                     if focus == x then
                         case control |> Nest.get focus of
                             Just ( _, item ) -> helper xs (flevel + 1) item

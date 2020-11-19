@@ -81,10 +81,10 @@ updateProperty value property =
             t |> callWith control
         ( Action control, FromButton ) ->
             () |> callWith control
-        ( Choice _ control, FromChoice i ) ->
+        ( Choice _ _ control, FromChoice i ) ->
             ( Nest.getState control, SelectedAt i )
                 |> callWith control
-        ( Group _ _, _ ) ->
+        ( Group _ _ _, _ ) ->
             Cmd.none
         _ -> Cmd.none
 
@@ -95,7 +95,7 @@ update { path, value } prop =
         [] -> updateProperty value prop
         id :: next ->
             case prop of
-                Group _ control ->
+                Group _ _ control ->
                     case control |> Nest.get id of
                         Just ( _, innerProp ) ->
                             innerProp
@@ -122,9 +122,9 @@ applyProperty value prop =
             control |> Control.setValue t |> Toggle
         ( Action control, FromButton ) ->
             control |> Control.setValue () |> Action
-        ( Choice focus control, FromChoice i ) ->
-            Choice focus <| Nest.select i <| control
-        ( Group _ _, _ ) ->
+        ( Choice focus shape control, FromChoice i ) ->
+            Choice focus shape <| Nest.select i <| control
+        ( Group _ _ _, _ ) ->
             prop
         _ -> prop
 
@@ -135,16 +135,16 @@ apply { path, value } prop =
         [] -> applyProperty value prop
         id :: next ->
             case prop of
-                Group focus control ->
+                Group focus shape control ->
                     control
-                        |> withItem id
-                                (apply { path = next, value = value })
-                        |> Group focus
-                Choice focus control ->
+                        |> Nest.withItem id
+                                (Tuple.mapSecond <| apply { path = next, value = value })
+                        |> Group focus shape
+                Choice focus shape control ->
                     control
-                        |> withItem id
-                                (apply { path = next, value = value })
-                        |> Choice focus
+                        |> Nest.withItem id
+                                (Tuple.mapSecond <| apply { path = next, value = value })
+                        |> Choice focus shape
                 _ -> prop
 
 
@@ -218,7 +218,7 @@ encodePropertyAt path property =
                 , ( "path", encodeRawPath path )
                 ]
 
-        Choice _ ( Control ( _, items ) ( state, SelectedAt current ) _) ->
+        Choice _ _ ( Control items ( state, SelectedAt current ) _) ->
             E.object
                 [ ( "type", E.string "choice" )
                 , ( "path", encodeRawPath path )
@@ -233,7 +233,7 @@ encodePropertyAt path property =
                     Expanded -> False )
                 , ( "options", encodeNested path items )
                 ]
-        Group _ (Control ( _, items ) ( state, _ ) _ ) ->
+        Group _ _ (Control items ( state, _ ) _ ) ->
             E.object
                 [ ( "type", E.string "nest" )
                 , ( "path", encodeRawPath path )
@@ -311,11 +311,11 @@ encodeUpdate maybeClient path prop =
                     ( "button"
                     , E.null
                     )
-                Choice _ control ->
+                Choice _ _ control ->
                     ( "choice"
                     , E.int <| Nest.whichSelected control
                     )
-                Group _ _ ->
+                Group _ _ _ ->
                     ( "nest"
                     , E.null
                     )
