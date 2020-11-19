@@ -15,9 +15,9 @@ TODO:
 ### 2.0.0
 
 * Support cell shapes other than 1x1;
-* Support different flows: `TopToBottom`, `BottomToTop`, `LeftToRight`, `RightToLeft`;
+* Support different docks: `TopToBottom`, `BottomToTop`, `LeftToRight`, `RightToLeft`;
 * Calculate the grid size dynamically;
-* `Gui.reflow` to allow to force custom size of the grid;
+* `Gui.redock` to allow to force custom size of the grid;
 * _Choice_ component shows the selected item instead the expanding control;
 * `Builder.choiceWithIcons` + `Builder.string` + `Builder.palette` helpers;
 * Shape is required to be passed to group controls;

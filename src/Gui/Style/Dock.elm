@@ -1,13 +1,13 @@
-module Gui.Style.Flow exposing
-    ( Flow
+module Gui.Style.Dock exposing
+    ( Dock
     , topToBottom, bottomToTop, leftToRight, rightToLeft
     , adaptBounds, adaptPosition, adaptSize, firstCellAt
     , boundsFromSize
     , toString
     )
 
-{-| # Flow
-@docs Flow
+{-| # Dock
+@docs Dock
 
 # Values
 @docs topToBottom, bottomToTop, leftToRight, rightToLeft
@@ -18,71 +18,113 @@ import Gui.Style.Cell as Cell
 import Size exposing (..)
 
 
+type HorzAnchor
+    = Left
+    | Center
+    | Right
 
-{-| Flow describes the direction in which GUI is oriented and to which side it is "docked".
+
+type VertAnchor
+    = Top
+    | Middle
+    | Bottom
+
+
+{-| `Dock` describes the direction in which GUI is oriented and to which corner it is "docked".
 
 If you are familiar with macOS Dock — here we have the similar concept.
 -}
-type Flow
-    = TopToBottom
-    | BottomToTop
-    | LeftToRight
-    | RightToLeft
+type Dock = Dock ( HorzAnchor, VertAnchor )
+
+{-|
+-}
+topLeft : Dock
+topLeft = Dock ( Left, Top )
 
 
 {-|
 -}
-topToBottom : Flow
-topToBottom = TopToBottom
+topCenter : Dock
+topCenter = Dock ( Center, Top )
 
 
 {-|
 -}
-bottomToTop : Flow
-bottomToTop = BottomToTop
+topRight : Dock
+topRight = Dock ( Right, Top )
 
 
 {-|
 -}
-leftToRight : Flow
-leftToRight = LeftToRight
+middleLeft : Dock
+middleLeft = Dock ( Middle, Left )
 
 
 {-|
 -}
-rightToLeft : Flow
-rightToLeft = RightToLeft
+center : Dock
+center = Dock ( Middle, Center )
+
+
+{-|
+-}
+middleRight : Dock
+middleRight = Dock ( Middle, Right )
+
+
+{-|
+-}
+bottomLeft : Dock
+bottomLeft = Dock ( Bottom, Left )
+
+
+{-|
+-}
+bottomCenter : Dock
+bottomCenter = Dock ( Bottom, Center )
+
+
+{-|
+-}
+bottomRight : Dock
+bottomRight = Dock ( Bottom, Right )
 
 
 adaptBounds
-     : Flow
+     : Dock
     -> ( Float, Float )
     -> { x : Float, y : Float, width : Float, height : Float }
     -> { x : Float, y : Float, width : Float, height : Float }
-adaptBounds flow ( width, height ) innerBounds =
-    case flow of
-        TopToBottom -> innerBounds
-        BottomToTop ->
+adaptBounds (Dock ( horz, vert )) ( width, height ) innerBounds =
+    { width =
+        case horz of
+            Left ->
+    , height =
+    }
+
+    case dock of
+        ( Bottom, _ ) ->
             { innerBounds
             | y = height - innerBounds.y - innerBounds.height
             }
-        LeftToRight ->
+        ( _, Right ) ->
             { width = innerBounds.height
             , height = innerBounds.width
             , x = innerBounds.y
             , y = innerBounds.x
             }
-        RightToLeft ->
+        {- RightToLeft ->
             { width = innerBounds.height
             , height = innerBounds.width
             , x = height - innerBounds.y - innerBounds.height
             , y = innerBounds.x
-            }
+            } -}
+        _ -> innerBounds
 
 
-adaptPosition : Flow -> ( Float, Float ) -> { x : Float, y : Float } -> { x : Float, y : Float }
-adaptPosition flow ( width, height ) { x, y } =
-    case flow of
+adaptPosition : Dock -> ( Float, Float ) -> { x : Float, y : Float } -> { x : Float, y : Float }
+adaptPosition dock ( width, height ) { x, y } =
+    case dock of
         TopToBottom -> { x = x, y = y }
         BottomToTop ->
             { x = x
@@ -98,18 +140,18 @@ adaptPosition flow ( width, height ) { x, y } =
             }
 
 
-adaptSize : Flow -> ( Float, Float ) -> ( Float, Float )
-adaptSize flow ( w, h ) =
-    case flow of
+adaptSize : Dock -> ( Float, Float ) -> ( Float, Float )
+adaptSize dock ( w, h ) =
+    case dock of
         TopToBottom -> ( w, h )
         BottomToTop -> ( w, h )
         LeftToRight -> ( h, w )
         RightToLeft -> ( h, w )
 
 
-firstCellAt : Flow ->  { a | width : Float, height : Float } -> ( Float, Float )
-firstCellAt flow bounds =
-    case flow of
+firstCellAt : Dock ->  { a | width : Float, height : Float } -> ( Float, Float )
+firstCellAt dock bounds =
+    case dock of
         TopToBottom -> ( 0, 0 )
         BottomToTop -> ( 0, bounds.height - Cell.height )
         LeftToRight -> ( 0, 0 )
@@ -117,12 +159,12 @@ firstCellAt flow bounds =
 
 
 boundsFromSize
-     : Flow
+     : Dock
     -> Size Pixels
     -> Size Cells
     -> { x : Float, y : Float, width : Float, height : Float }
 boundsFromSize
-    flow
+    dock
     (Size ( viewportWidthInPx, viewportHeightInPx ))
     (Size ( gridWidthInCells, gridHeightInCells )) =
     let
@@ -131,12 +173,12 @@ boundsFromSize
             , Cell.height * toFloat gridHeightInCells
             )
     in
-        { x = case flow of
+        { x = case dock of
             TopToBottom -> Cell.gap / 2
             BottomToTop -> Cell.gap / 2
             RightToLeft -> toFloat viewportWidthInPx - gridWidthInPx - Cell.gap / 2
             LeftToRight -> Cell.gap / 2
-        , y = case flow of
+        , y = case dock of
             TopToBottom -> Cell.gap / 2
             BottomToTop -> toFloat viewportHeightInPx - gridHeightInPx - Cell.gap / 2
             RightToLeft -> Cell.gap / 2
@@ -152,9 +194,9 @@ boundsFromSize
         } -}
 
 
-toString : Flow -> String
-toString flow =
-    case flow of
+toString : Dock -> String
+toString dock =
+    case dock of
         TopToBottom -> "ttb"
         BottomToTop -> "btt"
         LeftToRight -> "ltr"

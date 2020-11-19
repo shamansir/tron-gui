@@ -3,7 +3,7 @@ module Gui exposing
     , view, update, init, subscriptions, run, Message
     , map, over
     , detachable, encode, applyRaw, initRaw
-    , reflow
+    , redock
     )
 
 
@@ -73,8 +73,8 @@ NB: Don't forget to copy `src/Gui.css` to your application to make GUI look and 
 # Lifecycle
 @docs init, update, view, subscriptions, run, Message
 
-# Flow
-@docs reflow
+# Dock
+@docs redock
 
 # Common Helpers
 @docs map, over
@@ -116,9 +116,9 @@ import Gui.FocusLogic as Focus exposing (..)
 import Gui.Focus as Focus exposing (..)
 import Gui.Detach as Detach exposing (make, ClientId, Detach, map)
 import Gui.Expose as Exp exposing (..)
-import Gui.Style.Flow exposing (Flow(..))
+import Gui.Style.Dock exposing (Dock(..))
 --import Gui.Style.Anchor exposing (Anchor(..))
-import Gui.Style.Flow as Flow exposing (..)
+import Gui.Style.Dock as Dock exposing (..)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Logic as Style exposing (..)
 import Gui.Style.Cell as Cell exposing (..)
@@ -133,8 +133,9 @@ to fire all the messages you pass to it in definition. This is similar to how yo
 Use `init` to create an instance of `Gui msg`. See the example in the head of the module and `example/` folder for more details.
 -}
 type alias Gui msg =
-    { flow : Flow
+    { dock : Dock
     , viewport : Size Pixels
+    , size : Maybe (Size Cells)
     , mouse : MouseState
     , tree : Builder msg
     , detach : Detach msg
@@ -165,8 +166,9 @@ the conversion function.
 -}
 map : (msgA -> msgB) -> Gui msgA -> Gui msgB
 map f gui =
-    { flow = gui.flow
+    { dock = gui.dock
     , viewport = gui.viewport
+    , size = gui.size
     , mouse = gui.mouse
     , tree = gui.tree |> Gui.Property.map f
     , detach = gui.detach |> Detach.map f
@@ -224,7 +226,7 @@ Since `init builder` is just:
 -}
 initRaw : Builder msg -> Gui msg
 initRaw root =
-    Gui Flow.topToBottom (Size ( 0, 0 )) Gui.Mouse.init root Detach.never
+    Gui Dock.topToBottom (Size ( 0, 0 )) Gui.Mouse.init root Detach.never
 -- TODO: get rid of initRaw
 
 
@@ -461,7 +463,7 @@ handleMouse mouseAction gui =
             gui.viewport
                 |> sizeFromViewport gui.tree
         bounds =
-            Flow.boundsFromSize gui.flow gui.viewport size
+            Dock.boundsFromSize gui.dock gui.viewport size
         theLayout =
             layout gui |> Tuple.second
 
@@ -671,14 +673,14 @@ fromWindow passSize =
             )
 
 
-{-| Change flow direction of the GUI to `TopToBottom`, `BottomToTop`, `RightToLeft` or `LeftToRight`.
+{-| Change dock direction of the GUI to `TopToBottom`, `BottomToTop`, `RightToLeft` or `LeftToRight`.
 
-See `Style.Flow` for values.
+See `Style.Dock` for values.
 -}
-reflow : Flow -> Gui msg -> Gui msg
-reflow flow gui =
+redock : Dock -> Gui msg -> Gui msg
+redock dock gui =
     { gui
-    | flow = flow
+    | dock = dock
     }
 
 
@@ -717,9 +719,9 @@ layout gui =
                     |> Maybe.map (Tuple.pair path)
             ) of
         Nothing ->
-            ( gui.tree, Layout.pack gui.flow size gui.tree )
+            ( gui.tree, Layout.pack gui.dock size gui.tree )
         Just ( attachedPath, root ) ->
-            ( root, Layout.pack1 gui.flow size attachedPath root )
+            ( root, Layout.pack1 gui.dock size attachedPath root )
 
 
 {-| Subscribe the updates of the GUI, so it would resize with the window,
@@ -763,9 +765,9 @@ view theme gui =
         cellsSize =
             gui.viewport |> sizeFromViewport gui.tree
         bounds =
-            Flow.boundsFromSize gui.flow gui.viewport cellsSize
+            Dock.boundsFromSize gui.dock gui.viewport cellsSize
     in
     case layout gui of
         ( root, theLayout ) ->
             theLayout
-                |> Layout.view theme gui.flow bounds gui.detach root
+                |> Layout.view theme gui.dock bounds gui.detach root
