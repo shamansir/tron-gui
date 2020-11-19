@@ -226,7 +226,7 @@ Since `init builder` is just:
 -}
 initRaw : Builder msg -> Gui msg
 initRaw root =
-    Gui Dock.topToBottom (Size ( 0, 0 )) Gui.Mouse.init root Detach.never
+    Gui Dock.topLeft (Size ( 0, 0 )) Nothing Gui.Mouse.init root Detach.never
 -- TODO: get rid of initRaw
 
 
