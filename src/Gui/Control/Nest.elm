@@ -5,11 +5,6 @@ import Array exposing (Array)
 
 import Gui.Control as Core exposing (Control)
 
-import Gui.Style.CellShape exposing (CellShape)
-
-
-type alias Shape = ( Float, Float )
-
 
 type NestState
     = Expanded
@@ -25,19 +20,19 @@ type SelectedAt = SelectedAt Int
 
 type alias GroupControl item msg =
     Core.Control
-        ( ( Shape, CellShape ), Array item )
+        ( Array item )
         ( NestState, () )
         msg
 
 
 type alias ChoiceControl item msg =
     Core.Control
-        ( ( Shape, CellShape ), Array item )
+        ( Array item )
         ( NestState, SelectedAt )
         msg
 
 
-get : Int -> Core.Control ( a, Array item ) value msg -> Maybe item
+get : Int -> Core.Control ( Array item ) value msg -> Maybe item
 get n = getItems >> Array.get n
 
 
@@ -139,46 +134,58 @@ is : NestState -> Core.Control setup ( NestState, a ) msg -> Bool
 is state (Core.Control _ ( expanded, a ) _) = expanded == state
 
 
-getItems
-     : Core.Control
-            ( a, Array item )
-            value
-            msg
-    -> Array item
-getItems (Core.Control ( _, items ) _ _) = items
+getItems : Core.Control ( Array item ) value msg -> Array item
+getItems (Core.Control items _ _) = items
 
 
 setItems
      : Array item
-    -> Core.Control ( a, Array item ) value msg
-    -> Core.Control ( a, Array item ) value msg
-setItems newItems (Core.Control ( a, items ) value handler) =
-    Core.Control ( a, newItems ) value handler
+    -> Core.Control ( Array item ) value msg
+    -> Core.Control ( Array item ) value msg
+setItems newItems (Core.Control _ value handler) =
+    Core.Control newItems value handler
 
 
 mapItems
      : (itemA -> itemB)
     -> Core.Control
-            ( a, Array itemA )
+            ( Array itemA )
             value
             msg
     -> Core.Control
-            ( a, Array itemB )
+            ( Array itemB )
             value
             msg
-mapItems f (Core.Control ( a, items ) value handler) =
-    Core.Control ( a, items |> Array.map f ) value handler
+mapItems f (Core.Control items value handler) =
+    Core.Control ( items |> Array.map f ) value handler
 
 
 indexedMapItems
      : (Int -> itemA -> itemB)
     -> Core.Control
-            ( a, Array itemA )
+            ( Array itemA )
             value
             msg
     -> Core.Control
-            ( a, Array itemB )
+            ( Array itemB )
             value
             msg
-indexedMapItems f (Core.Control ( a, items ) value handler) =
-    Core.Control ( a, items |> Array.indexedMap f ) value handler
+indexedMapItems f (Core.Control items value handler) =
+    Core.Control ( items |> Array.indexedMap f ) value handler
+
+
+withItem
+     : Int
+    -> (item -> item)
+    -> Core.Control (Array item) value msg
+    -> Core.Control (Array item) value msg
+withItem id f ( Core.Control items state handler ) =
+    Core.Control
+        ( case Array.get id items of
+            Just item ->
+                items
+                |> Array.set id (f item)
+            Nothing -> items
+        )
+        state
+        handler

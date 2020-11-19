@@ -26,6 +26,12 @@ import Gui.Style.CellShape exposing (CellShape)
 type FocusAt = FocusAt Int
 
 
+type alias Shape = ( Float, Float )
+
+
+type alias NestShape = ( Shape, CellShape )
+
+
 type alias Label = String
 
 
@@ -37,8 +43,8 @@ type Property msg
     | Color (Color.Control msg)
     | Toggle (Toggle.Control msg)
     | Action (Button.Control msg)
-    | Choice (Maybe FocusAt) (Nest.ChoiceControl ( Label, Property msg ) msg)
-    | Group (Maybe FocusAt) (Nest.GroupControl ( Label, Property msg ) msg)
+    | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Label, Property msg ) msg)
+    | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property msg ) msg)
 
 
 knobDistance = 90 * 4
@@ -62,11 +68,11 @@ find1 path root = -- TODO: reuse `fildAll` + `tail`?
                 [] -> Just ( label, prop )
                 index::pathTail ->
                     case prop of
-                        Choice _ control ->
+                        Choice _ _ control ->
                             control
                                 |> Nest.get index
                                 |> Maybe.andThen (helper pathTail)
-                        Group _ control ->
+                        Group _ _ control ->
                             control
                                 |> Nest.get index
                                 |> Maybe.andThen (helper pathTail)
@@ -99,12 +105,12 @@ findAll path root =
                 [] -> []
                 index::pathTail ->
                     case prop of
-                        Choice _ control ->
+                        Choice _ _ control ->
                             control
                                 |> Nest.get index
                                 |> Maybe.map (helper pathTail)
                                 |> Maybe.withDefault []
-                        Group  _ control ->
+                        Group _ _ control ->
                             control
                                 |> Nest.get index
                                 |> Maybe.map (helper pathTail)
@@ -124,15 +130,17 @@ map f prop =
         Color control -> Color <| Control.map f control
         Toggle control -> Toggle <| Control.map f control
         Action control -> Action <| Control.map f control
-        Choice focus control ->
+        Choice focus shape control ->
             Choice
                 focus
+                shape
                 <| (control
                     |> Nest.mapItems (Tuple.mapSecond <| map f)
                     |> Control.map f)
-        Group focus control ->
+        Group focus shape control ->
             Group
                 focus
+                shape
                 <| (control
                     |> Nest.mapItems (Tuple.mapSecond <| map f)
                     |> Control.map f)
@@ -156,10 +164,10 @@ fold f from root =
         helper : Path -> Property msg -> a -> a
         helper curPath item val =
             case item of
-                Choice _ control ->
+                Choice _ _ control ->
                     f curPath item
                         <| foldItems curPath (Nest.getItems control) val
-                Group _ control ->
+                Group _ _ control ->
                     f curPath item
                         <| foldItems curPath (Nest.getItems control) val
                 _ -> f curPath item val
@@ -186,15 +194,17 @@ mapReplace f root =
         helper : Path -> Property msg -> Property msg
         helper curPath item =
             case item of
-                Choice focus control ->
+                Choice focus shape control ->
                     f curPath
                         <| Choice
                             focus
+                            shape
                         <| (control |> Nest.indexedMapItems (replaceItem curPath))
-                Group focus control ->
+                Group focus shape control ->
                     f curPath
                         <| Group
                             focus
+                            shape
                         <| (control |> Nest.indexedMapItems (replaceItem curPath))
                 _ -> f curPath item
 
@@ -237,13 +247,13 @@ execute item =
             Just <| Action control
         Text textControl ->
             Just <| Text <| ensureEditing textControl
-        Choice focus control ->
+        Choice focus shape control ->
             Just
-                <| Choice focus
+                <| Choice focus shape
                 <| Nest.execute control
-        Group focus control ->
+        Group focus shape control ->
             Just
-                <| Group focus
+                <| Group focus shape
                 <| Nest.execute control
         _ -> Nothing
 
@@ -254,7 +264,7 @@ executeAt path root =
         |> findWithParent path of
         Just ( parent, item ) ->
             case ( parent, item ) of
-                ( Choice focus control, Action _ ) ->
+                ( Choice focus shape control, Action _ ) ->
 
                     case Path.pop path of
                         Just ( toParent, selectedIndex ) ->
@@ -264,11 +274,11 @@ executeAt path root =
                             in
                                 case execute item of
                                     Just newCell ->
-                                        [ ( toParent, Choice focus newParent )
+                                        [ ( toParent, Choice focus shape newParent )
                                         , ( path, newCell )
                                         ]
                                     Nothing ->
-                                        [ ( toParent, Choice focus newParent )
+                                        [ ( toParent, Choice focus shape newParent )
                                         ]
                         Nothing ->
                             []
@@ -308,29 +318,29 @@ updateTextAt path newValue =
 expand : Property msg -> Property msg
 expand prop =
     case prop of
-        Group focus control ->
-            Group focus <| Nest.expand control
-        Choice focus control ->
-            Choice focus <| Nest.expand control
+        Group focus shape control ->
+            Group focus shape <| Nest.expand control
+        Choice focus shape control ->
+            Choice focus shape <| Nest.expand control
         _ -> prop
 
 collapse : Property msg -> Property msg
 collapse prop =
     case prop of
-        Group focus control ->
-            Group focus <| Nest.collapse control
-        Choice focus control ->
-            Choice focus <| Nest.collapse control
+        Group focus shape control ->
+            Group focus shape <| Nest.collapse control
+        Choice focus shape control ->
+            Choice focus shape <| Nest.collapse control
         _ -> prop
 
 
 detach : Property msg -> Property msg
 detach prop =
     case prop of
-        Group focus control ->
-            Group focus <| Nest.detach control
-        Choice focus control ->
-            Choice focus <| Nest.detach control
+        Group focus shape control ->
+            Group focus shape <| Nest.detach control
+        Choice focus shape control ->
+            Choice focus shape <| Nest.detach control
         _ -> prop
 
 
@@ -409,37 +419,16 @@ call prop =
         Color control -> Control.call control
         Toggle control -> Control.call control
         Action control -> Control.call control
-        Choice _ control -> Control.call control
-        Group _ control -> Control.call control
-
-
-withItem
-     : Int
-    -> (Property msg -> Property msg)
-    -> Core.Control ( a, Array ( b, Property msg ) ) value msg
-    -> Core.Control ( a, Array ( b, Property msg ) ) value msg
-withItem id f ( Control ( shape, items ) state handler ) =
-    Control
-        ( shape
-        , case Array.get id items of
-            Just ( label, innerProp ) ->
-                items
-                |> Array.set id
-                    ( label
-                    , f innerProp
-                    )
-            Nothing -> items
-        )
-        state
-        handler
+        Choice _ _ control -> Control.call control
+        Group _ _ control -> Control.call control
 
 
 getCellShape : Property msg -> Maybe CellShape
 getCellShape prop =
     case prop of
-        Choice _ (Control ( ( _, cellShape ), _ ) _ _ ) ->
+        Choice _ ( _, cellShape ) _ ->
             Just cellShape
-        Group _ (Control ( ( _, cellShape ), _ ) _ _ ) ->
+        Group _ ( _, cellShape ) _ ->
             Just cellShape
         _ -> Nothing
 
@@ -447,7 +436,7 @@ getCellShape prop =
 getSelected : Property msg -> Maybe ( Label, Property msg )
 getSelected prop =
     case prop of
-        Choice _ control ->
+        Choice _ _ control ->
             control |> Nest.getSelected
         _ -> Nothing
 
@@ -455,6 +444,6 @@ getSelected prop =
 isSelected : Property msg -> Int -> Bool
 isSelected prop index =
     case prop of
-        Choice _ control ->
+        Choice _ _ control ->
             Nest.isSelected control index
         _ -> False

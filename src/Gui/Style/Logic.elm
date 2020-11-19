@@ -43,11 +43,11 @@ assignTones =
         assignTone ( path, prop ) ( knownTones, nextTone ) =
             if Path.howDeep path == 1 then
                 case prop of
-                    Group _ _ ->
+                    Group _ _ _ ->
                         ( knownTones |> Dict.insert (Path.toString path) nextTone
                         , Tone.next nextTone
                         )
-                    Choice _ _ ->
+                    Choice _ _ _ ->
                         ( knownTones |> Dict.insert (Path.toString path) nextTone
                         , Tone.next nextTone
                         )

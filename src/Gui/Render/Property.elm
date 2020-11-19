@@ -134,7 +134,7 @@ viewProperty
             button style state face cellShape label bounds
         Color (Control _ value _) ->
             color style state value bounds
-        Choice _ control ->
+        Choice _ _ control ->
             case maybeSelectedInside of
                 Just theSelectedProp ->
                     viewProperty
@@ -147,7 +147,7 @@ viewProperty
                         theSelectedProp
                 Nothing ->
                     arrow style state (Nest.getState control) bounds
-        Group _ control ->
+        Group _ _ control ->
             arrow style state (Nest.getState control) bounds
         _ -> Svg.none
 
@@ -436,8 +436,8 @@ makeClass tone shape prop =
                 Color _ -> "color"
                 Toggle _ -> "toggle"
                 Action _ -> "button"
-                Choice _ _ -> "choice"
-                Group _ _ -> "group"
+                Choice _ _ _ -> "choice"
+                Group _ _ _ -> "group"
             )
         ++ " cell--" ++ toneToModifier tone
         ++ " cell--" ++ shapeToModifier shape

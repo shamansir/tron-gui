@@ -65,7 +65,7 @@ propertyDebug ( label, prop )  =
         Action _ ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " button" ]
-        Group maybeFocus (Control _ ( state, _ ) _) ->
+        Group maybeFocus _ (Control _ ( state, _ ) _) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " nested: "
                 , textAt 5 20
@@ -76,7 +76,7 @@ propertyDebug ( label, prop )  =
                         Just (FocusAt focus) -> String.fromInt focus
                         _ -> "none"
                 ]
-        Choice maybeFocus (Control _ ( state, SelectedAt selected ) _ ) ->
+        Choice maybeFocus _ (Control _ ( state, SelectedAt selected ) _ ) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " choice: "
                 , textAt 5 20
