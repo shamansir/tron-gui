@@ -73,8 +73,8 @@ toString tone =
 
 
 next : Tone -> Tone
-next style =
-    case style of
+next tone =
+    case tone of
         Green -> Pink
         Pink -> Yellow
         Yellow -> Aqua
