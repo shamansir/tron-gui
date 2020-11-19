@@ -4,12 +4,16 @@ module RandomGui exposing (generator)
 import Random
 import Array exposing (Array)
 import Color exposing (..)
+import Axis exposing (Axis)
 
 import Gui exposing (Gui)
-import Gui.Control exposing (Control(..))
-import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, expand)
-import Gui.Property as Gui exposing
-    ( Label, ToggleState(..), NestState(..), Icon(..), TextState(..), Face(..) )
+import Gui.Control as Core exposing (Control(..))
+import Gui.Control.Nest exposing (ChoiceControl, GroupControl, NestState(..), SelectedAt(..), expand, getItems)
+import Gui.Control.Toggle exposing (ToggleState(..))
+import Gui.Control.Text exposing (TextState(..))
+import Gui.Control.Button as Button exposing (Face(..), Icon(..))
+import Gui.Property  exposing (Property(..))
+import Gui.Property as Gui exposing ( Label )
 import Gui.Build exposing (Builder)
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS exposing (..)
@@ -29,8 +33,8 @@ type Icon
 generator : Random.Generator (Builder ())
 generator =
     group (DeepLevel 0)
-        |> Random.map Group
         |> Random.map expand
+        |> Random.andThen group_
 
 
 property : DeepLevel -> Random.Generator (Builder ())
@@ -49,12 +53,12 @@ property (DeepLevel deep) =
                     7 ->
                         if deep < 7 then
                             choice (DeepLevel <| deep + 1)
-                                |> Random.map Choice
+                                |> Random.andThen choice_
                         else button |> Random.map Action
                     8 ->
                         if deep < 7 then
                             group (DeepLevel <| deep + 1)
-                                |> Random.map Group
+                                |> Random.andThen group_
                         else button |> Random.map Action
                     _ -> Random.constant Nil
             )
@@ -134,7 +138,7 @@ color =
 button : Random.Generator ( Control Face () () )
 button =
     Random.uniform Nothing [ Just Arrow, Just Export, Just Regenerate, Just Arm, Just Goose ]
-        |> Random.map (Maybe.map (sourceOf >> Gui.Icon >> WithIcon) >> Maybe.withDefault Default)
+        |> Random.map (Maybe.map (sourceOf >> Button.Icon >> WithIcon) >> Maybe.withDefault Default)
         |> Random.map (\icon -> Control icon () <| Just <| always ())
 
 
@@ -150,8 +154,8 @@ controls deep =
                 Color _ -> "color"
                 Toggle _ -> "toggle"
                 Action _ -> "button"
-                Choice _ -> "choice"
-                Group _ -> "group"
+                Choice _ _ _ -> "choice"
+                Group _ _ _ -> "group"
         addLabel : Builder () -> Random.Generator ( Label, Builder () )
         addLabel prop =
             Random.int 0 10000
@@ -168,63 +172,84 @@ controls deep =
                 )
 
 
-choice : DeepLevel -> Random.Generator ( ChoiceControl () )
+choice : DeepLevel -> Random.Generator ( ChoiceControl (Label, Builder ()) () )
 choice deep =
     controls deep
         |> Random.andThen
             (\cs ->
                 Random.map3
                     Control
-                    (Random.map2
-                        Tuple.pair
-                        (Random.map2
+                    {- (Random.map2
                             Tuple.pair
                             (shape <| Array.length cs)
                             (Random.constant CS.default)
-                        )
-                        (Random.constant cs)
-                    )
+                        ) -}
+                    (Random.constant cs)
                     (Random.map2
                         Tuple.pair
                         expandState
-                        (Random.map (Tuple.pair Nothing)
-                            <| Random.map Gui.SelectedAt
+                        (Random.map SelectedAt
                             <| Random.int 0 <| Array.length cs - 1)
                     )
                     handler
             )
 
 
-group : DeepLevel -> Random.Generator ( GroupControl () )
+group : DeepLevel -> Random.Generator ( GroupControl ( Label, Builder () ) () )
 group deep =
     controls deep
         |> Random.andThen
             (\cs ->
                 Random.map3
                     Control
-                    (Random.map2
-                        Tuple.pair
-                        (Random.map2
-                            Tuple.pair
-                            (shape <| Array.length cs)
-                            (Random.constant CS.default)
-                        )
-                        (Random.constant cs)
-                    )
+                    (Random.constant cs)
                     (Random.map2
                         Tuple.pair
                         expandState
-                        (Random.constant Nothing)
+                        (Random.constant ())
                     )
                     handler
             )
 
 
+shapeFor
+     : Control (Array ( Label, Builder () )) val msg
+    -> Random.Generator ( Gui.Shape, CS.CellShape )
+shapeFor cs =
+    Random.map2
+        Tuple.pair
+        (shape <| Array.length <| getItems cs)
+        (Random.constant CS.default)
+
+
 shape : Int -> Random.Generator Gui.Shape
 shape toFit =
     Random.int 1 toFit
-        |> Random.map (\v -> ( v, (toFit // v) + (if toFit - (toFit // v * toFit) > 0 then 1 else 0) ))
+        |> Random.map
+            (\v ->
+                ( v
+                , (toFit // v) + (if toFit - (toFit // v * toFit) > 0 then 1 else 0)
+                )
+            )
         |> Random.map (Tuple.mapBoth toFloat toFloat)
+
+
+group_
+     : GroupControl (Label, Builder ()) ()
+    -> Random.Generator (Builder ())
+group_ control =
+    Random.map
+        (\s -> Group Nothing s control)
+        <| shapeFor control
+
+
+choice_
+     : ChoiceControl (Label, Builder ()) ()
+    -> Random.Generator (Builder ())
+choice_ control =
+    Random.map
+        (\s -> Choice Nothing s control)
+        <| shapeFor control
 
 
 toggleState : Random.Generator ToggleState

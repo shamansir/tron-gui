@@ -40,7 +40,7 @@ view : Theme -> Gui msg -> Html Msg
 view theme gui =
     let
 
-        layout = Layout.pack gui.flow ( 10, 10 ) gui.tree
+        layout = Layout.pack gui.flow ( 20, 20 ) gui.tree
         viewControl ( path, bounds ) =
             [ box
                 [ A.color Color.black
