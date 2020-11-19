@@ -107,18 +107,25 @@ view { mode, gui, example, theme } =
         , Html.button
             [ Html.onClick SwitchTheme ]
             [ Html.text "Theme" ]
-        , Html.button
-            [ Html.onClick <| ChangeDock Dock.topLeft ]
-            [ Html.text "Top to Bottom" ]
-        , Html.button
-            [ Html.onClick <| ChangeDock Dock.bottomLeft ]
-            [ Html.text "Bottom to Top" ]
-        , Html.button
-            [ Html.onClick <| ChangeDock Dock.topRight ]
-            [ Html.text "Left to Right" ]
-        , Html.button
-            [ Html.onClick <| ChangeDock Dock.bottomLeft ]
-            [ Html.text "Right to Left" ]
+        , Html.span
+            []
+            <| List.map
+                (\(label, dock) ->
+                    Html.button
+                        [ Html.onClick <| ChangeDock dock ]
+                        [ Html.text label ]
+                )
+            <|
+            [ ( "⬁", Dock.topLeft )
+            , ( "⇧", Dock.topCenter )
+            , ( "⬀", Dock.topRight )
+            , ( "⇦", Dock.middleLeft )
+            , ( "◯", Dock.center )
+            , ( "⇨", Dock.middleRight )
+            , ( "⬃", Dock.bottomLeft )
+            , ( "⇩", Dock.bottomCenter )
+            , ( "⬂", Dock.bottomRight )
+            ]
         , case mode of
             DatGui -> Html.div [] []
             TronGui ->
