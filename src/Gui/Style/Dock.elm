@@ -1,6 +1,8 @@
 module Gui.Style.Dock exposing
     ( Dock
-    , topToBottom, bottomToTop, leftToRight, rightToLeft
+    , topLeft, topCenter, topRight
+    , middleLeft, center, middleRight
+    , bottomLeft, bottomCenter, bottomRight
     , adaptBounds, adaptPosition, adaptSize, firstCellAt
     , boundsFromSize
     , toString
@@ -57,37 +59,37 @@ topRight = Dock ( Right, Top )
 {-|
 -}
 middleLeft : Dock
-middleLeft = Dock ( Middle, Left )
+middleLeft = Dock ( Left, Middle )
 
 
 {-|
 -}
 center : Dock
-center = Dock ( Middle, Center )
+center = Dock ( Center, Middle )
 
 
 {-|
 -}
 middleRight : Dock
-middleRight = Dock ( Middle, Right )
+middleRight = Dock ( Right, Middle )
 
 
 {-|
 -}
 bottomLeft : Dock
-bottomLeft = Dock ( Bottom, Left )
+bottomLeft = Dock ( Left, Bottom )
 
 
 {-|
 -}
 bottomCenter : Dock
-bottomCenter = Dock ( Bottom, Center )
+bottomCenter = Dock ( Center, Bottom )
 
 
 {-|
 -}
 bottomRight : Dock
-bottomRight = Dock ( Bottom, Right )
+bottomRight = Dock ( Right, Bottom )
 
 
 adaptBounds
@@ -98,64 +100,62 @@ adaptBounds
 adaptBounds (Dock ( horz, vert )) ( width, height ) innerBounds =
     { width =
         case horz of
-            Left ->
+            Left -> innerBounds.height
+            Center -> innerBounds.width
+            Right -> innerBounds.height
     , height =
+        case horz of
+            Left -> innerBounds.width
+            Center -> innerBounds.height
+            Right -> innerBounds.width
+    , x =
+        case horz of
+            Left -> innerBounds.y
+            Center -> innerBounds.x
+            Right -> height - innerBounds.y - innerBounds.height
+    , y =
+        case ( horz, vert ) of
+            ( Center, Bottom ) -> height - innerBounds.y - innerBounds.height
+            ( Center, _ ) -> innerBounds.y
+            ( _, Bottom ) -> width - innerBounds.x - innerBounds.width
+            _ -> innerBounds.x
     }
-
-    case dock of
-        ( Bottom, _ ) ->
-            { innerBounds
-            | y = height - innerBounds.y - innerBounds.height
-            }
-        ( _, Right ) ->
-            { width = innerBounds.height
-            , height = innerBounds.width
-            , x = innerBounds.y
-            , y = innerBounds.x
-            }
-        {- RightToLeft ->
-            { width = innerBounds.height
-            , height = innerBounds.width
-            , x = height - innerBounds.y - innerBounds.height
-            , y = innerBounds.x
-            } -}
-        _ -> innerBounds
 
 
 adaptPosition : Dock -> ( Float, Float ) -> { x : Float, y : Float } -> { x : Float, y : Float }
-adaptPosition dock ( width, height ) { x, y } =
-    case dock of
-        TopToBottom -> { x = x, y = y }
-        BottomToTop ->
-            { x = x
-            , y = height - y
-            }
-        LeftToRight ->
-            { x = y
-            , y = x
-            }
-        RightToLeft ->
-            { x = y
-            , y = width - x
-            }
+adaptPosition (Dock ( horz, vert )) ( width, height ) { x, y } =
+    { x =
+        case horz of
+            Left -> y
+            Center -> x
+            Right -> height - y
+    , y =
+        case ( horz, vert ) of
+            ( Center, Bottom ) -> height - y
+            ( Center, _ ) -> y
+            ( _, Bottom ) -> width - x
+            _ -> x
+    }
 
 
 adaptSize : Dock -> ( Float, Float ) -> ( Float, Float )
-adaptSize dock ( w, h ) =
-    case dock of
-        TopToBottom -> ( w, h )
-        BottomToTop -> ( w, h )
-        LeftToRight -> ( h, w )
-        RightToLeft -> ( h, w )
+adaptSize (Dock (horz, _)) ( w, h ) =
+    case horz of
+        Center -> ( w, h )
+        _ -> ( h, w )
 
 
 firstCellAt : Dock ->  { a | width : Float, height : Float } -> ( Float, Float )
-firstCellAt dock bounds =
-    case dock of
-        TopToBottom -> ( 0, 0 )
-        BottomToTop -> ( 0, bounds.height - Cell.height )
-        LeftToRight -> ( 0, 0 )
-        RightToLeft -> ( bounds.width - Cell.width, 0 )
+firstCellAt (Dock ( horz, vert )) bounds =
+    ( case horz of
+        Right -> bounds.height - Cell.height
+        _ -> 0
+    , case ( horz, vert ) of
+       ( Left, Bottom ) -> bounds.width - Cell.width
+       ( Center, Bottom ) -> bounds.height - Cell.height
+       ( Right, Bottom ) -> bounds.width - Cell.width
+       _ -> 0
+    )
 
 
 boundsFromSize
@@ -164,7 +164,7 @@ boundsFromSize
     -> Size Cells
     -> { x : Float, y : Float, width : Float, height : Float }
 boundsFromSize
-    dock
+    (Dock ( horz, vert ))
     (Size ( viewportWidthInPx, viewportHeightInPx ))
     (Size ( gridWidthInCells, gridHeightInCells )) =
     let
@@ -173,16 +173,14 @@ boundsFromSize
             , Cell.height * toFloat gridHeightInCells
             )
     in
-        { x = case dock of
-            TopToBottom -> Cell.gap / 2
-            BottomToTop -> Cell.gap / 2
-            RightToLeft -> toFloat viewportWidthInPx - gridWidthInPx - Cell.gap / 2
-            LeftToRight -> Cell.gap / 2
-        , y = case dock of
-            TopToBottom -> Cell.gap / 2
-            BottomToTop -> toFloat viewportHeightInPx - gridHeightInPx - Cell.gap / 2
-            RightToLeft -> Cell.gap / 2
-            LeftToRight -> Cell.gap / 2
+        { x = case horz of
+            Left -> Cell.gap / 2
+            Center -> (toFloat viewportWidthInPx / 2) - (toFloat gridWidthInCells / 2)
+            Right -> toFloat viewportWidthInPx - gridWidthInPx - Cell.gap / 2
+        , y = case vert of
+            Top -> Cell.gap / 2
+            Middle -> (toFloat viewportHeightInPx / 2) - (gridHeightInPx / 2)
+            Bottom -> toFloat viewportHeightInPx - gridHeightInPx - Cell.gap / 2
         , width = gridWidthInPx
         , height = gridHeightInPx
         }
@@ -195,9 +193,14 @@ boundsFromSize
 
 
 toString : Dock -> String
-toString dock =
-    case dock of
-        TopToBottom -> "ttb"
-        BottomToTop -> "btt"
-        LeftToRight -> "ltr"
-        RightToLeft -> "rtl"
+toString (Dock ( horz, vert )) =
+    ( case horz of
+        Left -> "left"
+        Center -> "center"
+        Right -> "right"
+    ) ++ "-" ++
+    ( case vert of
+        Top -> "top"
+        Middle -> "middle"
+        Bottom -> "bottom"
+    )

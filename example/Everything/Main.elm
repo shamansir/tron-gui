@@ -108,16 +108,16 @@ view { mode, gui, example, theme } =
             [ Html.onClick SwitchTheme ]
             [ Html.text "Theme" ]
         , Html.button
-            [ Html.onClick <| ChangeDock Dock.topToBottom ]
+            [ Html.onClick <| ChangeDock Dock.topLeft ]
             [ Html.text "Top to Bottom" ]
         , Html.button
-            [ Html.onClick <| ChangeDock Dock.bottomToTop ]
+            [ Html.onClick <| ChangeDock Dock.bottomLeft ]
             [ Html.text "Bottom to Top" ]
         , Html.button
-            [ Html.onClick <| ChangeDock Dock.leftToRight ]
+            [ Html.onClick <| ChangeDock Dock.topRight ]
             [ Html.text "Left to Right" ]
         , Html.button
-            [ Html.onClick <| ChangeDock Dock.rightToLeft ]
+            [ Html.onClick <| ChangeDock Dock.bottomLeft ]
             [ Html.text "Right to Left" ]
         , case mode of
             DatGui -> Html.div [] []
