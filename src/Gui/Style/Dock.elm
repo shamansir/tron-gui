@@ -125,17 +125,33 @@ adaptBounds (Dock ( horz, vert )) ( width, height ) innerBounds =
 adaptPosition : Dock -> ( Float, Float ) -> { x : Float, y : Float } -> { x : Float, y : Float }
 adaptPosition (Dock ( horz, vert )) ( width, height ) { x, y } =
     { x =
-        case horz of
-            Left -> y
-            Center -> x
-            Right -> height - y
-    , y =
         case ( horz, vert ) of
+            ( Left, Top ) -> y
+            ( Left, Middle ) -> y
+            ( Left, Bottom ) -> height - y
+            ( Center, Top ) -> x
+            ( Center, Middle ) -> x
+            ( Center, Bottom ) -> x
+            ( Right, Top ) -> y
+            ( Right, Middle ) -> y
+            ( Right, Bottom ) -> height - y
+    , y =
+        case Debug.log "dock" ( horz, vert ) of
+            ( Left, Top ) -> x
+            ( Left, Middle ) -> x
+            ( Left, Bottom ) -> x
+            ( Center, Top ) -> y
+            ( Center, Middle ) -> y
             ( Center, Bottom ) -> height - y
-            ( Center, _ ) -> y
-            ( _, Bottom ) -> width - x
-            _ -> x
-    }
+            ( Right, Top ) -> width - x
+            ( Right, Middle ) -> width - x
+            ( Right, Bottom ) -> width - x
+
+            -- ( Center, Bottom ) -> height - y
+            -- ( Center, _ ) -> y
+            -- ( _, Bottom ) -> width - x
+            -- _ -> x
+    } |> Debug.log "pos"
 
 
 adaptSize : Dock -> ( Float, Float ) -> ( Float, Float )
@@ -175,7 +191,7 @@ boundsFromSize
     in
         { x = case horz of
             Left -> Cell.gap / 2
-            Center -> (toFloat viewportWidthInPx / 2) - (toFloat gridWidthInCells / 2)
+            Center -> (toFloat viewportWidthInPx / 2) - (gridWidthInPx / 2)
             Right -> toFloat viewportWidthInPx - gridWidthInPx - Cell.gap / 2
         , y = case vert of
             Top -> Cell.gap / 2
