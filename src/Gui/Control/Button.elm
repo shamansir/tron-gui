@@ -15,7 +15,6 @@ type Face
     | WithColor Color
 
 
-
 type alias Control msg = Core.Control Face () msg
 
 

@@ -10,17 +10,19 @@ import Html.Attributes as HA
 import Html.Events as HE
 
 import Bounds exposing (Bounds)
+import Axis exposing (Axis)
 
 import Gui.Property exposing (..)
 import Gui.Path as Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
 import Gui.Focus exposing (Focused(..))
-import Gui.Control exposing (Control(..))
+import Gui.Control as Core exposing (Control(..))
 
 import Gui.Control.Text exposing (TextState(..))
 import Gui.Control.Button exposing (Face(..), Icon(..))
 import Gui.Control.Toggle exposing (ToggleState(..))
 import Gui.Control.Nest as Nest exposing (getState, NestState(..))
+import Gui.Control.Number as Number exposing (Control)
 
 import Gui.Render.Transform exposing (..)
 import Gui.Render.Util exposing (..)
