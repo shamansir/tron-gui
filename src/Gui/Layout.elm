@@ -16,6 +16,9 @@ import Gui.Style.Flow as Flow
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS
 
+import Gui.Control.Nest exposing (NestState(..))
+import Gui.Control.Nest as Nest exposing (getItems)
+
 
 type Cell_ a
     = One_ a
@@ -84,15 +87,17 @@ pack1 flow size rootPath prop =
     case prop of
         Nil ->
             init flow size
-        Group (Control ( ( shape, _ ), items) _ _) ->
+        Group _ ( shape, _ ) control ->
             ( flow
             , size
-            , packItemsAtRoot (Flow.adaptSize flow size) rootPath shape items
+            , packItemsAtRoot (Flow.adaptSize flow size) rootPath shape
+                <| Nest.getItems control
             )
-        Choice (Control ( (shape, _ ), items) _ _) ->
+        Choice _ ( shape, _ ) control ->
             ( flow
             , size
-            , packItemsAtRoot (Flow.adaptSize flow size) rootPath shape items
+            , packItemsAtRoot (Flow.adaptSize flow size) rootPath shape
+                <| Nest.getItems control
             )
         _ ->
             ( flow
@@ -158,30 +163,30 @@ packItemsAtRoot size rp shape items =
 
         packGroupControl
             :  List Int
+            -> ( Shape, CellShape )
             -> BinPack (Cell_ Path)
             -> Control
-                    ( ( Shape, CellShape ), Array ( Label, Property msg ) )
-                    ( GroupState, a )
+                    ( Array ( Label, Property msg ) )
+                    ( NestState, a )
                     msg
             -> BinPack (Cell_ Path)
         packGroupControl
             path
+            ( innerShape, cellShape )
             layout
-            (Control ( ( innerShape, cellShape ), innerItems ) (grpState, _) _) =
-            case grpState of
-                Expanded ->
-                    let
-                        withPlate
-                            = layout
-                                |> packMany
-                                    path
-                                    innerShape
-                                    cellShape
-                                    innerItems
-                    in
-                        packPlatesOf path withPlate innerItems
-                Collapsed -> layout
-                Detached -> layout
+            control =
+            if Nest.is Expanded control then
+                let
+                    withPlate
+                        = layout
+                            |> packMany
+                                path
+                                innerShape
+                                cellShape
+                                (Nest.getItems control)
+                in
+                    packPlatesOf path withPlate <| Nest.getItems control
+            else layout
 
         packPlatesOf path layout =
             Array.indexedMap Tuple.pair
@@ -191,10 +196,10 @@ packItemsAtRoot size rp shape items =
                             nextPath = path ++ [index]
                         in
                         case innerProp of
-                            Choice control ->
-                                control |> packGroupControl nextPath prevLayout
-                            Group control ->
-                                control |> packGroupControl nextPath prevLayout
+                            Choice _ innerShape control ->
+                                control |> packGroupControl nextPath innerShape prevLayout
+                            Group _ innerShape control ->
+                                control |> packGroupControl nextPath innerShape prevLayout
                             _ ->
                                 prevLayout
                     )

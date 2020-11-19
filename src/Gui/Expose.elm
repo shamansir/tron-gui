@@ -16,6 +16,11 @@ import Gui.Property exposing (..)
 import Gui.Path exposing (Path)
 import Gui.Path as Path exposing (toList)
 
+-- TODO: make controls expose themselves, so get rid of these imports below
+import Gui.Control.Text as Text exposing (TextState(..))
+import Gui.Control.Toggle as Toggle exposing (ToggleState(..))
+import Gui.Control.Nest as Nest exposing (NestState(..), SelectedAt(..))
+
 
 type alias RawPath = List Id
 
@@ -76,10 +81,10 @@ updateProperty value property =
             t |> callWith control
         ( Action control, FromButton ) ->
             () |> callWith control
-        ( Choice ( Control _ ( expanded, ( focus, _ ) ) _ as control), FromChoice i ) ->
-            ( expanded, ( focus, SelectedAt i ) )
+        ( Choice _ _ control, FromChoice i ) ->
+            ( Nest.getState control, SelectedAt i )
                 |> callWith control
-        ( Group _, _ ) ->
+        ( Group _ _ _, _ ) ->
             Cmd.none
         _ -> Cmd.none
 
@@ -90,8 +95,8 @@ update { path, value } prop =
         [] -> updateProperty value prop
         id :: next ->
             case prop of
-                Group ( Control ( _, items ) _ _) ->
-                    case Array.get id items of
+                Group _ _ control ->
+                    case control |> Nest.get id of
                         Just ( _, innerProp ) ->
                             innerProp
                                 |> update { path = next, value = value }
@@ -117,14 +122,9 @@ applyProperty value prop =
             control |> Control.setValue t |> Toggle
         ( Action control, FromButton ) ->
             control |> Control.setValue () |> Action
-        ( Choice control, FromChoice i ) ->
-            control
-                |> Control.update
-                    (\( expanded, ( focus, _) )
-                        -> ( expanded, ( focus, SelectedAt i ) )
-                    )
-                |> Choice
-        ( Group _, _ ) ->
+        ( Choice focus shape control, FromChoice i ) ->
+            Choice focus shape <| Nest.select i <| control
+        ( Group _ _ _, _ ) ->
             prop
         _ -> prop
 
@@ -135,16 +135,16 @@ apply { path, value } prop =
         [] -> applyProperty value prop
         id :: next ->
             case prop of
-                Group control ->
+                Group focus shape control ->
                     control
-                        |> withItem id
-                                (apply { path = next, value = value })
-                        |> Group
-                Choice control ->
+                        |> Nest.withItem id
+                                (Tuple.mapSecond <| apply { path = next, value = value })
+                        |> Group focus shape
+                Choice focus shape control ->
                     control
-                        |> withItem id
-                                (apply { path = next, value = value })
-                        |> Choice
+                        |> Nest.withItem id
+                                (Tuple.mapSecond <| apply { path = next, value = value })
+                        |> Choice focus shape
                 _ -> prop
 
 
@@ -218,7 +218,7 @@ encodePropertyAt path property =
                 , ( "path", encodeRawPath path )
                 ]
 
-        Choice ( Control ( _, items ) ( state, ( _, SelectedAt current ) ) _) ->
+        Choice _ _ ( Control items ( state, SelectedAt current ) _) ->
             E.object
                 [ ( "type", E.string "choice" )
                 , ( "path", encodeRawPath path )
@@ -233,7 +233,7 @@ encodePropertyAt path property =
                     Expanded -> False )
                 , ( "options", encodeNested path items )
                 ]
-        Group (Control ( _, items ) ( state, _ ) _ ) ->
+        Group _ _ (Control items ( state, _ ) _ ) ->
             E.object
                 [ ( "type", E.string "nest" )
                 , ( "path", encodeRawPath path )
@@ -311,11 +311,11 @@ encodeUpdate maybeClient path prop =
                     ( "button"
                     , E.null
                     )
-                Choice ( Control ( _, items ) ( state, ( _, SelectedAt current ) ) _) ->
+                Choice _ _ control ->
                     ( "choice"
-                    , E.int current
+                    , E.int <| Nest.whichSelected control
                     )
-                Group _ ->
+                Group _ _ _ ->
                     ( "nest"
                     , E.null
                     )

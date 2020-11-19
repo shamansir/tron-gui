@@ -60,6 +60,7 @@ However, it is ok to use any name you like, for sure. Be it `Gui.` or `Def.` or 
 
 import Array
 import Color exposing (Color)
+import Axis exposing (Axis)
 
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)
@@ -69,6 +70,12 @@ import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS
 import Gui.Style.Shape exposing (Shape)
 import Gui.Style.Shape as Shape exposing (find, rows, cols)
+
+-- TODO: make controls init themselves, so get rid of these imports below
+import Gui.Control.Text exposing (TextState(..))
+import Gui.Control.Button exposing (Face(..), Icon(..))
+import Gui.Control.Toggle exposing (boolToToggle, toggleToBool)
+import Gui.Control.Nest exposing (NestState(..), SelectedAt(..))
 
 
 {-| `Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instance `Builder msg`.
@@ -289,7 +296,7 @@ input toString fromString default toMsg =
     Text
         <| Control
             ()
-            ( Ready, toString default)
+            ( Ready, toString default )
             (Just <| Tuple.second >> fromString >> Maybe.withDefault default >> toMsg)
 
 
@@ -302,7 +309,7 @@ text default handler =
     Text
         <| Control
             ()
-            (Ready, default)
+            ( Ready, default )
             (Just <| Tuple.second >> handler)
 
 
@@ -398,12 +405,13 @@ See also: `Style.Shape`, `Style.CellShape`
 nest : Shape -> CellShape -> Set msg -> Builder msg
 nest shape cellShape items =
     Group
+        Nothing
+        ( findShape cellShape shape items, cellShape )
         <| Control
-            ( ( findShape cellShape shape items, cellShape )
-            , Array.fromList items
+            ( Array.fromList items
             )
             ( Collapsed
-            , Nothing
+            , ()
             )
             Nothing -- (Tuple.first >> handler)
 
@@ -529,14 +537,13 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
                 |> List.indexedMap (toBuilder callByIndex)
     in
         Choice
+            Nothing
+            ( findShape cellShape shape set, cellShape )
             <| Control
-                ( ( findShape cellShape shape set, cellShape )
-                , set |> Array.fromList
-                )
+                ( set |> Array.fromList )
                 ( Collapsed
                 ,
-                    ( Nothing
-                    , indexedOptions
+                    indexedOptions
                         |> findMap
                             (\(index, option) ->
                                 if compare option current
@@ -545,9 +552,8 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
                             )
                         |> Maybe.withDefault 0
                         |> SelectedAt
-                    )
                 )
-                (Just <| Tuple.second >> Tuple.second >> callByIndex)
+                (Just <| Tuple.second >> callByIndex)
 
 
 {-| `strings` is a helper to create `choice` over string values.

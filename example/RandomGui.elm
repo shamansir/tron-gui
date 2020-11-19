@@ -9,7 +9,7 @@ import Gui exposing (Gui)
 import Gui.Control exposing (Control(..))
 import Gui.Property  exposing (Property(..), Axis, ChoiceControl, GroupControl, expand)
 import Gui.Property as Gui exposing
-    ( Label, ToggleState(..), GroupState(..), Icon(..), TextState(..), Face(..) )
+    ( Label, ToggleState(..), NestState(..), Icon(..), TextState(..), Face(..) )
 import Gui.Build exposing (Builder)
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS exposing (..)
@@ -233,7 +233,7 @@ toggleState =
         |> Random.map (\n -> if n < 40 then TurnedOff else TurnedOn)
 
 
-expandState : Random.Generator GroupState
+expandState : Random.Generator NestState
 expandState =
     Random.int 0 100
         |> Random.map (\n -> if n < 40 then Collapsed else Expanded)
