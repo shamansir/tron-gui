@@ -95,6 +95,7 @@ import Json.Encode as E
 
 import BinPack exposing (..)
 import Bounds exposing (Bounds)
+import Size exposing (..)
 
 import Gui.Path exposing (Path)
 import Gui.Path as Path exposing (start)
@@ -115,7 +116,8 @@ import Gui.FocusLogic as Focus exposing (..)
 import Gui.Focus as Focus exposing (..)
 import Gui.Detach as Detach exposing (make, ClientId, Detach, map)
 import Gui.Expose as Exp exposing (..)
-import Gui.Style.Flow exposing (Flow)
+import Gui.Style.Flow exposing (Flow(..))
+--import Gui.Style.Anchor exposing (Anchor(..))
 import Gui.Style.Flow as Flow exposing (..)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Logic as Style exposing (..)
@@ -132,7 +134,7 @@ Use `init` to create an instance of `Gui msg`. See the example in the head of th
 -}
 type alias Gui msg =
     { flow : Flow
-    , viewport : ( Int, Int )
+    , viewport : Size Pixels
     , mouse : MouseState
     , tree : Builder msg
     , detach : Detach msg
@@ -222,7 +224,7 @@ Since `init builder` is just:
 -}
 initRaw : Builder msg -> Gui msg
 initRaw root =
-    Gui Flow.topToBottom ( -1, -1 ) Gui.Mouse.init root Detach.never
+    Gui Flow.topToBottom (Size ( 0, 0 )) Gui.Mouse.init root Detach.never
 -- TODO: get rid of initRaw
 
 
@@ -357,10 +359,10 @@ update msg gui =
             in
                 handleKeyDown keyCode curFocus gui
 
-        ViewportChanged viewport ->
+        ViewportChanged ( w, h ) ->
             (
                 { gui
-                | viewport = viewport
+                | viewport = Size (w, h)
                 }
             , Cmd.none
             )
@@ -459,7 +461,7 @@ handleMouse mouseAction gui =
             gui.viewport
                 |> sizeFromViewport gui.tree
         bounds =
-            boundsFromSize gui.viewport size
+            Flow.boundsFromSize gui.flow gui.viewport size
         theLayout =
             layout gui |> Tuple.second
 
@@ -669,10 +671,6 @@ fromWindow passSize =
             )
 
 
-getViewport : Gui msg -> ( Int, Int )
-getViewport = .viewport
-
-
 {-| Change flow direction of the GUI to `TopToBottom`, `BottomToTop`, `RightToLeft` or `LeftToRight`.
 
 See `Style.Flow` for values.
@@ -684,45 +682,32 @@ reflow flow gui =
     }
 
 
-boundsFromSize : ( Int, Int ) -> ( Int, Int ) -> Bounds
-boundsFromSize ( width, height ) ( gridWidthInCells, gridHeightInCells ) =
-    let
-        ( gridWidthInPx, gridHeightInPx ) =
-            ( Cell.width * toFloat gridWidthInCells
-            , Cell.height * toFloat gridHeightInCells
-            )
-    in
-        { x = (toFloat width / 2) - (gridWidthInPx / 2)
-        , y = (toFloat height / 2) - (gridHeightInPx / 2)
-        , width = gridWidthInPx
-        , height = gridHeightInPx
-        }
-
-
 getRootPath : Gui msg -> Path
 getRootPath gui =
     Detach.isAttached gui.detach
         |> Maybe.withDefault Path.start
 
 
-sizeFromViewport : Property msg -> ( Int, Int ) -> ( Int, Int )
-sizeFromViewport root ( widthInPixels, heightInPixels ) =
+sizeFromViewport : Property msg -> Size Pixels -> Size Cells
+sizeFromViewport _ (Size ( widthInPixels, heightInPixels )) =
     let
-        cellsFitHorizontally = floor <| toFloat widthInPixels / (Cell.width + Cell.gap)
-        cellsFitVertically = floor <| toFloat heightInPixels / (Cell.height + Cell.gap)
+        cellsFitHorizontally = Debug.log "horz" <| floor (toFloat widthInPixels / Cell.width)
+        cellsFitVertically = Debug.log "vert" <| floor (toFloat heightInPixels / Cell.height)
+        -- cellsFitHorizontally = 17 -- floor <| toFloat widthInPixels / (Cell.width + Cell.gap)
+        -- cellsFitVertically = 9 --floor <| toFloat heightInPixels / (Cell.height + Cell.gap)
     in
-        ( if cellsFitHorizontally > 3 then cellsFitHorizontally - 3 else cellsFitHorizontally
-        , if cellsFitVertically > 2 then cellsFitVertically - 2 else cellsFitVertically
-        )
+        ( floor <| toFloat widthInPixels / Cell.width
+        , floor <| toFloat heightInPixels / Cell.height
+        ) |> Size
 
 
 layout : Gui msg -> ( Property msg, Layout )
 layout gui =
     let
-        size =
+        ( Size cellsSize ) =
             gui.viewport
                 |> sizeFromViewport gui.tree
-                |> Tuple.mapBoth toFloat toFloat
+        size = cellsSize |> Tuple.mapBoth toFloat toFloat
     in
     case Detach.isAttached gui.detach
         |> Maybe.andThen
@@ -775,11 +760,10 @@ Use `Theme` from `Gui.Style` to set it to `Dark` or `Light` theme.
 view : Theme -> Gui msg -> Html Msg
 view theme gui =
     let
-        size =
-            gui.viewport
-                |> sizeFromViewport gui.tree
+        cellsSize =
+            gui.viewport |> sizeFromViewport gui.tree
         bounds =
-            boundsFromSize gui.viewport size
+            Flow.boundsFromSize gui.flow gui.viewport cellsSize
     in
     case layout gui of
         ( root, theLayout ) ->

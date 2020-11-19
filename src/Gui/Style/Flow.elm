@@ -2,6 +2,7 @@ module Gui.Style.Flow exposing
     ( Flow
     , topToBottom, bottomToTop, leftToRight, rightToLeft
     , adaptBounds, adaptPosition, adaptSize, firstCellAt
+    , boundsFromSize
     , toString
     )
 
@@ -13,6 +14,8 @@ module Gui.Style.Flow exposing
 -}
 
 import Gui.Style.Cell as Cell
+
+import Size exposing (..)
 
 
 
@@ -111,6 +114,42 @@ firstCellAt flow bounds =
         BottomToTop -> ( 0, bounds.height - Cell.height )
         LeftToRight -> ( 0, 0 )
         RightToLeft -> ( bounds.width - Cell.width, 0 )
+
+
+boundsFromSize
+     : Flow
+    -> Size Pixels
+    -> Size Cells
+    -> { x : Float, y : Float, width : Float, height : Float }
+boundsFromSize
+    flow
+    (Size ( viewportWidthInPx, viewportHeightInPx ))
+    (Size ( gridWidthInCells, gridHeightInCells )) =
+    let
+        ( gridWidthInPx, gridHeightInPx ) =
+            ( Cell.width * toFloat gridWidthInCells
+            , Cell.height * toFloat gridHeightInCells
+            )
+    in
+        { x = case flow of
+            TopToBottom -> Cell.gap / 2
+            BottomToTop -> Cell.gap / 2
+            RightToLeft -> toFloat viewportWidthInPx - gridWidthInPx - Cell.gap / 2
+            LeftToRight -> Cell.gap / 2
+        , y = case flow of
+            TopToBottom -> Cell.gap / 2
+            BottomToTop -> toFloat viewportHeightInPx - gridHeightInPx - Cell.gap / 2
+            RightToLeft -> Cell.gap / 2
+            LeftToRight -> Cell.gap / 2
+        , width = gridWidthInPx
+        , height = gridHeightInPx
+        }
+        {-
+        { x = (toFloat viewportWidthInPx / 2) - (gridWidthInPx / 2)
+        , y = (toFloat viewportHeightInPx / 2) - (gridHeightInPx / 2)
+        , width = gridWidthInPx
+        , height = gridHeightInPx
+        } -}
 
 
 toString : Flow -> String
