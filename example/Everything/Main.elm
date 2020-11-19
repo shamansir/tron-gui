@@ -27,8 +27,8 @@ import Gui.Build as Tron exposing (Builder)
 import Gui.Detach as Detach exposing (fromUrl)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Theme as Theme
-import Gui.Style.Flow exposing (Flow)
-import Gui.Style.Flow as Flow
+import Gui.Style.Dock exposing (Dock)
+import Gui.Style.Dock as Dock
 
 import Default.Main as Default
 import Default.Model as Default
@@ -41,7 +41,7 @@ import RandomGui as Gui exposing (generator)
 type Msg
     = NoOp
     | ChangeMode Mode
-    | ChangeFlow Flow
+    | ChangeDock Dock
     | FromDatGui Exp.RawUpdate
     | ToTron Tron.Msg
     | ToDefault Default.Msg
@@ -108,16 +108,16 @@ view { mode, gui, example, theme } =
             [ Html.onClick SwitchTheme ]
             [ Html.text "Theme" ]
         , Html.button
-            [ Html.onClick <| ChangeFlow Flow.topToBottom ]
+            [ Html.onClick <| ChangeDock Dock.topToBottom ]
             [ Html.text "Top to Bottom" ]
         , Html.button
-            [ Html.onClick <| ChangeFlow Flow.bottomToTop ]
+            [ Html.onClick <| ChangeDock Dock.bottomToTop ]
             [ Html.text "Bottom to Top" ]
         , Html.button
-            [ Html.onClick <| ChangeFlow Flow.leftToRight ]
+            [ Html.onClick <| ChangeDock Dock.leftToRight ]
             [ Html.text "Left to Right" ]
         , Html.button
-            [ Html.onClick <| ChangeFlow Flow.rightToLeft ]
+            [ Html.onClick <| ChangeDock Dock.rightToLeft ]
             [ Html.text "Right to Left" ]
         , case mode of
             DatGui -> Html.div [] []
@@ -236,10 +236,10 @@ update msg model =
             , Cmd.none
             )
 
-        ( ChangeFlow newFlow, _ ) ->
+        ( ChangeDock newDock, _ ) ->
             (
                 { model
-                | gui = model.gui |> Gui.reflow newFlow
+                | gui = model.gui |> Gui.redock newDock
                 }
             , Cmd.none
             )

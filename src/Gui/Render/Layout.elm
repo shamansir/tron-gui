@@ -40,8 +40,8 @@ import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS exposing (..)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Theme as Theme exposing (toString)
-import Gui.Style.Flow exposing (Flow)
-import Gui.Style.Flow as Flow exposing (firstCellAt, toString)
+import Gui.Style.Dock exposing (Dock)
+import Gui.Style.Dock as Dock exposing (firstCellAt, toString)
 import Gui.Style.Placement exposing (Placement(..))
 import Gui.Style.Selected exposing (Selected(..))
 import Gui.Style.Tone as Tone exposing (none)
@@ -210,8 +210,8 @@ collectPlatesAndCells ( rootPath, root ) =
         ( [], [] )
 
 
-view : Theme -> Flow -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
-view theme flow bounds detach root layout =
+view : Theme -> Dock -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
+view theme dock bounds detach root layout =
     let
 
         keyDownHandler_ =
@@ -273,7 +273,7 @@ view theme flow bounds detach root layout =
             )
 
         detachButtonPos =
-            case Flow.firstCellAt flow bounds of
+            case Dock.firstCellAt dock bounds of
                 ( x, y ) -> ( x + Cell.gap, y + Cell.gap )
 
         makeClass =
@@ -282,7 +282,7 @@ view theme flow bounds detach root layout =
                     Debug -> "gui--debug "
                     _ -> "")
                 ++ " gui--" ++ Theme.toString theme
-                ++ " gui--" ++ Flow.toString flow
+                ++ " gui--" ++ Dock.toString dock
 
     in
         div [ HA.id rootId
