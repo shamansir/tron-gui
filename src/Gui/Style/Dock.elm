@@ -126,32 +126,16 @@ adaptPosition : Dock -> ( Float, Float ) -> { x : Float, y : Float } -> { x : Fl
 adaptPosition (Dock ( horz, vert )) ( width, height ) { x, y } =
     { x =
         case ( horz, vert ) of
-            ( Left, Top ) -> y
-            ( Left, Middle ) -> y
-            ( Left, Bottom ) -> height - y
-            ( Center, Top ) -> x
-            ( Center, Middle ) -> x
-            ( Center, Bottom ) -> x
-            ( Right, Top ) -> y
-            ( Right, Middle ) -> y
-            ( Right, Bottom ) -> height - y
+            ( Center, _ ) -> x
+            ( _, Bottom ) -> height - y
+            _ -> y
     , y =
-        case Debug.log "dock" ( horz, vert ) of
-            ( Left, Top ) -> x
-            ( Left, Middle ) -> x
-            ( Left, Bottom ) -> x
-            ( Center, Top ) -> y
-            ( Center, Middle ) -> y
+        case ( horz, vert ) of
+            ( Left, _ ) -> x
             ( Center, Bottom ) -> height - y
-            ( Right, Top ) -> width - x
-            ( Right, Middle ) -> width - x
-            ( Right, Bottom ) -> width - x
-
-            -- ( Center, Bottom ) -> height - y
-            -- ( Center, _ ) -> y
-            -- ( _, Bottom ) -> width - x
-            -- _ -> x
-    } |> Debug.log "pos"
+            ( Center, _ ) -> y
+            ( Right, _ ) -> width - x
+    }
 
 
 adaptSize : Dock -> ( Float, Float ) -> ( Float, Float )
@@ -164,12 +148,10 @@ adaptSize (Dock (horz, _)) ( w, h ) =
 firstCellAt : Dock ->  { a | width : Float, height : Float } -> ( Float, Float )
 firstCellAt (Dock ( horz, vert )) bounds =
     ( case horz of
-        Right -> bounds.height - Cell.height
+        Right -> bounds.width - Cell.width
         _ -> 0
-    , case ( horz, vert ) of
-       ( Left, Bottom ) -> bounds.width - Cell.width
-       ( Center, Bottom ) -> bounds.height - Cell.height
-       ( Right, Bottom ) -> bounds.width - Cell.width
+    , case vert  of
+       Bottom -> bounds.height - Cell.height
        _ -> 0
     )
 

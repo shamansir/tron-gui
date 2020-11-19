@@ -81,7 +81,7 @@ init url _ =
             { mode = TronGui
             , example = initialModel
             , theme = Theme.light
-            , gui = gui
+            , gui = gui -- |> Gui.reshape ( 5, 6 )
             , url = url
             }
         , startGui
