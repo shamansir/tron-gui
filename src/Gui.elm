@@ -3,7 +3,7 @@ module Gui exposing
     , view, update, init, subscriptions, run, Message
     , map, over
     , detachable, encode, applyRaw, initRaw
-    , redock
+    , redock, reshape
     )
 
 
@@ -73,8 +73,8 @@ NB: Don't forget to copy `src/Gui.css` to your application to make GUI look and 
 # Lifecycle
 @docs init, update, view, subscriptions, run, Message
 
-# Dock
-@docs redock
+# Dock & Shape
+@docs redock, reshape
 
 # Common Helpers
 @docs map, over
@@ -459,9 +459,7 @@ handleMouse mouseAction gui =
         nextMouseState =
             gui.mouse
                 |> Gui.Mouse.apply mouseAction
-        size =
-            gui.viewport
-                |> sizeFromViewport gui.tree
+        size = getSizeInCells gui
         bounds =
             Dock.boundsFromSize gui.dock gui.viewport size
         theLayout =
@@ -673,7 +671,7 @@ fromWindow passSize =
             )
 
 
-{-| Change dock direction of the GUI to `TopToBottom`, `BottomToTop`, `RightToLeft` or `LeftToRight`.
+{-| Change dock direction of the GUI to any corner of the window, or its center.
 
 See `Style.Dock` for values.
 -}
@@ -681,6 +679,15 @@ redock : Dock -> Gui msg -> Gui msg
 redock dock gui =
     { gui
     | dock = dock
+    }
+
+
+{-| Set custom shape for all the GUI, in cells. By default, it is calulated from current viewport size, but you may want to reduce the amount of cells, so here's the method. This way GUI will be perfectly in the middle when docked to central positions.
+-}
+reshape : ( Int, Int ) -> Gui msg -> Gui msg
+reshape cellSize gui =
+    { gui
+    | size = Just <| Size cellSize
     }
 
 
@@ -693,22 +700,28 @@ getRootPath gui =
 sizeFromViewport : Property msg -> Size Pixels -> Size Cells
 sizeFromViewport _ (Size ( widthInPixels, heightInPixels )) =
     let
-        cellsFitHorizontally = Debug.log "horz" <| floor (toFloat widthInPixels / Cell.width)
-        cellsFitVertically = Debug.log "vert" <| floor (toFloat heightInPixels / Cell.height)
-        -- cellsFitHorizontally = 17 -- floor <| toFloat widthInPixels / (Cell.width + Cell.gap)
-        -- cellsFitVertically = 9 --floor <| toFloat heightInPixels / (Cell.height + Cell.gap)
+        cellsFitHorizontally = floor (toFloat widthInPixels / Cell.width)
+        cellsFitVertically = floor (toFloat heightInPixels / Cell.height)
     in
         ( floor <| toFloat widthInPixels / Cell.width
         , floor <| toFloat heightInPixels / Cell.height
         ) |> Size
 
 
+
+getSizeInCells : Gui msg -> Size Cells
+getSizeInCells gui =
+    case gui.size of
+        Just userSize -> userSize
+        Nothing ->
+            gui.viewport
+                |> sizeFromViewport gui.tree
+
+
 layout : Gui msg -> ( Property msg, Layout )
 layout gui =
     let
-        ( Size cellsSize ) =
-            gui.viewport
-                |> sizeFromViewport gui.tree
+        ( Size cellsSize ) = getSizeInCells gui
         size = cellsSize |> Tuple.mapBoth toFloat toFloat
     in
     case Detach.isAttached gui.detach
@@ -762,8 +775,7 @@ Use `Theme` from `Gui.Style` to set it to `Dark` or `Light` theme.
 view : Theme -> Gui msg -> Html Msg
 view theme gui =
     let
-        cellsSize =
-            gui.viewport |> sizeFromViewport gui.tree
+        cellsSize = getSizeInCells gui
         bounds =
             Dock.boundsFromSize gui.dock gui.viewport cellsSize
     in
