@@ -1,7 +1,10 @@
 ### 4.0.0
 
 * Now there is a `Style.Shape` module that helps to define the shape of the plate in a friendly method, like only by specifying the required number of rows or columns (and no adjustment to cell shape is required anymore);
+* Docking support for all nine directions;
+* Now the whole viewport is used for the grid by default + let user request the custom shape of the grid;
 * All the style modules are moved to `Style.*` package and properly separated;
+* Now controls' types and helpers are defined in the separate modules;
 * `Builder.labels`;
 
 TODO:
