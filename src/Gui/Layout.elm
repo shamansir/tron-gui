@@ -11,8 +11,8 @@ import Gui.Path as Path exposing (Path)
 import Gui.Property exposing (..)
 import Gui.Property as Property exposing (fold)
 import BinPack exposing (..)
-import Gui.Style.Flow exposing (Flow)
-import Gui.Style.Flow as Flow
+import Gui.Style.Dock exposing (Dock)
+import Gui.Style.Dock as Dock
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS
 
@@ -30,7 +30,7 @@ type Cell a
     | Many a (List a)
 
 
-type alias Layout = ( Flow, ( Float, Float ), BinPack (Cell_ Path) )
+type alias Layout = ( Dock, ( Float, Float ), BinPack (Cell_ Path) )
 
 
 {-
@@ -46,11 +46,11 @@ type Position a = Position { x : Float, y : Float }
 -}
 
 
-init : Flow -> ( Float, Float ) -> Layout
-init flow size =
-    ( flow
+init : Dock -> ( Float, Float ) -> Layout
+init dock size =
+    ( dock
     , size
-    , initBinPack <| Flow.adaptSize flow size
+    , initBinPack <| Dock.adaptSize dock size
     )
 
 
@@ -60,9 +60,9 @@ initBinPack ( maxCellsByX, maxCellsByY )
 
 
 find : Layout -> { x : Float, y : Float } -> Maybe Path
-find ( flow, size, layout ) pos =
+find ( dock, size, layout ) pos =
     let
-        adaptedPos = Flow.adaptPosition flow size pos
+        adaptedPos = Dock.adaptPosition dock size pos
     in
         case layout |> BinPack.find adaptedPos of
             Just ( One_ path, _ ) ->
@@ -78,31 +78,31 @@ find ( flow, size, layout ) pos =
                 Nothing
 
 
-pack : Flow -> ( Float, Float ) -> Property msg -> Layout
-pack flow size = pack1 flow size Path.start
+pack : Dock -> ( Float, Float ) -> Property msg -> Layout
+pack dock size = pack1 dock size Path.start
 
 
-pack1 : Flow -> ( Float, Float ) -> Path -> Property msg -> Layout
-pack1 flow size rootPath prop =
+pack1 : Dock -> ( Float, Float ) -> Path -> Property msg -> Layout
+pack1 dock size rootPath prop =
     case prop of
         Nil ->
-            init flow size
+            init dock size
         Group _ ( shape, _ ) control ->
-            ( flow
+            ( dock
             , size
-            , packItemsAtRoot (Flow.adaptSize flow size) rootPath shape
+            , packItemsAtRoot (Dock.adaptSize dock size) rootPath shape
                 <| Nest.getItems control
             )
         Choice _ ( shape, _ ) control ->
-            ( flow
+            ( dock
             , size
-            , packItemsAtRoot (Flow.adaptSize flow size) rootPath shape
+            , packItemsAtRoot (Dock.adaptSize dock size) rootPath shape
                 <| Nest.getItems control
             )
         _ ->
-            ( flow
+            ( dock
             , size
-            , initBinPack (Flow.adaptSize flow size)
+            , initBinPack (Dock.adaptSize dock size)
                 |> BinPack.pack1 ( { width = 1, height = 1 }, One_ <| Path.start )
             )
 
@@ -210,10 +210,10 @@ packItemsAtRoot size rp shape items =
 
 
 unfold : ( Cell ( Path, Bounds ) -> a -> a ) -> a -> Layout -> a
-unfold f def ( flow, size, bp ) =
+unfold f def ( dock, size, bp ) =
     let
         adaptBounds =
-            Flow.adaptBounds flow <| Flow.adaptSize flow size
+            Dock.adaptBounds dock <| Dock.adaptSize dock size
     in
         BinPack.unfold
             (\( c, bounds ) prev ->

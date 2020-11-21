@@ -8,7 +8,7 @@
         "Gui",
         "Gui.Build",
         "Gui.Style.Theme",
-        "Gui.Style.Flow",
+        "Gui.Style.Dock",
         "Gui.Style.Shape",
         "Gui.Style.CellShape"
     ],

@@ -27,8 +27,8 @@ import Gui.Build as Tron exposing (Builder)
 import Gui.Detach as Detach exposing (fromUrl)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Theme as Theme
-import Gui.Style.Flow exposing (Flow)
-import Gui.Style.Flow as Flow
+import Gui.Style.Dock exposing (Dock)
+import Gui.Style.Dock as Dock
 
 import Default.Main as Default
 import Default.Model as Default
@@ -41,7 +41,7 @@ import RandomGui as Gui exposing (generator)
 type Msg
     = NoOp
     | ChangeMode Mode
-    | ChangeFlow Flow
+    | ChangeDock Dock
     | FromDatGui Exp.RawUpdate
     | ToTron Tron.Msg
     | ToDefault Default.Msg
@@ -81,7 +81,7 @@ init url _ =
             { mode = TronGui
             , example = initialModel
             , theme = Theme.light
-            , gui = gui
+            , gui = gui -- |> Gui.reshape ( 5, 6 )
             , url = url
             }
         , startGui
@@ -107,18 +107,25 @@ view { mode, gui, example, theme } =
         , Html.button
             [ Html.onClick SwitchTheme ]
             [ Html.text "Theme" ]
-        , Html.button
-            [ Html.onClick <| ChangeFlow Flow.topToBottom ]
-            [ Html.text "Top to Bottom" ]
-        , Html.button
-            [ Html.onClick <| ChangeFlow Flow.bottomToTop ]
-            [ Html.text "Bottom to Top" ]
-        , Html.button
-            [ Html.onClick <| ChangeFlow Flow.leftToRight ]
-            [ Html.text "Left to Right" ]
-        , Html.button
-            [ Html.onClick <| ChangeFlow Flow.rightToLeft ]
-            [ Html.text "Right to Left" ]
+        , Html.span
+            []
+            <| List.map
+                (\(label, dock) ->
+                    Html.button
+                        [ Html.onClick <| ChangeDock dock ]
+                        [ Html.text label ]
+                )
+            <|
+            [ ( "⬁", Dock.topLeft )
+            , ( "⇧", Dock.topCenter )
+            , ( "⬀", Dock.topRight )
+            , ( "⇦", Dock.middleLeft )
+            , ( "◯", Dock.center )
+            , ( "⇨", Dock.middleRight )
+            , ( "⬃", Dock.bottomLeft )
+            , ( "⇩", Dock.bottomCenter )
+            , ( "⬂", Dock.bottomRight )
+            ]
         , case mode of
             DatGui -> Html.div [] []
             TronGui ->
@@ -236,10 +243,10 @@ update msg model =
             , Cmd.none
             )
 
-        ( ChangeFlow newFlow, _ ) ->
+        ( ChangeDock newDock, _ ) ->
             (
                 { model
-                | gui = model.gui |> Gui.reflow newFlow
+                | gui = model.gui |> Gui.redock newDock
                 }
             , Cmd.none
             )
