@@ -14,7 +14,7 @@ import Default.Gui as DefaultGui
 
 
 type Msg
-    = ToDefault Default.Msg
+    = ToExample Default.Msg
     | FromDatGui Exp.RawUpdate
 
 
@@ -36,7 +36,7 @@ init _ =
     in
         (
             ( example
-            , gui |> Tron.map ToDefault
+            , gui |> Tron.map ToExample
             )
         , gui
             |> Tron.encode
@@ -56,7 +56,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ( example, gui ) =
     case msg of
 
-        ToDefault dmsg ->
+        ToExample dmsg ->
             (
                 ( example |> Default.update dmsg
                 , gui

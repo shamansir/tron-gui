@@ -1,4 +1,4 @@
-module Default.Model exposing (..)
+module Example.Default.Model exposing (..)
 
 
 import Color exposing (Color)

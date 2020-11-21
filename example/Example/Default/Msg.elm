@@ -1,8 +1,8 @@
-module Default.Msg exposing (..)
+module Example.Default.Msg exposing (..)
 
 
 import Color exposing (Color)
-import Default.Model exposing (..)
+import Example.Default.Model exposing (..)
 
 
 type Msg
