@@ -8,40 +8,36 @@ import Html.Attributes as Attr exposing (class)
 
 import Gui as Tron exposing (Gui, init, view, update, subscriptions)
 import Gui.Msg as Tron exposing (Msg(..))
-import Gui.Style.Theme as Tron exposing (Theme)
+import Gui.Style.Theme as Theme exposing (Theme)
 
-import Default.Main as Default
-import Default.Model as Default
-import Default.Msg as Default
-import Default.Gui as DefaultGui
+import Example.Default.Main as Example
+import Example.Default.Model as Example
+import Example.Default.Msg as Example
+import Example.Default.Gui as ExampleGui
 
 import AFrame.Render.Layout as AFrame exposing (view)
 
 
 type Msg
-    = ToDefault Default.Msg
+    = ToExample Example.Msg
     | ToTron Tron.Msg
 
 
-type alias Example
-    = Default.Model
-
-
 type alias Model =
-    ( Example, Tron.Gui Msg )
+    ( Example.Model, Tron.Gui Msg )
 
 
 init : flags -> ( Model, Cmd Msg )
 init _ =
     let
-        example = Default.init
+        example = Example.init
         ( gui, guiEffect ) =
-            DefaultGui.for example
+            ExampleGui.for example
                 |> Tron.init
     in
         (
             ( example
-            , gui |> Tron.map ToDefault
+            , gui |> Tron.map ToExample
             )
         , guiEffect |> Cmd.map ToTron
         )
@@ -52,7 +48,7 @@ view ( example, gui ) =
     Html.div
         [ ]
         [ gui
-            |> AFrame.view Tron.light
+            |> AFrame.view Theme.light
             |> Html.map ToTron
         --, Default.view example
         ]
@@ -62,9 +58,9 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ( example, gui ) =
     case msg of
 
-        ToDefault dmsg ->
+        ToExample dmsg ->
             (
-                ( example |> Default.update dmsg
+                ( example |> Example.update dmsg
                 , gui
                 )
             , Cmd.none

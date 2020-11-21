@@ -1,4 +1,4 @@
-module Default.Gui exposing (..)
+module Example.Default.Gui exposing (..)
 
 
 import Color exposing (Color)
@@ -11,8 +11,8 @@ import Gui.Style.Shape exposing (..)
 import Gui.Style.CellShape exposing (..)
 
 
-import Default.Model exposing (..)
-import Default.Msg exposing (..)
+import Example.Default.Model exposing (..)
+import Example.Default.Msg exposing (..)
 
 
 for : Model -> Property Msg
