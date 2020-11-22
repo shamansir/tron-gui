@@ -1,4 +1,4 @@
 module Example.Goose.Model exposing (..)
 
 
-foo = 42
+type alias Model = ()

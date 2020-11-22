@@ -15,7 +15,7 @@ import Example.Default.Model exposing (..)
 import Example.Default.Msg exposing (..)
 
 
-for : Model -> Property Msg
+for : Model -> Gui.Builder Msg
 for model =
     Gui.root
         [ ( "ghost", Gui.none )
