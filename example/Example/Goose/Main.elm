@@ -45,7 +45,7 @@ update msg model =
         ChangeEyeSize size ->
             changeEye (\eye -> { eye | size = size })
         LookAt direction ->
-            { model | lookAt = direction }
+            changeEye (\eye -> { eye | lookAt = direction })
         ChangeShoes shoes ->
             { model | shoes = shoes }
         ChangeFeathersColor color ->
@@ -54,6 +54,8 @@ update msg model =
             changeColor (\colors -> { colors | skin = color })
         ChangeEyeColor color ->
             changeColor (\colors -> { colors | eye = color })
+        ChangeIroquoisColor color ->
+            changeColor (\colors -> { colors | iroquois = color })
         ChangeBackground color ->
             changeColor (\colors -> { colors | background = color })
 

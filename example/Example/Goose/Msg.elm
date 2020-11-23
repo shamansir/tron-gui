@@ -21,4 +21,5 @@ type Msg
     | ChangeFeathersColor Color
     | ChangeSkinColor Color
     | ChangeEyeColor Color
+    | ChangeIroquoisColor Color
     | ChangeBackground Color
