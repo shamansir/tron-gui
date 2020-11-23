@@ -33,6 +33,21 @@ for model =
             , eyeGui model.eye
             )
         ,
+            ( "look at"
+            ,
+                Gui.choice
+                    ( Shape.auto )
+                    Cell.single -- Cell.halfByOne
+                    (\v ->
+                        case v of
+                            Left -> "left"
+                            Right -> "right")
+                    [ Left, Right ]
+                    model.lookAt
+                    (==)
+                    LookAt
+            )
+        ,
             ( "punk on"
             ,
                 Gui.toggle
@@ -107,21 +122,6 @@ eyeGui config =
                     { min = 1, max = 10, step = 0.1 }
                     config.size
                     ChangeEyeSize
-            )
-        ,
-            ( "look at"
-            ,
-                Gui.choice
-                    ( Shape.auto )
-                    Cell.single -- Cell.halfByOne
-                    (\v ->
-                        case v of
-                            Left -> "left"
-                            Right -> "right")
-                    [ Left, Right ]
-                    config.lookAt
-                    (==)
-                    LookAt
             )
         ]
 

@@ -7,10 +7,11 @@ import Svg.Attributes exposing (..)
 
 import Example.Goose.Model exposing (..)
 import Example.Goose.Msg exposing (..)
+import Color
 
 
 view : Model -> Svg msg
-view _ =
+view model =
     svg
         [ id "goose"
         , viewBox "0 0 662.2 671.4"
@@ -21,8 +22,10 @@ view _ =
         , version "1.1"
         ]
         [ body
-        , head
-        , honk
+        , head (Tuple.first model.honk) model.eye
+        , if Tuple.first model.honk
+            then honk <| Tuple.second model.honk
+            else Svg.g [] []
         , boots
         ]
 
@@ -39,15 +42,15 @@ body =
         ]
 
 
-head : Svg msg
-head =
+head : Bool -> EyeConfig -> Svg msg
+head honkOn eyeConfig =
     g
         [ id "head"
         ]
         [ neck
-        , mouth
-        , nose
-        , eye
+        , beak
+        , if honkOn then openBeak else Svg.g [] []
+        , eye eyeConfig
         ]
 
 
@@ -103,11 +106,10 @@ neck =
         [ ]
 
 
-mouth : Svg msg
-mouth =
+openBeak : Svg msg
+openBeak =
     Svg.g
         [ id "mouth"
-        , opacity "0"
         ]
         [ Svg.path
             [ class "skin"
@@ -123,8 +125,8 @@ mouth =
             [ ]
         ]
 
-nose : Svg msg
-nose =
+beak : Svg msg
+beak =
     Svg.path
         [ id "nose"
         , class "skin"
@@ -134,22 +136,22 @@ nose =
         [ ]
 
 
-eye : Svg msg
-eye =
+eye : EyeConfig -> Svg msg
+eye config =
     Svg.circle
         [ id "eye"
         , cx "250.2"
         , cy "65.5"
-        , r "5"
+        , r <| String.fromFloat config.size
         , fill "#000"
         ]
         [ ]
 
 
-honk : Svg msg
-honk =
+honk : HonkConfig -> Svg msg
+honk config =
     Svg.g
-        [ id "honk", opacity "0" ]
+        [ id "honk" ]
         [ Svg.path
             [ stroke "#000"
             , fill "none"
@@ -158,13 +160,14 @@ honk =
             , d "M527.2,71.7c0,16.9-12.2,31.8-30.7,40.2c-10.2,4.7-22.4,7.4-35.4,7.4c-22.4,0-42.3-8.1-54.2-20.4l-52.9,5 l42.9-20.8c-1.2-3.7-1.9-7.5-1.9-11.4c0-26.3,29.6-47.7,66.1-47.7C497.6,24,527.2,45.3,527.2,71.7z" ]
             [ ]
         , text_
-            [ fontSize "36"
+            [ fontSize <| String.fromInt config.size
             , id "text"
             , transform "matrix(1 0 0 1 420.9966 82.7509)"
+            , fill <| Color.toCssString config.color
             ]
-            [ text "CAI!" ]
+            [ text <| config.text ]
         , line
-            [ stroke "#000"
+            [ stroke <| Color.toCssString config.color
             , class "bubble"
             , strokeWidth "3"
             , x1 "494.4", y1 "137"
@@ -172,7 +175,7 @@ honk =
             ]
             []
         , line
-            [ stroke "#000"
+            [ stroke <| Color.toCssString config.color
             , class "bubble"
             , strokeWidth "3"
             , x1 "531.1", y1 "111.1"
@@ -180,7 +183,7 @@ honk =
             ]
             []
         , line
-            [ stroke "#000"
+            [ stroke <| Color.toCssString config.color
             , class "bubble"
             , strokeWidth "3"
             , x1 "545.8", y1 "43.4"
@@ -188,7 +191,7 @@ honk =
             ]
             []
         , line
-            [ stroke "#000"
+            [ stroke <| Color.toCssString config.color
             , class "bubble"
             , strokeWidth "3"
             , x1 "564.1", y1 "82.8"
@@ -196,7 +199,7 @@ honk =
             ]
             []
         , line
-            [ stroke "#000"
+            [ stroke <| Color.toCssString config.color
             , class "bubble"
             , strokeWidth "3"
             , x1 "443", y1 "143.7"
