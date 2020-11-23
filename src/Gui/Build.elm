@@ -1,7 +1,7 @@
 module Gui.Build exposing
     ( Builder, Set
     , root
-    , none, int, float, xy, color, text, input, button, buttonWith, toggle
+    , none, int, float, number, xy, coord, color, text, input, button, buttonWith, toggle, bool
     , nest, choice, choiceAuto, choiceIcons, strings, labels, labelsAuto, palette
     , icon
     , map, mapSet
@@ -45,7 +45,7 @@ However, it is ok to use any name you like, for sure. Be it `Gui.` or `Def.` or 
 @docs root
 
 # Items
-@docs none, int, float, xy, color, text, input, button, buttonWith, toggle
+@docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, toggle, bool
 
 # Groups
 @docs nest, choice, choiceIcons, choiceAuto, strings, palette
@@ -255,6 +255,14 @@ int { min, max, step } default toMsg =
         (round >> toMsg)
 
 
+{-| `number` is the alias for `Builde.float`.
+
+    Builder.number { min = 0, max = 44000, step = 1 } myModel.frequency ChangeFrequency
+-}
+number : Axis -> Float -> ( Float -> msg ) -> Builder msg
+number = float
+
+
 {-| `xy` creates a control over a pair of two number values or anything that can be translated to them.
 
     Builder.xy
@@ -270,6 +278,12 @@ xy axes default =
     Coordinate
         << Control axes default
         << Just
+
+
+{-| `coord` is the alias for `Builder.xy`
+-}
+coord : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Builder msg
+coord = xy
 
 
 {-| `input` creates a control over a value which can be translated to `String` and parsed from `String`. It is just a helper over `text` control.
@@ -377,6 +391,12 @@ toggle default toMsg =
             ()
             (boolToToggle default)
             (Just <| toggleToBool >> toMsg)
+
+
+{-| `bool` is the alias for `Builder.toggle`
+-}
+bool : Bool -> (Bool -> msg) -> Builder msg
+bool = toggle
 
 
 {-| `nest` lets you group other controls (including other `nest`ings) under a button which expands a group. Also, this group can be _detached_ if GUI is confugured so.

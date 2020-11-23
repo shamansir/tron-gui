@@ -7,7 +7,6 @@ import Color exposing (Color)
 type alias Model =
     { honk : ( Bool, HonkConfig )
     , eye : EyeConfig
-    , lookAt : LookDirection
     , shoes : Shoes
     , punk : Bool
     , colors : Colors
@@ -26,8 +25,7 @@ init =
             }
         )
     , eye =
-        EyeConfig ( 0, 0 ) 5
-    , lookAt = Left
+        EyeConfig ( 0, 0 ) 5 Left
     , shoes = Original
     , punk = False
     , colors =
@@ -51,6 +49,7 @@ type alias HonkConfig =
 type alias EyeConfig =
     { position : ( Float, Float )
     , size : Float
+    , lookAt : LookDirection
     }
 
 
