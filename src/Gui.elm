@@ -520,18 +520,21 @@ handleMouse mouseAction gui =
                         Just ( path, Color ( Control state curColor handler ) ) ->
                             let
                                 hueAxis = { min = 0, max = 1, step = 0.01 }
-                                satAxis = { min = 0, max = 1, step = 0.01 }
+                                lgtAxis = { min = 0, max = 1, step = 0.01 }
                                 curHsla = Color.toHsla curColor
                                 ( dX, dY ) = distanceXY knobDistance nextMouseState
-                                ( nextHue, nextSaturation ) =
+                                ( nextHue, nextLightness ) =
                                     ( alter hueAxis dX curHsla.hue
-                                    , alter satAxis dY curHsla.saturation
+                                    , alter lgtAxis dY curHsla.lightness
                                     )
                                 nextColor =
                                     Color.hsla
                                         nextHue
-                                        nextSaturation
-                                        curHsla.lightness
+                                        (if curHsla.saturation > 0.25 then
+                                            -- && curHsla.saturation < 0.75 then
+                                                curHsla.saturation
+                                        else 0.5)
+                                        nextLightness -- curHsla.lightness
                                         curHsla.alpha
                                 nextControl =
                                     Control state nextColor handler
