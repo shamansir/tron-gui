@@ -19,8 +19,11 @@ view model =
         , preserveAspectRatio "xMidYMid meet"
         , x "0", y "0"
         , width "100%"
-        , height "711px"
+        -- , height "711px"
+        , height "100vh"
         , version "1.1"
+        , SA.style <| "background-color: "
+            ++ Color.toCssString model.colors.background
         ]
         [ body
             model.colors

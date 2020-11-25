@@ -35,7 +35,7 @@ init =
         { feathers = Color.rgb255 236 41 123 -- #ec297b
         , skin = Color.rgb255 253 182 13 -- #fdb60d
         , eye = Color.black
-        , background = Color.white
+        , background = Color.gray -- Color.white
         , iroquois = Color.black
         }
     }
