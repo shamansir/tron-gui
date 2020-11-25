@@ -9,6 +9,7 @@ import Gui as Tron exposing (Gui, init, view, update, subscriptions)
 import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Style.Theme as Theme exposing (Theme(..))
 
+
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
 import Example.Goose.Msg as Example
@@ -16,6 +17,9 @@ import Example.Goose.Gui as ExampleGui
 
 
 {-
+-- Change to a more boring example
+-- by just commenting out `.Goose` imports above
+-- and removing the comment here
 import Example.Default.Main as Example
 import Example.Default.Model as Example
 import Example.Default.Msg as Example

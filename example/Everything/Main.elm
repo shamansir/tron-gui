@@ -30,10 +30,21 @@ import Gui.Style.Theme as Theme
 import Gui.Style.Dock exposing (Dock)
 import Gui.Style.Dock as Dock
 
+import Example.Goose.Main as Example
+import Example.Goose.Model as Example
+import Example.Goose.Msg as Example
+import Example.Goose.Gui as ExampleGui
+
+
+{-
+-- Change to a more boring example
+-- by just commenting out `.Goose` imports above
+-- and removing the comment here
 import Example.Default.Main as Example
 import Example.Default.Model as Example
 import Example.Default.Msg as Example
 import Example.Default.Gui as ExampleGui
+-}
 
 import RandomGui as Gui exposing (generator)
 
