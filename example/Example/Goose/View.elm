@@ -3,11 +3,12 @@ module Example.Goose.View exposing (..)
 
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+import Svg.Attributes as SA exposing (style)
 
 
 import Example.Goose.Model exposing (..)
 import Example.Goose.Msg exposing (..)
-import Color
+import Color exposing (Color)
 
 
 view : Model -> Svg msg
@@ -22,98 +23,117 @@ view model =
         , version "1.1"
         ]
         [ body
-        , head (Tuple.first model.honk) model.eye
+            model.colors
+            model.lookAt
+            ( model.punk, model.colors.iroquois )
+        , head
+            model.colors
+            model.lookAt
+            (Tuple.first model.honk)
+            model.eye
         , if Tuple.first model.honk
             then honk <| Tuple.second model.honk
             else Svg.g [] []
-        , boots
+        , case model.shoes of
+            None -> Svg.g [] []
+            Boots -> boots
         ]
 
 
-body : Svg msg
-body =
+body : Colors -> LookDirection -> ( Bool, Color ) -> Svg msg
+body colors dir ( isPunk, iroquoisColor ) =
     g
         [ id "body"
         ]
-        [ iroquois
-        , rightLeg
-        , leftLeg
-        , chest
+        [ if isPunk
+            then iroquois colors.iroquois dir
+            else Svg.g [] []
+        , rightLeg colors.skin
+        , leftLeg colors.skin
+        , chest colors.feathers
         ]
 
 
-head : Bool -> EyeConfig -> Svg msg
-head honkOn eyeConfig =
+head : Colors -> LookDirection -> Bool -> EyeConfig -> Svg msg
+head colors dir honkOn eyeConfig =
     g
         [ id "head"
+        , SA.style
+            <| case dir of
+                Left -> ""
+                Right -> "transform: translateX(519.8px) scaleX(-1)"
         ]
-        [ neck
-        , beak
-        , if honkOn then openBeak else Svg.g [] []
-        , eye eyeConfig
+        [ neck colors.feathers
+        , beak colors.skin
+        , if honkOn then openBeak colors.skin else Svg.g [] []
+        , eye ( colors.eye, eyeConfig )
         ]
 
 
-iroquois : Svg msg
-iroquois =
+iroquois : Color -> LookDirection -> Svg msg
+iroquois color dir =
     polygon
         [ id "iro"
-        , opacity "0"
+        , fill <| Color.toCssString color
+        , SA.style
+            <| case dir of
+                Left -> ""
+                Right -> "transform: translateX(519.8px) scaleX(-1)"
         , points "289.8,62.5 304.8,62.5 287.8,77.4 245.1,67.9 215.9,65.5 177.2,36.4 202.3,40.2 194.5,22 213.4,33.9 213.4,29.2 205.7,12.3 213.4,19.1 213.4,8.9 224.6,22.5 227.1,12.3 235.9,23.9 235.9,3.6 241.8,20.3 248.4,3.7 252.6,27.2 261.2,3.6 262,22.6 275.3,12.5 275.3,29.7 293.7,9.4 284.1,41.1 293.4,38.5 291.5,44.5 304.8,37.8"
         ]
         [ ]
 
 
-rightLeg : Svg msg
-rightLeg =
+rightLeg : Color -> Svg msg
+rightLeg color =
     Svg.path
         [ id "rleg"
         , class "skin"
-        , fill "#fdb60d"
+        , fill <| Color.toCssString color
         , d "M373.6 592.7c-4.7-9.5-8.7-19.4-13-29.2v-2.6-1.6c.2-1.8.6-3.6.8-5.3.4-2.6.8-5.1 1.4-7.7 3-14.6 6.1-29 9.1-43.5.6-2.2 1.2-4.3 1.8-6.5-2.8.6-5.9 1-8.7 1.6h-3.2c-1.4-.6-2.6-1.4-4.1-2-.8 4.3-1.6 8.3-2.4 12.6-.6 5.3-1 10.5-1.6 15.6-.4 1.8-.6 3.6-1 5.5-2.6 8.3-5.1 16.4-7.7 24.7-.6.8-1.2 1.4-1.8 2.2-3.6 2.4-7.1 5.5-11.1 7.3-13.6 6.3-27.3 12.2-40.9 18.2-.6.4-1 1-1.6 1.4-.4 1.4-.6 2.8-1 4.3 3.8 4.9 9.1 2.6 14 2.4 3.6 0 7.5-.2 11.1-.2-.2-.2-.4-.4-.8-.6.2.2.4.4.8.6 1.2.8 2.4 1.4 3.4 2.4 7.9 9.5 17.4 9.5 27.7 5.1 8.5-3.6 15.6.2 22.7 4.3h4.3c3.2-2.5 3.6-5.1 1.8-9zm-62.8-4.8c.4.2 1 .4 1.4.8-.4-.2-.8-.6-1.4-.8z"
         ]
         [ ]
 
 
-leftLeg : Svg msg
-leftLeg =
+leftLeg : Color -> Svg msg
+leftLeg color =
     Svg.path
         [ id "lleg"
         , class "skin"
-        , fill "#fdb60d"
+        , fill <| Color.toCssString color
         , d "M248.5 463.3c-2.6 0-5.3-.2-7.7-.2 0 1.4-.2 2.8-.2 4.3.2.8.2 1.6.4 2.4 2.2 14.4 2.6 29 1 43.3-.4 2.8-.6 5.7-2 8.3-2.2 4.3-7.5 6.1-11.9 7.5-16 4.5-33 6.7-49.4 9.9-1.8.4-3.6.8-5.3 1.6-5.1 3.2-1.6 6.1 2.2 7.5 2 .8 4.1 1 6.3 1.2 2.8.2 2.2.8 1.2 2.8-3.2 5.7-2 7.9 4.7 8.3 7.9.4 16 .2 23.9.2.4 0 1 .2 1.4.2 3.8 8.1 6.3 9.1 13 5.3 1-.6 1.8-1.4 2.6-2.2 1-.6 1.8-1.2 2.8-1.8 1.4-1 2.8-1.8 4.5-2.8h-.2c1-.6 1.8-1 2.8-1.6 1.4-1 3-1.8 4.5-2.8.6 0 1-.2 1.2-.6.4-.4.8-.6 1.2-1 .6-.4 1-.8 1.6-1.2.8-.6 1.8-1.2 2.6-1.8.6-.4 1-.8 1.6-1.2 1.2-1 2.4-1.8 3.6-2.8.6-.6 1.2-1.2 2-1.8.6-.8 1.2-1.8 1.8-2.6.4-.6.6-1.2 1-1.8.4-.2.6-.6.8-1 .4-.2.8-.6.8-1 4.8-2.7 1.3-7.2-.1-11.2 0-.2-.2-.4-.2-.8-2-6.9-2.6-14.8-3.2-21.9-1.2-14.6-.4-29.4 2-43.7-.2.8-9.7 2.4-11.3 3z"
         ]
         [ ]
 
 
-chest : Svg msg
-chest =
+chest : Color -> Svg msg
+chest color =
     Svg.path
         [ id "chest"
-        , fill "#ec297b"
+        , fill <| Color.toCssString color
         , d "M303.2 242.8c-4.3-1.5-6.9-3.1-8.1-6.1h-70.3c-2 4.7-4.2 9.3-6.5 13.8-3.2 6.1-7.9 11.3-11.5 17.4-4.1 6.9-7.7 14-10.9 21.3-6.1 14.8-8.7 30.6-4.5 46.2 3.8 14.4 8.9 28.8 14.8 42.5 7.5 17.6 11.7 35.8 15.6 54.7 1.8 9.1 7.1 17.8 11.3 26.3 1.2 2.6 4.9 3.8 7.5 5.9 2.6 0 5.3.2 7.7.2 3.8-1 7.5-2.2 11.3-3.2 8.5-4.7 16.4-11.7 25.5-13.6 6.5-1.4 14.6 3.8 21.7 6.7 8.3 3.2 15.2 8.1 21.1 14.8 6.1 6.9 12.8 13.2 19.4 19.4 3 2.8 6.7 5.3 9.9 8.1 1.4.6 2.6 1.4 4.1 2h3.2c2.8-.6 5.9-1 8.7-1.6 10.9-8.1 16.4-20.3 22.3-32 10.5-21.9 21.1-43.5 32-65.2 5.5-10.7 12.2-22.1 13.8-34.4 1.8-13.2 7.9-21.7 15-32.8 9.4-13.7 15.8-32.1 14.6-49-.2-2.4-.8-4.5-1.8-6.3-5.7-10.9-21.3-11.9-31.2-7.7-6.1 2.6-11.9 6.3-18.4 7.7-9.3 2-19-1.2-27.9-4.5-29.5-10.3-58.8-20.5-88.4-30.6"
         ]
         [ ]
 
 
-neck : Svg msg
-neck =
+neck : Color -> Svg msg
+neck color =
     Svg.path
         [ id "chest"
-        , fill "#ec297b"
+        , fill <| Color.toCssString color
         , d "M295.1 236.7c-.6-1.4-.8-3.2-.8-5.4.2-6.1.4-11.7 0-17.8-.8-14.4-1.4-29-.2-43.5 2-22.3 7.5-45 3.2-67.2-4.3-23.1-22.7-51.8-46.8-58.5-4.9-1.4-9.9-1-14.6.6-6.1 2-11.3 6.1-15.4 10.7S213 66.5 213.4 73l2.4-.6c9.3-2 16.4.4 20.7 9.7 2.8 6.3 6.5 12.4 9.9 18.6-2.2 1.8-3.8 4.7-4.5 8.7.6-4.1 11.9 1.2 13 2.8 7.1 10.9-3 31-5.9 41.7-7.2 27.7-13 56.4-24.3 82.8"
         ]
         [ ]
 
 
-openBeak : Svg msg
-openBeak =
+openBeak : Color -> Svg msg
+openBeak color =
     Svg.g
         [ id "mouth"
         ]
         [ Svg.path
             [ class "skin"
-            , fill "#fdb60d"
+            , fill <| Color.toCssString color
             , d "M248.4,103.9c0,0,0.6,7-5.1,12.7c-7.7,7.7-12.3,15.9-16.2,19.8c-4.9,4.7-7.4,6.6-13.6,9.4c-6,2.8-7.8-4-7.8-4 L248.4,103.9z"
             ]
             [ ]
@@ -125,27 +145,39 @@ openBeak =
             [ ]
         ]
 
-beak : Svg msg
-beak =
+beak : Color -> Svg msg
+beak color =
     Svg.path
         [ id "nose"
         , class "skin"
-        , fill "#fdb60d"
+        , fill <| Color.toCssString color
         , d "M196.4 119.4c5.3-14.2 10.3-28.4 15.6-42.5.4-.6.6-2.6 1.2-3.2.8-.8.6-1 3-1.4 9.3-2 16.4.6 20.7 9.9 3.4 7.5 7.7 14.6 11.5 21.7-6.5 5.7-13 11.5-19.4 17.2-2 2-4.3 3.8-6.3 5.9-8.9 6.1-26.5 4.1-28.2 2.6-3.6-3.5 1.1-6.8 1.9-10.2z"
         ]
         [ ]
 
 
-eye : EyeConfig -> Svg msg
-eye config =
+eyePos = ( 250.2, 65.5 )
+
+
+eye : ( Color, EyeConfig ) -> Svg msg
+eye ( color, config ) =
     Svg.circle
         [ id "eye"
-        , cx "250.2"
-        , cy "65.5"
+        , cx
+            <| String.fromFloat
+            <| case ( eyePos, config.position ) of
+                ( ( origX, _ ), ( shiftX, _ ) ) -> origX + shiftX
+        , cy
+            <| String.fromFloat
+            <| case ( eyePos, config.position ) of
+                ( ( _, origY ), ( _, shiftY ) ) -> origY + shiftY
         , r <| String.fromFloat config.size
-        , fill "#000"
+        , fill <| Color.toCssString color
         ]
         [ ]
+
+
+textPos = ( 420.9966, 82.7509 )
 
 
 honk : HonkConfig -> Svg msg
@@ -153,7 +185,7 @@ honk config =
     Svg.g
         [ id "honk" ]
         [ Svg.path
-            [ stroke "#000"
+            [ stroke <| Color.toCssString config.color
             , fill "none"
             , class "bubble"
             , strokeWidth "3"
@@ -162,7 +194,12 @@ honk config =
         , text_
             [ fontSize <| String.fromInt config.size
             , id "text"
-            , transform "matrix(1 0 0 1 420.9966 82.7509)"
+            , transform
+                <| case ( textPos, config.position ) of
+                    ( ( origX, origY ), ( shiftX, shiftY ) ) ->
+                        "matrix(1 0 0 1 "
+                            ++ (String.fromFloat <| origX + shiftX) ++ " "
+                            ++ (String.fromFloat <| origY + shiftY) ++ ")"
             , fill <| Color.toCssString config.color
             ]
             [ text <| config.text ]

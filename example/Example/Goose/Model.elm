@@ -4,6 +4,7 @@ module Example.Goose.Model exposing (..)
 import Color exposing (Color)
 
 
+
 type alias Model =
     { honk : ( Bool, HonkConfig )
     , eye : EyeConfig
@@ -28,11 +29,11 @@ init =
     , eye =
         EyeConfig ( 0, 0 ) 5
     , lookAt = Left
-    , shoes = Original
+    , shoes = None
     , punk = False
     , colors =
-        { feathers = Color.rgb255 236 41 123
-        , skin = Color.rgb255 253 182 13
+        { feathers = Color.rgb255 236 41 123 -- #ec297b
+        , skin = Color.rgb255 253 182 13 -- #fdb60d
         , eye = Color.black
         , background = Color.white
         , iroquois = Color.black
@@ -60,7 +61,7 @@ type LookDirection
 
 
 type Shoes
-    = Original
+    = None
     | Boots
 
 

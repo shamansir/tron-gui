@@ -58,6 +58,16 @@ for model =
             ( "colors"
             , colorsGui model.punk model.colors
             )
+        ,
+            ( "boots on"
+            ,
+                Gui.toggle
+                    (case model.shoes of
+                        None -> False
+                        Boots -> True
+                    )
+                    (\v -> ChangeShoes <| if v then Boots else None)
+            )
         ]
 
 
@@ -73,7 +83,7 @@ honkGui config =
                 in Gui.xy
                     ( posAxis, posAxis )
                     config.position
-                    ChangeEyePosition
+                    ChangeHonkTextPosition
             )
         ,
             ( "size"
