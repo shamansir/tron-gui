@@ -13,7 +13,7 @@ RUN npm install
 RUN npm install elm
 
 RUN chmod +x ./node_modules/elm/bin/elm
-RUN chmod +rx ./elm-stuff/0.19.1/d.dat
+RUN chmod -f +rx ./elm-stuff/0.19.1/d.dat || true
 
 # RUN cd ./example
 
