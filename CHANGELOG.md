@@ -4,8 +4,11 @@
 * Docking support for all nine directions;
 * Now the whole viewport is used for the grid by default + let user request the custom shape of the grid;
 * All the style modules are moved to `Style.*` package and properly separated;
+* `Gui.over` function keeps the expanded panels expanded, the new `Gui.use` function—doesn't;
+* `Builder.expand` + `Builder.collapse` helpers;
 * Now controls' types and helpers are defined in the separate modules;
 * `Builder.labels`;
+* The Goose example instead of the boring default one (still, the boring one can be switched back);
 
 TODO:
 

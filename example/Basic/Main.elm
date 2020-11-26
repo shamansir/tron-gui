@@ -70,10 +70,10 @@ update msg ( example, gui ) =
 
         ToExample dmsg ->
             (
+                -- If your GUI structure never changes (unlike with `Goose` example),
+                -- you need neither `updatedBy` function nor this condition check,
+                -- at all! Just leave the `else` part in your code.
                 if ExampleGui.updatedBy dmsg then
-                    -- If your GUI structure never changes,
-                    -- you need neither `updatedBy` function nor this condition check,
-                    -- at all! Just leave the `else` part in your code.
                     let nextModel = example |> Example.update dmsg
                     in
                         ( nextModel

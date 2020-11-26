@@ -24,6 +24,7 @@ import Gui as Tron exposing (Gui)
 import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Mouse exposing (Position)
 import Gui.Build as Tron exposing (Builder)
+import Gui.Build as Builder exposing (map)
 import Gui.Detach as Detach exposing (fromUrl)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Theme as Theme
@@ -88,7 +89,9 @@ init url _ =
             { mode = TronGui
             , example = initialModel
             , theme = Theme.light
-            , gui = gui -- |> Gui.reshape ( 5, 6 )
+            , gui = gui
+                |> Gui.reshape ( 7, 7 )
+                |> Gui.redock Dock.bottomLeft
             , url = url
             }
         , startGui
@@ -175,10 +178,26 @@ update msg model =
 
         ( ToExample dmsg, _ ) ->
             (
-                { model
-                | example =
-                    Example.update dmsg model.example
-                }
+                -- If your GUI structure never changes (unlike with `Goose` example),
+                -- you need neither `updatedBy` function nor this condition check,
+                -- at all! Just leave the `else` part in your code.
+                if ExampleGui.updatedBy dmsg then
+
+                    let nextExample = model.example |> Example.update dmsg
+                    in
+                        { model
+                        | example = nextExample
+                        , gui =
+                            model.gui
+                                |> Tron.over
+                                    (ExampleGui.for nextExample
+                                        |> Builder.map ToExample)
+                        }
+                else
+                    { model
+                    | example =
+                        Example.update dmsg model.example
+                    }
             , Cmd.none
             )
 
@@ -218,7 +237,9 @@ update msg model =
             in
                 (
                     { model
-                    | gui = newGui |> Gui.map (always NoOp)
+                    | gui = newGui
+                        |> Gui.map (always NoOp)
+                        |> Gui.redock Dock.bottomCenter
                     }
                 , case model.mode of
                     DatGui ->

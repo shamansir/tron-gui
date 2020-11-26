@@ -13,6 +13,7 @@ import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Style.Theme as Theme exposing (Theme(..))
 import Gui.Detach as Detach exposing (fromUrl)
 import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
+import Gui.Build as Builder exposing (map)
 
 
 import Example.Goose.Main as Example
@@ -92,9 +93,21 @@ update msg ( example, gui ) =
 
         ToExample dmsg ->
             (
-                ( example |> Example.update dmsg
-                , gui
-                )
+                -- If your GUI structure never changes (unlike with `Goose` example),
+                -- you need neither `updatedBy` function nor this condition check,
+                -- at all! Just leave the `else` part in your code.
+                if ExampleGui.updatedBy dmsg then
+                    let nextModel = example |> Example.update dmsg
+                    in
+                        ( nextModel
+                        , gui
+                            |> Tron.over
+                                (ExampleGui.for nextModel |> Builder.map ToExample)
+                        )
+                else
+                    ( example |> Example.update dmsg
+                    , gui
+                    )
             , Cmd.none
             )
 
