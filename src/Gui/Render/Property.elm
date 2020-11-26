@@ -271,24 +271,35 @@ text style state ( editing, value ) onInput bounds =
                         value
                     else (value |> String.left 6) ++ ".." ]
         Editing ->
-            Svg.foreignObject
-                [ HA.style "width" <| String.fromFloat bounds.width  ++ "px"
-                , HA.style "height" <| String.fromFloat bounds.height  ++ "px"
-                , SA.class "text--edit"
+            Svg.g
+                [ SA.style <|
+                    "transform: "
+                        ++ "translate(" ++ String.fromFloat Cell.gap ++ "px,"
+                                        ++ String.fromFloat topShift ++ "px)"
                 ]
-                [ Html.input
-                    [ HA.style "max-width" <| String.fromFloat maxWidth ++ "px"
-                    , HA.style "height" <| String.fromFloat lineHeight ++ "px"
-                    , HA.style "left" <| String.fromFloat Cell.gap ++ "px"
-                    , HA.style "top" <| String.fromFloat topShift ++ "px"
-                    , HA.style "font-size" <| String.fromFloat fontSize ++ "px"
-                    , HA.style "color" <| Color.toCssString <| Tone.text style state
-                    , HA.type_ "text"
-                    , HA.placeholder "input"
-                    , HE.onInput onInput
-                    , HA.value value
+                [ Svg.foreignObject
+                    [ HA.width <| ceiling bounds.width
+                    , HA.height <| ceiling bounds.height
+                    , HA.style "width" <| String.fromFloat bounds.width  ++ "px"
+                    , HA.style "height" <| String.fromFloat bounds.height  ++ "px"
+                    , HA.style "position" "fixed"
+                    , SA.class "text--edit"
                     ]
-                    [ ]
+                    [ Html.input
+                        [ HA.style "max-width" <| String.fromFloat maxWidth ++ "px"
+                        , HA.style "height" <| String.fromFloat lineHeight ++ "px"
+                        -- , HA.style "left" <| String.fromFloat Cell.gap ++ "px"
+                        -- , HA.style "top" <| String.fromFloat topShift ++ "px"
+                        , HA.style "font-size" <| String.fromFloat fontSize ++ "px"
+                        , HA.style "color" <| Color.toCssString <| Tone.text style state
+                        , HA.style "position" "initial"
+                        , HA.type_ "text"
+                        , HA.placeholder "input"
+                        , HE.onInput onInput
+                        , HA.value value
+                        ]
+                        [ ]
+                    ]
                 ]
 
 
