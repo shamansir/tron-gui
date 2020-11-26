@@ -25,6 +25,7 @@ COPY --from=0 /app/example/app.js /usr/share/nginx/html
 COPY --from=0 /app/example/dat.gui.min.js /usr/share/nginx/html
 COPY --from=0 /app/src/Gui.css /usr/share/nginx/html
 COPY --from=0 /app/example/dat-gui-proxy.js /usr/share/nginx/html
+COPY --from=0 /app/example/ws-client.js /usr/share/nginx/html
 COPY --from=0 /app/example/Everything/index.html /usr/share/nginx/html
 COPY --from=0 /app/example/Example/Goose/JetBrainsMono-Regular.woff /usr/share/nginx/html
 COPY --from=0 /app/example/Example/Goose/JetBrainsMono-Regular.woff2 /usr/share/nginx/html
