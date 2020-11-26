@@ -7,6 +7,7 @@ import Html.Attributes as Attr exposing (class)
 
 import Gui as Tron exposing (Gui, init, view, update, subscriptions)
 import Gui.Msg as Tron exposing (Msg(..))
+import Gui.Build as Builder exposing (map)
 import Gui.Style.Theme as Theme exposing (Theme(..))
 
 
@@ -69,9 +70,21 @@ update msg ( example, gui ) =
 
         ToExample dmsg ->
             (
-                ( example |> Example.update dmsg
-                , gui
-                )
+                if ExampleGui.updatedBy dmsg then
+                    -- If your GUI structure never changes,
+                    -- you need neither `updatedBy` function nor this condition check,
+                    -- at all! Just leave the `else` part in your code.
+                    let nextModel = example |> Example.update dmsg
+                    in
+                        ( nextModel
+                        , gui
+                            |> Tron.over
+                                (ExampleGui.for nextModel |> Builder.map ToExample)
+                        )
+                else
+                    ( example |> Example.update dmsg
+                    , gui
+                    )
             , Cmd.none
             )
 

@@ -170,3 +170,7 @@ choiceToLabel c =
         B -> "The B"
         C -> "The C"
         D -> "The D"
+
+
+updatedBy : Msg -> Bool
+updatedBy _ = False

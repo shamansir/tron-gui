@@ -47,6 +47,9 @@ type Property msg
     | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property msg ) msg)
 
 
+type alias ExpandData = List Path
+
+
 knobDistance = 90 * 4
 
 
@@ -292,6 +295,29 @@ executeAt path root =
         Nothing -> []
 
 
+loadExpanded : Property msg -> ExpandData
+loadExpanded =
+    unfold
+        >> List.filterMap
+            (\(path, innerProp) ->
+                case innerProp of
+                    Group _ _ control ->
+                        if control |> Nest.is Expanded then Just path else Nothing
+                    Choice _ _ control ->
+                        if control |> Nest.is Expanded then Just path else Nothing
+                    _ -> Nothing
+            )
+
+
+applyExpanded : Property msg -> ExpandData -> Property msg
+applyExpanded =
+    -- expanded
+    --     |> List.foldl expandAt prop
+    List.foldl expandAt -- FIXME: not very efficient since goes through the structure several times
+
+
+-- TODO: better use the functions below directly from their controls
+
 
 finishEditingAt : Path -> Property msg -> Property msg
 finishEditingAt path =
@@ -323,6 +349,7 @@ expand prop =
         Choice focus shape control ->
             Choice focus shape <| Nest.expand control
         _ -> prop
+
 
 collapse : Property msg -> Property msg
 collapse prop =

@@ -5,6 +5,7 @@ module Gui.Build exposing
     , nest, choice, choiceAuto, choiceIcons, strings, labels, labelsAuto, palette
     , icon
     , map, mapSet
+    , expand, collapse
     )
 
 
@@ -56,6 +57,8 @@ However, it is ok to use any name you like, for sure. Be it `Gui.` or `Def.` or 
 # Common Helpers
 @docs map, mapSet
 
+# Force expand / collapse for nesting
+
 -}
 
 import Array
@@ -64,6 +67,7 @@ import Axis exposing (Axis)
 
 import Gui.Control exposing (..)
 import Gui.Property exposing (..)
+import Gui.Property as Property exposing (expand, collapse)
 import Gui.Control exposing (Control(..))
 import Gui.Util exposing (findMap)
 import Gui.Style.CellShape exposing (CellShape)
@@ -665,3 +669,21 @@ findShape cellShape shape =
     List.map Tuple.second
         >> noGhosts
         >> Shape.find cellShape shape
+
+
+{-| Forcefully expand the nesting:
+
+    Builder.nest ... |> Builder.expand
+    Builder.choice ... |> Builder.expand
+-}
+expand : Builder msg -> Builder msg
+expand = Property.expand
+
+
+{-| Forcefully collapse the nesting:
+
+    Builder.nest ... |> Builder.collapse
+    Builder.choice ... |> Builder.collapse
+-}
+collapse : Builder msg -> Builder msg
+collapse = Property.expand
