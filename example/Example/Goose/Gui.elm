@@ -25,7 +25,9 @@ for model =
             ( "honk"
             ,
                 if Tuple.first model.honk then
-                    honkGui <| Tuple.second model.honk
+                    Tuple.second model.honk
+                        |> honkGui
+                        |> Gui.expand
                 else Gui.none
             )
         ,
@@ -152,3 +154,13 @@ colorsGui isPunk colors =
                 else Gui.none
             )
         ]
+
+
+updatedBy : Msg -> Bool
+updatedBy msg =
+    case msg of
+        HonkOn -> True
+        HonkOff -> True
+        PunkOn -> True
+        PunkOff -> True
+        _ -> False

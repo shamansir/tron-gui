@@ -1,7 +1,7 @@
 module Gui exposing
     ( Gui
     , view, update, init, subscriptions, run, Message
-    , map, over
+    , map, over, use
     , detachable, encode, applyRaw, initRaw
     , redock, reshape
     )
@@ -77,7 +77,7 @@ NB: Don't forget to copy `src/Gui.css` to your application to make GUI look and 
 @docs redock, reshape
 
 # Common Helpers
-@docs map, over
+@docs map, over, use
 
 # Detaching and Connecting to JavaScript
 @docs detachable, encode, applyRaw, initRaw
@@ -268,7 +268,7 @@ detachable url ack send receive gui =
         )
 
 
-{-| While keeping other options intact, replace the GUI structure completely.
+{-| While keeping other options intact and keeping the expanded panels, rebuild the GUI structure using the new model. If some panels were
 
 It is useful if the model updated externally, you want to re-build UI using this model,
 but you don't need/want to notify anyone about the updated values or perform initial effects.
@@ -284,6 +284,28 @@ If you have a function like:
 -}
 over : Builder msg -> Gui msg -> Gui msg
 over prop gui =
+    { gui
+    | tree =
+        loadExpanded gui.tree
+            |> applyExpanded prop
+    }
+
+
+{-| While keeping other options intact, replace the GUI structure completely.
+
+It is useful both if the model updated externally or you have very different model, and you want to re-build UI using this model, but you don't need/want to notify anyone about the updated values or perform initial effects.
+
+If you have a function like:
+
+    for : MyModel -> Builder MyMsg
+    for = ...
+
+..as in the `init` example. Then using `use` in `update` is just:
+
+    gui |> Gui.use (for nextModel)
+-}
+use : Builder msg -> Gui msg -> Gui msg
+use prop gui =
     { gui
     | tree = prop
     }
