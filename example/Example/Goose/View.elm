@@ -63,7 +63,7 @@ head colors dir honkOn eyeConfig =
         [ id "head"
         , SA.style
             <| case dir of
-                Left -> ""
+                Left -> "transform: translateX(0) scaleX(1)"
                 Right -> "transform: translateX(519.8px) scaleX(-1)"
         ]
         [ neck colors.feathers

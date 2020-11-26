@@ -172,7 +172,7 @@ knob style state bounds value =
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
     in
         Svg.g
-            []
+            [ resetTransform ]
             [ path (Tone.lines style state |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
@@ -206,7 +206,7 @@ coord style state bounds ( valueX, valueY ) =
             )
     in
     Svg.g
-        []
+        [ resetTransform ]
         [ Svg.line
             [ SA.x1 <| String.fromFloat left
             , SA.y1 <| String.fromFloat cy
@@ -333,7 +333,7 @@ button ( ( theme, tone ) as style ) ( ( _, _, selected ) as state ) face cellSha
                 then case selected of
                     Selected ->
                         Svg.g
-                            []
+                            [ resetTransform ]
                             [ Svg.g
                                 [ SA.style <|
                                     "transform: "
@@ -359,7 +359,7 @@ button ( ( theme, tone ) as style ) ( ( _, _, selected ) as state ) face cellSha
                             ( cx - iconWidth / 2, cy - iconHeight / 2 + 1 )
             in
                 Svg.g
-                    [ ]
+                    [ resetTransform ]
                     [
                         Svg.image
                         [ SA.xlinkHref <| iconUrl
