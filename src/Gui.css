@@ -33,7 +33,7 @@
 }
 
 .cell {
-    display: block;
+    /* display: block; */
     width: 70px;
     height: 70px;
     min-width: 70px;

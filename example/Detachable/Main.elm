@@ -10,36 +10,45 @@ import Html.Attributes as Attr exposing (class)
 
 import Gui as Tron exposing (Gui, init, view, update, subscriptions)
 import Gui.Msg as Tron exposing (Msg(..))
-import Gui.Render.Style as Tron exposing (Theme(..))
+import Gui.Style.Theme as Theme exposing (Theme(..))
 import Gui.Detach as Detach exposing (fromUrl)
 import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
+import Gui.Build as Builder exposing (map)
 
-import Default.Main as Default
-import Default.Model as Default
-import Default.Msg as Default
-import Default.Gui as DefaultGui
+
+import Example.Goose.Main as Example
+import Example.Goose.Model as Example
+import Example.Goose.Msg as Example
+import Example.Goose.Gui as ExampleGui
+
+
+{-
+-- Change to a more boring example
+-- by just commenting out `.Goose` imports above
+-- and removing the comment here
+import Example.Default.Main as Example
+import Example.Default.Model as Example
+import Example.Default.Msg as Example
+import Example.Default.Gui as ExampleGui
+-}
 
 
 type Msg
     = NoOp
-    | ToDefault Default.Msg
+    | ToExample Example.Msg
     | ToTron Tron.Msg
 
 
-type alias Example
-    = Default.Model
-
-
 type alias Model =
-    ( Example, Tron.Gui Msg )
+    ( Example.Model, Tron.Gui Msg )
 
 
 init : Url -> Navigation.Key -> ( Model, Cmd Msg )
 init url _ =
     let
-        example = Default.init
+        example = Example.init
         ( gui, guiEffect ) =
-            DefaultGui.for example
+            ExampleGui.for example
                 |> Tron.init
         ( nextGui, detachableEffect ) =
             gui
@@ -52,7 +61,7 @@ init url _ =
         (
             ( example
             , nextGui
-                |> Tron.map ToDefault
+                |> Tron.map ToExample
             )
         , Cmd.batch
             [ guiEffect
@@ -67,9 +76,9 @@ view ( example, gui ) =
     Html.div
         [ ]
         [ gui
-            |> Tron.view Tron.Light
+            |> Tron.view Theme.light
             |> Html.map ToTron
-        , Default.view example
+        , Example.view example
         ]
 
 
@@ -82,11 +91,23 @@ update msg ( example, gui ) =
             , Cmd.none
             )
 
-        ToDefault dmsg ->
+        ToExample dmsg ->
             (
-                ( example |> Default.update dmsg
-                , gui
-                )
+                -- If your GUI structure never changes (unlike with `Goose` example),
+                -- you need neither `updatedBy` function nor this condition check,
+                -- at all! Just leave the `else` part in your code.
+                if ExampleGui.updatedBy dmsg then
+                    let nextModel = example |> Example.update dmsg
+                    in
+                        ( nextModel
+                        , gui
+                            |> Tron.over
+                                (ExampleGui.for nextModel |> Builder.map ToExample)
+                        )
+                else
+                    ( example |> Example.update dmsg
+                    , gui
+                    )
             , Cmd.none
             )
 

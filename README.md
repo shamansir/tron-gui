@@ -127,3 +127,10 @@ See `example/` folder for more examples:
 * `example/Detachable` the demo of how the interface can be detached at any nesting (if you run the provided WebScocket server before running the example);
 * `example/DatGui` is about how easy it is to replace Tron GUI with `dat.gui`;
 * `example/Everything` — all of the above, plus randomly generating interface structures;
+
+
+## Docker
+
+* `docker build . -t tron-example`
+* `docker run -p 8000:8000 tron-example`
+* TODO: instructions to run WebSocket-server

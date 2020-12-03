@@ -1,9 +1,9 @@
 module Gui exposing
     ( Gui
     , view, update, init, subscriptions, run, Message
-    , map, over
+    , map, over, use
     , detachable, encode, applyRaw, initRaw
-    , reflow
+    , redock, reshape
     )
 
 
@@ -73,11 +73,11 @@ NB: Don't forget to copy `src/Gui.css` to your application to make GUI look and 
 # Lifecycle
 @docs init, update, view, subscriptions, run, Message
 
-# Flow
-@docs reflow
+# Dock & Shape
+@docs redock, reshape
 
 # Common Helpers
-@docs map, over
+@docs map, over, use
 
 # Detaching and Connecting to JavaScript
 @docs detachable, encode, applyRaw, initRaw
@@ -95,6 +95,7 @@ import Json.Encode as E
 
 import BinPack exposing (..)
 import Bounds exposing (Bounds)
+import Size exposing (..)
 
 import Gui.Path exposing (Path)
 import Gui.Path as Path exposing (start)
@@ -115,8 +116,9 @@ import Gui.FocusLogic as Focus exposing (..)
 import Gui.Focus as Focus exposing (..)
 import Gui.Detach as Detach exposing (make, ClientId, Detach, map)
 import Gui.Expose as Exp exposing (..)
-import Gui.Style.Flow exposing (Flow)
-import Gui.Style.Flow as Flow exposing (..)
+import Gui.Style.Dock exposing (Dock(..))
+--import Gui.Style.Anchor exposing (Anchor(..))
+import Gui.Style.Dock as Dock exposing (..)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Logic as Style exposing (..)
 import Gui.Style.Cell as Cell exposing (..)
@@ -131,8 +133,9 @@ to fire all the messages you pass to it in definition. This is similar to how yo
 Use `init` to create an instance of `Gui msg`. See the example in the head of the module and `example/` folder for more details.
 -}
 type alias Gui msg =
-    { flow : Flow
-    , viewport : ( Int, Int )
+    { dock : Dock
+    , viewport : Size Pixels
+    , size : Maybe (Size Cells)
     , mouse : MouseState
     , tree : Builder msg
     , detach : Detach msg
@@ -163,8 +166,9 @@ the conversion function.
 -}
 map : (msgA -> msgB) -> Gui msgA -> Gui msgB
 map f gui =
-    { flow = gui.flow
+    { dock = gui.dock
     , viewport = gui.viewport
+    , size = gui.size
     , mouse = gui.mouse
     , tree = gui.tree |> Gui.Property.map f
     , detach = gui.detach |> Detach.map f
@@ -222,7 +226,7 @@ Since `init builder` is just:
 -}
 initRaw : Builder msg -> Gui msg
 initRaw root =
-    Gui Flow.topToBottom ( -1, -1 ) Gui.Mouse.init root Detach.never
+    Gui Dock.topLeft (Size ( 0, 0 )) Nothing Gui.Mouse.init root Detach.never
 -- TODO: get rid of initRaw
 
 
@@ -264,7 +268,7 @@ detachable url ack send receive gui =
         )
 
 
-{-| While keeping other options intact, replace the GUI structure completely.
+{-| While keeping other options intact and keeping the expanded panels, rebuild the GUI structure using the new model. If some panels were
 
 It is useful if the model updated externally, you want to re-build UI using this model,
 but you don't need/want to notify anyone about the updated values or perform initial effects.
@@ -280,6 +284,28 @@ If you have a function like:
 -}
 over : Builder msg -> Gui msg -> Gui msg
 over prop gui =
+    { gui
+    | tree =
+        loadExpanded gui.tree
+            |> applyExpanded prop
+    }
+
+
+{-| While keeping other options intact, replace the GUI structure completely.
+
+It is useful both if the model updated externally or you have very different model, and you want to re-build UI using this model, but you don't need/want to notify anyone about the updated values or perform initial effects.
+
+If you have a function like:
+
+    for : MyModel -> Builder MyMsg
+    for = ...
+
+..as in the `init` example. Then using `use` in `update` is just:
+
+    gui |> Gui.use (for nextModel)
+-}
+use : Builder msg -> Gui msg -> Gui msg
+use prop gui =
     { gui
     | tree = prop
     }
@@ -357,10 +383,10 @@ update msg gui =
             in
                 handleKeyDown keyCode curFocus gui
 
-        ViewportChanged viewport ->
+        ViewportChanged ( w, h ) ->
             (
                 { gui
-                | viewport = viewport
+                | viewport = Size (w, h)
                 }
             , Cmd.none
             )
@@ -455,11 +481,9 @@ handleMouse mouseAction gui =
         nextMouseState =
             gui.mouse
                 |> Gui.Mouse.apply mouseAction
-        size =
-            gui.viewport
-                |> sizeFromViewport gui.tree
+        size = getSizeInCells gui
         bounds =
-            boundsFromSize gui.viewport size
+            Dock.boundsFromSize gui.dock gui.viewport size
         theLayout =
             layout gui |> Tuple.second
 
@@ -518,18 +542,21 @@ handleMouse mouseAction gui =
                         Just ( path, Color ( Control state curColor handler ) ) ->
                             let
                                 hueAxis = { min = 0, max = 1, step = 0.01 }
-                                satAxis = { min = 0, max = 1, step = 0.01 }
+                                lgtAxis = { min = 0, max = 1, step = 0.01 }
                                 curHsla = Color.toHsla curColor
                                 ( dX, dY ) = distanceXY knobDistance nextMouseState
-                                ( nextHue, nextSaturation ) =
+                                ( nextHue, nextLightness ) =
                                     ( alter hueAxis dX curHsla.hue
-                                    , alter satAxis dY curHsla.saturation
+                                    , alter lgtAxis dY curHsla.lightness
                                     )
                                 nextColor =
                                     Color.hsla
                                         nextHue
-                                        nextSaturation
-                                        curHsla.lightness
+                                        (if curHsla.saturation > 0.25 then
+                                            -- && curHsla.saturation < 0.75 then
+                                                curHsla.saturation
+                                        else 0.5)
+                                        nextLightness -- curHsla.lightness
                                         curHsla.alpha
                                 nextControl =
                                     Control state nextColor handler
@@ -669,34 +696,24 @@ fromWindow passSize =
             )
 
 
-getViewport : Gui msg -> ( Int, Int )
-getViewport = .viewport
+{-| Change dock direction of the GUI to any corner of the window, or its center.
 
-
-{-| Change flow direction of the GUI to `TopToBottom`, `BottomToTop`, `RightToLeft` or `LeftToRight`.
-
-See `Style.Flow` for values.
+See `Style.Dock` for values.
 -}
-reflow : Flow -> Gui msg -> Gui msg
-reflow flow gui =
+redock : Dock -> Gui msg -> Gui msg
+redock dock gui =
     { gui
-    | flow = flow
+    | dock = dock
     }
 
 
-boundsFromSize : ( Int, Int ) -> ( Int, Int ) -> Bounds
-boundsFromSize ( width, height ) ( gridWidthInCells, gridHeightInCells ) =
-    let
-        ( gridWidthInPx, gridHeightInPx ) =
-            ( Cell.width * toFloat gridWidthInCells
-            , Cell.height * toFloat gridHeightInCells
-            )
-    in
-        { x = (toFloat width / 2) - (gridWidthInPx / 2)
-        , y = (toFloat height / 2) - (gridHeightInPx / 2)
-        , width = gridWidthInPx
-        , height = gridHeightInPx
-        }
+{-| Set custom shape for all the GUI, in cells. By default, it is calulated from current viewport size, but you may want to reduce the amount of cells, so here's the method. This way GUI will be perfectly in the middle when docked to central positions.
+-}
+reshape : ( Int, Int ) -> Gui msg -> Gui msg
+reshape cellSize gui =
+    { gui
+    | size = Just <| Size cellSize
+    }
 
 
 getRootPath : Gui msg -> Path
@@ -705,24 +722,32 @@ getRootPath gui =
         |> Maybe.withDefault Path.start
 
 
-sizeFromViewport : Property msg -> ( Int, Int ) -> ( Int, Int )
-sizeFromViewport root ( widthInPixels, heightInPixels ) =
+sizeFromViewport : Property msg -> Size Pixels -> Size Cells
+sizeFromViewport _ (Size ( widthInPixels, heightInPixels )) =
     let
-        cellsFitHorizontally = floor <| toFloat widthInPixels / (Cell.width + Cell.gap)
-        cellsFitVertically = floor <| toFloat heightInPixels / (Cell.height + Cell.gap)
+        cellsFitHorizontally = floor (toFloat widthInPixels / Cell.width)
+        cellsFitVertically = floor (toFloat heightInPixels / Cell.height)
     in
-        ( if cellsFitHorizontally > 3 then cellsFitHorizontally - 3 else cellsFitHorizontally
-        , if cellsFitVertically > 2 then cellsFitVertically - 2 else cellsFitVertically
-        )
+        ( floor <| toFloat widthInPixels / Cell.width
+        , floor <| toFloat heightInPixels / Cell.height
+        ) |> Size
+
+
+
+getSizeInCells : Gui msg -> Size Cells
+getSizeInCells gui =
+    case gui.size of
+        Just userSize -> userSize
+        Nothing ->
+            gui.viewport
+                |> sizeFromViewport gui.tree
 
 
 layout : Gui msg -> ( Property msg, Layout )
 layout gui =
     let
-        size =
-            gui.viewport
-                |> sizeFromViewport gui.tree
-                |> Tuple.mapBoth toFloat toFloat
+        ( Size cellsSize ) = getSizeInCells gui
+        size = cellsSize |> Tuple.mapBoth toFloat toFloat
     in
     case Detach.isAttached gui.detach
         |> Maybe.andThen
@@ -732,9 +757,9 @@ layout gui =
                     |> Maybe.map (Tuple.pair path)
             ) of
         Nothing ->
-            ( gui.tree, Layout.pack gui.flow size gui.tree )
+            ( gui.tree, Layout.pack gui.dock size gui.tree )
         Just ( attachedPath, root ) ->
-            ( root, Layout.pack1 gui.flow size attachedPath root )
+            ( root, Layout.pack1 gui.dock size attachedPath root )
 
 
 {-| Subscribe the updates of the GUI, so it would resize with the window,
@@ -775,13 +800,11 @@ Use `Theme` from `Gui.Style` to set it to `Dark` or `Light` theme.
 view : Theme -> Gui msg -> Html Msg
 view theme gui =
     let
-        size =
-            gui.viewport
-                |> sizeFromViewport gui.tree
+        cellsSize = getSizeInCells gui
         bounds =
-            boundsFromSize gui.viewport size
+            Dock.boundsFromSize gui.dock gui.viewport cellsSize
     in
     case layout gui of
         ( root, theLayout ) ->
             theLayout
-                |> Layout.view theme gui.flow bounds gui.detach root
+                |> Layout.view theme gui.dock bounds gui.detach root

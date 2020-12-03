@@ -24,16 +24,28 @@ import Gui as Tron exposing (Gui)
 import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Mouse exposing (Position)
 import Gui.Build as Tron exposing (Builder)
+import Gui.Build as Builder exposing (map)
 import Gui.Detach as Detach exposing (fromUrl)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Theme as Theme
-import Gui.Style.Flow exposing (Flow)
-import Gui.Style.Flow as Flow
+import Gui.Style.Dock exposing (Dock)
+import Gui.Style.Dock as Dock
 
-import Default.Main as Default
-import Default.Model as Default
-import Default.Msg as Default
-import Default.Gui as DefaultGui
+import Example.Goose.Main as Example
+import Example.Goose.Model as Example
+import Example.Goose.Msg as Example
+import Example.Goose.Gui as ExampleGui
+
+
+{-
+-- Change to a more boring example
+-- by just commenting out `.Goose` imports above
+-- and removing the comment here
+import Example.Default.Main as Example
+import Example.Default.Model as Example
+import Example.Default.Msg as Example
+import Example.Default.Gui as ExampleGui
+-}
 
 import RandomGui as Gui exposing (generator)
 
@@ -41,18 +53,14 @@ import RandomGui as Gui exposing (generator)
 type Msg
     = NoOp
     | ChangeMode Mode
-    | ChangeFlow Flow
+    | ChangeDock Dock
     | FromDatGui Exp.RawUpdate
     | ToTron Tron.Msg
-    | ToDefault Default.Msg
+    | ToExample Example.Msg
     | Randomize (Tron.Builder ())
     | SwitchTheme
     | TriggerRandom
     | TriggerDefault
-
-
-type alias Example
-    = Default.Model
 
 
 type Mode
@@ -64,7 +72,7 @@ type alias Model =
     { mode : Mode
     , theme : Theme
     , gui : Tron.Gui Msg
-    , example : Example
+    , example : Example.Model
     , url : Url
     }
 
@@ -72,16 +80,18 @@ type alias Model =
 init : Url -> Navigation.Key -> ( Model, Cmd Msg )
 init url _ =
     let
-        initialModel = Default.init
+        initialModel = Example.init
         ( gui, startGui ) =
             initialModel
-                |> defaultGui url
+                |> exampleGui url
     in
         (
             { mode = TronGui
             , example = initialModel
             , theme = Theme.light
             , gui = gui
+                |> Gui.reshape ( 7, 7 )
+                |> Gui.redock Dock.bottomLeft
             , url = url
             }
         , startGui
@@ -107,25 +117,32 @@ view { mode, gui, example, theme } =
         , Html.button
             [ Html.onClick SwitchTheme ]
             [ Html.text "Theme" ]
-        , Html.button
-            [ Html.onClick <| ChangeFlow Flow.topToBottom ]
-            [ Html.text "Top to Bottom" ]
-        , Html.button
-            [ Html.onClick <| ChangeFlow Flow.bottomToTop ]
-            [ Html.text "Bottom to Top" ]
-        , Html.button
-            [ Html.onClick <| ChangeFlow Flow.leftToRight ]
-            [ Html.text "Left to Right" ]
-        , Html.button
-            [ Html.onClick <| ChangeFlow Flow.rightToLeft ]
-            [ Html.text "Right to Left" ]
+        , Html.span
+            []
+            <| List.map
+                (\(label, dock) ->
+                    Html.button
+                        [ Html.onClick <| ChangeDock dock ]
+                        [ Html.text label ]
+                )
+            <|
+            [ ( "⬁", Dock.topLeft )
+            , ( "⇧", Dock.topCenter )
+            , ( "⬀", Dock.topRight )
+            , ( "⇦", Dock.middleLeft )
+            , ( "◯", Dock.center )
+            , ( "⇨", Dock.middleRight )
+            , ( "⬃", Dock.bottomLeft )
+            , ( "⇩", Dock.bottomCenter )
+            , ( "⬂", Dock.bottomRight )
+            ]
         , case mode of
             DatGui -> Html.div [] []
             TronGui ->
                 gui
                     |> Gui.view theme
                     |> Html.map ToTron
-        , Default.view example
+        , Example.view example
         ]
 
 
@@ -146,7 +163,7 @@ update msg model =
         ( ChangeMode TronGui, _ ) ->
             let
                 ( gui, startGui ) =
-                    model.example |> defaultGui model.url
+                    model.example |> exampleGui model.url
             in
                 (
                     { model
@@ -159,12 +176,28 @@ update msg model =
                     ]
                 )
 
-        ( ToDefault dmsg, _ ) ->
+        ( ToExample dmsg, _ ) ->
             (
-                { model
-                | example =
-                    Default.update dmsg model.example
-                }
+                -- If your GUI structure never changes (unlike with `Goose` example),
+                -- you need neither `updatedBy` function nor this condition check,
+                -- at all! Just leave the `else` part in your code.
+                if ExampleGui.updatedBy dmsg then
+
+                    let nextExample = model.example |> Example.update dmsg
+                    in
+                        { model
+                        | example = nextExample
+                        , gui =
+                            model.gui
+                                |> Tron.over
+                                    (ExampleGui.for nextExample
+                                        |> Builder.map ToExample)
+                        }
+                else
+                    { model
+                    | example =
+                        Example.update dmsg model.example
+                    }
             , Cmd.none
             )
 
@@ -204,7 +237,9 @@ update msg model =
             in
                 (
                     { model
-                    | gui = newGui |> Gui.map (always NoOp)
+                    | gui = newGui
+                        |> Gui.map (always NoOp)
+                        |> Gui.redock Dock.bottomCenter
                     }
                 , case model.mode of
                     DatGui ->
@@ -219,7 +254,7 @@ update msg model =
         ( TriggerDefault, _ ) ->
             let
                 ( gui, startGui ) =
-                    Default.init |> defaultGui model.url
+                    Example.init |> exampleGui model.url
             in
                 (
                     { model
@@ -236,10 +271,10 @@ update msg model =
             , Cmd.none
             )
 
-        ( ChangeFlow newFlow, _ ) ->
+        ( ChangeDock newDock, _ ) ->
             (
                 { model
-                | gui = model.gui |> Gui.reflow newFlow
+                | gui = model.gui |> Gui.redock newDock
                 }
             , Cmd.none
             )
@@ -271,11 +306,11 @@ main =
         }
 
 
-defaultGui : Url -> Default.Model -> ( Gui Msg, Cmd Msg )
-defaultGui url model =
+exampleGui : Url -> Example.Model -> ( Gui Msg, Cmd Msg )
+exampleGui url model =
     let
         ( gui, startGui ) =
-            DefaultGui.for model
+            ExampleGui.for model
                 |> Gui.init
         ( nextGui, launchDetachable )
             = gui
@@ -286,7 +321,7 @@ defaultGui url model =
                     receieveUpdateFromWs
     in
         ( nextGui
-            |> Gui.map ToDefault
+            |> Gui.map ToExample
         , Cmd.batch
             [ startGui
             , launchDetachable

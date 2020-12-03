@@ -7,19 +7,30 @@ import Html exposing (Html, div)
 import Gui as Tron exposing (Gui, initRaw, view)
 import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
 
-import Default.Main as Default
-import Default.Model as Default
-import Default.Msg as Default
-import Default.Gui as DefaultGui
+import Example.Goose.Main as Example
+import Example.Goose.Model as Example
+import Example.Goose.Msg as Example
+import Example.Goose.Gui as ExampleGui
+
+
+{-
+-- Change to a more boring example
+-- by just commenting out `.Goose` imports above
+-- and removing the comment here
+import Example.Default.Main as Example
+import Example.Default.Model as Example
+import Example.Default.Msg as Example
+import Example.Default.Gui as ExampleGui
+-}
 
 
 type Msg
-    = ToDefault Default.Msg
+    = ToExample Example.Msg
     | FromDatGui Exp.RawUpdate
 
 
 type alias Example
-    = Default.Model
+    = Example.Model
 
 
 type alias Model =
@@ -29,14 +40,14 @@ type alias Model =
 init : flags -> ( Model, Cmd Msg )
 init _ =
     let
-        example = Default.init
+        example = Example.init
         gui =
-            DefaultGui.for example
+            ExampleGui.for example
                 |> Tron.initRaw
     in
         (
             ( example
-            , gui |> Tron.map ToDefault
+            , gui |> Tron.map ToExample
             )
         , gui
             |> Tron.encode
@@ -48,7 +59,7 @@ view : Model -> Html Msg
 view ( example, _ ) =
     Html.div
         [ ]
-        [ Default.view example
+        [ Example.view example
         ]
 
 
@@ -56,9 +67,9 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ( example, gui ) =
     case msg of
 
-        ToDefault dmsg ->
+        ToExample dmsg ->
             (
-                ( example |> Default.update dmsg
+                ( example |> Example.update dmsg
                 , gui
                 )
             , Cmd.none

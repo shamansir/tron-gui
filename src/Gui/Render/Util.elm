@@ -177,3 +177,8 @@ arrowWithLink color onClick url =
             , arrow color (scale 0.35) (rotate 45)
             ]
         ] -}
+
+
+-- needed for Safari to properly position sub-groups when VDOM is re-rendered
+resetTransform : Svg.Attribute msg
+resetTransform = SA.style "transform: translate(0px,0px)"
