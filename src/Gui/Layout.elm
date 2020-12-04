@@ -103,7 +103,7 @@ pack1 dock size rootPath prop =
             ( dock
             , size
             , initBinPack (Dock.adaptSize dock size)
-                |> BinPack.pack1 ( { width = 1, height = 1 }, One_ <| Path.start )
+                |> BinPack.carelessPack ( { width = 1, height = 1 }, One_ <| Path.start )
             )
 
 
@@ -129,13 +129,13 @@ packItemsAtRoot size rp shape items =
                     (initBinPack size)
 
         packOne path =
-            BinPack.pack1
+            BinPack.carelessPack
                 ( { width = 1, height = 1 }
                 , One_ <| Path.fromList path
                 )
 
         packOneSub path cellShape =
-            BinPack.pack1
+            BinPack.carelessPack
                 ( case CS.numify cellShape of
                     ( cw, ch ) ->
                         { width = cw, height = ch }
@@ -143,7 +143,7 @@ packItemsAtRoot size rp shape items =
                 )
 
         packMany path (w, h) cellShape plateItems =
-            BinPack.pack1
+            BinPack.carelessPack
                 (
                     { width = w
                     , height = h
@@ -215,7 +215,7 @@ unfold f def ( dock, size, bp ) =
         adaptBounds =
             Dock.adaptBounds dock <| Dock.adaptSize dock size
     in
-        BinPack.unfold
+        BinPack.foldGeometry
             (\( c, bounds ) prev ->
                 case c of
                     One_ path ->
@@ -231,7 +231,7 @@ unfold f def ( dock, size, bp ) =
                                     (Tuple.mapSecond
                                         <| adaptBounds << Bounds.shift bounds
                                     )
-                                <| BinPack.unfold
+                                <| BinPack.foldGeometry
                                     (::)
                                     []
                                     innerBp

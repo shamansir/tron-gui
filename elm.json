@@ -22,7 +22,8 @@
         "elm/random": "1.0.0 <= v < 2.0.0",
         "elm/svg": "1.0.1 <= v < 2.0.0",
         "elm/url": "1.0.0 <= v < 2.0.0",
-        "pdamoc/elm-hashids": "1.0.4 <= v < 2.0.0"
+        "pdamoc/elm-hashids": "1.0.4 <= v < 2.0.0",
+        "shamansir/bin-pack": "1.0.0 <= v < 2.0.0"
     },
     "test-dependencies": {}
 }
