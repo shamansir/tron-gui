@@ -1,5 +1,8 @@
 function startWs(ackToWs, receieveUpdateFromWs, sendUpdateToWs) {
-    let socket = new WebSocket("ws://localhost:3333");
+    const WSS_HOST = 'localhost';
+    const WSS_PORT = '80';
+
+    let socket = new WebSocket("ws://" + WSS_HOST + ":" + WSS_PORT);
 
     let clientId = null;
 
