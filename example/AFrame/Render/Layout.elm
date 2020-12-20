@@ -27,6 +27,8 @@ import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (Cell(..), pack, unfold)
 import Gui.Property as Gui exposing (find)
 import Gui.Control as Gui exposing (Control(..))
+import Gui.Control.Toggle as Gui exposing (ToggleState(..))
+import Gui.Control.Button as Button exposing (Face(..), Icon(..))
 import Gui.Path exposing (Path)
 import Bounds exposing (Bounds)
 
@@ -73,7 +75,9 @@ view theme gui =
                 , onClick <| Click path
                 ]
                 []
-            , viewProperty bounds path prop
+            , entity
+                [ onClick <| Click path ]
+                [ viewProperty bounds path prop ]
             ]
         viewPlate bounds path prop innerCells =
             {- [ box
@@ -205,6 +209,51 @@ viewProperty bounds path prop =
                 ]
                 []
 
+        Gui.Toggle (Gui.Control _ val _) ->
+            entity
+                [ geometry
+                    [ AG.primitive A.cylinder
+                    , Cylinder.radius 0.1
+                    , Cylinder.height 0.05
+                    ]
+                , AC.position
+                    (xOffset + bounds.x)
+                    (yOffset + (bounds.y * -1))
+                    (z + 0.2)
+                , AC.rotation 90 0 0
+                , material
+                    [ AM.color <| case val of
+                        TurnedOn -> Color.green
+                        TurnedOff -> Color.red
+                    , AM.opacity 0.8
+                    ]
+                ]
+                []
+
+        Gui.Action (Gui.Control face _ _) ->
+
+            entity
+                [ text
+                    [ AT.value
+                        <| case face of
+                            Button.Default -> "btn"
+                            Button.WithIcon (Icon icon) -> icon
+                            Button.WithColor color -> Color.toCssString color
+                    , AT.width (bounds.width * 4)
+                    , AT.color <| Color.rgb 0.2 0.2 0.2
+                    --, AT.lineHeight 0.1
+                    ]
+                , AC.position
+                    (xOffset + bounds.x + 1.9)
+                    (yOffset + (bounds.y * -1) + 0.1)
+                    (z + 0.4)
+                , material
+                    [ AM.color <| Color.rgb 0.2 0.2 0.2
+                    , AM.opacity 0.8
+                    ]
+                ]
+                []
+
         Gui.Color (Gui.Control _ curVal _) ->
 
             entity
@@ -217,7 +266,7 @@ viewProperty bounds path prop =
                 , AC.rotation 90 0 0
                 , material
                     [ let
-                        cc = Debug.log "color" <| Color.toCssString curVal -- FIXME: converts to `rbga`, Three.js is not accepting it
+                        cc = Color.toCssString curVal -- FIXME: converts to `rbga`, Three.js is not accepting it
                         in AM.color <| curVal
                     , AM.opacity 0.8
                     ]
