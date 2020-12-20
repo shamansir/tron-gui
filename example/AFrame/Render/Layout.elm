@@ -17,6 +17,7 @@ import AFrame.Components.Geometry.Box as Box exposing (..)
 import AFrame.Components.Geometry.Cylinder as Cylinder exposing (..)
 import AFrame.Components.Material as AM exposing (..)
 import AFrame.Components.Material.Flat as AM exposing (..)
+import AFrame.Components.Text as AT exposing (..)
 
 
 import Gui exposing (Gui)
@@ -102,6 +103,7 @@ view theme gui =
     in
         scene
             []
+            -- [ debug ]
             <| Aframe.camera [] [ Aframe.cursor [] [] ] :: renderedCells
 
 
@@ -157,6 +159,51 @@ viewProperty bounds path prop =
                     ]
                     []
                 ]
+
+        Gui.Coordinate (Gui.Control ( xcfg, ycfg ) ( x, y ) _) ->
+            entity
+                [ geometry
+                    [ AG.primitive A.cylinder
+                    , Cylinder.radius 0.1
+                    , Cylinder.height 0.05
+                    ]
+                , let
+                    sideX = (xcfg.max - xcfg.min) * (bounds.width * 0.02)
+                    sideY = (ycfg.max - ycfg.min) * (bounds.height * 0.02)
+                    scX = x / (xcfg.max - xcfg.min) * (bounds.width * 0.02)
+                    scY = y / (ycfg.max - ycfg.min) * (bounds.height * 0.02)
+                in
+                    AC.position
+                        (xOffset + bounds.x - (sideX / 2) + scX)
+                        (yOffset + (bounds.y * -1) + (sideY / 2) + scY)
+                        (z + 0.2)
+                , AC.rotation 90 0 0
+                , material
+                    [ AM.color <| Color.rgb 0.2 0.2 0.2
+                    , AM.opacity 0.8
+                    ]
+                ]
+                []
+
+        Gui.Text (Gui.Control _ ( _, val ) _) ->
+
+            entity
+                [ text
+                    [ AT.value val
+                    , AT.width (bounds.width * 4)
+                    , AT.color <| Color.rgb 0.2 0.2 0.2
+                    --, AT.lineHeight 0.1
+                    ]
+                , AC.position
+                    (xOffset + bounds.x + 1.9)
+                    (yOffset + (bounds.y * -1) + 0.1)
+                    (z + 0.4)
+                , material
+                    [ AM.color <| Color.rgb 0.2 0.2 0.2
+                    , AM.opacity 0.8
+                    ]
+                ]
+                []
 
         Gui.Color (Gui.Control _ curVal _) ->
 
