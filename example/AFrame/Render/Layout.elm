@@ -14,6 +14,7 @@ import AFrame.Variants.Primitive as A exposing (..)
 import AFrame.Components as AC exposing (..)
 import AFrame.Components.Geometry as AG exposing (..)
 import AFrame.Components.Geometry.Box as Box exposing (..)
+import AFrame.Components.Geometry.Cylinder as Cylinder exposing (..)
 import AFrame.Components.Material as AM exposing (..)
 import AFrame.Components.Material.Flat as AM exposing (..)
 
@@ -24,6 +25,7 @@ import Gui.Style.Theme exposing (Theme)
 import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (Cell(..), pack, unfold)
 import Gui.Property as Gui exposing (find)
+import Gui.Control as Gui exposing (Control(..))
 import Gui.Path exposing (Path)
 import Bounds exposing (Bounds)
 
@@ -61,7 +63,6 @@ view theme gui =
                     , Box.depth 0.1
                     , Box.width (bounds.width * 0.9)
                     , Box.height (bounds.height * 0.9)
-
                     ]
                 , AC.position (xOffset + bounds.x) (yOffset + bounds.y * -1) z
                 , material
@@ -71,16 +72,6 @@ view theme gui =
                 , onClick <| Click path
                 ]
                 []
-            -- , Aframe_.box
-            --     [ Aframe.color Color.white
-            --     , Aframe.opacity 0.8
-            --     , Aframe.position (xOffset + bounds.x) (yOffset + bounds.y * -1) z
-            --     , Aframe.depth 0.1
-            --     , Aframe.width (bounds.width * 0.9)
-            --     , Aframe.height (bounds.height * 0.9)
-            --     , onClick <| Click path
-            --     ]
-            --     []
             , viewProperty bounds path prop
             ]
         viewPlate bounds path prop innerCells =
@@ -117,4 +108,74 @@ view theme gui =
 
 viewProperty : Bounds -> Path -> Gui.Property msg -> Html Msg
 viewProperty bounds path prop =
-    Aframe_.box [] []
+    case prop of
+        Gui.Number (Gui.Control cfg val _) ->
+
+            entity
+                []
+
+                [ entity
+                    [ geometry
+                        [ AG.primitive A.cylinder
+                        , Cylinder.radius (min bounds.width bounds.height * 0.4)
+                        , Cylinder.height 0.05
+                        ]
+                    , AC.position (xOffset + bounds.x) (yOffset + bounds.y * -1) (z + 0.05)
+                    , AC.rotation 90 0 0
+                    , material
+                        [ AM.color <| Color.rgb 0.7 0.7 0.7
+                        , AM.opacity 0.8
+                        ]
+                    ]
+                    []
+
+                , entity
+                    [ geometry
+                        [ AG.primitive A.box
+                        , Box.depth 0.1
+                        , Box.width 0.05
+                        , Box.height (bounds.height * 0.8)
+                        ]
+                        {-
+                        [ AG.primitive A.cylinder
+                        , Cylinder.radius (min bounds.width bounds.height * 0.4)
+                        , Cylinder.height 0.05
+                        , Cylinder.thetaStart 0
+                        , Cylinder.thetaLength <| (val - cfg.min) / (cfg.max - cfg.min) * 360
+                        ]
+                        -}
+                    , AC.position
+                        (xOffset + bounds.x)
+                        (yOffset + (bounds.y * -1))
+                        (z + 0.2)
+                    -- , for cylinder: AC.rotation 90 0 0
+                    , AC.rotation 0 0 <| (val - cfg.min) / (cfg.max - cfg.min) * 360
+                    , material
+                        [ AM.color <| Color.rgb 0.2 0.2 0.2
+                        , AM.opacity 0.8
+                        ]
+                    ]
+                    []
+                ]
+
+        Gui.Color (Gui.Control _ curVal _) ->
+
+            entity
+                [ geometry
+                    [ AG.primitive A.cylinder
+                    , Cylinder.radius (min bounds.width bounds.height * 0.4)
+                    , Cylinder.height 0.2
+                    ]
+                , AC.position (xOffset + bounds.x) (yOffset + bounds.y * -1) (z + 0.05)
+                , AC.rotation 90 0 0
+                , material
+                    [ let
+                        cc = Debug.log "color" <| Color.toCssString curVal -- FIXME: converts to `rbga`, Three.js is not accepting it
+                        in AM.color <| curVal
+                    , AM.opacity 0.8
+                    ]
+                , onClick <| Click path
+                ]
+                []
+
+        _ -> Aframe_.box [] []
