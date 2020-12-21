@@ -5,12 +5,13 @@ import Array exposing (..)
 import Json.Decode as Json
 
 
-import Bounds exposing (Bounds)
+import Bounds
+import BinPack exposing (..)
+
 import Gui.Control exposing (Control(..))
 import Gui.Path as Path exposing (Path)
 import Gui.Property exposing (..)
 import Gui.Property as Property exposing (fold)
-import BinPack exposing (..)
 import Gui.Style.Dock exposing (Dock)
 import Gui.Style.Dock as Dock
 import Gui.Style.CellShape exposing (CellShape)

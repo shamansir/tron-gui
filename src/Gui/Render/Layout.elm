@@ -12,7 +12,7 @@ import Json.Decode as Json
 import Dict
 import Url exposing (Url)
 
-import BinPack
+import BinPack exposing (Bounds)
 import Bounds exposing (..)
 import Bounds as B exposing (..)
 

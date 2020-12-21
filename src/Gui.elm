@@ -93,8 +93,7 @@ import Browser.Events as Browser
 import Html exposing (Html)
 import Json.Encode as E
 
-import BinPack exposing (..)
-import Bounds exposing (Bounds)
+import BinPack exposing (Bounds)
 import Size exposing (..)
 
 import Gui.Path exposing (Path)

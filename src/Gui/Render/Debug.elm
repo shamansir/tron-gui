@@ -2,6 +2,7 @@ module Gui.Render.Debug exposing (..)
 
 
 import Bounds exposing (..)
+import BinPack exposing (Bounds)
 
 import Svg exposing (Svg)
 import Color
@@ -10,7 +11,6 @@ import Gui.Control exposing (Control(..))
 import Gui.Property exposing (..)
 import Gui.Control.Toggle exposing (..)
 import Gui.Control.Nest exposing (..)
-
 import Gui.Render.Util exposing (..)
 
 

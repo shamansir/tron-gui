@@ -4,6 +4,7 @@ module Gui.Style.Logic exposing (..)
 import Dict exposing (Dict)
 
 import Color exposing (Color)
+import BinPack exposing (Bounds)
 
 import Gui.Style.Shape exposing (Shape(..))
 import Gui.Style.CellShape exposing (CellShape)
@@ -15,7 +16,6 @@ import Gui.Style.Cell as Cell
 
 
 import Gui.Mouse exposing (Position)
-import Bounds exposing (Bounds)
 import Gui.Property as Property exposing (Property(..))
 import Gui.Path as Path exposing (Path, toString)
 import Gui.Focus exposing (Focused(..))

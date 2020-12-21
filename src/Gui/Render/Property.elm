@@ -2,6 +2,7 @@ module Gui.Render.Property exposing (..)
 
 
 import Color exposing (Color)
+import BinPack exposing (Bounds)
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
@@ -9,7 +10,6 @@ import Html
 import Html.Attributes as HA
 import Html.Events as HE
 
-import Bounds exposing (Bounds)
 import Axis exposing (Axis)
 
 import Gui.Property exposing (..)

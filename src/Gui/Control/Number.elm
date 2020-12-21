@@ -2,7 +2,6 @@ module Gui.Control.Number exposing (..)
 
 
 import Axis exposing (Axis)
-import Bounds exposing (Bounds)
 import Color
 
 import Svg exposing (Svg)

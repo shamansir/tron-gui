@@ -3,8 +3,8 @@ module Gui.Render.Plate exposing (..)
 
 import Color
 import Url exposing (Url)
+import BinPack exposing (Bounds)
 
-import Bounds exposing (Bounds)
 import Gui.Path exposing (Path)
 import Gui.Msg exposing (Msg(..))
 import Gui.Detach exposing (ClientId, Detach, getLocalUrl, localUrlToString, LocalUrl)
