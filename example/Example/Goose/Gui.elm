@@ -110,6 +110,102 @@ honkGui config =
                     config.color
                     ChangeHonkTextColor
             )
+        ,
+            ( "position"
+            ,
+                let posAxis = { min = -50, max = 50, step = 1 }
+                in Gui.xy
+                    ( posAxis, posAxis )
+                    config.position
+                    ChangeHonkTextPosition
+            )
+        ,
+            ( "size"
+            ,
+                Gui.text
+                    (String.fromInt <| config.size)
+                    (String.toInt
+                        >> Maybe.withDefault (init.honk |> Tuple.second |> .size)
+                        >> ChangeHonkTextSize)
+            )
+        ,
+            ( "text"
+            ,
+                Gui.text
+                    config.text
+                    ChangeHonkText
+            )
+        ,
+            ( "color"
+            ,
+                Gui.color
+                    config.color
+                    ChangeHonkTextColor
+            )
+        ,
+            ( "position"
+            ,
+                let posAxis = { min = -50, max = 50, step = 1 }
+                in Gui.xy
+                    ( posAxis, posAxis )
+                    config.position
+                    ChangeHonkTextPosition
+            )
+        ,
+            ( "size"
+            ,
+                Gui.text
+                    (String.fromInt <| config.size)
+                    (String.toInt
+                        >> Maybe.withDefault (init.honk |> Tuple.second |> .size)
+                        >> ChangeHonkTextSize)
+            )
+        ,
+            ( "text"
+            ,
+                Gui.text
+                    config.text
+                    ChangeHonkText
+            )
+        ,
+            ( "color"
+            ,
+                Gui.color
+                    config.color
+                    ChangeHonkTextColor
+            )
+        ,
+            ( "position"
+            ,
+                let posAxis = { min = -50, max = 50, step = 1 }
+                in Gui.xy
+                    ( posAxis, posAxis )
+                    config.position
+                    ChangeHonkTextPosition
+            )
+        ,
+            ( "size"
+            ,
+                Gui.text
+                    (String.fromInt <| config.size)
+                    (String.toInt
+                        >> Maybe.withDefault (init.honk |> Tuple.second |> .size)
+                        >> ChangeHonkTextSize)
+            )
+        ,
+            ( "text"
+            ,
+                Gui.text
+                    config.text
+                    ChangeHonkText
+            )
+        ,
+            ( "color"
+            ,
+                Gui.color
+                    config.color
+                    ChangeHonkTextColor
+            )
         ]
 
 

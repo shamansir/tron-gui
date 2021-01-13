@@ -70,6 +70,7 @@ viewProperty
     -> State
     -> Path
     -> Bounds
+    -> Maybe Bounds
     -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
@@ -79,6 +80,7 @@ viewProperty
     ( ( _, focus, _ ) as state )
     path
     pixelBounds
+    parentPixelBounds
     maybeSelectedInside
     cellShape
     ( label, prop ) =
@@ -150,6 +152,7 @@ collectPlatesAndCells -- FIXME: a complicated function, split into many
             { path : Path
             , label : String
             , bounds : Bounds
+            , parentBounds: Maybe Bounds
             , parent : Maybe (Property msg)
             , source : Property msg
             , index : Maybe Int
@@ -168,6 +171,7 @@ collectPlatesAndCells ( rootPath, root ) =
                             , label = label
                             , parent = Nothing
                             , bounds = B.multiplyBy Cell.width cellBounds
+                            , parentBounds = Nothing
                             , source = source
                             , index = Nothing
                             } :: prevCells
@@ -195,6 +199,7 @@ collectPlatesAndCells ( rootPath, root ) =
                                                     , label = cellLabel
                                                     , parent = Just source
                                                     , bounds = B.multiplyBy Cell.width cellBounds
+                                                    , parentBounds = Just plateBounds
                                                     , source = cellSource
                                                     , index = Just index
                                                     } |> Just
@@ -248,6 +253,7 @@ view theme dock bounds detach root layout =
                         )
                         cell.path
                         cell.bounds
+                        cell.parentBounds
                         (getSelected cell.source)
                         ( cell.parent
                             |> Maybe.andThen Property.getCellShape

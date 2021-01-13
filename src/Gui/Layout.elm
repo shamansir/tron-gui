@@ -57,7 +57,7 @@ init dock size =
 
 initBinPack : ( Float, Float ) -> BinPack a
 initBinPack ( maxCellsByX, maxCellsByY )
-    = container maxCellsByX maxCellsByY
+    = container 100 100
 
 
 find : Layout -> { x : Float, y : Float } -> Maybe Path
@@ -157,7 +157,7 @@ packItemsAtRoot size rp shape items =
                                 then packOneSub (path ++ [index]) cellShape plateLayout
                                 else plateLayout
                         )
-                        (BinPack.container w h)
+                        (BinPack.container 100 100)
                     <| Array.indexedMap Tuple.pair
                     <| plateItems
                 )
