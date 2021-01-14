@@ -3,7 +3,7 @@
     "name": "shamansir/tron-gui",
     "summary": "Tron: Minimal Universal GUI",
     "license": "BSD-3-Clause",
-    "version": "3.0.0",
+    "version": "4.0.0",
     "exposed-modules": [
         "Gui",
         "Gui.Build",
