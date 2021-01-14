@@ -2,7 +2,7 @@ module Gui.Style.CellShape exposing
     ( CellShape
     , default
     , single, half, halfByOne, oneByHalf, twiceByHalf, halfByTwice, twiceByTwice
-    , isHorizontal, isVertical, isSquare, isLargeSquare
+    , isHorizontal, isVertical, isSquare, isSmallSquare, isLargeSquare
     , numify, toString
     )
 
@@ -21,9 +21,12 @@ Cell Shape is the place it takes in nested panels. Considering the default shape
 @docs CellShape
 
 # Values
-@docs single, half, halfByOne, oneByHalf, twiceByHalf, halfByTwice, twiceByTwice
+@docs default, single, half, halfByOne, oneByHalf, twiceByHalf, halfByTwice, twiceByTwice
 
-# Helpers
+# Determine shape
+@docs isHorizontal, isVertical, isSquare, isSmallSquare, isLargeSquare
+
+# Other Helpers
 @docs numify, toString
 -}
 
@@ -45,43 +48,43 @@ default : CellShape
 default = single
 
 
-{-|
+{-| 1x1
 -}
 single : CellShape
 single = CellShape Single Single
 
 
-{-|
+{-| 0.5x0.5
 -}
 half : CellShape
 half = CellShape Half Half
 
 
-{-|
+{-| 0.5x1
 -}
 halfByOne : CellShape
 halfByOne = CellShape Half Single
 
 
-{-|
+{-| 1x0.5
 -}
 oneByHalf : CellShape
 oneByHalf = CellShape Single Half
 
 
-{-|
+{-| 2x0.5
 -}
 twiceByHalf : CellShape
 twiceByHalf = CellShape Twice Half
 
 
-{-|
+{-| 0.5x2
 -}
 halfByTwice : CellShape
 halfByTwice = CellShape Half Twice
 
 
-{-|
+{-| 2x2
 -}
 twiceByTwice : CellShape
 twiceByTwice = CellShape Twice Twice
@@ -124,6 +127,8 @@ toString cs =
                 unitToString rn ++ "-by-" ++ unitToString cn
 
 
+{-|
+-}
 isSquare : CellShape -> Bool
 isSquare cs =
     case cs of
@@ -132,6 +137,8 @@ isSquare cs =
         _ -> False
 
 
+{-|
+-}
 isSmallSquare : CellShape -> Bool
 isSmallSquare cs =
     case cs of
@@ -139,6 +146,8 @@ isSmallSquare cs =
         _ -> False
 
 
+{-|
+-}
 isLargeSquare : CellShape -> Bool
 isLargeSquare cs =
     case cs of
@@ -146,6 +155,8 @@ isLargeSquare cs =
         _ -> False
 
 
+{-|
+-}
 isHorizontal : CellShape -> Bool
 isHorizontal cs =
     case cs of
@@ -153,6 +164,8 @@ isHorizontal cs =
         _ -> False
 
 
+{-|
+-}
 isVertical : CellShape -> Bool
 isVertical cs =
     case cs of

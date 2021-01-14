@@ -32,8 +32,8 @@ import Gui.Render.Util as Util exposing (arrow)
 import Gui.Style.Logic exposing (..)
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS exposing (..)
-import Gui.Style.Tone exposing (Tone)
-import Gui.Style.Tone as Tone exposing (..)
+import Gui.Style.Coloring exposing (Tone)
+import Gui.Style.Coloring as Coloring exposing (..)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Theme as Theme exposing (toString)
 import Gui.Style.Placement exposing (Placement)
@@ -58,7 +58,7 @@ view ( ( theme, tone ) as style ) state path bounds maybeSelectedInside cellShap
         [ Svg.rect
             [ SA.fill
                 <| Color.toCssString
-                <| Tone.back style state
+                <| Coloring.back_ style state
             , SA.x <| String.fromFloat (Cell.gap / 2)
             , SA.y <| String.fromFloat (Cell.gap / 2)
             , SA.rx <| String.fromFloat Cell.borderRadius
@@ -89,7 +89,7 @@ viewLabel style state cellShape bounds label =
                 [ SA.class "cell__label"
                 , SA.x <| String.fromFloat (bounds.width / 2)
                 , SA.y <| String.fromFloat (bounds.height / 5 * 4)
-                , SA.fill <| Color.toCssString <| Tone.text style state
+                , SA.fill <| Color.toCssString <| Coloring.text_ style state
                 ]
                 [ Svg.text label ]
         else Svg.none
@@ -173,17 +173,17 @@ knob style state bounds value =
     in
         Svg.g
             [ resetTransform ]
-            [ path (Tone.lines style state |> Color.toCssString)
+            [ path (Coloring.lines_ style state |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle 0, to = toAngle value }
-            , path (Tone.secondaryLines style state |> Color.toCssString)
+            , path (Coloring.secondaryLines_ style state |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle value, to = toAngle 1 }
-            , path (Tone.lines style state |> Color.toCssString)
+            , path (Coloring.lines_ style state |> Color.toCssString)
                 <| describeMark
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
@@ -212,7 +212,7 @@ coord style state bounds ( valueX, valueY ) =
             , SA.y1 <| String.fromFloat cy
             , SA.x2 <| String.fromFloat right
             , SA.y2 <| String.fromFloat cy
-            , SA.stroke <| Color.toCssString <| Tone.lines style state
+            , SA.stroke <| Color.toCssString <| Coloring.lines_ style state
             , SA.opacity "0.2"
             , SA.strokeWidth "1"
             , SA.strokeLinecap "round"
@@ -223,7 +223,7 @@ coord style state bounds ( valueX, valueY ) =
             , SA.y1 <| String.fromFloat top
             , SA.x2 <| String.fromFloat cx
             , SA.y2 <| String.fromFloat bottom
-            , SA.stroke <| Color.toCssString <| Tone.lines style state
+            , SA.stroke <| Color.toCssString <| Coloring.lines_ style state
             , SA.opacity "0.2"
             , SA.strokeWidth "1"
             , SA.strokeLinecap "round"
@@ -232,9 +232,9 @@ coord style state bounds ( valueX, valueY ) =
         , Svg.circle
             [ SA.cx <| String.fromFloat circleX
             , SA.cy <| String.fromFloat circleY
-            , SA.fill <| Color.toCssString <| Tone.lines style state
+            , SA.fill <| Color.toCssString <| Coloring.lines_ style state
             , SA.fill "none"
-            , SA.stroke <| Color.toCssString <| Tone.lines style state
+            , SA.stroke <| Color.toCssString <| Coloring.lines_ style state
             , SA.strokeWidth "2"
             , SA.r <| String.fromFloat circleRadius
             ]
@@ -264,7 +264,7 @@ text style state ( editing, value ) onInput bounds =
                 , SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat <| cy + 1
                 , SA.class "text--ready"
-                , SA.fill <| Color.toCssString <| Tone.lines style state
+                , SA.fill <| Color.toCssString <| Coloring.lines_ style state
                 ]
                 [ Svg.text <|
                     if String.length value <= 6 then
@@ -291,7 +291,7 @@ text style state ( editing, value ) onInput bounds =
                         -- , HA.style "left" <| String.fromFloat Cell.gap ++ "px"
                         -- , HA.style "top" <| String.fromFloat topShift ++ "px"
                         , HA.style "font-size" <| String.fromFloat fontSize ++ "px"
-                        , HA.style "color" <| Color.toCssString <| Tone.text style state
+                        , HA.style "color" <| Color.toCssString <| Coloring.text_ style state
                         , HA.style "position" "initial"
                         , HA.type_ "text"
                         , HA.placeholder "input"
@@ -313,9 +313,9 @@ toggle style state tstate bounds =
         , SA.cy <| String.fromFloat cy
         , SA.r <| String.fromFloat radius
         , SA.fill <| case tstate of
-            TurnedOn -> Color.toCssString <| Tone.lines style state
+            TurnedOn -> Color.toCssString <| Coloring.lines_ style state
             TurnedOff -> "none"
-        , SA.stroke <| Color.toCssString <| Tone.lines style state
+        , SA.stroke <| Color.toCssString <| Coloring.lines_ style state
         , SA.strokeWidth "2"
         ]
         [
@@ -335,7 +335,7 @@ button ( ( theme, tone ) as style ) ( ( _, _, selected ) as state ) face cellSha
                 [ SA.x <| String.fromFloat labelX
                 , SA.y <| String.fromFloat labelY
                 , SA.class "button__label"
-                , SA.fill <| Color.toCssString <| Tone.text style state
+                , SA.fill <| Color.toCssString <| Coloring.text_ style state
                 ]
                 [ Svg.text label ]
     in case face of
@@ -350,7 +350,7 @@ button ( ( theme, tone ) as style ) ( ( _, _, selected ) as state ) face cellSha
                                     "transform: "
                                         ++ "translate(" ++ String.fromFloat Cell.gap ++ "px,"
                                                         ++ String.fromFloat (cy - 4) ++ "px)" ]
-                                [ Util.arrow (Tone.text style state) (scale 0.5) (rotate 90)
+                                [ Util.arrow (Coloring.text_ style state) (scale 0.5) (rotate 90)
                                 ]
                             -- , textLabel ( bounds.width / 2.25 + gap, cy )
                             , textLabel ()
@@ -429,7 +429,7 @@ arrow style state groupState bounds =
                 ++ "translate(" ++ String.fromFloat (center.x - (14 * scaleV)) ++ "px,"
                                 ++ String.fromFloat (center.y - (14 * scaleV)) ++ "px)"
         ]
-        [ Util.arrow (Tone.lines style state) (scale scaleV)
+        [ Util.arrow (Coloring.lines_ style state) (scale scaleV)
             <| case groupState of
                 Expanded -> rotate 180
                 Detached -> rotate 45

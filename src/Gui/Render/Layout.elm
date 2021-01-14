@@ -44,7 +44,7 @@ import Gui.Style.Dock exposing (Dock)
 import Gui.Style.Dock as Dock exposing (firstCellAt, toString)
 import Gui.Style.Placement exposing (Placement(..))
 import Gui.Style.Selected exposing (Selected(..))
-import Gui.Style.Tone as Tone exposing (none)
+import Gui.Style.Coloring as Tone exposing (none)
 import Gui.Style.Cell as Cell
 
 

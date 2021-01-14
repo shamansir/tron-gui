@@ -3,8 +3,8 @@ module Example.Goose.Gui exposing (..)
 
 import Gui exposing (Gui)
 import Gui.Build as Gui
-import Gui.Style.Shape exposing (cols)
-import Gui.Style.Shape as Shape exposing (auto)
+import Gui.Style.PanelShape exposing (cols)
+import Gui.Style.PanelShape as Shape exposing (auto)
 import Gui.Style.CellShape as Cell exposing (single)
 
 import Example.Goose.Model exposing (..)

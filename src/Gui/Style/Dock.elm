@@ -12,7 +12,12 @@ module Gui.Style.Dock exposing
 @docs Dock
 
 # Values
-@docs topToBottom, bottomToTop, leftToRight, rightToLeft
+@docs topLeft, topCenter, topRight
+@docs middleLeft, center, middleRight
+@docs bottomLeft, bottomCenter, bottomRight
+
+# Helpers
+@docs adaptBounds, adaptPosition, adaptSize, firstCellAt, boundsFromSize, toString
 -}
 
 import Gui.Style.Cell as Cell
@@ -32,7 +37,7 @@ type VertAnchor
     | Bottom
 
 
-{-| `Dock` describes the direction in which GUI is oriented and to which corner it is "docked".
+{-| `Dock` describes the direction in which GUI is oriented and to which corner or side of the page it is "docked".
 
 If you are familiar with macOS Dock — here we have the similar concept.
 -}
@@ -92,6 +97,7 @@ bottomRight : Dock
 bottomRight = Dock ( Right, Bottom )
 
 
+{-| Given current `Dock` setting and size of the screen, move the requsted top-left-based bounds to the new area accoring to the docking state. -}
 adaptBounds
      : Dock
     -> ( Float, Float )
@@ -122,6 +128,7 @@ adaptBounds (Dock ( horz, vert )) ( width, height ) innerBounds =
     }
 
 
+{-| Given current `Dock` setting and size of the screen, move the requsted top-left-based point to the new position accoring to the docking state. -}
 adaptPosition : Dock -> ( Float, Float ) -> { x : Float, y : Float } -> { x : Float, y : Float }
 adaptPosition (Dock ( horz, vert )) ( width, height ) { x, y } =
     { x =
@@ -138,6 +145,7 @@ adaptPosition (Dock ( horz, vert )) ( width, height ) { x, y } =
     }
 
 
+{-| Flip the sides if docking happens in the center. -}
 adaptSize : Dock -> ( Float, Float ) -> ( Float, Float )
 adaptSize (Dock (horz, _)) ( w, h ) =
     case horz of
@@ -145,6 +153,7 @@ adaptSize (Dock (horz, _)) ( w, h ) =
         _ -> ( h, w )
 
 
+{-| Where the first cell is located with current dock setting and Docking state. -}
 firstCellAt : Dock ->  { a | width : Float, height : Float } -> ( Float, Float )
 firstCellAt (Dock ( horz, vert )) bounds =
     ( case horz of
@@ -156,6 +165,7 @@ firstCellAt (Dock ( horz, vert )) bounds =
     )
 
 
+{-| -}
 boundsFromSize
      : Dock
     -> Size Pixels
@@ -190,6 +200,7 @@ boundsFromSize
         } -}
 
 
+{-| -}
 toString : Dock -> String
 toString (Dock ( horz, vert )) =
     ( case horz of

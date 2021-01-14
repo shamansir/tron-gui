@@ -6,11 +6,10 @@ import Dict exposing (Dict)
 import Color exposing (Color)
 import BinPack exposing (Bounds)
 
-import Gui.Style.Shape exposing (Shape(..))
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CellShape exposing (toString)
-import Gui.Style.Tone exposing (Tone(..))
-import Gui.Style.Tone as Tone exposing (toString, next)
+import Gui.Style.Coloring exposing (Tone(..))
+import Gui.Style.Coloring as Tone exposing (toString, next)
 import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Cell as Cell
 

@@ -266,7 +266,7 @@ update msg model =
         ( SwitchTheme, _ ) ->
             (
                 { model
-                | theme = Theme.switch model.theme
+                | theme = Theme.toggle model.theme
                 }
             , Cmd.none
             )

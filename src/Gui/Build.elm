@@ -49,7 +49,7 @@ However, it is ok to use any name you like, for sure. Be it `Gui.` or `Def.` or 
 @docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, toggle, bool
 
 # Groups
-@docs nest, choice, choiceIcons, choiceAuto, strings, palette
+@docs nest, choice, choiceIcons, choiceAuto, strings, labels, labelsAuto, palette
 
 # Icons
 @docs icon
@@ -58,6 +58,7 @@ However, it is ok to use any name you like, for sure. Be it `Gui.` or `Def.` or 
 @docs map, mapSet
 
 # Force expand / collapse for nesting
+@docs expand, collapse
 
 -}
 
@@ -72,8 +73,8 @@ import Gui.Control exposing (Control(..))
 import Gui.Util exposing (findMap)
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS
-import Gui.Style.Shape exposing (Shape)
-import Gui.Style.Shape as Shape exposing (find, rows, cols)
+import Gui.Style.PanelShape exposing (PanelShape)
+import Gui.Style.PanelShape as Shape exposing (find, rows, cols)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Gui.Control.Text exposing (TextState(..))
@@ -426,7 +427,7 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
 
 See also: `Style.Shape`, `Style.CellShape`
 -}
-nest : Shape -> CellShape -> Set msg -> Builder msg
+nest : PanelShape -> CellShape -> Set msg -> Builder msg
 nest shape cellShape items =
     Group
         Nothing
@@ -460,7 +461,7 @@ nest shape cellShape items =
 See also: `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
 choice
-     : Shape
+     : PanelShape
     -> CellShape
     -> ( a -> Label )
     -> List a
@@ -494,7 +495,7 @@ choice shape cellShape toLabel =
         ChangeWaveShape
 -}
 choiceIcons
-     : Shape
+     : PanelShape
     -> CellShape
     -> ( a -> ( Label, Icon ) )
     -> List a
@@ -524,7 +525,7 @@ choiceIcons shape cellShape toLabelAndIcon =
         (String.toInteger >> Maybe.withDefault 128 >> ChangeBitrate)
 -}
 choiceAuto
-     : Shape
+     : PanelShape
     -> CellShape
     -> ( comparable -> Label )
     -> List comparable
@@ -536,7 +537,7 @@ choiceAuto shape cellShape f items v =
 
 
 choiceHelper
-     : ( Shape, CellShape )
+     : ( PanelShape, CellShape )
     -> ( (SelectedAt -> msg) -> Int -> a -> ( Label, Builder msg ) )
     -> List a
     -> a
@@ -603,6 +604,8 @@ strings options current toMsg =
         toMsg
 
 
+{-| `labels` is a helper to create `choice` over the values that could be converted to string/labels and compared.
+-}
 labels
      : ( a -> Label )
     -> List a
@@ -621,6 +624,8 @@ labels toLabel options current compare toMsg =
         toMsg
 
 
+{-| `labels` is a helper to create `choice` over the _comparable_ values that could be converted to strings/labels.
+-}
 labelsAuto
      : ( comparable -> Label )
     -> List comparable
@@ -639,7 +644,7 @@ labelsAuto toLabel options current toMsg =
         RepaintIceCream
 -}
 palette
-     : Shape
+     : PanelShape
     -> List Color
     -> Color
     -> (Color -> msg)
@@ -664,7 +669,7 @@ palette shape options current =
         )
 
 
-findShape : CellShape -> Shape -> Set a -> ( Float, Float )
+findShape : CellShape -> PanelShape -> Set a -> ( Float, Float )
 findShape cellShape shape =
     List.map Tuple.second
         >> noGhosts

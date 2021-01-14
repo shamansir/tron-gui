@@ -18,7 +18,7 @@ import Gui.Focus exposing (Focused(..))
 import Gui.Style.Logic exposing (..)
 import Gui.Style.Selected exposing (Selected(..))
 import Gui.Style.Placement exposing (Placement(..))
-import Gui.Style.Tone as Tone
+import Gui.Style.Coloring as Coloring
 import Gui.Style.Cell as Cell
 
 import Svg exposing (Svg)
@@ -34,7 +34,7 @@ state = ( AtRoot, NotFocused, Usual )
 back : Style -> Bounds -> Svg Msg
 back style bounds =
     Svg.rect
-        [ SA.fill <| Color.toCssString <| Tone.back style state
+        [ SA.fill <| Color.toCssString <| Coloring.back_ style state
         , SA.x <| String.fromFloat (Cell.gap / 2)
         , SA.y <| String.fromFloat (Cell.gap / 2)
         , SA.rx <| String.fromFloat Cell.borderRadius
@@ -67,7 +67,7 @@ controls detachFn ( ( _, tone ) as style ) path bounds ( label, prop ) =
             [ SA.class "plate-controls__title"
             , SA.x <| String.fromFloat <| bounds.width / 2
             , SA.y <| String.fromFloat <| Cell.gap + 1
-            , SA.fill <| Color.toCssString <| Tone.text style state
+            , SA.fill <| Color.toCssString <| Coloring.text_ style state
             ]
             [ Svg.text label ]
         , collapseButton
@@ -79,12 +79,12 @@ controls detachFn ( ( _, tone ) as style ) path bounds ( label, prop ) =
 
 detach : Style -> Svg msg
 detach style =
-    arrow (Tone.lines style state) (scale 0.35) (rotate 45)
+    arrow (Coloring.lines_ style state) (scale 0.35) (rotate 45)
 
 
 collapse : Style -> Svg msg
 collapse style =
-    arrow (Tone.lines style state) (scale 0.35) (rotate 180)
+    arrow (Coloring.lines_ style state) (scale 0.35) (rotate 180)
 
 
 collapseButton : Style -> Path -> ( Float, Float ) -> Svg Msg
