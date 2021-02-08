@@ -21,7 +21,6 @@ import Gui exposing (Gui)
 import Gui as Gui exposing (view, detachable, subscriptions)
 import Gui.Expose as Exp exposing (Update)
 import Gui as Tron exposing (Gui)
-import Gui.Msg as Tron exposing (Msg(..))
 import Gui.Mouse exposing (Position)
 import Gui.Build as Tron exposing (Builder)
 import Gui.Build as Builder exposing (map)
@@ -55,7 +54,7 @@ type Msg
     | ChangeMode Mode
     | ChangeDock Dock
     | FromDatGui Exp.RawUpdate
-    | ToTron Tron.Msg
+    | ToTron Tron.Message
     | ToExample Example.Msg
     | Randomize (Tron.Builder ())
     | SwitchTheme

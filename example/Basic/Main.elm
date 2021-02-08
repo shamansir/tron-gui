@@ -5,8 +5,7 @@ import Browser exposing (element)
 import Html exposing (Html, div)
 import Html.Attributes as Attr exposing (class)
 
-import Gui as Tron exposing (Gui, init, view, update, subscriptions)
-import Gui.Msg as Tron exposing (Msg(..))
+import Gui as Tron exposing (Gui, Message, init, view, update, subscriptions)
 import Gui.Build as Builder exposing (map)
 import Gui.Style.Theme as Theme exposing (Theme(..))
 
@@ -30,7 +29,7 @@ import Example.Default.Gui as ExampleGui
 
 type Msg
     = ToExample Example.Msg
-    | ToTron Tron.Msg
+    | ToTron Tron.Message
 
 
 type alias Model =

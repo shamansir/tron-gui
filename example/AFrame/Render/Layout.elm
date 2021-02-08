@@ -30,7 +30,7 @@ import Gui.Control as Gui exposing (Control(..))
 import Gui.Control.Toggle as Gui exposing (ToggleState(..))
 import Gui.Control.Button as Button exposing (Face(..), Icon(..))
 import Gui.Path exposing (Path)
-import Bounds exposing (Bounds)
+import BinPack exposing (Bounds)
 
 
 widthInCells = 10

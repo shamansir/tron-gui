@@ -6,8 +6,7 @@ import Browser exposing (element)
 import Html exposing (Html, div)
 import Html.Attributes as Attr exposing (class)
 
-import Gui as Tron exposing (Gui, init, view, update, subscriptions)
-import Gui.Msg as Tron exposing (Msg(..))
+import Gui as Tron exposing (Gui, Message, init, view, update, subscriptions)
 import Gui.Style.Theme as Theme exposing (Theme)
 
 import Example.Default.Main as Example
@@ -20,7 +19,7 @@ import AFrame.Render.Layout as AFrame exposing (view)
 
 type Msg
     = ToExample Example.Msg
-    | ToTron Tron.Msg
+    | ToTron Tron.Message
 
 
 type alias Model =

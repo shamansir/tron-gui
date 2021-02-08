@@ -217,7 +217,6 @@ encodePropertyAt path property =
                 [ ( "type", E.string "button" )
                 , ( "path", encodeRawPath path )
                 ]
-
         Choice _ _ ( Control items ( state, SelectedAt current ) _) ->
             E.object
                 [ ( "type", E.string "choice" )
