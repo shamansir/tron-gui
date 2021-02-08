@@ -2,12 +2,14 @@
 
 _(in progress)_
 
-* Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
+* New design;
 * Rename `Gui` to `Tron`;
 * Rename `Gui.Message` to `Gui.Msg` to be consistent with usual Elm style;
 * Pagination in panels which don't fit the inner buttons;
+* Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
 * One-Control example;
-* New design;
+* Include links to the examples in the docs;
+* Include minimal "OneControl" example into the docs;
 
 ### 4.0.0
 
