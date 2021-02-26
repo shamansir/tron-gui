@@ -5,6 +5,7 @@ _(in progress)_
 DONE:
 
 * One-Control example;
+* Color button control;
 
 TODO:
 
@@ -14,6 +15,7 @@ TODO:
 * Rename `Gui.Message` to `Gui.Msg` to be consistent with usual Elm style;
 * Pagination in panels which don't fit the inner buttons;
 * Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
+* Multiple-choice control;
 * Include links to the examples in the docs;
 * Include minimal "OneControl" example into the docs;
 
