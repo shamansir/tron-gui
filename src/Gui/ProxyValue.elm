@@ -15,3 +15,7 @@ type ProxyValue
     | FromToggle ToggleState
     | FromButton
     | Other
+
+
+
+-- TODO: toJson / fromJson
