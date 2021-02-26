@@ -101,7 +101,7 @@ describeMark
     -> String
 describeMark center { radiusA, radiusB } angleInDegrees =
     let
-        angleInRadians = (angleInDegrees-90) * pi / 180.0
+        angleInRadians = (angleInDegrees - 90) * pi / 180.0
         m_radiusA = radiusA * 0.4
         m_radiusB = radiusB * 0.4
         start =
