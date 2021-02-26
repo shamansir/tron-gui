@@ -224,17 +224,21 @@ view theme dock bounds detach root layout =
         tones = Style.assignTones root
 
         toneOf path =
-            tones |> Dict.get (Path.toString path) |> Maybe.withDefault Tone.none
+            tones
+                |> Dict.get (Path.toString path)
+                |> Maybe.withDefault Tone.none
 
         ( plates, cells ) =
             collectPlatesAndCells ( rootPath, root ) layout
 
         ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
 
-            ( plates |> List.map (.bounds >> viewPlateBack ( theme, Tone.none ) )
+            ( plates
+                |> List.map (.bounds >> viewPlateBack ( theme, Tone.none ) )
 
             , cells |> List.map
                 (\cell ->
+
                     viewProperty
                         ( theme, toneOf cell.path )
                         ( if (Path.sub rootPath cell.path |> Path.howDeep) == 1
@@ -254,6 +258,7 @@ view theme dock bounds detach root layout =
                             |> Maybe.withDefault CS.default
                         )
                         ( cell.label, cell.source )
+
                 )
 
             , plates |> List.map
@@ -274,7 +279,8 @@ view theme dock bounds detach root layout =
 
         detachButtonPos =
             case Dock.firstCellAt dock bounds of
-                ( x, y ) -> ( x + Cell.gap, y + Cell.gap )
+                ( x, y ) ->
+                    ( x + Cell.gap, y + Cell.gap )
 
         makeClass =
             "gui noselect "
@@ -285,7 +291,9 @@ view theme dock bounds detach root layout =
                 ++ " gui--" ++ Dock.toString dock
 
     in
-        div [ HA.id rootId
+        div
+
+            [ HA.id rootId
             , HA.class makeClass
             , HA.tabindex 0
             , keyDownHandler_
@@ -305,21 +313,22 @@ view theme dock bounds detach root layout =
                     [ Svg.g [ SA.class "grid__backs" ] platesBacksRendered
                     , Svg.g [ SA.class "grid__cells" ] cellsRendered
                     , Svg.g [ SA.class "grid__plate-controls" ] platesControlsRendered
+                    ,
+                        case detach |> Detach.getLocalUrl rootPath of
+                            Just localUrl ->
 
-                    , case detach |> Detach.getLocalUrl rootPath of
-                        Just localUrl ->
+                                Svg.g
+                                    [ SA.class "grid__detach"
+                                    ]
+                                    [ Plate.detachButton
+                                        ( theme, Tone.none )
+                                        rootPath
+                                        localUrl
+                                        detachButtonPos
+                                    ]
 
-                            Svg.g
-                                [ SA.class "grid__detach"
-                                ]
-                                [ Plate.detachButton
-                                    ( theme, Tone.none )
-                                    rootPath
-                                    localUrl
-                                    detachButtonPos
-                                ]
-
-                        Nothing -> Svg.none
+                            Nothing ->
+                                Svg.none
                     ]
                 ]
 

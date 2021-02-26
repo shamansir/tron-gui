@@ -215,6 +215,40 @@ mapReplace f root =
         helper Path.start root
 
 
+addPath : Property msg -> Property ( Path, msg )
+addPath root =
+    let
+        replaceItem : Path -> Int -> ( Label, Property msg ) -> ( Label, Property (Path, msg ) )
+        replaceItem parentPath index ( label, innerItem ) =
+            ( label
+            , helper (parentPath |> Path.advance index) innerItem
+            )
+
+        helper : Path -> Property msg -> Property ( Path, msg )
+        helper curPath item =
+            case item of
+                Choice focus shape control ->
+                    Choice
+                        focus
+                        shape
+                        (control
+                            |> Nest.indexedMapItems (replaceItem curPath)
+                            |> Control.map (Tuple.pair curPath)
+                        )
+                Group focus shape control ->
+                    Group
+                        focus
+                        shape
+                        (control
+                            |> Nest.indexedMapItems (replaceItem curPath)
+                            |> Control.map (Tuple.pair curPath)
+                        )
+                prop -> map (Tuple.pair curPath) prop
+
+    in
+        helper Path.start root
+
+
 updateAt : Path -> (Property msg -> Property msg) -> Property msg -> Property msg
 updateAt path f =
     mapReplace
