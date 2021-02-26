@@ -460,7 +460,7 @@ nest shape cellShape items =
 
 See also: `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
-choice
+choice -- TODO: remove, make choicesAuto default, chance to List ( a, Label )
      : PanelShape
     -> CellShape
     -> ( a -> Label )
@@ -494,7 +494,7 @@ choice shape cellShape toLabel =
         (==) -- equality operator usually works for sum types, but be accurate
         ChangeWaveShape
 -}
-choiceIcons
+choiceIcons -- TODO: remove, make choicesAuto default, chance to List ( a, Label, Icon )
      : PanelShape
     -> CellShape
     -> ( a -> ( Label, Icon ) )
@@ -606,7 +606,7 @@ strings options current toMsg =
 
 {-| `labels` is a helper to create `choice` over the values that could be converted to string/labels and compared.
 -}
-labels
+labels -- TODO: remove, make labelsAuto default
      : ( a -> Label )
     -> List a
     -> a
