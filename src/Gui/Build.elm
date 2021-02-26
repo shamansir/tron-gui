@@ -431,7 +431,9 @@ nest : PanelShape -> CellShape -> Set msg -> Builder msg
 nest shape cellShape items =
     Group
         Nothing
-        ( findShape cellShape shape items, cellShape )
+        ( findShape cellShape shape (items |> List.map Tuple.second)
+        , cellShape
+        )
         <| Control
             ( Array.fromList items
             )
@@ -548,6 +550,7 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
         callByIndex (SelectedAt indexToCall) =
+            -- FIXME: searching for the item every time seems wrong
             indexedOptions
                 |> findMap
                     (\(index, option) ->
@@ -563,12 +566,15 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
     in
         Choice
             Nothing
-            ( findShape cellShape shape set, cellShape )
+            ( findShape cellShape shape (set |> List.map Tuple.second)
+            , cellShape
+            )
             <| Control
                 ( set |> Array.fromList )
                 ( Collapsed
                 ,
                     indexedOptions
+                    -- FIXME: searching for the item every time seems wrong
                         |> findMap
                             (\(index, option) ->
                                 if compare option current
@@ -667,13 +673,6 @@ palette shape options current =
                     (c1.green == c2.green) &&
                     (c1.alpha == c2.alpha)
         )
-
-
-findShape : CellShape -> PanelShape -> Set a -> ( Float, Float )
-findShape cellShape shape =
-    List.map Tuple.second
-        >> noGhosts
-        >> Shape.find cellShape shape
 
 
 {-| Forcefully expand the nesting:

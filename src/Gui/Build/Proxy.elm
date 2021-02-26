@@ -86,7 +86,7 @@ nest : PanelShape -> CellShape -> B.Set ProxyValue -> B.Builder ProxyValue
 nest = B.nest
 
 
-choice
+choice -- TODO: remove, make choicesAuto default, chance to List ( a, Label )
      : PanelShape
     -> CellShape
     -> ( a -> Label )
@@ -94,11 +94,17 @@ choice
     -> a
     -> ( a -> a -> Bool )
     -> B.Builder ProxyValue
-choice pShape cShape toLabel items current compare =
-    B.choice pShape cShape toLabel items current compare FromChoice
+choice pShape cShape toLabel =
+    choiceHelper
+        ( pShape, cShape )
+        (\callByIndex index val ->
+            ( toLabel val
+            , B.button <| always <| callByIndex <| SelectedAt index
+            )
+        )
 
 
-choiceIcons
+choiceIcons -- TODO: remove, make choicesAuto default, chance to List ( a, Label, Icon )
      : PanelShape
     -> CellShape
     -> ( a -> ( Label, Icon ) )
@@ -106,8 +112,16 @@ choiceIcons
     -> a
     -> ( a -> a -> Bool )
     -> B.Builder ProxyValue
-choiceIcons pShape cShape toLabel items current compare =
-    B.choiceIcons pShape cShape toLabel items current compare (toLabel >> Tuple.first)
+choiceIcons pShape cShape toLabelAndIcon =
+    choiceHelper
+        ( pShape, cShape )
+        (\callByIndex index val ->
+            let ( label, theIcon ) = toLabelAndIcon val
+            in
+                ( label
+                , B.buttonWith theIcon <| always <| callByIndex <| SelectedAt index
+                )
+        )
 
 
 choiceAuto
@@ -117,8 +131,8 @@ choiceAuto
     -> List comparable
     -> comparable
     -> B.Builder ProxyValue
-choiceAuto pShape cShape toLabel items current =
-    B.choiceAuto pShape cShape toLabel items current toLabel
+choiceAuto pShape cShape f items v =
+    choice pShape cShape f items v (==)
 
 
 
@@ -127,17 +141,29 @@ strings
     -> String
     -> B.Builder ProxyValue
 strings options current =
-    B.strings options current identity
+    choice
+        (cols 1)
+        CS.twiceByHalf
+        identity
+        options
+        current
+        ((==))
 
 
-labels
+labels -- TODO: remove, make labelsAuto default
      : ( a -> Label )
     -> List a
     -> a
     -> ( a -> a -> Bool )
     -> B.Builder ProxyValue
-labels toLabel items current compare =
-    B.labels toLabel items current compare toLabel
+labels toLabel options current compare =
+    choice
+        (cols 1)
+        CS.twiceByHalf
+        toLabel
+        options
+        current
+        compare
 
 
 labelsAuto
@@ -145,14 +171,69 @@ labelsAuto
     -> List comparable
     -> comparable
     -> B.Builder ProxyValue
-labelsAuto toLabel items current =
-    B.labelsAuto toLabel items current toLabel
+labelsAuto toLabel options current =
+    labels toLabel options current (==)
 
 
-palette
+{-palette
      : PanelShape
     -> List Color
     -> Color
     -> B.Builder ProxyValue
 palette shape options current =
-    B.palette shape options current Color.toCssString
+    choiceHelper
+        ( shape, CS.half )
+        (\callByIndex index val ->
+            ( Color.toCssString val
+            , buttonByFace (WithColor val) <| always <| callByIndex <| SelectedAt index
+            )
+        )
+        options
+        current
+        (\cv1 cv2 ->
+            case ( cv1 |> Color.toRgba, cv2 |> Color.toRgba ) of
+                ( c1, c2 ) ->
+                    (c1.red == c2.red) &&
+                    (c1.blue == c2.blue) &&
+                    (c1.green == c2.green) &&
+                    (c1.alpha == c2.alpha)
+        ) -}
+
+
+choiceHelper
+     : ( PanelShape, CellShape )
+    -> ( (SelectedAt -> ProxyValue) -> Int -> a -> ( Label, B.Builder ProxyValue ) )
+    -> List a
+    -> a
+    -> ( a -> a -> Bool )
+    -> B.Builder ProxyValue
+choiceHelper ( shape, cellShape ) toBuilder options current compare =
+    let
+        indexedOptions = options |> List.indexedMap Tuple.pair
+        callByIndex (SelectedAt indexToCall) =
+            FromChoice indexToCall
+        set =
+            options
+                |> List.indexedMap (toBuilder callByIndex)
+    in
+        Choice
+            Nothing
+            ( findShape cellShape shape (set |> List.map Tuple.second)
+            , cellShape
+            )
+            <| Control
+                ( set |> Array.fromList )
+                ( Collapsed
+                ,
+                    indexedOptions
+                        -- FIXME: searching for the item every time seems wrong
+                        |> findMap
+                            (\(index, option) ->
+                                if compare option current
+                                    then Just index
+                                    else Nothing
+                            )
+                        |> Maybe.withDefault 0
+                        |> SelectedAt
+                )
+                (Just <| Tuple.second >> callByIndex)

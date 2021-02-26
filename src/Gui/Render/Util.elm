@@ -69,7 +69,7 @@ polarToCartesian
     -> { x : Float, y : Float }
 polarToCartesian center { radiusA, radiusB } angleInDegrees =
     let
-        angleInRadians = (angleInDegrees-90) * pi / 180.0
+        angleInRadians = (angleInDegrees - 90) * pi / 180.0
     in
         { x = center.x + (radiusA * cos angleInRadians)
         , y = center.y + (radiusB * sin angleInRadians)
