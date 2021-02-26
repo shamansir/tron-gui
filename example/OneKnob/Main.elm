@@ -78,18 +78,19 @@ update msg ( curAmount, gui ) =
 
         ToTron guiMsg ->
             case gui |> Tron.update guiMsg of
-                ( nextGui, cmds ) ->
+                ( nextGui, commands ) ->
                     (
                         ( curAmount
                         , nextGui
                         )
-                    , cmds
+                    , commands
                     )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions ( _, gui ) =
-    Tron.subscriptions gui |> Sub.map ToTron
+    Tron.subscriptions gui
+        |> Sub.map ToTron
 
 
 main : Program () Model Msg
