@@ -46,3 +46,16 @@ boolToToggle bool =
         False -> TurnedOff
 
 
+toggleToString : ToggleState -> String
+toggleToString state =
+    case state of
+        TurnedOn -> "on"
+        TurnedOff -> "off"
+
+
+stringToToggle : String -> Maybe ToggleState
+stringToToggle string =
+    case string of
+        "on" -> Just TurnedOn
+        "off" -> Just TurnedOff
+        _ -> Nothing

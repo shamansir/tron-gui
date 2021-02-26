@@ -15,6 +15,7 @@ import Gui.Control as Control exposing (update)
 import Gui.Property exposing (..)
 import Gui.Path exposing (Path)
 import Gui.Path as Path exposing (toList)
+import Gui.ProxyValue exposing (ProxyValue(..))
 
 -- TODO: make controls expose themselves, so get rid of these imports below
 import Gui.Control.Text as Text exposing (TextState(..))
@@ -22,27 +23,13 @@ import Gui.Control.Toggle as Toggle exposing (ToggleState(..))
 import Gui.Control.Nest as Nest exposing (NestState(..), SelectedAt(..))
 
 
-type alias RawPath = List Id
+type alias RawPath = List Int
 
 
 type alias RawProperty = E.Value
 
 
 type alias RawClientId = E.Value
-
-
-type alias Id = Int
-
-
-type ProxyValue -- TODO: get rid of?
-    = FromSlider Float
-    | FromXY ( Float, Float )
-    | FromInput String
-    | FromChoice Id
-    | FromColor Color
-    | FromToggle ToggleState
-    | FromButton
-    | Other
 
 
 type alias Update =
@@ -330,9 +317,9 @@ encodeUpdate maybeClient path prop =
             case prop of
                 Nil ->
                     ( "ghost", E.null )
-                Number ( Control { min, max, step } val _ ) ->
+                Number ( Control _ val _ ) ->
                     ( "slider", E.float val )
-                Coordinate ( Control ( xSpec, ySpec ) ( x, y ) _ ) ->
+                Coordinate ( Control _ ( x, y ) _ ) ->
                     ( "xy"
                     , E.string <| String.fromFloat x ++ "|" ++ String.fromFloat y
                     )

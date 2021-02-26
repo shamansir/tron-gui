@@ -6,6 +6,9 @@ import Array exposing (Array)
 import Gui.Control as Core exposing (Control)
 
 
+type alias Id = Int
+
+
 type NestState
     = Expanded
     | Collapsed
@@ -51,7 +54,7 @@ isSelected control n = whichSelected control == n
 
 
 whichSelected : ChoiceControl item msg -> Int
-whichSelected (Core.Control _ ( _, SelectedAt selected ) handler) = selected
+whichSelected (Core.Control _ ( _, SelectedAt selected ) _) = selected
 
 
 expand

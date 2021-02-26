@@ -215,8 +215,8 @@ mapReplace f root =
         helper Path.start root
 
 
-addPath : Property msg -> Property ( Path, msg )
-addPath root =
+addPathFrom : Path -> Property msg -> Property ( Path, msg )
+addPathFrom from root =
     let
         replaceItem : Path -> Int -> ( Label, Property msg ) -> ( Label, Property (Path, msg ) )
         replaceItem parentPath index ( label, innerItem ) =
@@ -246,7 +246,12 @@ addPath root =
                 prop -> map (Tuple.pair curPath) prop
 
     in
-        helper Path.start root
+        helper from root
+
+
+addPath : Property msg -> Property ( Path, msg )
+addPath =
+    addPathFrom Path.start
 
 
 updateAt : Path -> (Property msg -> Property msg) -> Property msg -> Property msg
