@@ -21,6 +21,7 @@ import Gui.Control.Toggle as Toggle exposing (..)
 import Gui.Control.Nest as Nest exposing (..)
 
 import Gui.Style.CellShape exposing (CellShape)
+import Gui.Style.PanelShape as Shape exposing (PanelShape)
 
 
 type FocusAt = FocusAt Int
@@ -513,3 +514,9 @@ isSelected prop index =
         Choice _ _ control ->
             Nest.isSelected control index
         _ -> False
+
+
+findShape : CellShape -> PanelShape -> List (Property msg) -> ( Float, Float )
+findShape cellShape panelShape =
+    noGhosts
+        >> Shape.find cellShape panelShape
