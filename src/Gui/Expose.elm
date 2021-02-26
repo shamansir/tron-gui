@@ -64,6 +64,35 @@ type alias Ack =
     }
 
 
+toExposed : Property msg -> Property ProxyValue
+toExposed prop =
+    case prop of
+        Nil ->
+            Nil
+        Number control ->
+            control |> setHandler FromSlider |> Number
+        Coordinate control ->
+            control |> setHandler FromXY |> Coordinate
+        Text control ->
+            control |> setHandler (Tuple.second >> FromInput) |> Text
+        Color control ->
+            control |> setHandler FromColor |> Color
+        Toggle control ->
+            control |> setHandler FromToggle |> Toggle
+        Action control ->
+            control |> setHandler (always FromButton) |> Action
+        Choice focus shape control ->
+            control
+                |> Nest.mapItems (Tuple.mapSecond toExposed)
+                |> setHandler (always Other) -- FIXME
+                |> Choice focus shape
+        Group focus shape control ->
+            control
+                |> Nest.mapItems (Tuple.mapSecond toExposed)
+                |> setHandler (always Other) -- FIXME
+                |> Group focus shape
+
+
 updateProperty : ProxyValue -> Property msg -> Cmd msg
 updateProperty value property =
     case ( property, value ) of
@@ -86,7 +115,8 @@ updateProperty value property =
                 |> callWith control
         ( Group _ _ _, _ ) ->
             Cmd.none
-        _ -> Cmd.none
+        ( _, _ ) ->
+            Cmd.none
 
 
 update : Update -> Property msg -> Cmd msg
@@ -126,7 +156,8 @@ applyProperty value prop =
             Choice focus shape <| Nest.select i <| control
         ( Group _ _ _, _ ) ->
             prop
-        _ -> prop
+        ( _, _ ) ->
+            prop
 
 
 apply : Update -> Property msg -> Property msg
@@ -207,10 +238,12 @@ encodePropertyAt path property =
             E.object
                 [ ( "type", E.string "toggle" )
                 , ( "path", encodeRawPath path )
-                , ( "current", E.string
+                ,
+                    ( "current", E.string
                         <| case val of
                             TurnedOn -> "on"
-                            TurnedOff -> "off" )
+                            TurnedOff -> "off"
+                    )
                 ]
         Action _ ->
             E.object
@@ -222,14 +255,22 @@ encodePropertyAt path property =
                 [ ( "type", E.string "choice" )
                 , ( "path", encodeRawPath path )
                 , ( "current", E.int current )
-                , ( "expanded", E.bool <| case state of
-                    Expanded -> True
-                    Collapsed -> False
-                    Detached -> False )
-                , ( "detached", E.bool <| case state of
-                    Detached -> True
-                    Collapsed -> False
-                    Expanded -> False )
+                ,
+                    ( "expanded"
+                    , E.bool
+                        <| case state of
+                            Expanded -> True
+                            Collapsed -> False
+                            Detached -> False
+                    )
+                ,
+                    ( "detached"
+                    , E.bool
+                        <| case state of
+                            Detached -> True
+                            Collapsed -> False
+                            Expanded -> False
+                    )
                 , ( "options", encodeNested path items )
                 ]
         Group _ _ (Control items ( state, _ ) _ ) ->
