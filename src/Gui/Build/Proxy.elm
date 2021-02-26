@@ -175,7 +175,7 @@ labelsAuto toLabel options current =
     labels toLabel options current (==)
 
 
-{-palette
+palette
      : PanelShape
     -> List Color
     -> Color
@@ -185,7 +185,7 @@ palette shape options current =
         ( shape, CS.half )
         (\callByIndex index val ->
             ( Color.toCssString val
-            , buttonByFace (WithColor val) <| always <| callByIndex <| SelectedAt index
+            , B.colorButton val <| always <| callByIndex <| SelectedAt index
             )
         )
         options
@@ -197,7 +197,7 @@ palette shape options current =
                     (c1.blue == c2.blue) &&
                     (c1.green == c2.green) &&
                     (c1.alpha == c2.alpha)
-        ) -}
+        )
 
 
 choiceHelper

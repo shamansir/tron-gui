@@ -1,7 +1,8 @@
 module Gui.Build exposing
     ( Builder, Set
     , root
-    , none, int, float, number, xy, coord, color, text, input, button, buttonWith, toggle, bool
+    , none, int, float, number, xy, coord, color, text, input, toggle, bool
+    , button, buttonWith, colorButton
     , nest, choice, choiceAuto, choiceIcons, strings, labels, labelsAuto, palette
     , icon
     , map, mapSet
@@ -373,6 +374,16 @@ icon = Icon
 buttonWith : Icon -> (() -> msg) -> Builder msg
 buttonWith icon_ =
     buttonByFace <| WithIcon icon_
+
+
+
+{-| Same as `button`, but having a color as it face.
+
+    Builder.button (Builder.icon "red-button.svg") <| always DoABang
+-}
+colorButton : Color -> (() -> msg) -> Builder msg
+colorButton color_ =
+    buttonByFace <| WithColor color_
 
 
 -- not exposed
