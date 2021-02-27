@@ -10,78 +10,6 @@ import Gui.Build as Builder exposing (Builder)
 import Gui.Style.Theme as Theme exposing (Theme(..))
 
 
-{-
-type alias Amount = Float
-
-
-type WithGuiMsg msg
-    = ToApp msg
-    | ToTron Tron.Message
-
-
-type alias WithGuiModel model msg =
-    ( model
-    , Tron.Gui msg
-    )
-
-
-init : flags -> model -> ( WithGuiModel model msg, Cmd (WithGuiMsg msg) )
-init flags initalModel =
-    let
-        ( gui, guiEffect ) =
-            for initialModel
-                |> Tron.init
-    in
-        (
-            ( initialAmount
-            , gui
-            )
-        , guiEffect |> Cmd.map ToTron
-        )
-
-
-view : Model -> Html (WithGuiMsg msg)
-view ( amount, gui ) =
-    Html.div
-        [ ]
-        [ gui
-            |> Tron.view Theme.dark
-            |> Html.map ToTron
-        , Html.text
-            <| String.fromFloat amount
-        ]
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ( curAmount, gui ) =
-    case msg of
-
-        AmountChanged newAmount ->
-            (
-                ( newAmount
-                , gui
-                )
-            , Cmd.none
-            )
-
-        ToTron guiMsg ->
-            case gui |> Tron.update guiMsg of
-                ( nextGui, commands ) ->
-                    (
-                        ( curAmount
-                        , nextGui
-                        )
-                    , commands
-                    )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions ( _, gui ) =
-    Tron.subscriptions gui
-        |> Sub.map ToTron
--}
-
-
 element
     :
         { init : flags -> ( model, Cmd msg )
@@ -112,7 +40,7 @@ element def =
                         ]
                     )
         , view =
-            \(model, gui) ->
+            \( model, gui ) ->
                 Html.div
                     [ ]
                     [ gui
