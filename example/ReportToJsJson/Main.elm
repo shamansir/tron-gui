@@ -1,11 +1,12 @@
 port module ReportToJsJson.Main exposing (main)
 
 
-import Browser exposing (element)
-import Html exposing (Html, div)
+import Browser
+import Html exposing (Html)
 
-import Gui as Tron exposing (Gui, initRaw, view)
-import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
+import Gui as Tron
+import Gui.Style.Theme as Theme
+import Gui.Expose as Exp
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -24,8 +25,9 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
-type alias Msg
-    = Tron.Message
+type Msg
+    = ToTron Tron.Message
+    | ToSend Exp.RawUpdate
 
 
 type alias Model =
@@ -38,15 +40,13 @@ init _ =
         example = Example.init
         gui =
             ExampleGui.for example
+                |> Exp.toExposed
                 |> Tron.initRaw
     in
-        (
-            ( example
-            , gui |> Tron.map ToExample
-            )
+        ( gui
         , gui
             |> Tron.encode
-            |> startDatGui
+            |> initGui
         )
 
 
@@ -54,18 +54,34 @@ view : Model -> Html Msg
 view gui =
     Html.div
         [ ]
-        [ Tron.view gui
+        [ Tron.view Theme.dark gui
+            |> Html.map ToTron
         ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg gui =
-    gui |> Tron.applyRaw msg
+    case msg of
+        ToTron tronMsg ->
+            let
+                ( nextGui, updateToSend ) =
+                    gui |> Tron.update tronMsg
+            in
+                ( nextGui
+                , updateToSend
+                    |> Cmd.map ToSend
+                )
+        ToSend rawMsg ->
+            ( gui
+            , sendUpdate rawMsg
+            )
+    --gui |> Tron.applyRaw msg
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    updateFromDatGui FromDatGui
+    Sub.none
+    -- updateFromDatGui FromDatGui
 
 
 main : Program () Model Msg
@@ -78,8 +94,6 @@ main =
         }
 
 
-port in : (Exp.RawUpdate -> msg) -> Sub msg
+port sendUpdate : Exp.RawUpdate -> Cmd msg
 
-port out : Exp.RawUpdate -> Cmd msg
-
-port init : Exp.RawProperty -> Cmd msg
+port initGui : Exp.RawProperty -> Cmd msg

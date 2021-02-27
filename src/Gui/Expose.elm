@@ -51,8 +51,8 @@ type alias Ack =
     }
 
 
-toExposed : Property msg -> Property ProxyValue
-toExposed prop =
+toProxied : Property msg -> Property ProxyValue
+toProxied prop =
     case prop of
         Nil ->
             Nil
@@ -70,14 +70,30 @@ toExposed prop =
             control |> setHandler (always FromButton) |> Action
         Choice focus shape control ->
             control
-                |> Nest.mapItems (Tuple.mapSecond toExposed)
+                |> Nest.mapItems (Tuple.mapSecond toProxied)
                 |> setHandler (always Other) -- FIXME
                 |> Choice focus shape
         Group focus shape control ->
             control
-                |> Nest.mapItems (Tuple.mapSecond toExposed)
+                |> Nest.mapItems (Tuple.mapSecond toProxied)
                 |> setHandler (always Other) -- FIXME
                 |> Group focus shape
+
+
+toExposed : Property msg -> Property RawUpdate
+toExposed prop =
+    prop
+        |> toProxied
+        |> Gui.Property.addPath
+         -- FIXME: `Expose.encodeUpdate` does the same as above
+        |> Gui.Property.map
+            (\(path, proxyVal) ->
+                { path = Path.toList path
+                , type_ = getTypeString proxyVal
+                , value = E.string "" -- FIXME: encode to string
+                , client = E.null
+                }
+            )
 
 
 updateProperty : ProxyValue -> Property msg -> Cmd msg
@@ -358,7 +374,20 @@ encodeUpdate maybeClient path prop =
 -- select selector gui = gui
 
 
-valueDecoder : String -> D.Decoder ProxyValue
+getTypeString : ProxyValue -> String -- FIXME: move to ProxyValue
+getTypeString value =
+    case value of
+        Other -> "ghost"
+        FromSlider _ -> "slider"
+        FromXY _ -> "xy"
+        FromInput _ -> "text"
+        FromColor _ -> "color"
+        FromChoice _ -> "choice"
+        FromToggle _ -> "toggle"
+        FromButton -> "button"
+
+
+valueDecoder : String -> D.Decoder ProxyValue -- FIXME: move to ProxyValue
 valueDecoder type_ =
     case type_ of
         "ghost" -> D.succeed Other
