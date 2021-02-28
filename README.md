@@ -132,5 +132,5 @@ See `example/` folder for more examples:
 ## Docker
 
 * `docker build . -t tron-example`
-* `docker run -p 8000:8000 tron-example`
+* `docker run -p 8080:8080 tron-example`
 * TODO: instructions to run WebSocket-server
