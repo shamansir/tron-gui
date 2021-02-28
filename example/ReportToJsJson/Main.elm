@@ -6,6 +6,7 @@ import Html exposing (Html)
 
 import Gui as Tron
 import Gui.Style.Theme as Theme
+import Gui.Style.Dock as Dock
 import Gui.Expose as Exp
 
 import Example.Goose.Main as Example
@@ -38,15 +39,19 @@ init : flags -> ( Model, Cmd Msg )
 init _ =
     let
         example = Example.init
-        gui =
+        ( gui, guiEffect ) =
             ExampleGui.for example
                 |> Exp.toExposed
-                |> Tron.initRaw
+                |> Tron.init
     in
-        ( gui
-        , gui
-            |> Tron.encode
-            |> initGui
+        ( gui |> Tron.redock Dock.topRight
+        , Cmd.batch
+            [ guiEffect
+                |> Cmd.map ToTron
+            , gui
+                |> Tron.encode
+                |> initGui
+            ]
         )
 
 
