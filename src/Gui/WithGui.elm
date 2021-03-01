@@ -9,16 +9,20 @@ import Gui as Tron
 import Gui.Build as Builder exposing (Builder)
 import Gui.Style.Theme as Theme exposing (Theme(..))
 import Gui.Style.Dock exposing (Dock(..))
+import Gui.Expose as Exp
 
 
-type Option
+type Option msg
     = Hidden
     | Theme Theme
     | Dock Dock
     | SendJsonToJs
-        {}
+        { init : Exp.RawProperty -> Cmd msg
+        , trasmit : Exp.RawUpdate -> Cmd msg
+        }
     | SendStringsToJs
-        {}
+        { transmit : ( String, String ) -> Cmd msg
+        }
     | AFrame
     | Detachable
         {}
@@ -29,7 +33,7 @@ type Option
 
 init
     :  ( flags -> ( model, Cmd msg ), model -> Builder msg )
-    -> List Option
+    -> List (Option msg)
     -> flags
     -> ( ( model, Tron.Gui msg ), Cmd (Either msg Tron.Message) )
 init ( userInit, userFor ) options flags =
@@ -51,6 +55,11 @@ init ( userInit, userFor ) options flags =
         )
 
 
+view
+    :  (model -> Html msg)
+    -> List (Option msg)
+    -> (model, Tron.Gui msg)
+    -> Html (Either msg Tron.Message)
 view userView options ( model, gui ) =
     Html.div
         [ ]
@@ -64,7 +73,7 @@ view userView options ( model, gui ) =
 
 subscriptions
     :  ( model -> Sub msg )
-    -> List Option
+    -> List (Option msg)
     -> ( model, Tron.Gui msg )
     -> Sub (Either msg Tron.Message)
 subscriptions userSubscriptions options ( model, gui ) =
@@ -76,7 +85,7 @@ subscriptions userSubscriptions options ( model, gui ) =
 
 update
     :  ( msg -> model -> (model, Cmd msg), model -> Builder msg )
-    -> List Option
+    -> List (Option msg)
     -> Either msg Tron.Message
     -> ( model, Tron.Gui msg )
     -> ( ( model, Tron.Gui msg ), Cmd (Either msg Tron.Message) )
@@ -112,7 +121,7 @@ update ( userUpdate, userFor ) options eitherMsg (model, gui) =
 
 element
     :
-        { options : List Option
+        { options : List (Option msg)
         , init : flags -> ( model, Cmd msg )
         , for : model -> Builder.Builder msg
         , subscriptions : model -> Sub msg
