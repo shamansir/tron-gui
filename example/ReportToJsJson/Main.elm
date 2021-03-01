@@ -80,13 +80,12 @@ update msg gui =
             ( gui
             , sendUpdate rawMsg
             )
-    --gui |> Tron.applyRaw msg
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
-    -- updateFromDatGui FromDatGui
+subscriptions gui =
+    Tron.subscriptions gui
+        |> Sub.map ToTron
 
 
 main : Program () Model Msg
