@@ -71,12 +71,12 @@ toProxied prop =
         Choice focus shape control ->
             control
                 |> Nest.mapItems (Tuple.mapSecond toProxied)
-                |> setHandler (always Other) -- FIXME
+                |> setHandler (Tuple.second >> Nest.toNum >> FromChoice)
                 |> Choice focus shape
         Group focus shape control ->
             control
                 |> Nest.mapItems (Tuple.mapSecond toProxied)
-                |> setHandler (always Other) -- FIXME
+                |> setHandler (always Other) -- TODO: notify expanded/collapsed/detached?
                 |> Group focus shape
 
 

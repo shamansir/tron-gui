@@ -57,6 +57,10 @@ whichSelected : ChoiceControl item msg -> Int
 whichSelected (Core.Control _ ( _, SelectedAt selected ) _) = selected
 
 
+toNum : SelectedAt -> Int
+toNum (SelectedAt n) = n
+
+
 expand
      : Core.Control
             setup
