@@ -90,7 +90,7 @@ init url _ =
             , theme = Theme.light
             , gui = gui
                 |> Gui.reshape ( 7, 7 )
-                |> Gui.redock Dock.bottomLeft
+                |> Gui.dock Dock.bottomLeft
             , url = url
             }
         , startGui
@@ -238,7 +238,7 @@ update msg model =
                     { model
                     | gui = newGui
                         |> Gui.map (always NoOp)
-                        |> Gui.redock Dock.bottomCenter
+                        |> Gui.dock Dock.bottomCenter
                     }
                 , case model.mode of
                     DatGui ->
@@ -273,7 +273,7 @@ update msg model =
         ( ChangeDock newDock, _ ) ->
             (
                 { model
-                | gui = model.gui |> Gui.redock newDock
+                | gui = model.gui |> Gui.dock newDock
                 }
             , Cmd.none
             )

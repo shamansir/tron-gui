@@ -44,7 +44,7 @@ init _ =
                 |> Exp.toExposed
                 |> Tron.init
     in
-        ( gui |> Tron.redock Dock.topRight
+        ( gui |> Tron.dock Dock.topRight
         , Cmd.batch
             [ guiEffect
                 |> Cmd.map ToTron
