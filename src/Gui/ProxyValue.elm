@@ -10,7 +10,7 @@ import Json.Encode as E
 
 import Color exposing (Color)
 import Gui.Control.Nest exposing (Id)
-import Gui.Control.Toggle exposing (ToggleState, toggleToBool)
+import Gui.Control.Toggle exposing (ToggleState, toggleToBool, toggleToString)
 
 
 type ProxyValue
@@ -49,3 +49,24 @@ encode v =
         FromToggle t -> E.bool <| toggleToBool t
         FromButton -> E.string ""
         Other -> E.null
+
+
+toString : ProxyValue -> String
+toString v =
+    case v of
+        FromSlider f ->
+            String.fromFloat f
+        FromXY ( x, y ) ->
+            String.fromFloat x ++ ":" ++ String.fromFloat y
+        FromInput t ->
+            t
+        FromChoice i ->
+            String.fromInt i
+        FromColor c ->
+            Color.toCssString c
+        FromToggle t ->
+            toggleToString t
+        FromButton ->
+            ""
+        Other ->
+            ""

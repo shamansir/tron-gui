@@ -1,11 +1,13 @@
 port module ReportToJsString.Main exposing (main)
 
 
-import Browser exposing (element)
-import Html exposing (Html, div)
+import Browser
+import Html exposing (Html)
 
-import Gui as Tron exposing (Gui, initRaw, view)
-import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
+import Gui as Tron
+import Gui.Style.Theme as Theme
+import Gui.Style.Dock as Dock
+import Gui.Expose as Exp
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -24,29 +26,27 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
-type alias Msg
-    = Tron.Message
+type Msg
+    = ToTron Tron.Message
+    | ToSend (String, String)
 
 
 type alias Model =
-    Tron.Gui ( Path, String )
+    Tron.Gui (String, String)
 
 
 init : flags -> ( Model, Cmd Msg )
 init _ =
     let
         example = Example.init
-        gui =
+        ( gui, guiEffect ) =
             ExampleGui.for example
-                |> Tron.initRaw
+                |> Exp.toStrExposed
+                |> Tron.init
     in
-        (
-            ( example
-            , gui |> Tron.map ToExample
-            )
-        , gui
-            |> Tron.encode
-            |> startDatGui
+        ( gui |> Tron.redock Dock.topRight
+        , guiEffect
+            |> Cmd.map ToTron
         )
 
 
@@ -54,18 +54,33 @@ view : Model -> Html Msg
 view gui =
     Html.div
         [ ]
-        [ Tron.view gui
+        [ Tron.view Theme.dark gui
+            |> Html.map ToTron
         ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg gui =
-    gui |> Tron.applyRaw msg
+    case msg of
+        ToTron tronMsg ->
+            let
+                ( nextGui, updateToSend ) =
+                    gui |> Tron.update tronMsg
+            in
+                ( nextGui
+                , updateToSend
+                    |> Cmd.map ToSend
+                )
+        ToSend rawMsg ->
+            ( gui
+            , sendUpdate rawMsg
+            )
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    updateFromDatGui FromDatGui
+subscriptions gui =
+    Tron.subscriptions gui
+        |> Sub.map ToTron
 
 
 main : Program () Model Msg
@@ -78,8 +93,4 @@ main =
         }
 
 
-port in : (Exp.RawUpdate -> msg) -> Sub msg
-
-port out : Exp.RawUpdate -> Cmd msg
-
-port init : Exp.RawProperty -> Cmd msg
+port sendUpdate : ( String, String ) -> Cmd msg

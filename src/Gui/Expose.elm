@@ -96,6 +96,19 @@ toExposed prop =
             )
 
 
+toStrExposed : Property msg -> Property ( String, String )
+toStrExposed prop =
+    prop
+        |> toProxied
+        |> Gui.Property.addLabeledPath
+        |> Gui.Property.map
+            (\(path, proxyVal) ->
+                ( String.join "/" path
+                , ProxyValue.toString proxyVal
+                )
+            )
+
+
 updateProperty : ProxyValue -> Property msg -> Cmd msg
 updateProperty value property =
     case ( property, value ) of
