@@ -3,7 +3,7 @@ module Gui exposing
     , view, update, init, subscriptions, run, Message
     , map, over, use
     , detachable, encode, applyRaw, initRaw
-    , redock, reshape
+    , dock, reshape
     )
 
 
@@ -74,7 +74,7 @@ NB: Don't forget to copy `src/Gui.css` to your application to make GUI look and 
 @docs init, update, view, subscriptions, run, Message
 
 # Dock & Shape
-@docs redock, reshape
+@docs dock, reshape
 
 # Common Helpers
 @docs map, over, use
@@ -700,10 +700,10 @@ fromWindow passSize =
 
 See `Style.Dock` for values.
 -}
-redock : Dock -> Gui msg -> Gui msg
-redock dock gui =
+dock : Dock -> Gui msg -> Gui msg
+dock to gui =
     { gui
-    | dock = dock
+    | dock = to
     }
 
 

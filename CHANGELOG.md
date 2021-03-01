@@ -6,6 +6,7 @@ DONE:
 
 * One-Control example;
 * Color button control;
+* Examples for sending GUI updates to JS, in JSON or in Strings;
 
 TODO:
 
@@ -41,7 +42,7 @@ TODO:
 * Support cell shapes other than 1x1;
 * Support different docks: `TopToBottom`, `BottomToTop`, `LeftToRight`, `RightToLeft`;
 * Calculate the grid size dynamically;
-* `Gui.redock` to allow to force custom size of the grid;
+* `Gui.reshape` to allow to force custom size of the grid;
 * _Choice_ component shows the selected item instead the expanding control;
 * `Builder.choiceWithIcons` + `Builder.string` + `Builder.palette` helpers;
 * Shape is required to be passed to group controls;
