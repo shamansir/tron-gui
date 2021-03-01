@@ -17,7 +17,7 @@ type Option msg
     | Theme Theme
     | Dock Dock
     | SendJsonToJs
-        { init : Exp.RawProperty -> Cmd msg
+        { ack : Exp.RawProperty -> Cmd msg
         , trasmit : Exp.RawUpdate -> Cmd msg
         }
     | SendStringsToJs
@@ -30,12 +30,16 @@ type Option msg
         {}
 
 
+type WithGuiMsg msg
+    = ToUser msg
+    | ToTron Tron.Msg
+
 
 init
     :  ( flags -> ( model, Cmd msg ), model -> Builder msg )
     -> List (Option msg)
     -> flags
-    -> ( ( model, Tron.Gui msg ), Cmd (Either msg Tron.Msg) )
+    -> ( ( model, Tron.Gui msg ), Cmd (WithGuiMsg msg) )
 init ( userInit, userFor ) options flags =
     let
         ( initialModel, userEffect ) =
@@ -43,14 +47,16 @@ init ( userInit, userFor ) options flags =
         ( gui, guiEffect ) =
             userFor initialModel
                 |> Tron.init
+
     in
         (
             ( initialModel
-            , gui --|> Tron.dock def.dock
+            , gui |> addInitOptions options
             )
         , Cmd.batch
-            [ userEffect |> Cmd.map Left
-            , guiEffect |> Cmd.map Right
+            [ userEffect |> Cmd.map ToUser
+            , guiEffect |> Cmd.map ToTron
+            , performInitEffects options gui |> Cmd.map ToUser
             ]
         )
 
@@ -59,15 +65,15 @@ view
     :  (model -> Html msg)
     -> List (Option msg)
     -> (model, Tron.Gui msg)
-    -> Html (Either msg Tron.Msg)
+    -> Html (WithGuiMsg msg)
 view userView options ( model, gui ) =
     Html.div
         [ ]
         [ gui
-            |> Tron.view Theme.light -- def.theme
-            |> Html.map Right
+            |> addViewOptions options
+            |> Html.map ToTron
         , userView model
-            |> Html.map Left
+            |> Html.map ToUser
         ]
 
 
@@ -75,24 +81,25 @@ subscriptions
     :  ( model -> Sub msg )
     -> List (Option msg)
     -> ( model, Tron.Gui msg )
-    -> Sub (Either msg Tron.Msg)
+    -> Sub (WithGuiMsg msg)
 subscriptions userSubscriptions options ( model, gui ) =
     Sub.batch
-        [ userSubscriptions model |> Sub.map Left
-        , Tron.subscriptions gui |> Sub.map Right
+        [ userSubscriptions model |> Sub.map ToUser
+        , Tron.subscriptions gui |> Sub.map ToTron
+        , addSubscriptionsOptions options gui |> Sub.map ToUser
         ]
 
 
 update
     :  ( msg -> model -> (model, Cmd msg), model -> Builder msg )
     -> List (Option msg)
-    -> Either msg Tron.Msg
+    -> WithGuiMsg msg
     -> ( model, Tron.Gui msg )
-    -> ( ( model, Tron.Gui msg ), Cmd (Either msg Tron.Msg) )
+    -> ( ( model, Tron.Gui msg ), Cmd (WithGuiMsg msg) )
 update ( userUpdate, userFor ) options eitherMsg (model, gui) =
     case eitherMsg of
 
-        Left userMsg ->
+        ToUser userMsg ->
             let
                 ( newUserModel, userEffect ) =
                     userUpdate userMsg model
@@ -103,10 +110,10 @@ update ( userUpdate, userFor ) options eitherMsg (model, gui) =
                 , gui
                     |> Tron.over (userFor model)
                 )
-            , userEffect |> Cmd.map Left
+            , userEffect |> Cmd.map ToUser
             )
 
-        Right guiMsg ->
+        ToTron guiMsg ->
             case gui |> Tron.update guiMsg of
                 ( nextGui, guiEffect ) ->
                     (
@@ -114,9 +121,64 @@ update ( userUpdate, userFor ) options eitherMsg (model, gui) =
                         , nextGui
                         )
                     , guiEffect
-                        |> Cmd.map Left
+                        |> Cmd.map ToUser
+                    -- FIXME: send the encoded update
                     )
 
+
+addInitOptions : List (Option msg) -> Tron.Gui msg -> Tron.Gui msg
+addInitOptions options gui =
+    options
+        |> List.foldl
+            (\option gui_ ->
+                case option of
+                    Dock target ->
+                        gui_ |> Tron.dock target
+                    _ ->
+                        gui_
+            )
+            gui
+
+
+performInitEffects : List (Option msg) -> Tron.Gui msg -> Cmd msg
+performInitEffects options gui =
+    options
+        |> List.foldl
+            (\option cmds ->
+                case option of
+                    SendJsonToJs { ack } ->
+                        (gui
+                            |> Tron.encode
+                            |> ack
+                        ) :: cmds
+                    _ ->
+                        cmds
+            )
+            []
+        |> Cmd.batch
+
+
+addSubscriptionsOptions : List (Option msg) -> Tron.Gui msg -> Sub msg
+addSubscriptionsOptions options gui =
+    Sub.none
+
+
+addViewOptions : List (Option msg) -> Tron.Gui msg -> Html Tron.Msg
+addViewOptions options gui =
+    options
+        |> List.foldl
+            (\option _ ->
+                case option of
+                    Hidden ->
+                        []
+                    Theme theme ->
+                        [ gui |> Tron.view theme ]
+                    -- FIXME: AFrame
+                    _ ->
+                        []
+            )
+            []
+        |> Html.div []
 
 
 element
@@ -128,7 +190,7 @@ element
         , view : model -> Html msg
         , update : msg -> model -> ( model, Cmd msg )
         }
-    -> Program flags ( model, Tron.Gui msg ) (Either msg Tron.Msg)
+    -> Program flags ( model, Tron.Gui msg ) (WithGuiMsg msg)
 element def =
     Browser.element
         { init =
