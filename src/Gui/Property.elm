@@ -228,6 +228,7 @@ addPathFrom from root =
         helper : Path -> Property msg -> Property ( Path, msg )
         helper curPath item =
             case item of
+
                 Choice focus shape control ->
                     Choice
                         focus
@@ -236,6 +237,7 @@ addPathFrom from root =
                             |> Nest.indexedMapItems (replaceItem curPath)
                             |> Control.map (Tuple.pair curPath)
                         )
+
                 Group focus shape control ->
                     Group
                         focus
@@ -244,6 +246,7 @@ addPathFrom from root =
                             |> Nest.indexedMapItems (replaceItem curPath)
                             |> Control.map (Tuple.pair curPath)
                         )
+
                 prop -> map (Tuple.pair curPath) prop
 
     in
@@ -253,6 +256,45 @@ addPathFrom from root =
 addPath : Property msg -> Property ( Path, msg )
 addPath =
     addPathFrom Path.start
+
+
+addLabeledPathFrom : List String -> Property msg -> Property ( List String, msg )
+addLabeledPathFrom from root =
+    let
+        replaceItem : List String -> ( Label, Property msg ) -> ( Label, Property (List String, msg ) )
+        replaceItem parentPath ( label, innerItem ) =
+            ( label
+            , helper (parentPath ++ [ label ]) innerItem
+            )
+
+        helper : List String -> Property msg -> Property ( List String, msg )
+        helper curPath item =
+            case item of
+                Choice focus shape control ->
+                    Choice
+                        focus
+                        shape
+                        (control
+                            |> Nest.mapItems (replaceItem curPath)
+                            |> Control.map (Tuple.pair curPath)
+                        )
+                Group focus shape control ->
+                    Group
+                        focus
+                        shape
+                        (control
+                            |> Nest.mapItems (replaceItem curPath)
+                            |> Control.map (Tuple.pair curPath)
+                        )
+                prop -> map (Tuple.pair curPath) prop
+
+    in
+        helper from root
+
+
+addLabeledPath : Property msg -> Property ( List String, msg )
+addLabeledPath =
+    addLabeledPathFrom []
 
 
 updateAt : Path -> (Property msg -> Property msg) -> Property msg -> Property msg
