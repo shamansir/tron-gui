@@ -15,7 +15,7 @@ import Gui.Control as Control exposing (update)
 import Gui.Property exposing (..)
 import Gui.Path exposing (Path)
 import Gui.Path as Path exposing (toList)
-import Gui.ProxyValue exposing (ProxyValue(..))
+import Gui.ProxyValue as ProxyValue exposing (ProxyValue(..))
 
 -- TODO: make controls expose themselves, so get rid of these imports below
 import Gui.Control.Text as Text exposing (TextState(..))
@@ -90,7 +90,7 @@ toExposed prop =
             (\(path, proxyVal) ->
                 { path = Path.toList path
                 , type_ = getTypeString proxyVal
-                , value = E.string "" -- FIXME: encode to string
+                , value = ProxyValue.encode proxyVal
                 , client = E.null
                 }
             )
