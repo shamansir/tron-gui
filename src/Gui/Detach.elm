@@ -10,7 +10,7 @@ import HashId exposing (HashId)
 import Gui.Path as Path exposing (Path, toList)
 import Gui.Expose as Exp
 import Gui.Property exposing (Property)
-import Gui.Msg exposing (Msg(..))
+import Gui.Msg exposing (Msg_(..))
 
 
 type alias Fragment = ( String, String )
@@ -32,7 +32,7 @@ type Detach msg =
         { toUrl : ClientId -> Path -> Maybe LocalUrl
         , ack : Exp.Ack -> Cmd msg
         , send : Exp.RawUpdate -> Cmd msg
-        , receive : ((Exp.RawUpdate -> Msg) -> Sub Msg)
+        , receive : ((Exp.RawUpdate -> Msg_) -> Sub Msg_)
         , attached : State
         , client : Maybe ClientId
         }
@@ -62,7 +62,7 @@ never =
         }
 
 
-nextClientId : Cmd Msg
+nextClientId : Cmd Msg_
 nextClientId =
     Random.generate SetClientId HashId.generator
 
@@ -128,8 +128,8 @@ make
      : Url
     -> (Exp.Ack -> Cmd msg)
     -> (Exp.RawUpdate -> Cmd msg)
-    -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
-    -> ( Detach msg, Cmd Msg )
+    -> ((Exp.RawUpdate -> Msg_) -> Sub Msg_)
+    -> ( Detach msg, Cmd Msg_ )
 make url ackPort sendPort receivePort =
     let
         ( maybeClient, state ) = fromUrl url
@@ -165,7 +165,7 @@ send (Detach d) path =
     d.send << Exp.encodeUpdate d.client path
 
 
-receive : Detach msg -> Sub Msg
+receive : Detach msg -> Sub Msg_
 receive (Detach d) =
     d.receive ReceiveRaw
 

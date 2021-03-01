@@ -29,7 +29,7 @@ import Example.Default.Gui as ExampleGui
 
 type Msg
     = ToExample Example.Msg
-    | ToTron Tron.Message
+    | ToTron Tron.Msg
 
 
 type alias Model =

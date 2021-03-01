@@ -54,7 +54,7 @@ type Msg
     | ChangeMode Mode
     | ChangeDock Dock
     | FromDatGui Exp.RawUpdate
-    | ToTron Tron.Message
+    | ToTron Tron.Msg
     | ToExample Example.Msg
     | Randomize (Tron.Builder ())
     | SwitchTheme

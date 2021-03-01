@@ -1,6 +1,6 @@
 module Gui exposing
     ( Gui
-    , view, update, init, subscriptions, run, Message
+    , view, update, init, subscriptions, run, Msg
     , map, over, use
     , detachable, encode, applyRaw, initRaw
     , dock, reshape
@@ -20,7 +20,7 @@ See `example/Basic` in the sources for a full example, here are the important ex
 
     import Gui as Tron
 
-    type Msg = MyMsgOne | MyMsgTwo | ... | ToTron Tron.Message
+    type Msg = MyMsgOne | MyMsgTwo | ... | ToTron Tron.Msg
 
     init _ =
         let
@@ -146,7 +146,7 @@ type alias Gui msg =
 
 You don't need it's constructors, only pass it to some `ToTron` wrapping message as in the example above.
 -}
-type alias Message = Msg
+type alias Msg = Msg_
 
 
 moves : Mouse.Position -> MouseAction
@@ -220,7 +220,7 @@ Since `init builder` is just:
 
     ( initRaw builder
     , run
-    ) -> ( Tron.Gui msg, Cmd Tron.Message )
+    ) -> ( Tron.Gui msg, Cmd Tron.Msg )
 
 `dat.gui` doesn't need any side-effects that are produced with `run`, that's why `initRaw` is used there.
 -}
