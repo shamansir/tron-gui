@@ -35,7 +35,7 @@ init
     :  ( flags -> ( model, Cmd msg ), model -> Builder msg )
     -> List (Option msg)
     -> flags
-    -> ( ( model, Tron.Gui msg ), Cmd (Either msg Tron.Message) )
+    -> ( ( model, Tron.Gui msg ), Cmd (Either msg Tron.Msg) )
 init ( userInit, userFor ) options flags =
     let
         ( initialModel, userEffect ) =
@@ -59,7 +59,7 @@ view
     :  (model -> Html msg)
     -> List (Option msg)
     -> (model, Tron.Gui msg)
-    -> Html (Either msg Tron.Message)
+    -> Html (Either msg Tron.Msg)
 view userView options ( model, gui ) =
     Html.div
         [ ]
@@ -75,7 +75,7 @@ subscriptions
     :  ( model -> Sub msg )
     -> List (Option msg)
     -> ( model, Tron.Gui msg )
-    -> Sub (Either msg Tron.Message)
+    -> Sub (Either msg Tron.Msg)
 subscriptions userSubscriptions options ( model, gui ) =
     Sub.batch
         [ userSubscriptions model |> Sub.map Left
@@ -86,9 +86,9 @@ subscriptions userSubscriptions options ( model, gui ) =
 update
     :  ( msg -> model -> (model, Cmd msg), model -> Builder msg )
     -> List (Option msg)
-    -> Either msg Tron.Message
+    -> Either msg Tron.Msg
     -> ( model, Tron.Gui msg )
-    -> ( ( model, Tron.Gui msg ), Cmd (Either msg Tron.Message) )
+    -> ( ( model, Tron.Gui msg ), Cmd (Either msg Tron.Msg) )
 update ( userUpdate, userFor ) options eitherMsg (model, gui) =
     case eitherMsg of
 
@@ -128,7 +128,7 @@ element
         , view : model -> Html msg
         , update : msg -> model -> ( model, Cmd msg )
         }
-    -> Program flags ( model, Tron.Gui msg ) (Either msg Tron.Message)
+    -> Program flags ( model, Tron.Gui msg ) (Either msg Tron.Msg)
 element def =
     Browser.element
         { init =

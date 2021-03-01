@@ -14,7 +14,7 @@ import Axis exposing (Axis)
 
 import Gui.Property exposing (..)
 import Gui.Path as Path exposing (Path)
-import Gui.Msg exposing (Msg(..))
+import Gui.Msg exposing (Msg_(..))
 import Gui.Focus exposing (Focused(..))
 import Gui.Control as Core exposing (Control(..))
 
@@ -49,7 +49,7 @@ view
     -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
-    -> Svg Msg
+    -> Svg Msg_
 view ( ( theme, tone ) as style ) state path bounds maybeSelectedInside cellShape ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
@@ -103,7 +103,7 @@ viewProperty
     -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
-    -> Svg Msg
+    -> Svg Msg_
 viewProperty
     style
     ( ( placement, focus, selected ) as state )
@@ -113,13 +113,17 @@ viewProperty
     cellShape
     ( label, prop ) =
     case prop of
+
         Number (Control { min, max } value _) ->
+
             knob
                 style
                 state
                 bounds
                 <| (value - min) / (max - min)
+
         Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
+
             coord
                 style
                 state
@@ -128,15 +132,25 @@ viewProperty
                     ( (xValue - xAxis.min) / (xAxis.max - xAxis.min)
                     , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
                     )
+
         Text (Control _ value _) ->
+
             text style state value (TextInput path) bounds
+
         Toggle (Control _ value _) ->
+
             toggle style state value bounds
+
         Action (Control face _ _) ->
+
             button style state face cellShape label bounds
+
         Color (Control _ value _) ->
+
             color style state value bounds
+
         Choice _ _ control ->
+
             case maybeSelectedInside of
                 Just theSelectedProp ->
                     viewProperty
@@ -149,8 +163,11 @@ viewProperty
                         theSelectedProp
                 Nothing ->
                     arrow style state (Nest.getState control) bounds
+
         Group _ _ control ->
+
             arrow style state (Nest.getState control) bounds
+            
         _ -> Svg.none
 
 

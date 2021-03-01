@@ -48,7 +48,7 @@ import Gui.Style.Coloring as Tone exposing (none)
 import Gui.Style.Cell as Cell
 
 
-type alias GridView = Html Msg
+type alias GridView = Html Msg_
 
 
 rootId : String
@@ -73,7 +73,7 @@ viewProperty
     -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
-    -> Svg Msg
+    -> Svg Msg_
 viewProperty
     style
     ( ( _, focus, _ ) as state )
@@ -107,7 +107,7 @@ viewProperty
                     ( label, prop )
 
 
-viewPlateBack : Style -> Bounds -> Svg Msg
+viewPlateBack : Style -> Bounds -> Svg Msg_
 viewPlateBack style pixelBounds =
     positionAt_ pixelBounds <|
         case mode of
@@ -126,7 +126,7 @@ viewPlateControls
     -> Path
     -> Bounds
     -> ( Label, Property msg )
-    -> Svg Msg
+    -> Svg Msg_
 viewPlateControls detach style path pixelBounds  ( label, source )  =
     positionAt_ pixelBounds <|
         case mode of
@@ -210,7 +210,7 @@ collectPlatesAndCells ( rootPath, root ) =
         ( [], [] )
 
 
-view : Theme -> Dock -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg
+view : Theme -> Dock -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg_
 view theme dock bounds detach root layout =
     let
 

@@ -27,7 +27,7 @@ import Example.Default.Gui as ExampleGui
 
 
 type Msg
-    = ToTron Tron.Message
+    = ToTron Tron.Msg
     | ToSend Exp.RawUpdate
 
 

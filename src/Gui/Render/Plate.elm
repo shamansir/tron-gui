@@ -6,7 +6,7 @@ import Url exposing (Url)
 import BinPack exposing (Bounds)
 
 import Gui.Path exposing (Path)
-import Gui.Msg exposing (Msg(..))
+import Gui.Msg exposing (Msg_(..))
 import Gui.Detach exposing (ClientId, Detach, getLocalUrl, localUrlToString, LocalUrl)
 import Gui.Property exposing (Label, Property)
 
@@ -31,7 +31,7 @@ state : State
 state = ( AtRoot, NotFocused, Usual )
 
 
-back : Style -> Bounds -> Svg Msg
+back : Style -> Bounds -> Svg Msg_
 back style bounds =
     Svg.rect
         [ SA.fill <| Color.toCssString <| Coloring.back_ style state
@@ -51,7 +51,7 @@ controls
     -> Path
     -> Bounds
     -> ( Label, Property msg )
-    -> Svg Msg
+    -> Svg Msg_
 controls detachFn ( ( _, tone ) as style ) path bounds ( label, prop ) =
     Svg.g
         [ SA.class <| "plate-controls plate-controls--" ++ toneToModifier tone ]
@@ -87,7 +87,7 @@ collapse style =
     arrow (Coloring.lines_ style state) (scale 0.35) (rotate 180)
 
 
-collapseButton : Style -> Path -> ( Float, Float ) -> Svg Msg
+collapseButton : Style -> Path -> ( Float, Float ) -> Svg Msg_
 collapseButton style path (x, y) =
     Svg.g
         [ SA.class "collapse-panel"
@@ -108,7 +108,7 @@ collapseButton style path (x, y) =
         ]
 
 
-detachButton : Style -> Path -> LocalUrl -> ( Float, Float ) -> Svg Msg
+detachButton : Style -> Path -> LocalUrl -> ( Float, Float ) -> Svg Msg_
 detachButton style path localUrl (x, y) =
     Svg.g
         [ SA.class "detach-panel"

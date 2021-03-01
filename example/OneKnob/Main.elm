@@ -14,7 +14,7 @@ type alias Amount = Float
 
 type Msg
     = AmountChanged Amount
-    | ToTron Tron.Message
+    | ToTron Tron.Msg
 
 
 type alias Model =

@@ -7,13 +7,13 @@ DONE:
 * One-Control example;
 * Color button control;
 * Examples for sending GUI updates to JS, in JSON or in Strings;
+* Rename `Gui.Message` to `Gui.Msg` to be consistent with usual Elm style;
 
 TODO:
 
 * New design;
 * Helpers, optional to use, based on the examples, like `detachable`, `communicateJS`...
 * Rename `Gui` module to `Tron`;
-* Rename `Gui.Message` to `Gui.Msg` to be consistent with usual Elm style;
 * Pagination in panels which don't fit the inner buttons;
 * Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
 * Multiple-choice control;
