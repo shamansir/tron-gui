@@ -1,7 +1,7 @@
 module Gui.Render.Property exposing (..)
 
 
-import Color exposing (Color)
+
 import BinPack exposing (Bounds)
 
 import Svg exposing (Svg)
@@ -34,11 +34,13 @@ import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS exposing (..)
 import Gui.Style.Coloring exposing (Tone)
 import Gui.Style.Coloring as Coloring exposing (..)
-import Gui.Style.Theme exposing (Theme)
+import Gui.Style.Theme exposing (Theme(..))
 import Gui.Style.Theme as Theme exposing (toString)
 import Gui.Style.Placement exposing (Placement)
 import Gui.Style.Selected exposing (Selected(..))
 import Gui.Style.Cell as Cell
+
+import Color as Color exposing (..)
 
 
 view
@@ -167,7 +169,7 @@ viewProperty
         Group _ _ control ->
 
             arrow style state (Nest.getState control) bounds
-            
+
         _ -> Svg.none
 
 
@@ -321,22 +323,47 @@ text style state ( editing, value ) onInput bounds =
 
 
 toggle : Style -> State -> ToggleState -> Bounds -> Svg msg
-toggle style state tstate bounds =
+toggle ( theme, _ ) _ tstate bounds =
     let
-        ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
-        radius = ( min bounds.width bounds.height) / 7
-    in Svg.circle
-        [ SA.cx <| String.fromFloat cx
-        , SA.cy <| String.fromFloat cy
-        , SA.r <| String.fromFloat radius
-        , SA.fill <| case tstate of
-            TurnedOn -> Color.toCssString <| Coloring.lines_ style state
-            TurnedOff -> "none"
-        , SA.stroke <| Color.toCssString <| Coloring.lines_ style state
-        , SA.strokeWidth "2"
-        ]
-        [
-        ]
+        ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) )
+        ( rectX, rectY ) = ( cx - 36 / 2, cy - 20 / 2 )
+        circleRadius = 8
+        rectCornerRadius = 10
+        ( rectWidth, rectHeight ) = ( 36, 20 )
+        ( circleX, circleY ) =
+            ( case tstate of
+                TurnedOff -> rectX + 2 + circleRadius
+                TurnedOn -> rectX + rectWidth - 2 - circleRadius
+            , cy
+            )
+    in
+        Svg.g
+            []
+            [ Svg.rect
+                [ SA.x <| String.fromFloat rectX
+                , SA.y <| String.fromFloat rectY
+                , SA.rx <| String.fromFloat rectCornerRadius
+                , SA.ry <| String.fromFloat rectCornerRadius
+                , SA.width <| String.fromFloat rectWidth
+                , SA.height <| String.fromFloat rectHeight
+                , SA.fill <| case (theme, tstate) of
+                    (Theme.Dark, TurnedOn) -> Color.toCssString Color.white
+                    (Theme.Dark, TurnedOff) -> Color.toCssString <| Color.rgba 1 1 1 0.4
+                    (Theme.Light, TurnedOn) -> Color.toCssString Color.black
+                    (Theme.Light, TurnedOff) -> Color.toCssString <| Color.rgba 0 0 0 0.2
+                ]
+                [ ]
+            , Svg.circle
+                [ SA.cx <| String.fromFloat circleX
+                , SA.cy <| String.fromFloat circleY
+                , SA.r <| String.fromFloat 8
+                , SA.fill <| case theme of
+                  Theme.Dark -> Color.toCssString Color.black
+                  Theme.Light -> Color.toCssString Color.white
+                ]
+                []
+            ]
+
 
 
 button : Style -> State -> Face -> CellShape -> Label -> Bounds -> Svg msg
