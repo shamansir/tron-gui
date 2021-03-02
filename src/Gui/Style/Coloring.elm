@@ -39,8 +39,8 @@ back theme ( placement, focused, _ ) =
         OnAPlate -> transparent
         AtRoot ->
             case ( theme, focused ) of
-                ( Dark, NotFocused ) -> Color.rgba 0.05 0.05 0.05 0.6
-                ( Light, NotFocused ) -> Color.rgba 1.0 1.0 1.0 0.8
+                ( Dark, NotFocused ) -> Color.rgba 0.05 0.05 0.05 0.9
+                ( Light, NotFocused ) -> Color.rgba 1.0 1.0 1.0 0.9
                 ( Dark, FocusedBy _ ) -> Color.rgb 0.2 0.2 0.2
                 ( Light, FocusedBy _ ) -> Color.rgb 1.0 1.0 1.0
 
