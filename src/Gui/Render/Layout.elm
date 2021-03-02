@@ -44,7 +44,6 @@ import Gui.Style.Dock exposing (Dock)
 import Gui.Style.Dock as Dock exposing (firstCellAt, toString)
 import Gui.Style.Placement exposing (Placement(..))
 import Gui.Style.Selected exposing (Selected(..))
-import Gui.Style.Coloring as Tone exposing (none)
 import Gui.Style.Cell as Cell
 
 
@@ -66,7 +65,7 @@ mode = Fancy
 
 
 viewProperty
-    :  Style
+    :  Theme
     -> State
     -> Path
     -> Bounds
@@ -75,7 +74,7 @@ viewProperty
     -> ( Label, Property msg )
     -> Svg Msg_
 viewProperty
-    style
+    theme
     ( ( _, focus, _ ) as state )
     path
     pixelBounds
@@ -98,7 +97,7 @@ viewProperty
                     ]
             Fancy ->
                 Property.view
-                    style
+                    theme
                     state
                     path
                     pixelBounds
@@ -107,8 +106,8 @@ viewProperty
                     ( label, prop )
 
 
-viewPlateBack : Style -> Bounds -> Svg Msg_
-viewPlateBack style pixelBounds =
+viewPlateBack : Theme -> Bounds -> Svg Msg_
+viewPlateBack theme pixelBounds =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -117,23 +116,23 @@ viewPlateBack style pixelBounds =
                     , boundsDebug pixelBounds
                     ]
             Fancy ->
-                Plate.back style pixelBounds
+                Plate.back theme pixelBounds
 
 
 viewPlateControls
      : Detach msg
-    -> Style
+    -> Theme
     -> Path
     -> Bounds
     -> ( Label, Property msg )
     -> Svg Msg_
-viewPlateControls detach style path pixelBounds  ( label, source )  =
+viewPlateControls detach theme path pixelBounds  ( label, source )  =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g [ ] [ ]
             Fancy ->
-                Plate.controls detach style path pixelBounds ( label, source )
+                Plate.controls detach theme path pixelBounds ( label, source )
 
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
@@ -221,12 +220,6 @@ view theme dock bounds detach root layout =
         rootPath =
             Detach.isAttached detach
                 |> Maybe.withDefault Path.start
-        tones = Style.assignTones root
-
-        toneOf path =
-            tones
-                |> Dict.get (Path.toString path)
-                |> Maybe.withDefault Tone.none
 
         ( plates, cells ) =
             collectPlatesAndCells ( rootPath, root ) layout
@@ -234,13 +227,13 @@ view theme dock bounds detach root layout =
         ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
 
             ( plates
-                |> List.map (.bounds >> viewPlateBack ( theme, Tone.none ) )
+                |> List.map (.bounds >> viewPlateBack theme )
 
             , cells |> List.map
                 (\cell ->
 
                     viewProperty
-                        ( theme, toneOf cell.path )
+                        theme
                         ( if (Path.sub rootPath cell.path |> Path.howDeep) == 1
                             then AtRoot
                             else OnAPlate
@@ -269,7 +262,7 @@ view theme dock bounds detach root layout =
                         |> CS.isSquare then
                         viewPlateControls
                             detach
-                            ( theme, toneOf plate.path )
+                            theme
                             plate.path
                             plate.bounds
                             ( plate.label, plate.source )
@@ -321,7 +314,7 @@ view theme dock bounds detach root layout =
                                     [ SA.class "grid__detach"
                                     ]
                                     [ Plate.detachButton
-                                        ( theme, Tone.none )
+                                        theme
                                         rootPath
                                         localUrl
                                         detachButtonPos
