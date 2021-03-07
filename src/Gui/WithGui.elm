@@ -10,24 +10,8 @@ import Gui.Build as Builder exposing (Builder)
 import Gui.Style.Theme as Theme exposing (Theme(..))
 import Gui.Style.Dock exposing (Dock(..))
 import Gui.Expose as Exp
-
-
-type Option msg
-    = Hidden
-    | Theme Theme
-    | Dock Dock
-    | SendJsonToJs
-        { ack : Exp.RawProperty -> Cmd msg
-        , trasmit : Exp.RawUpdate -> Cmd msg
-        }
-    | SendStringsToJs
-        { transmit : ( String, String ) -> Cmd msg
-        }
-    | AFrame
-    | Detachable
-        {}
-    | DatGui
-        {}
+import Gui.Option exposing (..)
+import Gui.Msg exposing (Msg_(..))
 
 
 type WithGuiMsg msg
@@ -120,9 +104,13 @@ update ( userUpdate, userFor ) options eitherMsg (model, gui) =
                         ( model
                         , nextGui
                         )
-                    , guiEffect
-                        |> Cmd.map ToUser
-                    -- FIXME: send the encoded update
+                    , Cmd.batch
+                        [ guiEffect
+                            |> Cmd.map ToUser
+                        , gui
+                            |> performUpdateEffects options guiMsg
+                            |> Cmd.map ToUser
+                        ]
                     )
 
 
@@ -149,6 +137,26 @@ performInitEffects options gui =
                     SendJsonToJs { ack } ->
                         (gui
                             |> Tron.encode
+                            |> ack
+                        ) :: cmds
+                    _ ->
+                        cmds
+            )
+            []
+        |> Cmd.batch
+
+
+performUpdateEffects : List (Option msg) -> Tron.Msg -> Tron.Gui msg -> Cmd msg
+performUpdateEffects options msg gui =
+    options
+        |> List.foldl
+            (\option cmds ->
+                case option of
+                    SendJsonToJs { ack } ->
+                        (gui.tree
+                            |> Exp.toExposed
+                            |> Tron.over gui
+                            |> Tron.update msg
                             |> ack
                         ) :: cmds
                     _ ->

@@ -27,12 +27,11 @@ type State
     | AttachedAt Path
 
 
+{-
 type Detach msg =
     Detach
         { toUrl : ClientId -> Path -> Maybe LocalUrl
-        , ack : Exp.Ack -> Cmd msg
-        , send : Exp.RawUpdate -> Cmd msg
-        , receive : ((Exp.RawUpdate -> Msg_) -> Sub Msg_)
+
         , attached : State
         , client : Maybe ClientId
         }
@@ -60,6 +59,7 @@ never =
         , attached = attachedAtRoot
         , client = Nothing
         }
+-}
 
 
 nextClientId : Cmd Msg_
@@ -215,3 +215,4 @@ stateToMaybe state =
     case state of
         Detached -> Nothing
         AttachedAt path -> Just path
+
