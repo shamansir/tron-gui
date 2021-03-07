@@ -138,7 +138,7 @@ type alias Gui msg =
     , size : Maybe (Size Cells)
     , mouse : MouseState
     , tree : Builder msg
-    , detach : Detach msg
+    , detach : Maybe (ClientId, Detach.State)
     }
 
 
@@ -171,7 +171,7 @@ map f gui =
     , size = gui.size
     , mouse = gui.mouse
     , tree = gui.tree |> Gui.Property.map f
-    , detach = gui.detach |> Detach.map f
+    , detach = gui.detach
     }
 
 
@@ -346,7 +346,7 @@ Install it into your `update` function similarly to:
 update
     :  Msg
     -> Gui msg
-    -> ( Gui msg, Cmd msg )
+    -> ( Gui msg, Cmd ( Path, msg ) )
 update msg gui =
     case msg of
         NoOp ->
@@ -366,7 +366,7 @@ update msg gui =
                     { gui
                     | tree = nextRoot
                     }
-                , updates |> notifyUpdates gui.detach
+                , updates |> notifyUpdates
                 )
 
         MouseDown path ->
@@ -472,7 +472,7 @@ trackMouse =
     |> Sub.map ApplyMouse
 
 
-handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd msg )
+handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd ( Path, msg ) )
 handleMouse mouseAction gui =
     let
         rootPath = getRootPath gui
@@ -591,9 +591,9 @@ handleMouse mouseAction gui =
 
                             Just ( path, prop ) ->
                                 case prop of
-                                    Number _ -> ( path, prop ) |> notifyUpdate gui.detach
-                                    Coordinate _ -> ( path, prop ) |> notifyUpdate gui.detach
-                                    Color _ -> ( path, prop ) |> notifyUpdate gui.detach
+                                    Number _ -> ( path, prop ) |> notifyUpdate
+                                    Coordinate _ -> ( path, prop ) |> notifyUpdate
+                                    Color _ -> ( path, prop ) |> notifyUpdate
                                     _ -> Cmd.none
                             Nothing -> Cmd.none
 
@@ -607,7 +607,7 @@ handleKeyDown
     :  Int
     -> Path
     -> Gui msg
-    -> ( Gui msg, Cmd msg )
+    -> ( Gui msg, Cmd ( Path, msg ) )
 handleKeyDown keyCode path gui =
     let
 
@@ -628,7 +628,7 @@ handleKeyDown keyCode path gui =
                     { gui
                     | tree = nextRoot
                     }
-                , updates |> notifyUpdates gui.detach
+                , updates |> notifyUpdates
                 )
 
     in case keyCode of
@@ -656,26 +656,26 @@ handleKeyDown keyCode path gui =
                                     |> setAt path nextProp
                             }
                         -- FIXME: inside, we check if it is a text prop again
-                        , notifyUpdate gui.detach ( path, nextProp )
+                        , notifyUpdate ( path, nextProp )
                         )
                 _ -> executeByPath ()
         -- else
         _ -> ( gui, Cmd.none )
 
 
-notifyUpdate : Detach msg -> ( Path, Property msg ) -> Cmd msg
-notifyUpdate detach ( path, prop ) =
+notifyUpdate : ( Path, Property msg ) -> Cmd ( Path, msg )
+notifyUpdate ( path, prop ) =
+    Property.call prop |> Cmd.map (Tuple.pair path)
+    {-
     Cmd.batch
-        [ Property.call prop
+        [ Property.call prop |> Cmd.map (Tuple.pair path)
         , Detach.send detach path prop
-        ]
+        ] -}
 
 
-notifyUpdates : Detach msg -> List ( Path, Property msg ) -> Cmd msg
-notifyUpdates detach =
-    List.map
-        (notifyUpdate detach)
-        >> Cmd.batch
+notifyUpdates : List ( Path, Property msg ) -> Cmd ( Path, msg )
+notifyUpdates =
+    List.map notifyUpdate >> Cmd.batch
 
 
 focus : msg -> Cmd msg

@@ -21,7 +21,7 @@ import AFrame.Components.Text as AT exposing (..)
 
 
 import Gui exposing (Gui)
-import Gui.Msg exposing (Msg(..))
+import Gui.Msg exposing (Msg_(..))
 import Gui.Style.Theme exposing (Theme)
 import Gui.Layout exposing (Layout)
 import Gui.Layout as Layout exposing (Cell(..), pack, unfold)
@@ -51,7 +51,7 @@ yOffset = 2
 xOffset = -5
 
 
-view : Theme -> Gui msg -> Html Msg
+view : Theme -> Gui msg -> Html Msg_
 view theme gui =
     let
 
@@ -112,7 +112,7 @@ view theme gui =
 
 
 
-viewProperty : Bounds -> Path -> Gui.Property msg -> Html Msg
+viewProperty : Bounds -> Path -> Gui.Property msg -> Html Msg_
 viewProperty bounds path prop =
     case prop of
         Gui.Number (Gui.Control cfg val _) ->

@@ -234,47 +234,50 @@ view theme dock bounds detach root layout =
         ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
 
             ( plates
-                |> List.map (.bounds >> viewPlateBack ( theme, Tone.none ) )
+                |> List.map
+                    (.bounds >> viewPlateBack ( theme, Tone.none ) )
 
-            , cells |> List.map
-                (\cell ->
+            , cells
+                |> List.map
+                    (\cell ->
 
-                    viewProperty
-                        ( theme, toneOf cell.path )
-                        ( if (Path.sub rootPath cell.path |> Path.howDeep) == 1
-                            then AtRoot
-                            else OnAPlate
-                        , focused root cell.path
-                        , if Maybe.map2 isSelected cell.parent cell.index
-                                |> Maybe.withDefault False
-                            then Selected
-                            else Usual
-                        )
-                        cell.path
-                        cell.bounds
-                        (getSelected cell.source)
-                        ( cell.parent
-                            |> Maybe.andThen Property.getCellShape
+                        viewProperty
+                            ( theme, toneOf cell.path )
+                            ( if (Path.sub rootPath cell.path |> Path.howDeep) == 1
+                                then AtRoot
+                                else OnAPlate
+                            , focused root cell.path
+                            , if Maybe.map2 isSelected cell.parent cell.index
+                                    |> Maybe.withDefault False
+                                then Selected
+                                else Usual
+                            )
+                            cell.path
+                            cell.bounds
+                            (getSelected cell.source)
+                            ( cell.parent
+                                |> Maybe.andThen Property.getCellShape
+                                |> Maybe.withDefault CS.default
+                            )
+                            ( cell.label, cell.source )
+
+                    )
+
+            , plates
+                |> List.map
+                    (\plate ->
+                        if plate.source
+                            |> Property.getCellShape
                             |> Maybe.withDefault CS.default
-                        )
-                        ( cell.label, cell.source )
-
-                )
-
-            , plates |> List.map
-                (\plate ->
-                    if plate.source
-                        |> Property.getCellShape
-                        |> Maybe.withDefault CS.default
-                        |> CS.isSquare then
-                        viewPlateControls
-                            detach
-                            ( theme, toneOf plate.path )
-                            plate.path
-                            plate.bounds
-                            ( plate.label, plate.source )
-                    else Svg.none
-                )
+                            |> CS.isSquare then
+                            viewPlateControls
+                                detach
+                                ( theme, toneOf plate.path )
+                                plate.path
+                                plate.bounds
+                                ( plate.label, plate.source )
+                        else Svg.none
+                    )
             )
 
         detachButtonPos =
@@ -284,9 +287,11 @@ view theme dock bounds detach root layout =
 
         makeClass =
             "gui noselect "
-                ++ (case mode of
-                    Debug -> "gui--debug "
-                    _ -> "")
+                ++
+                    (case mode of
+                        Debug -> "gui--debug "
+                        _ -> ""
+                    )
                 ++ " gui--" ++ Theme.toString theme
                 ++ " gui--" ++ Dock.toString dock
 
