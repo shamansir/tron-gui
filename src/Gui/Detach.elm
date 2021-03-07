@@ -67,14 +67,6 @@ nextClientId =
     Random.generate SetClientId HashId.generator
 
 
-setClientId : ClientId -> Detach msg -> Detach msg
-setClientId clientId (Detach d) =
-    Detach
-        { d
-        | client = Just clientId
-        }
-
-
 detached : State
 detached = Detached
 
@@ -87,11 +79,11 @@ attachedAtRoot : State
 attachedAtRoot = AttachedAt Path.start
 
 
-getLocalUrl : Path -> Detach msg -> Maybe LocalUrl
+{- getLocalUrl : Path -> Detach msg -> Maybe LocalUrl
 getLocalUrl path (Detach d) =
     case d.client of
         Just clientId -> d.toUrl clientId path
-        Nothing -> Nothing
+        Nothing -> Nothing -}
 
 
 root : String
@@ -124,6 +116,7 @@ localUrlToString fragments =
     "#" ++ (String.join "&" <| List.map encodeFragment <| fragments)
 
 
+{-
 make
      : Url
     -> (Exp.Ack -> Cmd msg)
@@ -149,13 +142,13 @@ make url ackPort sendPort receivePort =
                 ack detach
                     |> Cmd.map (always NoOp)
         )
-
+-}
 
 -- extract : Url -> List Path
 -- extract
 
 
-ack : Detach msg -> Cmd msg
+{- ack : Detach msg -> Cmd msg
 ack (Detach d) =
     d.ack <| Exp.encodeAck d.client
 
@@ -167,7 +160,7 @@ send (Detach d) path =
 
 receive : Detach msg -> Sub Msg_
 receive (Detach d) =
-    d.receive ReceiveRaw
+    d.receive ReceiveRaw -}
 
 
 fromUrl : Url -> ( Maybe ClientId, State )
@@ -205,9 +198,9 @@ fromUrl { fragment } =
         Nothing -> ( Nothing, Detached )
 
 
-isAttached : Detach msg -> Maybe Path
+{- isAttached : Detach msg -> Maybe Path
 isAttached (Detach d) =
-    d.attached |> stateToMaybe
+    d.attached |> stateToMaybe -}
 
 
 stateToMaybe : State -> Maybe Path
