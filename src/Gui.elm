@@ -2,7 +2,7 @@ module Gui exposing
     ( Gui
     , view, update, init, subscriptions, run, Msg
     , map, over, use
-    , detachable, encode, applyRaw, initRaw
+    , detachable, encode--, applyRaw, initRaw
     , dock, reshape
     )
 
@@ -123,6 +123,7 @@ import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Logic as Style exposing (..)
 import Gui.Style.Cell as Cell exposing (..)
 import Gui.Build exposing (..)
+import Gui.Detach exposing (State(..))
 
 
 {-| `Gui msg` is what manages your user interface and the way it looks.
@@ -138,7 +139,7 @@ type alias Gui msg =
     , size : Maybe (Size Cells)
     , mouse : MouseState
     , tree : Builder msg
-    , detach : Maybe (ClientId, Detach.State)
+    , detach : ( Maybe ClientId, Detach.State )
     }
 
 
@@ -226,7 +227,7 @@ Since `init builder` is just:
 -}
 initRaw : Builder msg -> Gui msg
 initRaw root =
-    Gui Dock.topLeft (Size ( 0, 0 )) Nothing Gui.Mouse.init root Detach.never
+    Gui Dock.topLeft (Size ( 0, 0 )) Nothing Gui.Mouse.init root ( Nothing, Detached )
 -- TODO: get rid of initRaw
 
 
@@ -242,29 +243,26 @@ run =
         ]
 
 
-{-| This is the only function you need to make your `GUI` _detachable*_. However, this function requires some ports to be present as an argument, so you'll need a pair of ports as well. And a WebSocket server. But that's it!
-
-_*_ — _detachable GUI_ in the context of Web Application means that you may move parts of your user interface to another browser window, tab, or even another device, such as a phone, a tablet, TV, VR glasses or whatever has a browser inside nowadays.
-
-For a detailed example, see `example/Detachable` in the sources.
--}
+-- FIXME: Use in WithGui at `init`
 detachable
      : Url
     -> (Exp.Ack -> Cmd msg)
-    -> (Exp.RawUpdate -> Cmd msg)
-    -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
     -> Gui msg
     -> ( Gui msg, Cmd Msg )
-detachable url ack send receive gui =
+detachable url ack gui =
     let
-        ( detach, detachEffects )
-            = Detach.make url ack send receive
+        ( maybeClient, state ) = Detach.fromUrl url
     in
         (
             { gui
-            | detach = detach
+            | detach = ( maybeClient, state )
             }
-        , detachEffects
+        , case maybeClient of
+            Nothing -> Detach.nextClientId
+            _ ->
+                Exp.encodeAck maybeClient
+                    |> ack
+                    |> Cmd.map (always NoOp)
         )
 
 
@@ -347,6 +345,7 @@ update
     :  Msg
     -> Gui msg
     -> ( Gui msg, Cmd ( Path, msg ) )
+    -- FIXME: use `Property.addPath` & use expose it as `Gui.addPath`
 update msg gui =
     case msg of
         NoOp ->
@@ -430,18 +429,16 @@ update msg gui =
                 )
 
         SetClientId clientId ->
-            let
-                nextDetach =
-                    gui.detach
-                        |> Detach.setClientId clientId
-            in
-                (
-                    { gui
-                    | detach = nextDetach
+            (
+                { gui
+                | detach =
+                    case gui.detach of
+                        ( _, state ) -> ( Just clientId, state )
 
-                    }
-                , nextDetach |> Detach.ack
-                )
+                }
+            , Cmd.none
+            -- , nextDetach |> Detach.ack -- FIXME: use in `WithGui`
+            )
 
 
 {-| `applyRaw` is needed only for the cases of replacing Tron interface with `dat.gui` or any other JS interpretation. See `example/DatGui` for reference.
@@ -453,7 +450,7 @@ applyRaw
     -> Gui msg
     -> Cmd msg
 applyRaw rawUpdate =
-    .tree >> Exp.update (Exp.fromPort rawUpdate)
+    .tree >> Exp.update (Exp.fromPort rawUpdate) >> Cmd.map Tuple.second
 
 
 trackMouse : Sub Msg
@@ -718,16 +715,17 @@ reshape cellSize gui =
 
 getRootPath : Gui msg -> Path
 getRootPath gui =
-    Detach.isAttached gui.detach
+    Tuple.second gui.detach
+        |> Detach.stateToMaybe
         |> Maybe.withDefault Path.start
 
 
 sizeFromViewport : Property msg -> Size Pixels -> Size Cells
 sizeFromViewport _ (Size ( widthInPixels, heightInPixels )) =
-    let
+    {- let
         cellsFitHorizontally = floor (toFloat widthInPixels / Cell.width)
         cellsFitVertically = floor (toFloat heightInPixels / Cell.height)
-    in
+    in -}
         ( floor <| toFloat widthInPixels / Cell.width
         , floor <| toFloat heightInPixels / Cell.height
         ) |> Size
@@ -749,7 +747,9 @@ layout gui =
         ( Size cellsSize ) = getSizeInCells gui
         size = cellsSize |> Tuple.mapBoth toFloat toFloat
     in
-    case Detach.isAttached gui.detach
+    case gui.detach
+        |> Tuple.second
+        |> Detach.stateToMaybe
         |> Maybe.andThen
             (\path ->
                 gui.tree
@@ -777,7 +777,7 @@ subscriptions : Gui msg -> Sub Msg
 subscriptions gui =
     Sub.batch
         [ trackMouse
-        , Detach.receive gui.detach
+        -- , Detach.receive gui.detach -- FIXME: use in `WithGui`
         , Browser.onResize <| \w h -> ViewportChanged ( w, h )
         ]
 

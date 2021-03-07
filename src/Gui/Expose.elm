@@ -135,10 +135,12 @@ updateProperty value property =
             Cmd.none
 
 
-update : Update -> Property msg -> Cmd msg
+update : Update -> Property msg -> Cmd ( Path, msg )
 update { path, value } prop =
     case path of
-        [] -> updateProperty value prop
+        [] ->
+            updateProperty value prop
+                |> Cmd.map (Tuple.pair <| Path.fromList path)
         id :: next ->
             case prop of
                 Group _ _ control ->
