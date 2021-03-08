@@ -26,8 +26,7 @@ import Gui.Layout as Layout exposing (unfold)
 import Gui.Focus exposing (Focused(..))
 import Gui.Focus as Focus exposing (toString)
 import Gui.FocusLogic as Focus exposing (focused)
-import Gui.Detach exposing (ClientId, Detach)
-import Gui.Detach as Detach exposing (isAttached)
+import Gui.Detach as Detach exposing (Ability(..))
 
 import Gui.Render.Util exposing (..)
 import Gui.Render.Util as Svg exposing (none)
@@ -121,7 +120,7 @@ viewPlateBack style pixelBounds =
 
 
 viewPlateControls
-     : Detach msg
+     : Detach.Ability
     -> Style
     -> Path
     -> Bounds
@@ -210,8 +209,16 @@ collectPlatesAndCells ( rootPath, root ) =
         ( [], [] )
 
 
-view : Theme -> Dock -> Bounds -> Detach msg -> Property msg -> Layout -> Html Msg_
-view theme dock bounds detach root layout =
+view
+    :  Theme
+    -> Dock
+    -> Bounds
+    -> Detach.State
+    -> Detach.GetAbility
+    -> Property msg
+    -> Layout
+    -> Html Msg_
+view theme dock bounds detach getDetachAbility root layout =
     let
 
         keyDownHandler_ =
@@ -219,7 +226,8 @@ view theme dock bounds detach root layout =
                 <| Json.map KeyDown HE.keyCode
 
         rootPath =
-            Detach.isAttached detach
+            detach
+                |> Detach.stateToMaybe
                 |> Maybe.withDefault Path.start
         tones = Style.assignTones root
 
@@ -271,7 +279,7 @@ view theme dock bounds detach root layout =
                             |> Maybe.withDefault CS.default
                             |> CS.isSquare then
                             viewPlateControls
-                                detach
+                                (getDetachAbility plate.path)
                                 ( theme, toneOf plate.path )
                                 plate.path
                                 plate.bounds
@@ -319,8 +327,8 @@ view theme dock bounds detach root layout =
                     , Svg.g [ SA.class "grid__cells" ] cellsRendered
                     , Svg.g [ SA.class "grid__plate-controls" ] platesControlsRendered
                     ,
-                        case detach |> Detach.getLocalUrl rootPath of
-                            Just localUrl ->
+                        case getDetachAbility rootPath of
+                            CanBeDetached localUrl ->
 
                                 Svg.g
                                     [ SA.class "grid__detach"
@@ -332,7 +340,7 @@ view theme dock bounds detach root layout =
                                         detachButtonPos
                                     ]
 
-                            Nothing ->
+                            CannotBeDetached ->
                                 Svg.none
                     ]
                 ]

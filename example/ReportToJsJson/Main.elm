@@ -8,6 +8,7 @@ import Gui as Tron
 import Gui.Style.Theme as Theme
 import Gui.Style.Dock as Dock
 import Gui.Expose as Exp
+import Gui.Property as Property
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -42,6 +43,7 @@ init _ =
         ( gui, guiEffect ) =
             ExampleGui.for example
                 |> Exp.toExposed
+                |> Property.map Tuple.first
                 |> Tron.init
     in
         ( gui |> Tron.dock Dock.topRight

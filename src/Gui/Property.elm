@@ -185,16 +185,21 @@ unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
-mapReplace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
-mapReplace f root =
+-- TODO: replace : (Path -> Property msgA -> Property msgB) -> Property msgA -> Property msgB
+--       or : (Path -> msgA -> msgB) -> ...
+--       then, implement `addPath` with it
+replace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
+replace f root =
     let
 
+        -- TODO: replaceItem : Path -> Int -> ( Label, Property msgA ) -> ( Label, Property msgB )
         replaceItem : Path -> Int -> ( Label, Property msg ) -> ( Label, Property msg )
         replaceItem parentPath index ( label, innerItem ) =
             ( label
             , helper (parentPath |> Path.advance index) innerItem
             )
 
+        -- TODO: replaceItem : helper : Path -> Property msgA -> Property msgB
         helper : Path -> Property msg -> Property msg
         helper curPath item =
             case item of
@@ -219,7 +224,7 @@ mapReplace f root =
 addPathFrom : Path -> Property msg -> Property ( Path, msg )
 addPathFrom from root =
     let
-        replaceItem : Path -> Int -> ( Label, Property msg ) -> ( Label, Property (Path, msg ) )
+        replaceItem : Path -> Int -> ( Label, Property msg ) -> ( Label, Property (Path, msg) )
         replaceItem parentPath index ( label, innerItem ) =
             ( label
             , helper (parentPath |> Path.advance index) innerItem
@@ -299,7 +304,7 @@ addLabeledPath =
 
 updateAt : Path -> (Property msg -> Property msg) -> Property msg -> Property msg
 updateAt path f =
-    mapReplace
+    replace
         <| \otherPath item ->
             if Path.equal otherPath path then f item else item
 
@@ -465,7 +470,7 @@ detachAt path =
 
 detachAll : Property msg -> Property msg
 detachAll =
-    mapReplace <| always detach
+    replace <| always detach
 
 
 toggle : Property msg -> Property msg
