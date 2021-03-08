@@ -2,7 +2,7 @@ module Gui exposing
     ( Gui
     , view, update, init, subscriptions, run, Msg
     , map, over, use
-    , detachable, encode--, applyRaw, initRaw
+    , detachable, encode, toExposed --, applyRaw, initRaw
     , dock, reshape
     )
 
@@ -344,8 +344,7 @@ Install it into your `update` function similarly to:
 update
     :  Msg
     -> Gui msg
-    -> ( Gui msg, Cmd ( Path, msg ) )
-    -- FIXME: use `Property.addPath` & use expose it as `Gui.addPath`
+    -> ( Gui msg, Cmd msg )
 update msg gui =
     case msg of
         NoOp ->
@@ -365,7 +364,9 @@ update msg gui =
                     { gui
                     | tree = nextRoot
                     }
-                , updates |> notifyUpdates
+                , updates
+                    |> List.map (Tuple.second >> Property.call)
+                    |> Cmd.batch
                 )
 
         MouseDown path ->
@@ -381,6 +382,7 @@ update msg gui =
                 curFocus = Focus.find gui.tree
             in
                 handleKeyDown keyCode curFocus gui
+                    |> Tuple.mapSecond (Cmd.map Tuple.second)
 
         ViewportChanged ( w, h ) ->
             (
@@ -411,7 +413,7 @@ update msg gui =
                     { gui
                     | tree = nextRoot
                     }
-                , Cmd.none -- Detach.sendTree gui.detach nextRoot
+                , Cmd.none -- FIXME: Detach.sendTree gui.detach nextRoot
                 )
 
         ReceiveRaw rawUpdate ->
@@ -450,7 +452,7 @@ applyRaw
     -> Gui msg
     -> Cmd msg
 applyRaw rawUpdate =
-    .tree >> Exp.update (Exp.fromPort rawUpdate) >> Cmd.map Tuple.second
+    .tree >> Exp.update (Exp.fromPort rawUpdate)
 
 
 trackMouse : Sub Msg
@@ -469,7 +471,7 @@ trackMouse =
     |> Sub.map ApplyMouse
 
 
-handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd ( Path, msg ) )
+handleMouse : MouseAction -> Gui msg -> ( Gui msg, Cmd msg )
 handleMouse mouseAction gui =
     let
         rootPath = getRootPath gui
@@ -585,12 +587,13 @@ handleMouse mouseAction gui =
                     then
 
                         case curMouseState.dragFrom |> Maybe.andThen findCellAt of
+                        -- TODO: do we need a path returned from `findCellAt`?
 
-                            Just ( path, prop ) ->
+                            Just ( _, prop ) ->
                                 case prop of
-                                    Number _ -> ( path, prop ) |> notifyUpdate
-                                    Coordinate _ -> ( path, prop ) |> notifyUpdate
-                                    Color _ -> ( path, prop ) |> notifyUpdate
+                                    Number _ -> Property.call prop
+                                    Coordinate _ -> Property.call prop
+                                    Color _ -> Property.call prop
                                     _ -> Cmd.none
                             Nothing -> Cmd.none
 
@@ -625,7 +628,9 @@ handleKeyDown keyCode path gui =
                     { gui
                     | tree = nextRoot
                     }
-                , updates |> notifyUpdates
+                , updates
+                    |> List.map (Tuple.second >> Property.call)
+                    |> Cmd.batch
                 )
 
     in case keyCode of
@@ -653,16 +658,28 @@ handleKeyDown keyCode path gui =
                                     |> setAt path nextProp
                             }
                         -- FIXME: inside, we check if it is a text prop again
-                        , notifyUpdate ( path, nextProp )
+                        , Property.call nextProp
                         )
                 _ -> executeByPath ()
         -- else
         _ -> ( gui, Cmd.none )
 
 
-notifyUpdate : ( Path, Property msg ) -> Cmd ( Path, msg )
-notifyUpdate ( path, prop ) =
-    Property.call prop |> Cmd.map (Tuple.pair path)
+toExposed : Gui msg -> Gui RawUpdate
+toExposed gui =
+    { dock = gui.dock
+    , viewport = gui.viewport
+    , size = gui.size
+    , mouse = gui.mouse
+    , tree = gui.tree |> Exp.toExposed
+    , detach = gui.detach
+    }
+
+
+{-
+notifyUpdate : Property msg -> Cmd ( msg )
+notifyUpdate prop  =
+    Property.call prop
     {-
     Cmd.batch
         [ Property.call prop |> Cmd.map (Tuple.pair path)
@@ -670,9 +687,11 @@ notifyUpdate ( path, prop ) =
         ] -}
 
 
-notifyUpdates : List ( Path, Property msg ) -> Cmd ( Path, msg )
+notifyUpdates : List ( Property msg ) -> Cmd msg
 notifyUpdates =
     List.map notifyUpdate >> Cmd.batch
+
+-}
 
 
 focus : msg -> Cmd msg

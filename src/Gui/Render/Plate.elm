@@ -7,7 +7,7 @@ import BinPack exposing (Bounds)
 
 import Gui.Path exposing (Path)
 import Gui.Msg exposing (Msg_(..))
-import Gui.Detach exposing (ClientId, Detach, getLocalUrl, localUrlToString, LocalUrl)
+import Gui.Detach exposing (ClientId, getLocalUrl, localUrlToString, LocalUrl)
 import Gui.Property exposing (Label, Property)
 
 import Gui.Render.Transform exposing (rotate, scale)

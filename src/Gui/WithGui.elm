@@ -17,6 +17,7 @@ import Gui.Msg exposing (Msg_(..))
 type WithGuiMsg msg
     = ToUser msg
     | ToTron Tron.Msg
+    | SendUpdate Exp.RawUpdate
 
 
 init
@@ -99,7 +100,7 @@ update ( userUpdate, userFor ) options eitherMsg (model, gui) =
 
         ToTron guiMsg ->
             case gui |> Tron.update guiMsg of
-                ( nextGui, guiEffect ) ->
+                ( nextGui, guiEffect) ->
                     (
                         ( model
                         , nextGui
@@ -109,7 +110,6 @@ update ( userUpdate, userFor ) options eitherMsg (model, gui) =
                             |> Cmd.map ToUser
                         , gui
                             |> performUpdateEffects options guiMsg
-                            |> Cmd.map ToUser
                         ]
                     )
 
@@ -146,18 +146,20 @@ performInitEffects options gui =
         |> Cmd.batch
 
 
-performUpdateEffects : List (Option msg) -> Tron.Msg -> Tron.Gui msg -> Cmd msg
+performUpdateEffects : List (Option msg) -> Tron.Msg -> Tron.Gui msg -> Cmd (WithGuiMsg msg)
 performUpdateEffects options msg gui =
     options
         |> List.foldl
             (\option cmds ->
                 case option of
-                    SendJsonToJs { ack } ->
-                        (gui.tree
-                            |> Exp.toExposed
-                            |> Tron.over gui
-                            |> Tron.update msg
-                            |> ack
+                    SendJsonToJs { transmit } ->
+                        (gui
+                            |> Tron.toExposed
+                            |> Tron.over gui.tree
+                            |> Tron.update msg -- FIXME: this way, we call the update at least twice
+                            |> Tuple.second
+                            |> Cmd.map SendUpdate
+                            --|> Cmd.andThen transmit
                         ) :: cmds
                     _ ->
                         cmds
@@ -168,7 +170,7 @@ performUpdateEffects options msg gui =
 
 addSubscriptionsOptions : List (Option msg) -> Tron.Gui msg -> Sub msg
 addSubscriptionsOptions options gui =
-    Sub.none
+    Sub.none -- FIXME:
 
 
 addViewOptions : List (Option msg) -> Tron.Gui msg -> Html Tron.Msg
