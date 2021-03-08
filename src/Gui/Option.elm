@@ -15,7 +15,7 @@ type Option msg
     | Dock Dock
     | SendJsonToJs
         { ack : Exp.RawProperty -> Cmd msg
-        , trasmit : Exp.RawUpdate -> Cmd msg
+        , transmit : Exp.RawUpdate -> Cmd msg
         }
     | SendStringsToJs
         { transmit : ( String, String ) -> Cmd msg

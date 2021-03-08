@@ -363,7 +363,7 @@ executeAt path root =
                                         , ( path, newCell )
                                         ]
                                     Nothing ->
-                                        [ ( toParent, Choice focus shape newParent )
+                                        [ (toParent, Choice focus shape newParent )
                                         ]
                         Nothing ->
                             []
