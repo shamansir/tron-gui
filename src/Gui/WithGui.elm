@@ -100,7 +100,7 @@ update ( userUpdate, userFor ) options eitherMsg (model, gui) =
 
         ToTron guiMsg ->
             case gui |> Tron.update guiMsg of
-                ( nextGui, guiEffect) ->
+                ( nextGui, guiEffect ) ->
                     (
                         ( model
                         , nextGui
@@ -112,6 +112,8 @@ update ( userUpdate, userFor ) options eitherMsg (model, gui) =
                             |> performUpdateEffects options guiMsg
                         ]
                     )
+
+        -- TODO: actually send the updates
 
 
 addInitOptions : List (Option msg) -> Tron.Gui msg -> Tron.Gui msg
@@ -155,8 +157,9 @@ performUpdateEffects options msg gui =
                     SendJsonToJs { transmit } ->
                         (gui
                             |> Tron.toExposed
+                            |> Tron.map Tuple.second -- FIXME: perform the update before
                             |> Tron.over gui.tree
-                            |> Tron.update msg -- FIXME: this way, we call the update at least twice
+                            |> Tron.update msg -- FIXME: this way, we call the update twice
                             |> Tuple.second
                             |> Cmd.map SendUpdate
                             --|> Cmd.andThen transmit

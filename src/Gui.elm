@@ -114,7 +114,7 @@ import Gui.Util exposing (..)
 -- import Gui.Alt as Alt exposing (Gui)
 import Gui.FocusLogic as Focus exposing (..)
 import Gui.Focus as Focus exposing (..)
-import Gui.Detach as Detach exposing (make, ClientId, Detach, map)
+import Gui.Detach as Detach exposing (ClientId)
 import Gui.Expose as Exp exposing (..)
 import Gui.Style.Dock exposing (Dock(..))
 --import Gui.Style.Anchor exposing (Anchor(..))
@@ -631,6 +631,7 @@ handleKeyDown keyCode path gui =
                 , updates
                     |> List.map (Tuple.second >> Property.call)
                     |> Cmd.batch
+                    |> Cmd.map (Tuple.pair path)
                 )
 
     in case keyCode of
@@ -659,13 +660,14 @@ handleKeyDown keyCode path gui =
                             }
                         -- FIXME: inside, we check if it is a text prop again
                         , Property.call nextProp
+                            |> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()
         -- else
         _ -> ( gui, Cmd.none )
 
 
-toExposed : Gui msg -> Gui RawUpdate
+toExposed : Gui msg -> Gui ( RawUpdate, msg )
 toExposed gui =
     { dock = gui.dock
     , viewport = gui.viewport
@@ -822,8 +824,17 @@ view theme gui =
         cellsSize = getSizeInCells gui
         bounds =
             Dock.boundsFromSize gui.dock gui.viewport cellsSize
+        detachState = Tuple.second gui.detach
+        toDetachAbility =
+            case Tuple.first gui.detach of
+                Just clientId ->
+                    Detach.formLocalUrl clientId
+                        >> Maybe.map Detach.CanBeDetached
+                        >> Maybe.withDefault Detach.CannotBeDetached
+                Nothing ->
+                    always Detach.CannotBeDetached
     in
     case layout gui of
         ( root, theLayout ) ->
             theLayout
-                |> Layout.view theme gui.dock bounds gui.detach root
+                |> Layout.view theme gui.dock bounds detachState toDetachAbility root

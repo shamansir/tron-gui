@@ -55,7 +55,7 @@ setHandler newHandler (Control state current _) =
     Control state current <| Just newHandler
 
 
-chainHandler : (v -> msgA -> msgB) -> Control s v msgA -> Control s v msgB
-chainHandler newHandler (Control state current maybeHandler) =
+mapWithValue : (v -> msgA -> msgB) -> Control s v msgA -> Control s v msgB
+mapWithValue newHandler (Control state current maybeHandler) =
     Control state current
         (maybeHandler |> Maybe.map (\handler v -> newHandler v <| handler v))

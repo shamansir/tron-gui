@@ -27,6 +27,14 @@ type State
     | AttachedAt Path
 
 
+type Ability
+    = CannotBeDetached
+    | CanBeDetached LocalUrl
+
+
+type alias GetAbility = Path -> Ability
+
+
 {-
 type Detach msg =
     Detach

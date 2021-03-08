@@ -7,7 +7,7 @@ import BinPack exposing (Bounds)
 
 import Gui.Path exposing (Path)
 import Gui.Msg exposing (Msg_(..))
-import Gui.Detach exposing (ClientId, getLocalUrl, localUrlToString, LocalUrl)
+import Gui.Detach as Detach exposing (Ability(..), ClientId, localUrlToString, LocalUrl)
 import Gui.Property exposing (Label, Property)
 
 import Gui.Render.Transform exposing (rotate, scale)
@@ -46,23 +46,23 @@ back style bounds =
 
 
 controls
-    :  Detach msg
+    :  Detach.Ability
     -> Style
     -> Path
     -> Bounds
     -> ( Label, Property msg )
     -> Svg Msg_
-controls detachFn ( ( _, tone ) as style ) path bounds ( label, prop ) =
+controls detachAbility ( ( _, tone ) as style ) path bounds ( label, prop ) =
     Svg.g
         [ SA.class <| "plate-controls plate-controls--" ++ toneToModifier tone ]
-        [ case detachFn |> getLocalUrl path of
-            Just localUrl ->
+        [ case detachAbility of
+            CanBeDetached localUrl ->
                 detachButton
                     style
                     path
                     localUrl
                     ( Cell.gap, Cell.gap )
-            Nothing -> Svg.none
+            CannotBeDetached -> Svg.none
         , Svg.text_
             [ SA.class "plate-controls__title"
             , SA.x <| String.fromFloat <| bounds.width / 2
