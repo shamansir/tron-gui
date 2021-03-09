@@ -4,6 +4,7 @@ module Gui.WithGui exposing (..)
 import Browser
 import Html exposing (Html)
 import Either exposing (Either(..))
+import Random
 
 import Gui as Tron
 import Gui.Build as Builder exposing (Builder)
@@ -12,12 +13,16 @@ import Gui.Style.Dock exposing (Dock(..))
 import Gui.Expose as Exp
 import Gui.Option exposing (..)
 import Gui.Msg exposing (Msg_(..))
+import Gui.Detach as Detach
 
 
 type WithGuiMsg msg
     = ToUser msg
     | ToTron Tron.Msg
+    | Ack Exp.Ack
     | SendUpdate Exp.RawUpdate
+    | ReceiveRaw Exp.RawUpdate
+    | SetClientId Detach.ClientId
 
 
 init
@@ -81,8 +86,8 @@ update
     -> WithGuiMsg msg
     -> ( model, Tron.Gui msg )
     -> ( ( model, Tron.Gui msg ), Cmd (WithGuiMsg msg) )
-update ( userUpdate, userFor ) options eitherMsg (model, gui) =
-    case eitherMsg of
+update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
+    case withGuiMsg of
 
         ToUser userMsg ->
             let
@@ -99,17 +104,17 @@ update ( userUpdate, userFor ) options eitherMsg (model, gui) =
             )
 
         ToTron guiMsg ->
-            case gui |> Tron.update guiMsg of
+            case gui |> Tron.toExposed |> Tron.update guiMsg of
                 ( nextGui, guiEffect ) ->
                     (
                         ( model
-                        , nextGui
+                        , nextGui |> Tron.map Tuple.second
                         )
                     , Cmd.batch
                         [ guiEffect
-                            |> Cmd.map ToUser
-                        , gui
-                            |> performUpdateEffects options guiMsg
+                            |> Cmd.map (Tuple.second >> ToUser)
+                        , guiEffect
+                            |> Cmd.map (Tuple.first >> SendUpdate)
                         ]
                     )
 
@@ -148,8 +153,9 @@ performInitEffects options gui =
         |> Cmd.batch
 
 
-performUpdateEffects : List (Option msg) -> Tron.Msg -> Tron.Gui msg -> Cmd (WithGuiMsg msg)
-performUpdateEffects options msg gui =
+{-
+performUpdateEffects : List (Option msg) -> Tron.Gui ( Exp.RawUpdate, msg ) -> Cmd (WithGuiMsg msg)
+performUpdateEffects options gui =
     options
         |> List.foldl
             (\option cmds ->
@@ -168,7 +174,7 @@ performUpdateEffects options msg gui =
                         cmds
             )
             []
-        |> Cmd.batch
+        |> Cmd.batch -}
 
 
 addSubscriptionsOptions : List (Option msg) -> Tron.Gui msg -> Sub msg
@@ -194,11 +200,16 @@ addViewOptions options gui =
         |> Html.div []
 
 
+nextClientId : Cmd (WithGuiMsg msg)
+nextClientId =
+    Random.generate SetClientId Detach.clientIdGenerator
+
+
 element
     :
         { options : List (Option msg)
-        , init : flags -> ( model, Cmd msg )
         , for : model -> Builder.Builder msg
+        , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Html msg
         , update : msg -> model -> ( model, Cmd msg )
