@@ -17,5 +17,3 @@ type Msg_
     | KeyDown Int
     | TextInput Path String
     | Detach Path
-    | ReceiveRaw Exp.RawUpdate
-    | SetClientId HashId

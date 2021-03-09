@@ -70,9 +70,8 @@ never =
 -}
 
 
-nextClientId : Cmd Msg_
-nextClientId =
-    Random.generate SetClientId HashId.generator
+clientIdGenerator : Random.Generator ClientId
+clientIdGenerator = HashId.generator
 
 
 detached : State
