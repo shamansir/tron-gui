@@ -19,7 +19,7 @@ import Gui.Detach as Detach
 type WithGuiMsg msg
     = ToUser msg
     | ToTron Tron.Msg
-    | Ack Exp.Ack
+    --| Ack Exp.Ack
     | SendUpdate Exp.RawUpdate
     | ReceiveRaw Exp.RawUpdate
     | SetClientId Detach.ClientId
@@ -118,7 +118,44 @@ update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
                         ]
                     )
 
-        -- TODO: actually send the updates
+        ReceiveRaw rawUpdate ->
+            let
+                nextRoot =
+                    gui.tree
+                        |> Exp.apply (Exp.fromPort rawUpdate)
+            in
+                (
+                    ( model
+                    ,
+                        { gui
+                        | tree = nextRoot
+                        }
+                    )
+                , nextRoot
+                    |> Exp.update (Exp.fromPort rawUpdate)
+                    |> Cmd.map ToUser
+                )
+
+        SetClientId clientId ->
+            (
+                ( model
+                ,
+                    { gui
+                    | detach =
+                        case gui.detach of
+                            ( _, state ) -> ( Just clientId, state )
+
+                    }
+                )
+            , Cmd.none
+            -- , nextDetach |> Detach.ack -- FIXME:
+            )
+
+
+        SendUpdate _ ->
+            ( (model, gui)
+            , Cmd.none
+            ) -- FIXME:
 
 
 addInitOptions : List (Option msg) -> Tron.Gui msg -> Tron.Gui msg
@@ -151,6 +188,30 @@ performInitEffects options gui =
             )
             []
         |> Cmd.batch
+
+
+
+-- FIXME: Use in WithGui at `init`
+{- detachable
+     : Url
+    -> (Exp.Ack -> Cmd msg)
+    -> Gui msg
+    -> ( Gui msg, Cmd Msg )
+detachable url ack gui =
+    let
+        ( maybeClient, state ) = Detach.fromUrl url
+    in
+        (
+            { gui
+            | detach = ( maybeClient, state )
+            }
+        , case maybeClient of
+            Nothing -> Detach.nextClientId
+            _ ->
+                Exp.encodeAck maybeClient
+                    |> ack
+                    |> Cmd.map (always NoOp)
+        ) -}
 
 
 {-
@@ -226,3 +287,5 @@ element def =
         , update =
             update ( def.update, def.for ) def.options
         }
+
+

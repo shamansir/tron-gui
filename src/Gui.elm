@@ -2,7 +2,7 @@ module Gui exposing
     ( Gui
     , view, update, init, subscriptions, run, Msg
     , map, over, use
-    , detachable, encode, toExposed --, applyRaw, initRaw
+    , encode, toExposed --, applyRaw, initRaw
     , dock, reshape
     )
 
@@ -243,29 +243,6 @@ run =
         ]
 
 
--- FIXME: Use in WithGui at `init`
-detachable
-     : Url
-    -> (Exp.Ack -> Cmd msg)
-    -> Gui msg
-    -> ( Gui msg, Cmd Msg )
-detachable url ack gui =
-    let
-        ( maybeClient, state ) = Detach.fromUrl url
-    in
-        (
-            { gui
-            | detach = ( maybeClient, state )
-            }
-        , case maybeClient of
-            Nothing -> Detach.nextClientId
-            _ ->
-                Exp.encodeAck maybeClient
-                    |> ack
-                    |> Cmd.map (always NoOp)
-        )
-
-
 {-| While keeping other options intact and keeping the expanded panels, rebuild the GUI structure using the new model. If some panels were
 
 It is useful if the model updated externally, you want to re-build UI using this model,
@@ -415,32 +392,6 @@ update msg gui =
                     }
                 , Cmd.none -- FIXME: Detach.sendTree gui.detach nextRoot
                 )
-
-        ReceiveRaw rawUpdate ->
-            let
-                nextRoot =
-                    gui.tree
-                        |> Exp.apply (Exp.fromPort rawUpdate)
-            in
-                (
-                    { gui
-                    | tree = nextRoot
-                    }
-                , nextRoot
-                    |> Exp.update (Exp.fromPort rawUpdate)
-                )
-
-        SetClientId clientId ->
-            (
-                { gui
-                | detach =
-                    case gui.detach of
-                        ( _, state ) -> ( Just clientId, state )
-
-                }
-            , Cmd.none
-            -- , nextDetach |> Detach.ack -- FIXME: use in `WithGui`
-            )
 
 
 {-| `applyRaw` is needed only for the cases of replacing Tron interface with `dat.gui` or any other JS interpretation. See `example/DatGui` for reference.
