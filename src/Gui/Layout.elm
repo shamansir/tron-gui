@@ -17,7 +17,7 @@ import Gui.Style.Dock as Dock
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS
 
-import Gui.Control.Nest exposing (NestState(..))
+import Gui.Control.Nest exposing (Form(..))
 import Gui.Control.Nest as Nest exposing (getItems)
 
 
@@ -168,7 +168,7 @@ packItemsAtRoot size rp shape items =
             -> BinPack (Cell_ Path)
             -> Control
                     ( Array ( Label, Property msg ) )
-                    ( NestState, a )
+                    { a | form : Form }
                     msg
             -> BinPack (Cell_ Path)
         packGroupControl

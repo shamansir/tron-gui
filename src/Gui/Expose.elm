@@ -19,7 +19,7 @@ import Gui.Path as Path exposing (toList)
 -- TODO: make controls expose themselves, so get rid of these imports below
 import Gui.Control.Text as Text exposing (TextState(..))
 import Gui.Control.Toggle as Toggle exposing (ToggleState(..))
-import Gui.Control.Nest as Nest exposing (NestState(..), SelectedAt(..))
+import Gui.Control.Nest as Nest exposing (Form(..), SelectedAt(..))
 
 
 type alias RawPath = List Id
@@ -81,8 +81,14 @@ updateProperty value property =
             t |> callWith control
         ( Action control, FromButton ) ->
             () |> callWith control
-        ( Choice _ _ control, FromChoice i ) ->
-            ( Nest.getState control, SelectedAt i )
+        ( Choice _ _ (Control _ state _ as control), FromChoice i ) ->
+            let
+                nextState =
+                    { state
+                    | selected = SelectedAt i
+                    }
+            in
+            nextState
                 |> callWith control
         ( Group _ _ _, _ ) ->
             Cmd.none
@@ -217,30 +223,31 @@ encodePropertyAt path property =
                 [ ( "type", E.string "button" )
                 , ( "path", encodeRawPath path )
                 ]
-        Choice _ _ ( Control items ( state, SelectedAt current ) _) ->
+        Choice _ _ ( Control items { form, selected } _) ->
             E.object
                 [ ( "type", E.string "choice" )
                 , ( "path", encodeRawPath path )
-                , ( "current", E.int current )
-                , ( "expanded", E.bool <| case state of
+                , ( "current", E.int <| case selected of
+                    SelectedAt index -> index )
+                , ( "expanded", E.bool <| case form of
                     Expanded -> True
                     Collapsed -> False
                     Detached -> False )
-                , ( "detached", E.bool <| case state of
+                , ( "detached", E.bool <| case form of
                     Detached -> True
                     Collapsed -> False
                     Expanded -> False )
                 , ( "options", encodeNested path items )
                 ]
-        Group _ _ (Control items ( state, _ ) _ ) ->
+        Group _ _ (Control items { form } _ ) ->
             E.object
                 [ ( "type", E.string "nest" )
                 , ( "path", encodeRawPath path )
-                , ( "expanded", E.bool <| case state of
+                , ( "expanded", E.bool <| case form of
                     Expanded -> True
                     Collapsed -> False
                     Detached -> False )
-                , ( "detached", E.bool <| case state of
+                , ( "detached", E.bool <| case form of
                     Detached -> True
                     Collapsed -> False
                     Expanded -> False )

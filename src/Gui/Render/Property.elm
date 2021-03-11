@@ -21,7 +21,7 @@ import Gui.Control as Core exposing (Control(..))
 import Gui.Control.Text exposing (TextState(..))
 import Gui.Control.Button exposing (Face(..), Icon(..))
 import Gui.Control.Toggle exposing (ToggleState(..))
-import Gui.Control.Nest as Nest exposing (getState, NestState(..))
+import Gui.Control.Nest as Nest exposing (getForm, Form(..))
 import Gui.Control.Number as Number exposing (Control)
 
 import Gui.Render.Transform exposing (..)
@@ -136,7 +136,7 @@ viewProperty
             button style state face cellShape label bounds
         Color (Control _ value _) ->
             color style state value bounds
-        Choice _ _ control ->
+        Choice _ _ ( Control _ { form } _) ->
             case maybeSelectedInside of
                 Just theSelectedProp ->
                     viewProperty
@@ -148,9 +148,9 @@ viewProperty
                         cellShape
                         theSelectedProp
                 Nothing ->
-                    arrow style state (Nest.getState control) bounds
-        Group _ _ control ->
-            arrow style state (Nest.getState control) bounds
+                    arrow style state form bounds
+        Group _ _ ( Control _ { form } _) ->
+            arrow style state form bounds
         _ -> Svg.none
 
 
@@ -418,8 +418,8 @@ color _ _ value bounds =
         ]
 
 
-arrow : Style -> State -> NestState -> Bounds -> Svg msg
-arrow style state groupState bounds =
+arrow : Style -> State -> Form -> Bounds -> Svg msg
+arrow style state form bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
         scaleV = (min bounds.width bounds.height) / 127
@@ -430,7 +430,7 @@ arrow style state groupState bounds =
                                 ++ String.fromFloat (center.y - (14 * scaleV)) ++ "px)"
         ]
         [ Util.arrow (Coloring.lines_ style state) (scale scaleV)
-            <| case groupState of
+            <| case form of
                 Expanded -> rotate 180
                 Detached -> rotate 45
                 Collapsed -> rotate 0

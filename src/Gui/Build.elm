@@ -80,7 +80,7 @@ import Gui.Style.PanelShape as Shape exposing (find, rows, cols)
 import Gui.Control.Text exposing (TextState(..))
 import Gui.Control.Button exposing (Face(..), Icon(..))
 import Gui.Control.Toggle exposing (boolToToggle, toggleToBool)
-import Gui.Control.Nest exposing (NestState(..), SelectedAt(..))
+import Gui.Control.Nest exposing (Form(..), SelectedAt(..), CurrentPage(..))
 
 
 {-| `Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instance `Builder msg`.
@@ -435,9 +435,7 @@ nest shape cellShape items =
         <| Control
             ( Array.fromList items
             )
-            ( Collapsed
-            , ()
-            )
+            { form = Collapsed }
             Nothing -- (Tuple.first >> handler)
 
 
@@ -566,8 +564,8 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
             ( findShape cellShape shape set, cellShape )
             <| Control
                 ( set |> Array.fromList )
-                ( Collapsed
-                ,
+                { form = Collapsed
+                , selected =
                     indexedOptions
                         |> findMap
                             (\(index, option) ->
@@ -577,8 +575,9 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
                             )
                         |> Maybe.withDefault 0
                         |> SelectedAt
-                )
-                (Just <| Tuple.second >> callByIndex)
+                , current = CurrentPage 0
+                }
+                (Just <| .selected >> callByIndex)
 
 
 {-| `strings` is a helper to create `choice` over string values.

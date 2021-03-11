@@ -65,27 +65,31 @@ propertyDebug ( label, prop )  =
         Action _ ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " button" ]
-        Group maybeFocus _ (Control _ ( state, _ ) _) ->
+        Group maybeFocus _ (Control _ { form } _) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " nested: "
                 , textAt 5 20
-                    <| if state == Expanded then "expanded" else "collapsed"
+                    <| if form == Expanded then "expanded" else "collapsed"
                 , textAt 5 35
                     <| "focus: " ++
                     case maybeFocus of
                         Just (FocusAt focus) -> String.fromInt focus
                         _ -> "none"
                 ]
-        Choice maybeFocus _ (Control _ ( state, SelectedAt selected ) _ ) ->
+        Choice maybeFocus _ (Control _ state _ ) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " choice: "
                 , textAt 5 20
-                    <| if state == Expanded then "expanded" else "collapsed"
+                    <| if state.form == Expanded then "expanded" else "collapsed"
                 , textAt 5 35
                     <| "focus: " ++
                     case maybeFocus of
                         Just (FocusAt focus) -> String.fromInt focus
                         _ -> "none"
                 , textAt 5 50
-                    <| " selected: " ++ String.fromInt selected
+                    <| " selected: " ++
+                            ( String.fromInt
+                            <| case state.selected of
+                                SelectedAt index -> index
+                            )
                 ]

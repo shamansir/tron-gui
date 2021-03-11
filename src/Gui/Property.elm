@@ -253,11 +253,11 @@ execute item =
         Choice focus shape control ->
             Just
                 <| Choice focus shape
-                <| Nest.execute control
+                <| Nest.toggle control
         Group focus shape control ->
             Just
                 <| Group focus shape
-                <| Nest.execute control
+                <| Nest.toggle control
         _ -> Nothing
 
 

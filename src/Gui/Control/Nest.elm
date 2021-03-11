@@ -6,7 +6,10 @@ import Array exposing (Array)
 import Gui.Control as Core exposing (Control)
 
 
-type NestState
+
+
+
+type Form
     = Expanded
     | Collapsed
     | Detached
@@ -15,20 +18,28 @@ type NestState
 type SelectedAt = SelectedAt Int
 
 
+type CurrentPage = CurrentPage Int
+
+
+
 -- TODO: move focus outside, only selection matters in the component for logic
 -- TODO: may be even (Shape, CellShape) should also be outside
 
 type alias GroupControl item msg =
     Core.Control
         ( Array item )
-        ( NestState, () )
+        { form : Form
+        }
         msg
 
 
 type alias ChoiceControl item msg =
     Core.Control
         ( Array item )
-        ( NestState, SelectedAt )
+        { form : Form
+        , selected : SelectedAt
+        , current : CurrentPage
+        }
         msg
 
 
@@ -37,8 +48,8 @@ get n = getItems >> Array.get n
 
 
 select : Int -> ChoiceControl item msg -> ChoiceControl item msg
-select index (Core.Control setup ( expanded, _ ) handler) =
-    Core.Control setup ( expanded, SelectedAt index ) handler
+select index (Core.Control setup state handler) =
+    Core.Control setup { state | selected = SelectedAt index } handler
 
 
 getSelected : ChoiceControl item msg -> Maybe item
@@ -51,87 +62,78 @@ isSelected control n = whichSelected control == n
 
 
 whichSelected : ChoiceControl item msg -> Int
-whichSelected (Core.Control _ ( _, SelectedAt selected ) handler) = selected
+whichSelected (Core.Control _ { selected } handler) =
+    case selected of
+        SelectedAt index -> index
 
 
 expand
      : Core.Control
             setup
-            ( NestState, a )
+            { a | form : Form }
             msg
     -> Core.Control
             setup
-            ( NestState, a )
+            { a | form : Form }
             msg
-expand (Core.Control setup ( _, a ) handler) =
-    Core.Control setup ( Expanded, a ) handler
+expand (Core.Control setup state handler) =
+    Core.Control setup { state | form = Expanded } handler
 
 
 collapse
      : Core.Control
             setup
-            ( NestState, a )
+            { a | form : Form }
             msg
     -> Core.Control
             setup
-            ( NestState, a )
+            { a | form : Form }
             msg
-collapse (Core.Control setup ( _, a ) handler) =
-    Core.Control setup ( Collapsed, a ) handler
+collapse (Core.Control setup state handler) =
+    Core.Control setup { state | form = Collapsed } handler
 
 
 detach
      : Core.Control
             setup
-            ( NestState, a )
+            { a | form : Form }
             msg
     -> Core.Control
             setup
-            ( NestState, a )
+            { a | form : Form }
             msg
-detach (Core.Control setup ( _, a ) handler) =
-    Core.Control setup ( Detached, a ) handler
+detach (Core.Control setup state handler) =
+    Core.Control setup { state | form = Detached } handler
 
 
-attach
+toggle
      : Core.Control
             setup
-            ( NestState, a )
+            { a | form : Form }
             msg
     -> Core.Control
             setup
-            ( NestState, a )
+            { a | form : Form }
             msg
-attach = expand
-
-
-execute
-    : Core.Control
-            setup
-            ( NestState, a )
-            msg
-    -> Core.Control
-            setup
-            ( NestState, a )
-            msg
-execute (Core.Control setup ( expanded, a ) handler) =
-    let
-        nextState =
-            case expanded of
-                Collapsed -> Expanded
+toggle (Core.Control setup state handler) =
+    Core.Control
+        setup
+        { state
+        | form =
+            case state.form of
                 Expanded -> Collapsed
+                Collapsed -> Expanded
                 Detached -> Detached
-    in
-        Core.Control setup ( nextState, a ) handler
+        }
+        handler
 
 
+getForm : Core.Control a { a | form : Form } msg -> Form
+getForm (Core.Control _ { form } _) = form
 
-getState : Core.Control a ( NestState, b ) msg -> NestState
-getState (Core.Control _ ( state, _ ) handler) = state
 
-
-is : NestState -> Core.Control setup ( NestState, a ) msg -> Bool
-is state (Core.Control _ ( expanded, a ) _) = expanded == state
+is : Form -> Core.Control setup { a | form : Form } msg -> Bool
+is checkedForm (Core.Control _ { form } _) = checkedForm == form
 
 
 getItems : Core.Control ( Array item ) value msg -> Array item

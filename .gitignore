@@ -6,6 +6,7 @@
 /example/Gui.css
 /example/*.woff
 /example/*.woff2
+.idea
 index.html
 # /example/dat.gui.min.js
 example/Example/Goose/index.js
