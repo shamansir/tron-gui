@@ -5,7 +5,7 @@ import Browser exposing (element)
 import Html exposing (Html, div)
 import Html.Attributes as Attr exposing (class)
 
-import Gui as Tron exposing (Gui, Message, init, view, update, subscriptions)
+import Gui as Tron exposing (Gui, Msg, init, view, update, subscriptions)
 import Gui.Build as Builder exposing (map)
 import Gui.Style.Theme as Theme exposing (Theme(..))
 
@@ -73,7 +73,8 @@ update msg ( example, gui ) =
                 -- you need neither `updatedBy` function nor this condition check,
                 -- at all! Just leave the `else` part in your code.
                 if ExampleGui.updatedBy dmsg then
-                    let nextModel = example |> Example.update dmsg
+                    -- FIXME: we're skipping Commands here
+                    let ( nextModel, _ ) = example |> Example.update dmsg
                     in
                         ( nextModel
                         , gui
@@ -81,7 +82,7 @@ update msg ( example, gui ) =
                                 (ExampleGui.for nextModel |> Builder.map ToExample)
                         )
                 else
-                    ( example |> Example.update dmsg
+                    ( example |> Example.update dmsg |> Tuple.first -- FIXME: we're skipping Commands here
                     , gui
                     )
             , Cmd.none
