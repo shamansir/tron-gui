@@ -9,13 +9,9 @@ import Url exposing (Url)
 import Gui.Render.Transform exposing (..)
 
 import Gui.Style.Theme exposing (Theme)
-import Gui.Style.Coloring exposing (Tone)
 import Gui.Style.Selected exposing (Selected)
 import Gui.Style.Placement exposing (Placement)
 import Gui.Focus exposing (Focused)
-
-
-type alias Style = ( Theme, Tone )
 
 
 type alias State = ( Placement, Focused, Selected )
@@ -69,7 +65,7 @@ polarToCartesian
     -> { x : Float, y : Float }
 polarToCartesian center { radiusA, radiusB } angleInDegrees =
     let
-        angleInRadians = (angleInDegrees-90) * pi / 180.0
+        angleInRadians = (angleInDegrees - 90) * pi / 180.0
     in
         { x = center.x + (radiusA * cos angleInRadians)
         , y = center.y + (radiusB * sin angleInRadians)
@@ -101,7 +97,7 @@ describeMark
     -> String
 describeMark center { radiusA, radiusB } angleInDegrees =
     let
-        angleInRadians = (angleInDegrees-90) * pi / 180.0
+        angleInRadians = (angleInDegrees - 90) * pi / 180.0
         m_radiusA = radiusA * 0.4
         m_radiusB = radiusB * 0.4
         start =

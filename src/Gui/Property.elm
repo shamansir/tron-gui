@@ -21,6 +21,7 @@ import Gui.Control.Toggle as Toggle exposing (..)
 import Gui.Control.Nest as Nest exposing (..)
 
 import Gui.Style.CellShape exposing (CellShape)
+import Gui.Style.PanelShape as Shape exposing (PanelShape)
 
 
 type FocusAt = FocusAt Int
@@ -184,16 +185,21 @@ unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
-mapReplace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
-mapReplace f root =
+-- TODO: replace : (Path -> Property msgA -> Property msgB) -> Property msgA -> Property msgB
+--       or : (Path -> msgA -> msgB) -> ...
+--       then, implement `addPath` with it
+replace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
+replace f root =
     let
 
+        -- TODO: replaceItem : Path -> Int -> ( Label, Property msgA ) -> ( Label, Property msgB )
         replaceItem : Path -> Int -> ( Label, Property msg ) -> ( Label, Property msg )
         replaceItem parentPath index ( label, innerItem ) =
             ( label
             , helper (parentPath |> Path.advance index) innerItem
             )
 
+        -- TODO: replaceItem : helper : Path -> Property msgA -> Property msgB
         helper : Path -> Property msg -> Property msg
         helper curPath item =
             case item of
@@ -215,9 +221,90 @@ mapReplace f root =
         helper Path.start root
 
 
+addPathFrom : Path -> Property msg -> Property ( Path, msg )
+addPathFrom from root =
+    let
+        replaceItem : Path -> Int -> ( Label, Property msg ) -> ( Label, Property (Path, msg) )
+        replaceItem parentPath index ( label, innerItem ) =
+            ( label
+            , helper (parentPath |> Path.advance index) innerItem
+            )
+
+        helper : Path -> Property msg -> Property ( Path, msg )
+        helper curPath item =
+            case item of
+
+                Choice focus shape control ->
+                    Choice
+                        focus
+                        shape
+                        (control
+                            |> Nest.indexedMapItems (replaceItem curPath)
+                            |> Control.map (Tuple.pair curPath)
+                        )
+
+                Group focus shape control ->
+                    Group
+                        focus
+                        shape
+                        (control
+                            |> Nest.indexedMapItems (replaceItem curPath)
+                            |> Control.map (Tuple.pair curPath)
+                        )
+
+                prop -> map (Tuple.pair curPath) prop
+
+    in
+        helper from root
+
+
+addPath : Property msg -> Property ( Path, msg )
+addPath =
+    addPathFrom Path.start
+
+
+addLabeledPathFrom : List String -> Property msg -> Property ( List String, msg )
+addLabeledPathFrom from root =
+    let
+        replaceItem : List String -> ( Label, Property msg ) -> ( Label, Property (List String, msg ) )
+        replaceItem parentPath ( label, innerItem ) =
+            ( label
+            , helper (parentPath ++ [ label ]) innerItem
+            )
+
+        helper : List String -> Property msg -> Property ( List String, msg )
+        helper curPath item =
+            case item of
+                Choice focus shape control ->
+                    Choice
+                        focus
+                        shape
+                        (control
+                            |> Nest.mapItems (replaceItem curPath)
+                            |> Control.map (Tuple.pair curPath)
+                        )
+                Group focus shape control ->
+                    Group
+                        focus
+                        shape
+                        (control
+                            |> Nest.mapItems (replaceItem curPath)
+                            |> Control.map (Tuple.pair curPath)
+                        )
+                prop -> map (Tuple.pair curPath) prop
+
+    in
+        helper from root
+
+
+addLabeledPath : Property msg -> Property ( List String, msg )
+addLabeledPath =
+    addLabeledPathFrom []
+
+
 updateAt : Path -> (Property msg -> Property msg) -> Property msg -> Property msg
 updateAt path f =
-    mapReplace
+    replace
         <| \otherPath item ->
             if Path.equal otherPath path then f item else item
 
@@ -281,7 +368,7 @@ executeAt path root =
                                         , ( path, newCell )
                                         ]
                                     Nothing ->
-                                        [ ( toParent, Choice focus shape newParent )
+                                        [ (toParent, Choice focus shape newParent )
                                         ]
                         Nothing ->
                             []
@@ -383,7 +470,7 @@ detachAt path =
 
 detachAll : Property msg -> Property msg
 detachAll =
-    mapReplace <| always detach
+    replace <| always detach
 
 
 toggle : Property msg -> Property msg
@@ -474,3 +561,9 @@ isSelected prop index =
         Choice _ _ control ->
             Nest.isSelected control index
         _ -> False
+
+
+findShape : CellShape -> PanelShape -> List (Property msg) -> ( Float, Float )
+findShape cellShape panelShape =
+    noGhosts
+        >> Shape.find cellShape panelShape

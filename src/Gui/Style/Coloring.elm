@@ -39,8 +39,8 @@ back theme ( placement, focused, _ ) =
         OnAPlate -> transparent
         AtRoot ->
             case ( theme, focused ) of
-                ( Dark, NotFocused ) -> Color.rgba 0.05 0.05 0.05 0.6
-                ( Light, NotFocused ) -> Color.rgba 1.0 1.0 1.0 0.8
+                ( Dark, NotFocused ) -> Color.rgba 0.05 0.05 0.05 0.9
+                ( Light, NotFocused ) -> Color.rgba 1.0 1.0 1.0 0.9
                 ( Dark, FocusedBy _ ) -> Color.rgb 0.2 0.2 0.2
                 ( Light, FocusedBy _ ) -> Color.rgb 1.0 1.0 1.0
 
@@ -71,60 +71,3 @@ aqua = Color.rgb255 35 205 232 -- "#23CDE8"
 
 
 black = Color.rgb255 58 62 65 -- "#3a3e41"
-
-
-type Tone
-    = None
-    | Green
-    | Pink
-    | Yellow
-    | Aqua
-
-
-none : Tone
-none = None
-
-
-back_ : ( Theme, Tone ) -> ( Placement, Focused, Selected ) -> Color
-back_ ( theme, _ ) =
-    back theme
-
-
-lines_ : ( Theme, Tone ) -> ( Placement, Focused, Selected ) -> Color
-lines_ ( theme, tone ) state =
-    case tone of
-        Green -> green
-        Pink -> pink
-        Yellow -> yellow
-        Aqua -> aqua
-        None -> lines theme state
-
-
-secondaryLines_ : ( Theme, Tone ) -> ( Placement, Focused, Selected ) -> Color
-secondaryLines_ ( theme, _ ) =
-    secondaryLines theme
-
-
-text_ : ( Theme, Tone ) -> ( Placement, Focused, Selected ) -> Color
-text_ ( theme, _ ) =
-    text theme
-
-
-toString : Tone -> String
-toString tone =
-    case tone of
-        Green -> "tone-1"
-        Pink -> "tone-2"
-        Yellow -> "tone-3"
-        Aqua -> "tone-4"
-        None -> "no-tone"
-
-
-next : Tone -> Tone
-next tone =
-    case tone of
-        Green -> Pink
-        Pink -> Yellow
-        Yellow -> Aqua
-        Aqua -> Green
-        None -> None

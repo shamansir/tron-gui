@@ -19,7 +19,7 @@ import AFrame.Render.Layout as AFrame exposing (view)
 
 type Msg
     = ToExample Example.Msg
-    | ToTron Tron.Message
+    | ToTron Tron.Msg
 
 
 type alias Model =

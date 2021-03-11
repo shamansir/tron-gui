@@ -48,3 +48,14 @@ getValue (Control _ v _) = v
 
 setValue : v -> Control s v msg -> Control s v msg
 setValue v = update <| always v
+
+
+setHandler : (v -> msgB) -> Control s v msgA -> Control s v msgB
+setHandler newHandler (Control state current _) =
+    Control state current <| Just newHandler
+
+
+mapWithValue : (v -> msgA -> msgB) -> Control s v msgA -> Control s v msgB
+mapWithValue newHandler (Control state current maybeHandler) =
+    Control state current
+        (maybeHandler |> Maybe.map (\handler v -> newHandler v <| handler v))

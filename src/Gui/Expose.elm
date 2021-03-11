@@ -15,6 +15,7 @@ import Gui.Control as Control exposing (update)
 import Gui.Property exposing (..)
 import Gui.Path exposing (Path)
 import Gui.Path as Path exposing (toList)
+import Gui.ProxyValue as ProxyValue exposing (ProxyValue(..))
 
 -- TODO: make controls expose themselves, so get rid of these imports below
 import Gui.Control.Text as Text exposing (TextState(..))
@@ -22,27 +23,13 @@ import Gui.Control.Toggle as Toggle exposing (ToggleState(..))
 import Gui.Control.Nest as Nest exposing (Form(..), SelectedAt(..))
 
 
-type alias RawPath = List Id
+type alias RawPath = List Int
 
 
 type alias RawProperty = E.Value
 
 
 type alias RawClientId = E.Value
-
-
-type alias Id = Int
-
-
-type ProxyValue -- TODO: get rid of?
-    = FromSlider Float
-    | FromXY ( Float, Float )
-    | FromInput String
-    | FromChoice Id
-    | FromColor Color
-    | FromToggle ToggleState
-    | FromButton
-    | Other
 
 
 type alias Update =
@@ -62,6 +49,88 @@ type alias RawUpdate =
 type alias Ack =
     { client : RawClientId
     }
+
+
+toProxied : Property msg -> Property ( ProxyValue, msg )
+toProxied prop =
+    let
+        helper : (v -> ProxyValue) -> ( v -> msg -> ( ProxyValue, msg ) )
+        -- helper : (a -> b) -> ( a -> c -> ( b, c ) )
+        helper toProxy v msg = ( toProxy v, msg )
+    in
+        case prop of
+            Nil ->
+                Nil
+            Number control ->
+                control
+                    |> mapWithValue (helper FromSlider)
+                    |> Number
+            Coordinate control ->
+                control
+                    |> mapWithValue (helper FromXY)
+                    |> Coordinate
+            Text control ->
+                control
+                    |> mapWithValue (helper (Tuple.second >> FromInput))
+                    |> Text
+            Color control ->
+                control
+                    |> mapWithValue (helper FromColor)
+                    |> Color
+            Toggle control ->
+                control
+                    |> mapWithValue (helper FromToggle)
+                    |> Toggle
+            Action control ->
+                control
+                    |> mapWithValue (helper <| always FromButton)
+                    |> Action
+            Choice focus shape control ->
+                control
+                    |> Nest.mapItems (Tuple.mapSecond toProxied)
+                    |> mapWithValue (helper (Tuple.second >> Nest.toNum >> FromChoice))
+                    |> Choice focus shape
+            Group focus shape control ->
+                control
+                    |> Nest.mapItems (Tuple.mapSecond toProxied)
+                    |> mapWithValue (helper <| always Other)
+                    -- TODO: notify expanded/collapsed/detached?
+                    |> Group focus shape
+
+
+toExposed : Property msg -> Property ( RawUpdate, msg )
+toExposed prop =
+    prop
+        |> toProxied
+        |> Gui.Property.addPath
+         -- FIXME: `Expose.encodeUpdate` does the same as above
+        |> Gui.Property.map
+            (\(path, (proxyVal, msg)) ->
+                (
+                    { path = Path.toList path
+                    , type_ = getTypeString proxyVal
+                    , value = ProxyValue.encode proxyVal
+                    , client = E.null
+                    }
+                , msg
+                )
+            )
+
+
+toStrExposed : Property msg -> Property ( ( String, String ), msg )
+toStrExposed prop =
+    prop
+        |> toProxied
+        |> Gui.Property.addLabeledPath
+        |> Gui.Property.map
+            (\(path, (proxyVal, msg)) ->
+                (
+                    ( String.join "/" path
+                    , ProxyValue.toString proxyVal
+                    )
+                    , msg
+                )
+            )
 
 
 updateProperty : ProxyValue -> Property msg -> Cmd msg
@@ -92,13 +161,15 @@ updateProperty value property =
                 |> callWith control
         ( Group _ _ _, _ ) ->
             Cmd.none
-        _ -> Cmd.none
+        ( _, _ ) ->
+            Cmd.none
 
 
 update : Update -> Property msg -> Cmd msg
 update { path, value } prop =
     case path of
-        [] -> updateProperty value prop
+        [] ->
+            updateProperty value prop
         id :: next ->
             case prop of
                 Group _ _ control ->
@@ -132,7 +203,8 @@ applyProperty value prop =
             Choice focus shape <| Nest.select i <| control
         ( Group _ _ _, _ ) ->
             prop
-        _ -> prop
+        ( _, _ ) ->
+            prop
 
 
 apply : Update -> Property msg -> Property msg
@@ -213,10 +285,13 @@ encodePropertyAt path property =
             E.object
                 [ ( "type", E.string "toggle" )
                 , ( "path", encodeRawPath path )
-                , ( "current", E.string
+                ,
+                    ( "current"
+                    , E.string
                         <| case val of
                             TurnedOn -> "on"
-                            TurnedOff -> "off" )
+                            TurnedOff -> "off"
+                    )
                 ]
         Action _ ->
             E.object
@@ -227,27 +302,44 @@ encodePropertyAt path property =
             E.object
                 [ ( "type", E.string "choice" )
                 , ( "path", encodeRawPath path )
-                , ( "current", E.int <| case selected of
-                    SelectedAt index -> index )
-                , ( "expanded", E.bool <| case form of
-                    Expanded -> True
-                    Collapsed -> False
-                    Detached -> False )
-                , ( "detached", E.bool <| case form of
-                    Detached -> True
-                    Collapsed -> False
-                    Expanded -> False )
+                ,
+                    ( "current"
+                    , E.int
+                        <| case selected of
+                            SelectedAt index -> index
+                    )
+                ,
+                    ( "expanded"
+                    , E.bool
+                        <| case form of
+                            Expanded -> True
+                            Collapsed -> False
+                            Detached -> False
+                    )
+                ,
+                    ( "detached"
+                    , E.bool
+                        <| case form of
+                            Detached -> True
+                            Collapsed -> False
+                            Expanded -> False
+                    )
                 , ( "options", encodeNested path items )
                 ]
-        Group _ _ (Control items { form } _ ) ->
+        Group _ _ (Control items { form } _) ->
             E.object
                 [ ( "type", E.string "nest" )
                 , ( "path", encodeRawPath path )
-                , ( "expanded", E.bool <| case form of
-                    Expanded -> True
-                    Collapsed -> False
-                    Detached -> False )
-                , ( "detached", E.bool <| case form of
+                ,
+                    ( "expanded"
+                    , E.bool
+                        <| case form of
+                            Expanded -> True
+                            Collapsed -> False
+                            Detached -> False
+                    )
+                ,
+                    ( "detached", E.bool <| case form of
                     Detached -> True
                     Collapsed -> False
                     Expanded -> False )
@@ -296,9 +388,9 @@ encodeUpdate maybeClient path prop =
             case prop of
                 Nil ->
                     ( "ghost", E.null )
-                Number ( Control { min, max, step } val _ ) ->
+                Number ( Control _ val _ ) ->
                     ( "slider", E.float val )
-                Coordinate ( Control ( xSpec, ySpec ) ( x, y ) _ ) ->
+                Coordinate ( Control _ ( x, y ) _ ) ->
                     ( "xy"
                     , E.string <| String.fromFloat x ++ "|" ++ String.fromFloat y
                     )
@@ -337,7 +429,20 @@ encodeUpdate maybeClient path prop =
 -- select selector gui = gui
 
 
-valueDecoder : String -> D.Decoder ProxyValue
+getTypeString : ProxyValue -> String -- FIXME: move to ProxyValue
+getTypeString value =
+    case value of
+        Other -> "ghost"
+        FromSlider _ -> "slider"
+        FromXY _ -> "xy"
+        FromInput _ -> "text"
+        FromColor _ -> "color"
+        FromChoice _ -> "choice"
+        FromToggle _ -> "toggle"
+        FromButton -> "button"
+
+
+valueDecoder : String -> D.Decoder ProxyValue -- FIXME: move to ProxyValue
 valueDecoder type_ =
     case type_ of
         "ghost" -> D.succeed Other

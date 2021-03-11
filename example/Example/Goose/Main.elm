@@ -12,9 +12,9 @@ view : Model -> Svg msg
 view = V.view
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
+    ( let
         changeHonk f =
             { model
             | honk = model.honk |> Tuple.mapSecond f
@@ -58,5 +58,6 @@ update msg model =
             changeColor (\colors -> { colors | iroquois = color })
         ChangeBackground color ->
             changeColor (\colors -> { colors | background = color })
-
+    , Cmd.none
+    )
 

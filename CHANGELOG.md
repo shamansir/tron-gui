@@ -2,14 +2,26 @@
 
 _(in progress)_
 
-* New design;
-* Rename `Gui` to `Tron`;
+DONE:
+
+* One-Control example;
+* Color button control;
+* Examples for sending GUI updates to JS, in JSON or in Strings;
 * Rename `Gui.Message` to `Gui.Msg` to be consistent with usual Elm style;
+
+TODO:
+
+* New design;
+* Helpers, optional to use, based on the examples, like `detachable`, `communicateJS`...
+* Rename `Gui` module to `Tron`;
 * Pagination in panels which don't fit the inner buttons;
 * Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
-* One-Control example;
+* Multiple-choice control;
 * Include links to the examples in the docs;
 * Include minimal "OneControl" example into the docs;
+* Get rid of functions in the `Model`;
+
+
 
 ### 4.0.0
 
@@ -32,7 +44,7 @@ _(in progress)_
 * Support cell shapes other than 1x1;
 * Support different docks: `TopToBottom`, `BottomToTop`, `LeftToRight`, `RightToLeft`;
 * Calculate the grid size dynamically;
-* `Gui.redock` to allow to force custom size of the grid;
+* `Gui.reshape` to allow to force custom size of the grid;
 * _Choice_ component shows the selected item instead the expanding control;
 * `Builder.choiceWithIcons` + `Builder.string` + `Builder.palette` helpers;
 * Shape is required to be passed to group controls;

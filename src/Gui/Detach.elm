@@ -10,7 +10,7 @@ import HashId exposing (HashId)
 import Gui.Path as Path exposing (Path, toList)
 import Gui.Expose as Exp
 import Gui.Property exposing (Property)
-import Gui.Msg exposing (Msg(..))
+import Gui.Msg exposing (Msg_(..))
 
 
 type alias Fragment = ( String, String )
@@ -27,12 +27,18 @@ type State
     | AttachedAt Path
 
 
+type Ability
+    = CannotBeDetached
+    | CanBeDetached LocalUrl
+
+
+type alias GetAbility = Path -> Ability
+
+
+{-
 type Detach msg =
     Detach
         { toUrl : ClientId -> Path -> Maybe LocalUrl
-        , ack : Exp.Ack -> Cmd msg
-        , send : Exp.RawUpdate -> Cmd msg
-        , receive : ((Exp.RawUpdate -> Msg) -> Sub Msg)
         , attached : State
         , client : Maybe ClientId
         }
@@ -60,19 +66,11 @@ never =
         , attached = attachedAtRoot
         , client = Nothing
         }
+-}
 
 
-nextClientId : Cmd Msg
-nextClientId =
-    Random.generate SetClientId HashId.generator
-
-
-setClientId : ClientId -> Detach msg -> Detach msg
-setClientId clientId (Detach d) =
-    Detach
-        { d
-        | client = Just clientId
-        }
+clientIdGenerator : Random.Generator ClientId
+clientIdGenerator = HashId.generator
 
 
 detached : State
@@ -87,11 +85,11 @@ attachedAtRoot : State
 attachedAtRoot = AttachedAt Path.start
 
 
-getLocalUrl : Path -> Detach msg -> Maybe LocalUrl
+{- getLocalUrl : Path -> Detach msg -> Maybe LocalUrl
 getLocalUrl path (Detach d) =
     case d.client of
         Just clientId -> d.toUrl clientId path
-        Nothing -> Nothing
+        Nothing -> Nothing -}
 
 
 root : String
@@ -124,12 +122,13 @@ localUrlToString fragments =
     "#" ++ (String.join "&" <| List.map encodeFragment <| fragments)
 
 
+{-
 make
      : Url
     -> (Exp.Ack -> Cmd msg)
     -> (Exp.RawUpdate -> Cmd msg)
-    -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
-    -> ( Detach msg, Cmd Msg )
+    -> ((Exp.RawUpdate -> Msg_) -> Sub Msg_)
+    -> ( Detach msg, Cmd Msg_ )
 make url ackPort sendPort receivePort =
     let
         ( maybeClient, state ) = fromUrl url
@@ -149,13 +148,13 @@ make url ackPort sendPort receivePort =
                 ack detach
                     |> Cmd.map (always NoOp)
         )
-
+-}
 
 -- extract : Url -> List Path
 -- extract
 
 
-ack : Detach msg -> Cmd msg
+{- ack : Detach msg -> Cmd msg
 ack (Detach d) =
     d.ack <| Exp.encodeAck d.client
 
@@ -165,9 +164,9 @@ send (Detach d) path =
     d.send << Exp.encodeUpdate d.client path
 
 
-receive : Detach msg -> Sub Msg
+receive : Detach msg -> Sub Msg_
 receive (Detach d) =
-    d.receive ReceiveRaw
+    d.receive ReceiveRaw -}
 
 
 fromUrl : Url -> ( Maybe ClientId, State )
@@ -205,9 +204,9 @@ fromUrl { fragment } =
         Nothing -> ( Nothing, Detached )
 
 
-isAttached : Detach msg -> Maybe Path
+{- isAttached : Detach msg -> Maybe Path
 isAttached (Detach d) =
-    d.attached |> stateToMaybe
+    d.attached |> stateToMaybe -}
 
 
 stateToMaybe : State -> Maybe Path
@@ -215,3 +214,4 @@ stateToMaybe state =
     case state of
         Detached -> Nothing
         AttachedAt path -> Just path
+

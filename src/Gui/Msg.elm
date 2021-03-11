@@ -8,7 +8,7 @@ import Gui.Mouse exposing (MouseAction)
 import Gui.Expose as Exp
 
 
-type Msg
+type Msg_
     = NoOp
     | ApplyMouse MouseAction -- from the document
     | ViewportChanged ( Int, Int )
@@ -17,5 +17,3 @@ type Msg
     | KeyDown Int
     | TextInput Path String
     | Detach Path
-    | ReceiveRaw Exp.RawUpdate
-    | SetClientId HashId

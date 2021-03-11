@@ -6,9 +6,6 @@ import Array exposing (Array)
 import Gui.Control as Core exposing (Control)
 
 
-
-
-
 type Form
     = Expanded
     | Collapsed

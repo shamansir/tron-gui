@@ -1,7 +1,7 @@
 module Gui.Render.Property exposing (..)
 
 
-import Color exposing (Color)
+
 import BinPack exposing (Bounds)
 
 import Svg exposing (Svg)
@@ -14,7 +14,7 @@ import Axis exposing (Axis)
 
 import Gui.Property exposing (..)
 import Gui.Path as Path exposing (Path)
-import Gui.Msg exposing (Msg(..))
+import Gui.Msg exposing (Msg_(..))
 import Gui.Focus exposing (Focused(..))
 import Gui.Control as Core exposing (Control(..))
 
@@ -32,33 +32,35 @@ import Gui.Render.Util as Util exposing (arrow)
 import Gui.Style.Logic exposing (..)
 import Gui.Style.CellShape exposing (CellShape)
 import Gui.Style.CellShape as CS exposing (..)
-import Gui.Style.Coloring exposing (Tone)
+
 import Gui.Style.Coloring as Coloring exposing (..)
-import Gui.Style.Theme exposing (Theme)
+import Gui.Style.Theme exposing (Theme(..))
 import Gui.Style.Theme as Theme exposing (toString)
 import Gui.Style.Placement exposing (Placement)
 import Gui.Style.Selected exposing (Selected(..))
 import Gui.Style.Cell as Cell
 
+import Color as Color exposing (..)
+
 
 view
-     : Style
+     : Theme
     -> State
     -> Path
     -> Bounds
     -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
-    -> Svg Msg
-view ( ( theme, tone ) as style ) state path bounds maybeSelectedInside cellShape ( label, prop ) =
+    -> Svg Msg_
+view theme state path bounds maybeSelectedInside cellShape ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
-        , SA.class <| makeClass tone cellShape <| prop
+        , SA.class <| makeClass cellShape <| prop
         ]
         [ Svg.rect
             [ SA.fill
                 <| Color.toCssString
-                <| Coloring.back_ style state
+                <| Coloring.back theme state
             , SA.x <| String.fromFloat (Cell.gap / 2)
             , SA.y <| String.fromFloat (Cell.gap / 2)
             , SA.rx <| String.fromFloat Cell.borderRadius
@@ -68,44 +70,44 @@ view ( ( theme, tone ) as style ) state path bounds maybeSelectedInside cellShap
             ]
             []
         , viewProperty
-            style state path bounds maybeSelectedInside cellShape ( label, prop )
+            theme state path bounds maybeSelectedInside cellShape ( label, prop )
         , case prop of
             Action _ -> Svg.none
-            _ -> viewLabel style state cellShape bounds label
+            _ -> viewLabel theme state cellShape bounds label
         ]
 
 
 viewLabel
-    :  Style
+    :  Theme
     -> State
     -> CellShape
     -> Bounds
     -> Label
     -> Svg msg
-viewLabel style state cellShape bounds label =
+viewLabel theme state cellShape bounds label =
     if CS.isSquare cellShape
         then
             Svg.text_
                 [ SA.class "cell__label"
                 , SA.x <| String.fromFloat (bounds.width / 2)
                 , SA.y <| String.fromFloat (bounds.height / 5 * 4)
-                , SA.fill <| Color.toCssString <| Coloring.text_ style state
+                , SA.fill <| Color.toCssString <| Coloring.text theme state
                 ]
                 [ Svg.text label ]
         else Svg.none
 
 
 viewProperty
-     : Style
+     : Theme
     -> State
     -> Path
     -> Bounds
     -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
-    -> Svg Msg
+    -> Svg Msg_
 viewProperty
-    style
+    theme
     ( ( placement, focus, selected ) as state )
     path
     bounds
@@ -113,34 +115,48 @@ viewProperty
     cellShape
     ( label, prop ) =
     case prop of
+
         Number (Control { min, max } value _) ->
+
             knob
-                style
+                theme
                 state
                 bounds
                 <| (value - min) / (max - min)
+
         Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
+
             coord
-                style
+                theme
                 state
                 bounds
                 <|
                     ( (xValue - xAxis.min) / (xAxis.max - xAxis.min)
                     , (yValue - yAxis.min) / (yAxis.max - yAxis.min)
                     )
+
         Text (Control _ value _) ->
-            text style state value (TextInput path) bounds
+
+            text theme state value (TextInput path) bounds
+
         Toggle (Control _ value _) ->
-            toggle style state value bounds
+
+            toggle theme state value bounds
+
         Action (Control face _ _) ->
-            button style state face cellShape label bounds
+
+            button theme state face cellShape label bounds
+
         Color (Control _ value _) ->
-            color style state value bounds
+
+            color theme state value bounds
+
         Choice _ _ ( Control _ { form } _) ->
+
             case maybeSelectedInside of
                 Just theSelectedProp ->
                     viewProperty
-                        style
+                        theme
                         ( placement, focus, Selected )
                         path
                         bounds
@@ -148,14 +164,17 @@ viewProperty
                         cellShape
                         theSelectedProp
                 Nothing ->
-                    arrow style state form bounds
+                    arrow theme state form bounds
+
         Group _ _ ( Control _ { form } _) ->
-            arrow style state form bounds
+
+            arrow theme state form bounds
+
         _ -> Svg.none
 
 
-knob : Style -> State -> Bounds -> Float -> Svg msg
-knob style state bounds value =
+knob : Theme -> State -> Bounds -> Float -> Svg msg
+knob theme state bounds value =
     let
         toAngle v = (-120) + (v * 120 * 2)
         path stroke d =
@@ -173,17 +192,17 @@ knob style state bounds value =
     in
         Svg.g
             [ resetTransform ]
-            [ path (Coloring.lines_ style state |> Color.toCssString)
+            [ path (Coloring.lines theme state |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle 0, to = toAngle value }
-            , path (Coloring.secondaryLines_ style state |> Color.toCssString)
+            , path (Coloring.secondaryLines theme state |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = toAngle value, to = toAngle 1 }
-            , path (Coloring.lines_ style state |> Color.toCssString)
+            , path (Coloring.lines theme state |> Color.toCssString)
                 <| describeMark
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
@@ -191,8 +210,8 @@ knob style state bounds value =
             ]
 
 
-coord : Style -> State -> Bounds -> ( Float, Float ) -> Svg msg
-coord style state bounds ( valueX, valueY ) =
+coord : Theme -> State -> Bounds -> ( Float, Float ) -> Svg msg
+coord theme state bounds ( valueX, valueY ) =
     let
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
         ( left, top ) = ( Cell.gap / 2, Cell.gap / 2 )
@@ -212,7 +231,7 @@ coord style state bounds ( valueX, valueY ) =
             , SA.y1 <| String.fromFloat cy
             , SA.x2 <| String.fromFloat right
             , SA.y2 <| String.fromFloat cy
-            , SA.stroke <| Color.toCssString <| Coloring.lines_ style state
+            , SA.stroke <| Color.toCssString <| Coloring.lines theme state
             , SA.opacity "0.2"
             , SA.strokeWidth "1"
             , SA.strokeLinecap "round"
@@ -223,7 +242,7 @@ coord style state bounds ( valueX, valueY ) =
             , SA.y1 <| String.fromFloat top
             , SA.x2 <| String.fromFloat cx
             , SA.y2 <| String.fromFloat bottom
-            , SA.stroke <| Color.toCssString <| Coloring.lines_ style state
+            , SA.stroke <| Color.toCssString <| Coloring.lines theme state
             , SA.opacity "0.2"
             , SA.strokeWidth "1"
             , SA.strokeLinecap "round"
@@ -232,9 +251,9 @@ coord style state bounds ( valueX, valueY ) =
         , Svg.circle
             [ SA.cx <| String.fromFloat circleX
             , SA.cy <| String.fromFloat circleY
-            , SA.fill <| Color.toCssString <| Coloring.lines_ style state
+            , SA.fill <| Color.toCssString <| Coloring.lines theme state
             , SA.fill "none"
-            , SA.stroke <| Color.toCssString <| Coloring.lines_ style state
+            , SA.stroke <| Color.toCssString <| Coloring.lines theme state
             , SA.strokeWidth "2"
             , SA.r <| String.fromFloat circleRadius
             ]
@@ -244,13 +263,13 @@ coord style state bounds ( valueX, valueY ) =
 
 
 text
-    :  Style
+    :  Theme
     -> State
     -> ( TextState, String )
     -> (String -> msg)
     -> Bounds
     -> Svg msg
-text style state ( editing, value ) onInput bounds =
+text theme state ( editing, value ) onInput bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
         fontSize = (min bounds.width bounds.height) / 6
@@ -264,7 +283,7 @@ text style state ( editing, value ) onInput bounds =
                 , SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat <| cy + 1
                 , SA.class "text--ready"
-                , SA.fill <| Color.toCssString <| Coloring.lines_ style state
+                , SA.fill <| Color.toCssString <| Coloring.lines theme state
                 ]
                 [ Svg.text <|
                     if String.length value <= 6 then
@@ -291,7 +310,7 @@ text style state ( editing, value ) onInput bounds =
                         -- , HA.style "left" <| String.fromFloat Cell.gap ++ "px"
                         -- , HA.style "top" <| String.fromFloat topShift ++ "px"
                         , HA.style "font-size" <| String.fromFloat fontSize ++ "px"
-                        , HA.style "color" <| Color.toCssString <| Coloring.text_ style state
+                        , HA.style "color" <| Color.toCssString <| Coloring.text theme state
                         , HA.style "position" "initial"
                         , HA.type_ "text"
                         , HA.placeholder "input"
@@ -303,27 +322,52 @@ text style state ( editing, value ) onInput bounds =
                 ]
 
 
-toggle : Style -> State -> ToggleState -> Bounds -> Svg msg
-toggle style state tstate bounds =
+toggle : Theme -> State -> ToggleState -> Bounds -> Svg msg
+toggle theme _ tstate bounds =
     let
-        ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
-        radius = ( min bounds.width bounds.height) / 7
-    in Svg.circle
-        [ SA.cx <| String.fromFloat cx
-        , SA.cy <| String.fromFloat cy
-        , SA.r <| String.fromFloat radius
-        , SA.fill <| case tstate of
-            TurnedOn -> Color.toCssString <| Coloring.lines_ style state
-            TurnedOff -> "none"
-        , SA.stroke <| Color.toCssString <| Coloring.lines_ style state
-        , SA.strokeWidth "2"
-        ]
-        [
-        ]
+        ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) )
+        ( rectX, rectY ) = ( cx - 36 / 2, cy - 20 / 2 )
+        circleRadius = 8
+        rectCornerRadius = 10
+        ( rectWidth, rectHeight ) = ( 36, 20 )
+        ( circleX, circleY ) =
+            ( case tstate of
+                TurnedOff -> rectX + 2 + circleRadius
+                TurnedOn -> rectX + rectWidth - 2 - circleRadius
+            , cy
+            )
+    in
+        Svg.g
+            []
+            [ Svg.rect
+                [ SA.x <| String.fromFloat rectX
+                , SA.y <| String.fromFloat rectY
+                , SA.rx <| String.fromFloat rectCornerRadius
+                , SA.ry <| String.fromFloat rectCornerRadius
+                , SA.width <| String.fromFloat rectWidth
+                , SA.height <| String.fromFloat rectHeight
+                , SA.fill <| case (theme, tstate) of
+                    (Theme.Dark, TurnedOn) -> Color.toCssString Color.white
+                    (Theme.Dark, TurnedOff) -> Color.toCssString <| Color.rgba 1 1 1 0.4
+                    (Theme.Light, TurnedOn) -> Color.toCssString Color.black
+                    (Theme.Light, TurnedOff) -> Color.toCssString <| Color.rgba 0 0 0 0.2
+                ]
+                [ ]
+            , Svg.circle
+                [ SA.cx <| String.fromFloat circleX
+                , SA.cy <| String.fromFloat circleY
+                , SA.r <| String.fromFloat 8
+                , SA.fill <| case theme of
+                  Theme.Dark -> Color.toCssString Color.black
+                  Theme.Light -> Color.toCssString Color.white
+                ]
+                []
+            ]
 
 
-button : Style -> State -> Face -> CellShape -> Label -> Bounds -> Svg msg
-button ( ( theme, tone ) as style ) ( ( _, _, selected ) as state ) face cellShape label bounds =
+
+button : Theme -> State -> Face -> CellShape -> Label -> Bounds -> Svg msg
+button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
         ( labelX, labelY ) =
@@ -335,7 +379,7 @@ button ( ( theme, tone ) as style ) ( ( _, _, selected ) as state ) face cellSha
                 [ SA.x <| String.fromFloat labelX
                 , SA.y <| String.fromFloat labelY
                 , SA.class "button__label"
-                , SA.fill <| Color.toCssString <| Coloring.text_ style state
+                , SA.fill <| Color.toCssString <| Coloring.text theme state
                 ]
                 [ Svg.text label ]
     in case face of
@@ -350,7 +394,7 @@ button ( ( theme, tone ) as style ) ( ( _, _, selected ) as state ) face cellSha
                                     "transform: "
                                         ++ "translate(" ++ String.fromFloat Cell.gap ++ "px,"
                                                         ++ String.fromFloat (cy - 4) ++ "px)" ]
-                                [ Util.arrow (Coloring.text_ style state) (scale 0.5) (rotate 90)
+                                [ Util.arrow (Coloring.text theme state) (scale 0.5) (rotate 90)
                                 ]
                             -- , textLabel ( bounds.width / 2.25 + gap, cy )
                             , textLabel ()
@@ -403,7 +447,7 @@ button ( ( theme, tone ) as style ) ( ( _, _, selected ) as state ) face cellSha
                     ]
 
 
-color : Style -> State -> Color -> Bounds -> Svg msg
+color : Theme -> State -> Color -> Bounds -> Svg msg
 color _ _ value bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
@@ -418,8 +462,8 @@ color _ _ value bounds =
         ]
 
 
-arrow : Style -> State -> Form -> Bounds -> Svg msg
-arrow style state form bounds =
+arrow : Theme -> State -> Form -> Bounds -> Svg msg
+arrow theme state form bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
         scaleV = (min bounds.width bounds.height) / 127
@@ -429,7 +473,7 @@ arrow style state form bounds =
                 ++ "translate(" ++ String.fromFloat (center.x - (14 * scaleV)) ++ "px,"
                                 ++ String.fromFloat (center.y - (14 * scaleV)) ++ "px)"
         ]
-        [ Util.arrow (Coloring.lines_ style state) (scale scaleV)
+        [ Util.arrow (Coloring.lines_ theme state) (scale scaleV)
             <| case form of
                 Expanded -> rotate 180
                 Detached -> rotate 45
@@ -437,8 +481,8 @@ arrow style state form bounds =
         ]
 
 
-makeClass : Tone -> CellShape -> Property msg -> String
-makeClass tone shape prop =
+makeClass : CellShape -> Property msg -> String
+makeClass shape prop =
     "cell"
         ++ " cell--" ++
             ( case prop of
@@ -452,5 +496,4 @@ makeClass tone shape prop =
                 Choice _ _ _ -> "choice"
                 Group _ _ _ -> "group"
             )
-        ++ " cell--" ++ toneToModifier tone
         ++ " cell--" ++ shapeToModifier shape
