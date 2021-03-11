@@ -3,7 +3,7 @@ module Gui.WithGui exposing (..)
 
 import Browser
 import Html exposing (Html)
-import Either exposing (Either(..))
+--import Either exposing (Either(..))
 import Random
 
 import Gui as Tron
@@ -14,6 +14,10 @@ import Gui.Expose as Exp
 import Gui.Option exposing (..)
 import Gui.Msg exposing (Msg_(..))
 import Gui.Detach as Detach
+
+
+type alias ProgramWithGui flags model msg =
+    Program flags ( model, Tron.Gui msg ) (WithGuiMsg msg)
 
 
 type WithGuiMsg msg
@@ -275,7 +279,8 @@ element
         , view : model -> Html msg
         , update : msg -> model -> ( model, Cmd msg )
         }
-    -> Program flags ( model, Tron.Gui msg ) (WithGuiMsg msg)
+    -> ProgramWithGui flags model msg
+    -- -> Program flags ( model, Tron.Gui msg ) (WithGuiMsg msg)
 element def =
     Browser.element
         { init =
