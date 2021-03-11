@@ -12,7 +12,7 @@ import Array exposing (Array)
 
 clear : Property msg -> Property msg
 clear =
-    mapReplace
+    replace
         (\_ prop ->
             case prop of
                 Group focus shape control ->

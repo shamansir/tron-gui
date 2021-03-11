@@ -2,7 +2,7 @@ module Gui exposing
     ( Gui
     , view, update, init, subscriptions, run, Msg
     , map, over, use
-    , detachable, encode, applyRaw, initRaw
+    , encode, toExposed --, applyRaw, initRaw
     , dock, reshape
     )
 
@@ -114,7 +114,7 @@ import Gui.Util exposing (..)
 -- import Gui.Alt as Alt exposing (Gui)
 import Gui.FocusLogic as Focus exposing (..)
 import Gui.Focus as Focus exposing (..)
-import Gui.Detach as Detach exposing (make, ClientId, Detach, map)
+import Gui.Detach as Detach exposing (ClientId)
 import Gui.Expose as Exp exposing (..)
 import Gui.Style.Dock exposing (Dock(..))
 --import Gui.Style.Anchor exposing (Anchor(..))
@@ -123,6 +123,7 @@ import Gui.Style.Theme exposing (Theme)
 import Gui.Style.Logic as Style exposing (..)
 import Gui.Style.Cell as Cell exposing (..)
 import Gui.Build exposing (..)
+import Gui.Detach exposing (State(..))
 
 
 {-| `Gui msg` is what manages your user interface and the way it looks.
@@ -138,7 +139,7 @@ type alias Gui msg =
     , size : Maybe (Size Cells)
     , mouse : MouseState
     , tree : Builder msg
-    , detach : Detach msg
+    , detach : ( Maybe ClientId, Detach.State )
     }
 
 
@@ -171,7 +172,7 @@ map f gui =
     , size = gui.size
     , mouse = gui.mouse
     , tree = gui.tree |> Gui.Property.map f
-    , detach = gui.detach |> Detach.map f
+    , detach = gui.detach
     }
 
 
@@ -226,7 +227,7 @@ Since `init builder` is just:
 -}
 initRaw : Builder msg -> Gui msg
 initRaw root =
-    Gui Dock.topLeft (Size ( 0, 0 )) Nothing Gui.Mouse.init root Detach.never
+    Gui Dock.topLeft (Size ( 0, 0 )) Nothing Gui.Mouse.init root ( Nothing, Detached )
 -- TODO: get rid of initRaw
 
 
@@ -240,32 +241,6 @@ run =
         [ focus NoOp
         , fromWindow ViewportChanged
         ]
-
-
-{-| This is the only function you need to make your `GUI` _detachable*_. However, this function requires some ports to be present as an argument, so you'll need a pair of ports as well. And a WebSocket server. But that's it!
-
-_*_ — _detachable GUI_ in the context of Web Application means that you may move parts of your user interface to another browser window, tab, or even another device, such as a phone, a tablet, TV, VR glasses or whatever has a browser inside nowadays.
-
-For a detailed example, see `example/Detachable` in the sources.
--}
-detachable
-     : Url
-    -> (Exp.Ack -> Cmd msg)
-    -> (Exp.RawUpdate -> Cmd msg)
-    -> ((Exp.RawUpdate -> Msg) -> Sub Msg)
-    -> Gui msg
-    -> ( Gui msg, Cmd Msg )
-detachable url ack send receive gui =
-    let
-        ( detach, detachEffects )
-            = Detach.make url ack send receive
-    in
-        (
-            { gui
-            | detach = detach
-            }
-        , detachEffects
-        )
 
 
 {-| While keeping other options intact and keeping the expanded panels, rebuild the GUI structure using the new model. If some panels were
@@ -366,7 +341,9 @@ update msg gui =
                     { gui
                     | tree = nextRoot
                     }
-                , updates |> notifyUpdates gui.detach
+                , updates
+                    |> List.map (Tuple.second >> Property.call)
+                    |> Cmd.batch
                 )
 
         MouseDown path ->
@@ -382,6 +359,7 @@ update msg gui =
                 curFocus = Focus.find gui.tree
             in
                 handleKeyDown keyCode curFocus gui
+                    |> Tuple.mapSecond (Cmd.map Tuple.second)
 
         ViewportChanged ( w, h ) ->
             (
@@ -412,35 +390,7 @@ update msg gui =
                     { gui
                     | tree = nextRoot
                     }
-                , Cmd.none -- Detach.sendTree gui.detach nextRoot
-                )
-
-        ReceiveRaw rawUpdate ->
-            let
-                nextRoot =
-                    gui.tree
-                        |> Exp.apply (Exp.fromPort rawUpdate)
-            in
-                (
-                    { gui
-                    | tree = nextRoot
-                    }
-                , nextRoot
-                    |> Exp.update (Exp.fromPort rawUpdate)
-                )
-
-        SetClientId clientId ->
-            let
-                nextDetach =
-                    gui.detach
-                        |> Detach.setClientId clientId
-            in
-                (
-                    { gui
-                    | detach = nextDetach
-
-                    }
-                , nextDetach |> Detach.ack
+                , Cmd.none -- FIXME: Detach.sendTree gui.detach nextRoot
                 )
 
 
@@ -588,12 +538,13 @@ handleMouse mouseAction gui =
                     then
 
                         case curMouseState.dragFrom |> Maybe.andThen findCellAt of
+                        -- TODO: do we need a path returned from `findCellAt`?
 
-                            Just ( path, prop ) ->
+                            Just ( _, prop ) ->
                                 case prop of
-                                    Number _ -> ( path, prop ) |> notifyUpdate gui.detach
-                                    Coordinate _ -> ( path, prop ) |> notifyUpdate gui.detach
-                                    Color _ -> ( path, prop ) |> notifyUpdate gui.detach
+                                    Number _ -> Property.call prop
+                                    Coordinate _ -> Property.call prop
+                                    Color _ -> Property.call prop
                                     _ -> Cmd.none
                             Nothing -> Cmd.none
 
@@ -607,7 +558,7 @@ handleKeyDown
     :  Int
     -> Path
     -> Gui msg
-    -> ( Gui msg, Cmd msg )
+    -> ( Gui msg, Cmd ( Path, msg ) )
 handleKeyDown keyCode path gui =
     let
 
@@ -628,7 +579,10 @@ handleKeyDown keyCode path gui =
                     { gui
                     | tree = nextRoot
                     }
-                , updates |> notifyUpdates gui.detach
+                , updates
+                    |> List.map (Tuple.second >> Property.call)
+                    |> Cmd.batch
+                    |> Cmd.map (Tuple.pair path)
                 )
 
     in case keyCode of
@@ -656,26 +610,41 @@ handleKeyDown keyCode path gui =
                                     |> setAt path nextProp
                             }
                         -- FIXME: inside, we check if it is a text prop again
-                        , notifyUpdate gui.detach ( path, nextProp )
+                        , Property.call nextProp
+                            |> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()
         -- else
         _ -> ( gui, Cmd.none )
 
 
-notifyUpdate : Detach msg -> ( Path, Property msg ) -> Cmd msg
-notifyUpdate detach ( path, prop ) =
+toExposed : Gui msg -> Gui ( RawUpdate, msg )
+toExposed gui =
+    { dock = gui.dock
+    , viewport = gui.viewport
+    , size = gui.size
+    , mouse = gui.mouse
+    , tree = gui.tree |> Exp.toExposed
+    , detach = gui.detach
+    }
+
+
+{-
+notifyUpdate : Property msg -> Cmd ( msg )
+notifyUpdate prop  =
+    Property.call prop
+    {-
     Cmd.batch
-        [ Property.call prop
+        [ Property.call prop |> Cmd.map (Tuple.pair path)
         , Detach.send detach path prop
-        ]
+        ] -}
 
 
-notifyUpdates : Detach msg -> List ( Path, Property msg ) -> Cmd msg
-notifyUpdates detach =
-    List.map
-        (notifyUpdate detach)
-        >> Cmd.batch
+notifyUpdates : List ( Property msg ) -> Cmd msg
+notifyUpdates =
+    List.map notifyUpdate >> Cmd.batch
+
+-}
 
 
 focus : msg -> Cmd msg
@@ -718,16 +687,17 @@ reshape cellSize gui =
 
 getRootPath : Gui msg -> Path
 getRootPath gui =
-    Detach.isAttached gui.detach
+    Tuple.second gui.detach
+        |> Detach.stateToMaybe
         |> Maybe.withDefault Path.start
 
 
 sizeFromViewport : Property msg -> Size Pixels -> Size Cells
 sizeFromViewport _ (Size ( widthInPixels, heightInPixels )) =
-    let
+    {- let
         cellsFitHorizontally = floor (toFloat widthInPixels / Cell.width)
         cellsFitVertically = floor (toFloat heightInPixels / Cell.height)
-    in
+    in -}
         ( floor <| toFloat widthInPixels / Cell.width
         , floor <| toFloat heightInPixels / Cell.height
         ) |> Size
@@ -749,7 +719,9 @@ layout gui =
         ( Size cellsSize ) = getSizeInCells gui
         size = cellsSize |> Tuple.mapBoth toFloat toFloat
     in
-    case Detach.isAttached gui.detach
+    case gui.detach
+        |> Tuple.second
+        |> Detach.stateToMaybe
         |> Maybe.andThen
             (\path ->
                 gui.tree
@@ -777,7 +749,7 @@ subscriptions : Gui msg -> Sub Msg
 subscriptions gui =
     Sub.batch
         [ trackMouse
-        , Detach.receive gui.detach
+        -- , Detach.receive gui.detach -- FIXME: use in `WithGui`
         , Browser.onResize <| \w h -> ViewportChanged ( w, h )
         ]
 
@@ -803,8 +775,17 @@ view theme gui =
         cellsSize = getSizeInCells gui
         bounds =
             Dock.boundsFromSize gui.dock gui.viewport cellsSize
+        detachState = Tuple.second gui.detach
+        toDetachAbility =
+            case Tuple.first gui.detach of
+                Just clientId ->
+                    Detach.formLocalUrl clientId
+                        >> Maybe.map Detach.CanBeDetached
+                        >> Maybe.withDefault Detach.CannotBeDetached
+                Nothing ->
+                    always Detach.CannotBeDetached
     in
     case layout gui of
         ( root, theLayout ) ->
             theLayout
-                |> Layout.view theme gui.dock bounds gui.detach root
+                |> Layout.view theme gui.dock bounds detachState toDetachAbility root

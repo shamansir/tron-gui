@@ -51,60 +51,84 @@ type alias Ack =
     }
 
 
-toProxied : Property msg -> Property ProxyValue
+toProxied : Property msg -> Property ( ProxyValue, msg )
 toProxied prop =
-    case prop of
-        Nil ->
-            Nil
-        Number control ->
-            control |> setHandler FromSlider |> Number
-        Coordinate control ->
-            control |> setHandler FromXY |> Coordinate
-        Text control ->
-            control |> setHandler (Tuple.second >> FromInput) |> Text
-        Color control ->
-            control |> setHandler FromColor |> Color
-        Toggle control ->
-            control |> setHandler FromToggle |> Toggle
-        Action control ->
-            control |> setHandler (always FromButton) |> Action
-        Choice focus shape control ->
-            control
-                |> Nest.mapItems (Tuple.mapSecond toProxied)
-                |> setHandler (Tuple.second >> Nest.toNum >> FromChoice)
-                |> Choice focus shape
-        Group focus shape control ->
-            control
-                |> Nest.mapItems (Tuple.mapSecond toProxied)
-                |> setHandler (always Other) -- TODO: notify expanded/collapsed/detached?
-                |> Group focus shape
+    let
+        helper : (v -> ProxyValue) -> ( v -> msg -> ( ProxyValue, msg ) )
+        -- helper : (a -> b) -> ( a -> c -> ( b, c ) )
+        helper toProxy v msg = ( toProxy v, msg )
+    in
+        case prop of
+            Nil ->
+                Nil
+            Number control ->
+                control
+                    |> mapWithValue (helper FromSlider)
+                    |> Number
+            Coordinate control ->
+                control
+                    |> mapWithValue (helper FromXY)
+                    |> Coordinate
+            Text control ->
+                control
+                    |> mapWithValue (helper (Tuple.second >> FromInput))
+                    |> Text
+            Color control ->
+                control
+                    |> mapWithValue (helper FromColor)
+                    |> Color
+            Toggle control ->
+                control
+                    |> mapWithValue (helper FromToggle)
+                    |> Toggle
+            Action control ->
+                control
+                    |> mapWithValue (helper <| always FromButton)
+                    |> Action
+            Choice focus shape control ->
+                control
+                    |> Nest.mapItems (Tuple.mapSecond toProxied)
+                    |> mapWithValue (helper (Tuple.second >> Nest.toNum >> FromChoice))
+                    |> Choice focus shape
+            Group focus shape control ->
+                control
+                    |> Nest.mapItems (Tuple.mapSecond toProxied)
+                    |> mapWithValue (helper <| always Other)
+                    -- TODO: notify expanded/collapsed/detached?
+                    |> Group focus shape
 
 
-toExposed : Property msg -> Property RawUpdate
+toExposed : Property msg -> Property ( RawUpdate, msg )
 toExposed prop =
     prop
         |> toProxied
         |> Gui.Property.addPath
          -- FIXME: `Expose.encodeUpdate` does the same as above
         |> Gui.Property.map
-            (\(path, proxyVal) ->
-                { path = Path.toList path
-                , type_ = getTypeString proxyVal
-                , value = ProxyValue.encode proxyVal
-                , client = E.null
-                }
+            (\(path, (proxyVal, msg)) ->
+                (
+                    { path = Path.toList path
+                    , type_ = getTypeString proxyVal
+                    , value = ProxyValue.encode proxyVal
+                    , client = E.null
+                    }
+                , msg
+                )
             )
 
 
-toStrExposed : Property msg -> Property ( String, String )
+toStrExposed : Property msg -> Property ( ( String, String ), msg )
 toStrExposed prop =
     prop
         |> toProxied
         |> Gui.Property.addLabeledPath
         |> Gui.Property.map
-            (\(path, proxyVal) ->
-                ( String.join "/" path
-                , ProxyValue.toString proxyVal
+            (\(path, (proxyVal, msg)) ->
+                (
+                    ( String.join "/" path
+                    , ProxyValue.toString proxyVal
+                    )
+                    , msg
                 )
             )
 
@@ -138,7 +162,8 @@ updateProperty value property =
 update : Update -> Property msg -> Cmd msg
 update { path, value } prop =
     case path of
-        [] -> updateProperty value prop
+        [] ->
+            updateProperty value prop
         id :: next ->
             case prop of
                 Group _ _ control ->

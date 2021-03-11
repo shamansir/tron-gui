@@ -19,6 +19,8 @@ TODO:
 * Multiple-choice control;
 * Include links to the examples in the docs;
 * Include minimal "OneControl" example into the docs;
+* Get rid of functions in the `Model`;
+
 
 
 ### 4.0.0

@@ -86,7 +86,7 @@ nest : PanelShape -> CellShape -> B.Set ProxyValue -> B.Builder ProxyValue
 nest = B.nest
 
 
-choice -- TODO: remove, make choicesAuto default, chance to List ( a, Label )
+choice -- TODO: remove, make choicesAuto default, change to List ( a, Label )
      : PanelShape
     -> CellShape
     -> ( a -> Label )
@@ -104,7 +104,7 @@ choice pShape cShape toLabel =
         )
 
 
-choiceIcons -- TODO: remove, make choicesAuto default, chance to List ( a, Label, Icon )
+choiceIcons -- TODO: remove, make choicesAuto default, change to List ( a, Label, Icon )
      : PanelShape
     -> CellShape
     -> ( a -> ( Label, Icon ) )

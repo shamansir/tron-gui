@@ -3,36 +3,30 @@ module Gui.WithGui exposing (..)
 
 import Browser
 import Html exposing (Html)
-import Either exposing (Either(..))
+--import Either exposing (Either(..))
+import Random
 
 import Gui as Tron
 import Gui.Build as Builder exposing (Builder)
 import Gui.Style.Theme as Theme exposing (Theme(..))
 import Gui.Style.Dock exposing (Dock(..))
 import Gui.Expose as Exp
+import Gui.Option exposing (..)
+import Gui.Msg exposing (Msg_(..))
+import Gui.Detach as Detach
 
 
-type Option msg
-    = Hidden
-    | Theme Theme
-    | Dock Dock
-    | SendJsonToJs
-        { ack : Exp.RawProperty -> Cmd msg
-        , trasmit : Exp.RawUpdate -> Cmd msg
-        }
-    | SendStringsToJs
-        { transmit : ( String, String ) -> Cmd msg
-        }
-    | AFrame
-    | Detachable
-        {}
-    | DatGui
-        {}
+type alias ProgramWithGui flags model msg =
+    Program flags ( model, Tron.Gui msg ) (WithGuiMsg msg)
 
 
 type WithGuiMsg msg
     = ToUser msg
     | ToTron Tron.Msg
+    --| Ack Exp.Ack
+    | SendUpdate Exp.RawUpdate
+    | ReceiveRaw Exp.RawUpdate
+    | SetClientId Detach.ClientId
 
 
 init
@@ -96,8 +90,8 @@ update
     -> WithGuiMsg msg
     -> ( model, Tron.Gui msg )
     -> ( ( model, Tron.Gui msg ), Cmd (WithGuiMsg msg) )
-update ( userUpdate, userFor ) options eitherMsg (model, gui) =
-    case eitherMsg of
+update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
+    case withGuiMsg of
 
         ToUser userMsg ->
             let
@@ -114,16 +108,58 @@ update ( userUpdate, userFor ) options eitherMsg (model, gui) =
             )
 
         ToTron guiMsg ->
-            case gui |> Tron.update guiMsg of
+            case gui |> Tron.toExposed |> Tron.update guiMsg of
                 ( nextGui, guiEffect ) ->
                     (
                         ( model
-                        , nextGui
+                        , nextGui |> Tron.map Tuple.second
                         )
-                    , guiEffect
-                        |> Cmd.map ToUser
-                    -- FIXME: send the encoded update
+                    , Cmd.batch
+                        [ guiEffect
+                            |> Cmd.map (Tuple.second >> ToUser)
+                        , guiEffect
+                            |> Cmd.map (Tuple.first >> SendUpdate)
+                        ]
                     )
+
+        ReceiveRaw rawUpdate ->
+            let
+                nextRoot =
+                    gui.tree
+                        |> Exp.apply (Exp.fromPort rawUpdate)
+            in
+                (
+                    ( model
+                    ,
+                        { gui
+                        | tree = nextRoot
+                        }
+                    )
+                , nextRoot
+                    |> Exp.update (Exp.fromPort rawUpdate)
+                    |> Cmd.map ToUser
+                )
+
+        SetClientId clientId ->
+            (
+                ( model
+                ,
+                    { gui
+                    | detach =
+                        case gui.detach of
+                            ( _, state ) -> ( Just clientId, state )
+
+                    }
+                )
+            , Cmd.none
+            -- , nextDetach |> Detach.ack -- FIXME:
+            )
+
+
+        SendUpdate _ ->
+            ( (model, gui)
+            , Cmd.none
+            ) -- FIXME:
 
 
 addInitOptions : List (Option msg) -> Tron.Gui msg -> Tron.Gui msg
@@ -158,9 +194,57 @@ performInitEffects options gui =
         |> Cmd.batch
 
 
+
+-- FIXME: Use in WithGui at `init`
+{- detachable
+     : Url
+    -> (Exp.Ack -> Cmd msg)
+    -> Gui msg
+    -> ( Gui msg, Cmd Msg )
+detachable url ack gui =
+    let
+        ( maybeClient, state ) = Detach.fromUrl url
+    in
+        (
+            { gui
+            | detach = ( maybeClient, state )
+            }
+        , case maybeClient of
+            Nothing -> Detach.nextClientId
+            _ ->
+                Exp.encodeAck maybeClient
+                    |> ack
+                    |> Cmd.map (always NoOp)
+        ) -}
+
+
+{-
+performUpdateEffects : List (Option msg) -> Tron.Gui ( Exp.RawUpdate, msg ) -> Cmd (WithGuiMsg msg)
+performUpdateEffects options gui =
+    options
+        |> List.foldl
+            (\option cmds ->
+                case option of
+                    SendJsonToJs { transmit } ->
+                        (gui
+                            |> Tron.toExposed
+                            |> Tron.map Tuple.second -- FIXME: perform the update before
+                            |> Tron.over gui.tree
+                            |> Tron.update msg -- FIXME: this way, we call the update twice
+                            |> Tuple.second
+                            |> Cmd.map SendUpdate
+                            --|> Cmd.andThen transmit
+                        ) :: cmds
+                    _ ->
+                        cmds
+            )
+            []
+        |> Cmd.batch -}
+
+
 addSubscriptionsOptions : List (Option msg) -> Tron.Gui msg -> Sub msg
 addSubscriptionsOptions options gui =
-    Sub.none
+    Sub.none -- FIXME:
 
 
 addViewOptions : List (Option msg) -> Tron.Gui msg -> Html Tron.Msg
@@ -175,22 +259,27 @@ addViewOptions options gui =
                         [ gui |> Tron.view theme ]
                     -- FIXME: AFrame
                     _ ->
-                        []
+                        [ gui |> Tron.view Theme.light ]
             )
             []
         |> Html.div []
 
 
+nextClientId : Cmd (WithGuiMsg msg)
+nextClientId =
+    Random.generate SetClientId Detach.clientIdGenerator
+
+
 element
     :
         { options : List (Option msg)
-        , init : flags -> ( model, Cmd msg )
         , for : model -> Builder.Builder msg
+        , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Html msg
         , update : msg -> model -> ( model, Cmd msg )
         }
-    -> Program flags ( model, Tron.Gui msg ) (WithGuiMsg msg)
+    -> ProgramWithGui flags model msg
 element def =
     Browser.element
         { init =
@@ -202,3 +291,5 @@ element def =
         , update =
             update ( def.update, def.for ) def.options
         }
+
+

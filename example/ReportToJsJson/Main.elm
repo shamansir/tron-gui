@@ -8,6 +8,10 @@ import Gui as Tron
 import Gui.Style.Theme as Theme
 import Gui.Style.Dock as Dock
 import Gui.Expose as Exp
+import Gui.Property as Property
+import Gui.WithGui as WithGui
+import Gui.WithGui exposing (ProgramWithGui)
+import Gui.Option as Option exposing (..)
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -26,6 +30,7 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
+{-
 type Msg
     = ToTron Tron.Msg
     | ToSend Exp.RawUpdate
@@ -42,6 +47,7 @@ init _ =
         ( gui, guiEffect ) =
             ExampleGui.for example
                 |> Exp.toExposed
+                |> Property.map Tuple.first
                 |> Tron.init
     in
         ( gui |> Tron.dock Dock.topRight
@@ -87,14 +93,25 @@ subscriptions gui =
     Tron.subscriptions gui
         |> Sub.map ToTron
 
+-}
 
-main : Program () Model Msg
+
+main : ProgramWithGui () Example.Model Example.Msg
 main =
-    Browser.element
-        { init = init
-        , view = view
-        , subscriptions = subscriptions
-        , update = update
+    WithGui.element
+        { options =
+            [ Option.sendJson
+                { ack = initGui
+                , transmit = sendUpdate
+                }
+            , Option.theme Theme.dark
+            , Option.dock Dock.middleRight
+            ]
+        , for = ExampleGui.for
+        , init = always ( Example.init, Cmd.none )
+        , view = Example.view
+        , update = Example.update
+        , subscriptions = always Sub.none
         }
 
 
