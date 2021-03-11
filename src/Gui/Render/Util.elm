@@ -9,13 +9,9 @@ import Url exposing (Url)
 import Gui.Render.Transform exposing (..)
 
 import Gui.Style.Theme exposing (Theme)
-import Gui.Style.Coloring exposing (Tone)
 import Gui.Style.Selected exposing (Selected)
 import Gui.Style.Placement exposing (Placement)
 import Gui.Focus exposing (Focused)
-
-
-type alias Style = ( Theme, Tone )
 
 
 type alias State = ( Placement, Focused, Selected )

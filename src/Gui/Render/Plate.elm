@@ -11,7 +11,7 @@ import Gui.Detach as Detach exposing (Ability(..), ClientId, localUrlToString, L
 import Gui.Property exposing (Label, Property)
 
 import Gui.Render.Transform exposing (rotate, scale)
-import Gui.Render.Util exposing (arrow, Style, State)
+import Gui.Render.Util exposing (arrow, State)
 import Gui.Render.Util as Svg exposing (none)
 
 import Gui.Focus exposing (Focused(..))
@@ -20,6 +20,7 @@ import Gui.Style.Selected exposing (Selected(..))
 import Gui.Style.Placement exposing (Placement(..))
 import Gui.Style.Coloring as Coloring
 import Gui.Style.Cell as Cell
+import Gui.Style.Theme exposing (Theme)
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
@@ -31,10 +32,10 @@ state : State
 state = ( AtRoot, NotFocused, Usual )
 
 
-back : Style -> Bounds -> Svg Msg_
-back style bounds =
+back : Theme -> Bounds -> Svg Msg_
+back theme bounds =
     Svg.rect
-        [ SA.fill <| Color.toCssString <| Coloring.back_ style state
+        [ SA.fill <| Color.toCssString <| Coloring.back theme state
         , SA.x <| String.fromFloat (Cell.gap / 2)
         , SA.y <| String.fromFloat (Cell.gap / 2)
         , SA.rx <| String.fromFloat Cell.borderRadius
@@ -47,18 +48,18 @@ back style bounds =
 
 controls
     :  Detach.Ability
-    -> Style
+    -> Theme
     -> Path
     -> Bounds
     -> ( Label, Property msg )
     -> Svg Msg_
-controls detachAbility ( ( _, tone ) as style ) path bounds ( label, prop ) =
+controls detachAbility theme path bounds ( label, prop ) =
     Svg.g
-        [ SA.class <| "plate-controls plate-controls--" ++ toneToModifier tone ]
+        [ SA.class "plate-controls" ]
         [ case detachAbility of
             CanBeDetached localUrl ->
                 detachButton
-                    style
+                    theme
                     path
                     localUrl
                     ( Cell.gap, Cell.gap )
@@ -67,28 +68,28 @@ controls detachAbility ( ( _, tone ) as style ) path bounds ( label, prop ) =
             [ SA.class "plate-controls__title"
             , SA.x <| String.fromFloat <| bounds.width / 2
             , SA.y <| String.fromFloat <| Cell.gap + 1
-            , SA.fill <| Color.toCssString <| Coloring.text_ style state
+            , SA.fill <| Color.toCssString <| Coloring.text theme state
             ]
             [ Svg.text label ]
         , collapseButton
-            style
+            theme
             path
             ( bounds.width - Cell.gap - 10, Cell.gap )
         ]
 
 
-detach : Style -> Svg msg
-detach style =
-    arrow (Coloring.lines_ style state) (scale 0.35) (rotate 45)
+detach : Theme -> Svg msg
+detach theme =
+    arrow (Coloring.lines theme state) (scale 0.35) (rotate 45)
 
 
-collapse : Style -> Svg msg
-collapse style =
-    arrow (Coloring.lines_ style state) (scale 0.35) (rotate 180)
+collapse : Theme -> Svg msg
+collapse theme =
+    arrow (Coloring.lines theme state) (scale 0.35) (rotate 180)
 
 
-collapseButton : Style -> Path -> ( Float, Float ) -> Svg Msg_
-collapseButton style path (x, y) =
+collapseButton : Theme -> Path -> ( Float, Float ) -> Svg Msg_
+collapseButton theme path (x, y) =
     Svg.g
         [ SA.class "collapse-panel"
         , SA.style <| "transform: translate(" ++
@@ -104,12 +105,12 @@ collapseButton style path (x, y) =
             , SA.height "10"
             ]
             []
-        , collapse style
+        , collapse theme
         ]
 
 
-detachButton : Style -> Path -> LocalUrl -> ( Float, Float ) -> Svg Msg_
-detachButton style path localUrl (x, y) =
+detachButton : Theme -> Path -> LocalUrl -> ( Float, Float ) -> Svg Msg_
+detachButton theme path localUrl (x, y) =
     Svg.g
         [ SA.class "detach-panel"
         , SA.style <| "transform: translate(" ++
@@ -128,6 +129,6 @@ detachButton style path localUrl (x, y) =
                 , SA.height "10"
                 ]
                 []
-            , detach style
+            , detach theme
             ]
         ]

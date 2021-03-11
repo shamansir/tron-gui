@@ -39,7 +39,6 @@ type alias GetAbility = Path -> Ability
 type Detach msg =
     Detach
         { toUrl : ClientId -> Path -> Maybe LocalUrl
-
         , attached : State
         , client : Maybe ClientId
         }
