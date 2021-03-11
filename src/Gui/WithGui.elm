@@ -259,7 +259,7 @@ addViewOptions options gui =
                         [ gui |> Tron.view theme ]
                     -- FIXME: AFrame
                     _ ->
-                        []
+                        [ gui |> Tron.view Theme.light ]
             )
             []
         |> Html.div []
@@ -280,7 +280,6 @@ element
         , update : msg -> model -> ( model, Cmd msg )
         }
     -> ProgramWithGui flags model msg
-    -- -> Program flags ( model, Tron.Gui msg ) (WithGuiMsg msg)
 element def =
     Browser.element
         { init =

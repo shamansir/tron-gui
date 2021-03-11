@@ -35,3 +35,32 @@ type Option msg
         }
     | DatGui
         {}
+
+
+sendJson
+    :
+        { ack : Exp.RawProperty -> Cmd msg
+        , transmit : Exp.RawUpdate -> Cmd msg
+        }
+    -> Option msg
+sendJson = SendJsonToJs
+
+
+sendStrings
+    :
+        { transmit : ( String, String ) -> Cmd msg
+        }
+    -> Option msg
+sendStrings = SendStringsToJs
+
+
+hidden : Option msg
+hidden = Hidden
+
+
+dock : Dock -> Option msg
+dock = Dock
+
+
+theme : Theme -> Option msg
+theme = Theme

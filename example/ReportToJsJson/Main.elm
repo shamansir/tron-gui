@@ -11,6 +11,7 @@ import Gui.Expose as Exp
 import Gui.Property as Property
 import Gui.WithGui as WithGui
 import Gui.WithGui exposing (ProgramWithGui)
+import Gui.Option exposing (..)
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -97,22 +98,20 @@ subscriptions gui =
 
 main : ProgramWithGui () Example.Model Example.Msg
 main =
-
-    {- Browser.element
-        { init = init
-        , view = view
-        , subscriptions = subscriptions
-        , update = update
-        } -}
     WithGui.element
         { options =
-            []
+            [ SendJsonToJs
+                { ack = initGui
+                , transmit = sendUpdate
+                }
+            ]
         , for = ExampleGui.for
         , init = always ( Example.init, Cmd.none )
         , view = Example.view
         , update = Example.update
         , subscriptions = always Sub.none
         }
+
 
 port sendUpdate : Exp.RawUpdate -> Cmd msg
 
