@@ -9,6 +9,8 @@ import Gui.Style.Theme as Theme
 import Gui.Style.Dock as Dock
 import Gui.Expose as Exp
 import Gui.Property as Property
+import Gui.WithGui as WithGui
+import Gui.WithGui exposing (ProgramWithGui)
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -27,6 +29,7 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
+{-
 type Msg
     = ToTron Tron.Msg
     | ToSend Exp.RawUpdate
@@ -89,16 +92,27 @@ subscriptions gui =
     Tron.subscriptions gui
         |> Sub.map ToTron
 
+-}
 
-main : Program () Model Msg
+
+main : ProgramWithGui () Example.Model Example.Msg
 main =
-    Browser.element
+
+    {- Browser.element
         { init = init
         , view = view
         , subscriptions = subscriptions
         , update = update
+        } -}
+    WithGui.element
+        { options =
+            []
+        , for = ExampleGui.for
+        , init = always ( Example.init, Cmd.none )
+        , view = Example.view
+        , update = Example.update
+        , subscriptions = always Sub.none
         }
-
 
 port sendUpdate : Exp.RawUpdate -> Cmd msg
 
