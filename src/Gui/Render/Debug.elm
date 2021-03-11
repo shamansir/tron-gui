@@ -87,9 +87,5 @@ propertyDebug ( label, prop )  =
                         Just (FocusAt focus) -> String.fromInt focus
                         _ -> "none"
                 , textAt 5 50
-                    <| " selected: " ++
-                            ( String.fromInt
-                            <| case state.selected of
-                                SelectedAt index -> index
-                            )
+                    <| " selected: " ++ String.fromInt state.selected
                 ]

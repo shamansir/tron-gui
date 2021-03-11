@@ -20,7 +20,7 @@ import Gui.ProxyValue as ProxyValue exposing (ProxyValue(..))
 -- TODO: make controls expose themselves, so get rid of these imports below
 import Gui.Control.Text as Text exposing (TextState(..))
 import Gui.Control.Toggle as Toggle exposing (ToggleState(..))
-import Gui.Control.Nest as Nest exposing (Form(..), SelectedAt(..))
+import Gui.Control.Nest as Nest exposing (Form(..))
 
 
 type alias RawPath = List Int
@@ -88,7 +88,7 @@ toProxied prop =
             Choice focus shape control ->
                 control
                     |> Nest.mapItems (Tuple.mapSecond toProxied)
-                    |> mapWithValue (helper (Tuple.second >> Nest.toNum >> FromChoice))
+                    |> mapWithValue (helper (.selected >> FromChoice))
                     |> Choice focus shape
             Group focus shape control ->
                 control
@@ -150,14 +150,13 @@ updateProperty value property =
             t |> callWith control
         ( Action control, FromButton ) ->
             () |> callWith control
-        ( Choice _ _ (Control _ state _ as control), FromChoice i ) ->
+        ( Choice _ _ control, FromChoice i ) ->
             let
-                nextState =
-                    { state
-                    | selected = SelectedAt i
-                    }
+                curValue = Control.getValue control
             in
-            nextState
+                { curValue
+                | selected = i
+                }
                 |> callWith control
         ( Group _ _ _, _ ) ->
             Cmd.none
@@ -304,9 +303,7 @@ encodePropertyAt path property =
                 , ( "path", encodeRawPath path )
                 ,
                     ( "current"
-                    , E.int
-                        <| case selected of
-                            SelectedAt index -> index
+                    , E.int selected
                     )
                 ,
                     ( "expanded"

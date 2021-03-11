@@ -12,11 +12,10 @@ type Form
     | Detached
 
 
-type SelectedAt = SelectedAt Int
+type alias ItemId = Int
 
 
-type CurrentPage = CurrentPage Int
-
+type alias PageNum = Int
 
 
 -- TODO: move focus outside, only selection matters in the component for logic
@@ -26,6 +25,7 @@ type alias GroupControl item msg =
     Core.Control
         ( Array item )
         { form : Form
+        , page : PageNum
         }
         msg
 
@@ -34,19 +34,19 @@ type alias ChoiceControl item msg =
     Core.Control
         ( Array item )
         { form : Form
-        , selected : SelectedAt
-        , current : CurrentPage
+        , selected : ItemId
+        , page : PageNum
         }
         msg
 
 
-get : Int -> Core.Control ( Array item ) value msg -> Maybe item
+get : ItemId -> Core.Control ( Array item ) value msg -> Maybe item
 get n = getItems >> Array.get n
 
 
-select : Int -> ChoiceControl item msg -> ChoiceControl item msg
+select : ItemId -> ChoiceControl item msg -> ChoiceControl item msg
 select index (Core.Control setup state handler) =
-    Core.Control setup { state | selected = SelectedAt index } handler
+    Core.Control setup { state | selected = index } handler
 
 
 getSelected : ChoiceControl item msg -> Maybe item
@@ -54,14 +54,12 @@ getSelected control =
     get (whichSelected control) control
 
 
-isSelected : ChoiceControl item msg -> Int -> Bool
+isSelected : ChoiceControl item msg -> ItemId -> Bool
 isSelected control n = whichSelected control == n
 
 
-whichSelected : ChoiceControl item msg -> Int
-whichSelected (Core.Control _ { selected } handler) =
-    case selected of
-        SelectedAt index -> index
+whichSelected : ChoiceControl item msg -> ItemId
+whichSelected (Core.Control _ { selected } handler) = selected
 
 
 expand

@@ -473,7 +473,7 @@ arrow theme state form bounds =
                 ++ "translate(" ++ String.fromFloat (center.x - (14 * scaleV)) ++ "px,"
                                 ++ String.fromFloat (center.y - (14 * scaleV)) ++ "px)"
         ]
-        [ Util.arrow (Coloring.lines_ theme state) (scale scaleV)
+        [ Util.arrow (Coloring.lines theme state) (scale scaleV)
             <| case form of
                 Expanded -> rotate 180
                 Detached -> rotate 45

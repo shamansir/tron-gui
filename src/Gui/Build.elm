@@ -63,6 +63,7 @@ However, it is ok to use any name you like, for sure. Be it `Gui.` or `Def.` or 
 
 -}
 
+
 import Array
 import Color exposing (Color)
 import Axis exposing (Axis)
@@ -81,7 +82,7 @@ import Gui.Style.PanelShape as Shape exposing (find, rows, cols)
 import Gui.Control.Text exposing (TextState(..))
 import Gui.Control.Button exposing (Face(..), Icon(..))
 import Gui.Control.Toggle exposing (boolToToggle, toggleToBool)
-import Gui.Control.Nest exposing (Form(..), SelectedAt(..), CurrentPage(..))
+import Gui.Control.Nest exposing (Form(..), ItemId, PageNum)
 
 
 {-| `Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instance `Builder msg`.
@@ -448,7 +449,9 @@ nest shape cellShape items =
         <| Control
             ( Array.fromList items
             )
-            { form = Collapsed }
+            { form = Collapsed
+            , page = 0
+            }
             Nothing -- (Tuple.first >> handler)
 
 
@@ -485,7 +488,7 @@ choice shape cellShape toLabel =
         ( shape, cellShape )
         (\callByIndex index val ->
             ( toLabel val
-            , button <| always <| callByIndex <| SelectedAt index
+            , button <| always <| callByIndex index
             )
         )
 
@@ -521,7 +524,7 @@ choiceIcons shape cellShape toLabelAndIcon =
             let ( label, theIcon ) = toLabelAndIcon val
             in
                 ( label
-                , buttonWith theIcon <| always <| callByIndex <| SelectedAt index
+                , buttonWith theIcon <| always <| callByIndex index
                 )
         )
 
@@ -549,7 +552,7 @@ choiceAuto shape cellShape f items v =
 
 choiceHelper
      : ( PanelShape, CellShape )
-    -> ( (SelectedAt -> msg) -> Int -> a -> ( Label, Builder msg ) )
+    -> ( (ItemId -> msg) -> Int -> a -> ( Label, Builder msg ) )
     -> List a
     -> a
     -> ( a -> a -> Bool )
@@ -558,7 +561,7 @@ choiceHelper
 choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
-        callByIndex (SelectedAt indexToCall) =
+        callByIndex indexToCall =
             -- FIXME: searching for the item every time seems wrong
             indexedOptions
                 |> findMap
@@ -591,8 +594,7 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
                                     else Nothing
                             )
                         |> Maybe.withDefault 0
-                        |> SelectedAt
-                , current = CurrentPage 0
+                , page = 0
                 }
                 (Just <| .selected >> callByIndex)
 
@@ -670,7 +672,7 @@ palette shape options current =
         ( shape, CS.half )
         (\callByIndex index val ->
             ( Color.toCssString val
-            , buttonByFace (WithColor val) <| always <| callByIndex <| SelectedAt index
+            , buttonByFace (WithColor val) <| always <| callByIndex index
             )
         )
         options

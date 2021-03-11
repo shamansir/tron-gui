@@ -9,7 +9,7 @@ import Json.Encode as E
 
 
 import Color exposing (Color)
-import Gui.Control.Nest exposing (Id)
+import Gui.Control.Nest exposing (ItemId)
 import Gui.Control.Toggle exposing (ToggleState, toggleToBool, toggleToString)
 
 
@@ -17,7 +17,7 @@ type ProxyValue
     = FromSlider Float
     | FromXY ( Float, Float )
     | FromInput String
-    | FromChoice Id
+    | FromChoice ItemId
     | FromColor Color
     | FromToggle ToggleState
     | FromButton
