@@ -11,7 +11,7 @@ import Gui.Expose as Exp
 import Gui.Property as Property
 import Gui.WithGui as WithGui
 import Gui.WithGui exposing (ProgramWithGui)
-import Gui.Option exposing (..)
+import Gui.Option as Option exposing (..)
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -100,10 +100,12 @@ main : ProgramWithGui () Example.Model Example.Msg
 main =
     WithGui.element
         { options =
-            [ SendJsonToJs
+            [ Option.sendJson
                 { ack = initGui
                 , transmit = sendUpdate
                 }
+            , Option.theme Theme.dark
+            , Option.dock Dock.middleRight
             ]
         , for = ExampleGui.for
         , init = always ( Example.init, Cmd.none )
