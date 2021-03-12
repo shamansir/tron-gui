@@ -2,7 +2,7 @@ module Gui.Option exposing (..)
 
 
 import Gui.Style.Theme as Theme exposing (Theme(..))
-import Gui.Style.Dock exposing (Dock(..))
+import Gui.Style.Dock as Dock exposing (Dock(..))
 import Gui.Expose as Exp
 import Gui.Detach as Detach
 import Gui.Msg exposing (Msg_)
@@ -12,7 +12,7 @@ import Gui.Path exposing (Path)
 type RenderTarget
     = Html Dock Theme
     | Aframe
-    | None
+    | Nowhere
 
 
 type PortCommunication msg
@@ -65,7 +65,7 @@ sendStrings = Ports << SendStrings
 
 
 hidden : Option msg
-hidden = RenderTo None
+hidden = RenderTo Nowhere
 
 
 appearance : Dock -> Theme -> Option msg
@@ -85,7 +85,7 @@ getRenderTarget =
                 _ -> prev
         )
         Nothing
-    >> Maybe.withDefault None
+    >> Maybe.withDefault (Html Dock.center Theme.light)
 
 
 getCommunication : List (Option msg) -> PortCommunication msg

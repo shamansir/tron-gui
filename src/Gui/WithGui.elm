@@ -64,7 +64,7 @@ view userView options ( model, gui ) =
     Html.div
         [ ]
         [ gui
-            |> addViewOptions options
+            |> useRenderTarget options
             |> Html.map ToTron
         , userView model
             |> Html.map ToUser
@@ -165,21 +165,12 @@ update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
 
 performInitEffects : List (Option msg) -> Tron.Gui msg -> Cmd msg
 performInitEffects options gui =
-    options
-        |> List.foldl
-            (\option cmds ->
-                case option of
-                    SendJsonToJs { ack } ->
-                        (gui
-                            |> Tron.encode
-                            |> ack
-                        ) :: cmds
-                    _ ->
-                        cmds
-            )
-            []
-        |> Cmd.batch
-
+    case getCommunication options of
+        SendJson { ack } ->
+            gui
+                |> Tron.encode
+                |> ack
+        _ -> Cmd.none
 
 
 -- FIXME: Use in WithGui at `init`
@@ -234,31 +225,12 @@ addSubscriptionsOptions options gui =
     Sub.none -- FIXME:
 
 
-addViewOptions : List (Option msg) -> Tron.Gui msg -> Html Tron.Msg
-addViewOptions options gui =
-    let
-        ( maybeTheme, maybeDock ) =
-            options
-                |> List.foldl
-                    (\option ( prevTheme, prevDock ) ->
-                        case option of
-                            Hidden ->
-                                ( Nothing, Nothing )
-                            Theme theme ->
-                                ( Just theme, prevDock )
-                            Dock dock ->
-                                ( prevTheme, Just dock )
-                            _ ->
-                                ( prevTheme, prevDock )
-                    )
-                    ( Nothing, Nothing )
-
-    in
-        Maybe.map2
-            (\theme dock -> gui |> Tron.dock dock |> Tron.view theme)
-            maybeTheme
-            maybeDock
-        |> Maybe.withDefault (Html.div [] [])
+useRenderTarget : List (Option msg) -> Tron.Gui msg -> Html Tron.Msg
+useRenderTarget options gui =
+    case getRenderTarget options of
+        Html dock theme -> gui |> Tron.dock dock |> Tron.view theme
+        Nowhere -> Html.div [] []
+        Aframe -> Html.div [] [] -- FIXME
 
 
 nextClientId : Cmd (WithGuiMsg msg)
