@@ -45,7 +45,7 @@ init ( userInit, userFor ) options flags =
     in
         (
             ( initialModel
-            , gui |> addInitOptions options
+            , gui --|> addInitOptions options
             )
         , Cmd.batch
             [ userEffect |> Cmd.map ToUser
@@ -162,19 +162,6 @@ update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
             ) -- FIXME:
 
 
-addInitOptions : List (Option msg) -> Tron.Gui msg -> Tron.Gui msg
-addInitOptions options gui =
-    options
-        |> List.foldl
-            (\option gui_ ->
-                case option of
-                    Dock target ->
-                        gui_ |> Tron.dock target
-                    _ ->
-                        gui_
-            )
-            gui
-
 
 performInitEffects : List (Option msg) -> Tron.Gui msg -> Cmd msg
 performInitEffects options gui =
@@ -249,20 +236,29 @@ addSubscriptionsOptions options gui =
 
 addViewOptions : List (Option msg) -> Tron.Gui msg -> Html Tron.Msg
 addViewOptions options gui =
-    options
-        |> List.foldl
-            (\option _ ->
-                case option of
-                    Hidden ->
-                        []
-                    Theme theme ->
-                        [ gui |> Tron.view theme ]
-                    -- FIXME: AFrame
-                    _ ->
-                        [ gui |> Tron.view Theme.light ]
-            )
-            []
-        |> Html.div []
+    let
+        ( maybeTheme, maybeDock ) =
+            options
+                |> List.foldl
+                    (\option ( prevTheme, prevDock ) ->
+                        case option of
+                            Hidden ->
+                                ( Nothing, Nothing )
+                            Theme theme ->
+                                ( Just theme, prevDock )
+                            Dock dock ->
+                                ( prevTheme, Just dock )
+                            _ ->
+                                ( prevTheme, prevDock )
+                    )
+                    ( Nothing, Nothing )
+
+    in
+        Maybe.map2
+            (\theme dock -> gui |> Tron.dock dock |> Tron.view theme)
+            maybeTheme
+            maybeDock
+        |> Maybe.withDefault (Html.div [] [])
 
 
 nextClientId : Cmd (WithGuiMsg msg)
