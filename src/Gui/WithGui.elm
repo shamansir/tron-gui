@@ -45,7 +45,7 @@ init ( userInit, userFor ) options flags =
     in
         (
             ( initialModel
-            , gui --|> addInitOptions options
+            , gui |> addInitOptions options
             )
         , Cmd.batch
             [ userEffect |> Cmd.map ToUser
@@ -102,7 +102,8 @@ update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
             (
                 ( newUserModel
                 , gui
-                    |> Tron.over (userFor model)
+                    --|> Tron.over (userFor model)
+                    -- FIXME: calling `userFor` is needed when the interface needs to be rebuilt
                 )
             , userEffect |> Cmd.map ToUser
             )
@@ -135,9 +136,9 @@ update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
                         | tree = nextRoot
                         }
                     )
-                , nextRoot
+                , Cmd.none {- nextRoot
                     |> Exp.update (Exp.fromPort rawUpdate)
-                    |> Cmd.map ToUser
+                    |> Cmd.map ToUser -}
                 )
 
         SetClientId clientId ->
@@ -218,6 +219,14 @@ performUpdateEffects options gui =
             )
             []
         |> Cmd.batch -}
+
+
+addInitOptions : List (Option msg) -> Tron.Gui msg -> Tron.Gui msg
+addInitOptions options gui =
+    case getRenderTarget options of
+        Html dock _ -> gui |> Tron.dock dock
+        Nowhere -> gui
+        Aframe -> gui
 
 
 addSubscriptionsOptions : List (Option msg) -> Tron.Gui msg -> Sub msg

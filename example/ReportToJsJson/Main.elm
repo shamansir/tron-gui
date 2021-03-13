@@ -104,12 +104,11 @@ main =
                 { ack = initGui
                 , transmit = sendUpdate
                 }
-            , Option.theme Theme.dark
-            , Option.dock Dock.middleRight
+            , Option.appearance Dock.middleRight Theme.dark
             ]
         , for = ExampleGui.for
         , init = always ( Example.init, Cmd.none )
-        , view = Example.view
+        , view = always <| Html.div [] [] -- Example.view
         , update = Example.update
         , subscriptions = always Sub.none
         }
