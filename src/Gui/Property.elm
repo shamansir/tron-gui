@@ -51,6 +51,12 @@ type Property msg
 type alias ExpandData = List Path
 
 
+type alias EditingData = List Path
+
+
+type alias TransientState = ( ExpandData, EditingData )
+
+
 knobDistance = 90 * 4
 
 
@@ -336,7 +342,7 @@ execute item =
             -- we don't update the value since it's `()`, but we do execute it
             Just <| Action control
         Text textControl ->
-            Just <| Text <| ensureEditing textControl
+            Just <| Text <| Text.ensureEditing textControl
         Choice focus shape control ->
             Just
                 <| Choice focus shape
@@ -382,6 +388,14 @@ executeAt path root =
         Nothing -> []
 
 
+
+loadTransientState : Property msg -> TransientState
+loadTransientState prop =
+    ( loadExpanded prop
+    , loadTextEditing prop
+    )
+
+
 loadExpanded : Property msg -> ExpandData
 loadExpanded =
     unfold
@@ -396,11 +410,35 @@ loadExpanded =
             )
 
 
+loadTextEditing : Property msg -> EditingData
+loadTextEditing =
+    unfold
+        >> List.filterMap
+            (\(path, innerProp) ->
+                case innerProp of
+                    Text (Control _ ( Text.Editing, _) _ ) ->
+                        Just path
+                    _ -> Nothing
+            )
+
+
 applyExpanded : Property msg -> ExpandData -> Property msg
 applyExpanded =
     -- expanded
     --     |> List.foldl expandAt prop
     List.foldl expandAt -- FIXME: not very efficient since goes through the structure several times
+
+
+applyTextEditing : Property msg -> EditingData -> Property msg
+applyTextEditing =
+    -- expanded
+    --     |> List.foldl expandAt prop
+    List.foldl ensureEditingAt -- FIXME: not very efficient since goes through the structure several times
+
+
+applyTransientState : Property msg -> TransientState -> Property msg
+applyTransientState prop ( expanded, editing ) =
+    editing |> applyTextEditing (expanded |> applyExpanded prop)
 
 
 -- TODO: better use the functions below directly from their controls
@@ -426,6 +464,13 @@ updateTextAt path newValue =
 
 
 -- updateAndExecute : (v -> v) -> Control s v msg -> ( Control s v msg, msg )
+
+ensureEditing : Property msg -> Property msg
+ensureEditing prop =
+    case prop of
+        Text control ->
+            Text <| Text.ensureEditing control
+        _ -> prop
 
 
 expand : Property msg -> Property msg
@@ -500,6 +545,11 @@ toggleOff prop =
         Toggle control ->
             Toggle <| Toggle.toggleOff control
         _ -> prop
+
+
+ensureEditingAt : Path -> Property msg -> Property msg
+ensureEditingAt path =
+    updateAt path ensureEditing
 
 
 {-

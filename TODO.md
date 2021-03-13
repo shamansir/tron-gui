@@ -9,3 +9,5 @@
 * Get rid of functions in the `Model`:
     * do not store tree in the `Gui msg`, build it every time;
     * store the actual messages for the current value in the controls, not the handlers;
+    * due to `.over`, text editing may stop working (the state if the text is edited or not, is changed every time),
+        so we need to store the editing state and everything like that in the `Gui` though;

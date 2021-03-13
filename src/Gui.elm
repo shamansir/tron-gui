@@ -261,8 +261,8 @@ over : Builder msg -> Gui msg -> Gui msg
 over prop gui =
     { gui
     | tree =
-        loadExpanded gui.tree
-            |> applyExpanded prop
+        loadTransientState gui.tree
+            |> applyTransientState prop
     }
 
 

@@ -183,53 +183,6 @@ tryTransmitting options rawUpdate =
         _ -> Cmd.none
 
 
--- FIXME: Use in WithGui at `init`
-{- detachable
-     : Url
-    -> (Exp.Ack -> Cmd msg)
-    -> Gui msg
-    -> ( Gui msg, Cmd Msg )
-detachable url ack gui =
-    let
-        ( maybeClient, state ) = Detach.fromUrl url
-    in
-        (
-            { gui
-            | detach = ( maybeClient, state )
-            }
-        , case maybeClient of
-            Nothing -> Detach.nextClientId
-            _ ->
-                Exp.encodeAck maybeClient
-                    |> ack
-                    |> Cmd.map (always NoOp)
-        ) -}
-
-
-{-
-performUpdateEffects : List (Option msg) -> Tron.Gui ( Exp.RawUpdate, msg ) -> Cmd (WithGuiMsg msg)
-performUpdateEffects options gui =
-    options
-        |> List.foldl
-            (\option cmds ->
-                case option of
-                    SendJsonToJs { transmit } ->
-                        (gui
-                            |> Tron.toExposed
-                            |> Tron.map Tuple.second -- FIXME: perform the update before
-                            |> Tron.over gui.tree
-                            |> Tron.update msg -- FIXME: this way, we call the update twice
-                            |> Tuple.second
-                            |> Cmd.map SendUpdate
-                            --|> Cmd.andThen transmit
-                        ) :: cmds
-                    _ ->
-                        cmds
-            )
-            []
-        |> Cmd.batch -}
-
-
 addInitOptions : List (Option msg) -> Tron.Gui msg -> Tron.Gui msg
 addInitOptions options gui =
     case getRenderTarget options of
