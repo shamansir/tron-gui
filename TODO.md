@@ -6,6 +6,7 @@
 * Multiple-choice control;
 * Include links to the examples in the docs;
 * Include minimal "OneControl" example into the docs;
+* Consider having `Nil (Property msg)` instead of just `Nil`, so that any property could be hidden, but not absent in the tree;
 * Get rid of functions in the `Model`:
     * do not store tree in the `Gui msg`, build it every time;
     * store the actual messages for the current value in the controls, not the handlers;

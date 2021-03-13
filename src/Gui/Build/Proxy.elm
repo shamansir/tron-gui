@@ -224,8 +224,9 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare =
             )
             <| Control
                 ( set |> Array.fromList )
-                ( Collapsed
-                ,
+                { form = Collapsed
+                , page = 0
+                , selected =
                     indexedOptions
                         -- FIXME: searching for the item every time seems wrong
                         |> findMap
@@ -235,5 +236,5 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare =
                                     else Nothing
                             )
                         |> Maybe.withDefault 0
-                )
-                (Just <| Tuple.second >> callByIndex)
+                }
+                (Just <| .selected >> callByIndex)

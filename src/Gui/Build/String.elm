@@ -22,7 +22,7 @@ import Gui.Control.Text exposing (TextState(..))
 import Gui.Control.Button exposing (Face(..), Icon(..))
 import Gui.Control.Toggle exposing (boolToToggle, toggleToBool, toggleToString)
 import Gui.Control.XY exposing (xyToString, xyFromString)
-import Gui.Control.Nest exposing (NestState(..), SelectedAt(..))
+import Gui.Control.Nest exposing (Form(..), ItemId)
 
 
 none : B.Builder String
