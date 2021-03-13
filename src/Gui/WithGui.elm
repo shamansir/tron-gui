@@ -103,7 +103,6 @@ update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
                 ( newUserModel
                 , gui
                     |> Tron.over (userFor newUserModel)
-                    -- FIXME: calling `userFor` is needed when the interface needs to be rebuilt
                 )
             , userEffect |> Cmd.map ToUser
             )
@@ -157,10 +156,12 @@ update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
             )
 
 
-        SendUpdate _ ->
-            ( (model, gui)
-            , Cmd.none
-            ) -- FIXME:
+        SendUpdate rawUpdate ->
+            ( ( model, gui )
+            , rawUpdate
+                |> tryTransmitting options
+                |> Cmd.map ToUser
+            )
 
 
 
@@ -171,6 +172,14 @@ performInitEffects options gui =
             gui
                 |> Tron.encode
                 |> ack
+        _ -> Cmd.none
+
+
+tryTransmitting : List (Option msg) -> Exp.RawUpdate -> Cmd msg
+tryTransmitting options rawUpdate =
+    case getCommunication options of
+        SendJson { transmit } ->
+            transmit rawUpdate
         _ -> Cmd.none
 
 
