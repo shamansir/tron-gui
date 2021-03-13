@@ -9,20 +9,6 @@ DONE:
 * Examples for sending GUI updates to JS, in JSON or in Strings;
 * Rename `Gui.Message` to `Gui.Msg` to be consistent with usual Elm style;
 
-TODO:
-
-* New design;
-* Helpers, optional to use, based on the examples, like `detachable`, `communicateJS`...
-* Rename `Gui` module to `Tron`;
-* Pagination in panels which don't fit the inner buttons;
-* Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
-* Multiple-choice control;
-* Include links to the examples in the docs;
-* Include minimal "OneControl" example into the docs;
-* Get rid of functions in the `Model`;
-
-
-
 ### 4.0.0
 
 * Now there is a `Style.Shape` module that helps to define the shape of the plate in a friendly method, like only by specifying the required number of rows or columns (and no adjustment to cell shape is required anymore);

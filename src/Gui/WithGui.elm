@@ -102,7 +102,7 @@ update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
             (
                 ( newUserModel
                 , gui
-                    --|> Tron.over (userFor model)
+                    |> Tron.over (userFor newUserModel)
                     -- FIXME: calling `userFor` is needed when the interface needs to be rebuilt
                 )
             , userEffect |> Cmd.map ToUser
