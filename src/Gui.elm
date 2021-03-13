@@ -259,11 +259,14 @@ If you have a function like:
 -}
 over : Builder msg -> Gui msg -> Gui msg
 over prop gui =
-    { gui
-    | tree =
-        loadTransientState gui.tree
-            |> applyTransientState prop
-    }
+    let
+        lastFocus = Focus.find gui.tree
+    in
+        { gui
+        | tree =
+            loadTransientState gui.tree
+                |> applyTransientState (Focus.on prop lastFocus)
+        }
 
 
 {-| While keeping other options intact, replace the GUI structure completely.

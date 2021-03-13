@@ -21,7 +21,7 @@ import Gui.Style.PanelShape as Shape exposing (find, rows, cols)
 import Gui.Control.Text exposing (TextState(..))
 import Gui.Control.Button exposing (Face(..), Icon(..))
 import Gui.Control.Toggle exposing (boolToToggle, toggleToBool)
-import Gui.Control.Nest exposing (NestState(..), SelectedAt(..))
+import Gui.Control.Nest exposing (Form(..), ItemId)
 
 import Gui.ProxyValue exposing (ProxyValue(..))
 
@@ -99,7 +99,7 @@ choice pShape cShape toLabel =
         ( pShape, cShape )
         (\callByIndex index val ->
             ( toLabel val
-            , B.button <| always <| callByIndex <| SelectedAt index
+            , B.button <| always <| callByIndex index
             )
         )
 
@@ -119,7 +119,7 @@ choiceIcons pShape cShape toLabelAndIcon =
             let ( label, theIcon ) = toLabelAndIcon val
             in
                 ( label
-                , B.buttonWith theIcon <| always <| callByIndex <| SelectedAt index
+                , B.buttonWith theIcon <| always <| callByIndex index
                 )
         )
 
@@ -175,6 +175,7 @@ labelsAuto toLabel options current =
     labels toLabel options current (==)
 
 
+
 palette
      : PanelShape
     -> List Color
@@ -185,7 +186,7 @@ palette shape options current =
         ( shape, CS.half )
         (\callByIndex index val ->
             ( Color.toCssString val
-            , B.colorButton val <| always <| callByIndex <| SelectedAt index
+            , B.colorButton val <| always <| callByIndex index
             )
         )
         options
@@ -202,7 +203,7 @@ palette shape options current =
 
 choiceHelper
      : ( PanelShape, CellShape )
-    -> ( (SelectedAt -> ProxyValue) -> Int -> a -> ( Label, B.Builder ProxyValue ) )
+    -> ( (ItemId -> ProxyValue) -> Int -> a -> ( Label, B.Builder ProxyValue ) )
     -> List a
     -> a
     -> ( a -> a -> Bool )
@@ -210,7 +211,7 @@ choiceHelper
 choiceHelper ( shape, cellShape ) toBuilder options current compare =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
-        callByIndex (SelectedAt indexToCall) =
+        callByIndex indexToCall =
             FromChoice indexToCall
         set =
             options
@@ -234,6 +235,5 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare =
                                     else Nothing
                             )
                         |> Maybe.withDefault 0
-                        |> SelectedAt
                 )
                 (Just <| Tuple.second >> callByIndex)

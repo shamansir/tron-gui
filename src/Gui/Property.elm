@@ -436,6 +436,7 @@ applyTextEditing =
     List.foldl ensureEditingAt -- FIXME: not very efficient since goes through the structure several times
 
 
+-- FIXME: instead, traverse two trees with the same structure and move transient states between them
 applyTransientState : Property msg -> TransientState -> Property msg
 applyTransientState prop ( expanded, editing ) =
     editing |> applyTextEditing (expanded |> applyExpanded prop)

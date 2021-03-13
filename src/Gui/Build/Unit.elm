@@ -22,14 +22,14 @@ import Gui.Control.Text exposing (TextState(..))
 import Gui.Control.Button exposing (Face(..), Icon(..))
 import Gui.Control.Toggle exposing (boolToToggle, toggleToBool, toggleToString)
 import Gui.Control.XY exposing (xyToString, xyFromString)
-import Gui.Control.Nest exposing (NestState(..), SelectedAt(..))
+import Gui.Control.Nest exposing (Form(..))
 
 
 none : B.Builder ()
 none = B.none
 
 
-root : B.Set String -> B.Builder ()
+root : B.Set () -> B.Builder ()
 root = B.root
 
 
@@ -46,7 +46,7 @@ number = float
 
 
 xy : ( Axis, Axis ) -> ( Float, Float ) -> B.Builder ()
-xy xAxis yAxis = B.xy xAxis yAxis xyToString
+xy xAxis yAxis = B.xy xAxis yAxis <| always ()
 
 
 coord : ( Axis, Axis ) -> ( Float, Float ) -> B.Builder ()
@@ -58,7 +58,7 @@ input toString fromString current = B.input toString fromString current <| alway
 
 
 text : String -> B.Builder ()
-text default = B.text default identity
+text default = B.text default <| always ()
 
 
 color : Color -> B.Builder ()
@@ -66,11 +66,11 @@ color current = B.color current <| always ()
 
 
 button : B.Builder ()
-button = B.button <| always ""
+button = B.button <| always ()
 
 
 buttonWith : Icon -> B.Builder ()
-buttonWith icon = B.buttonWith icon <| always ""
+buttonWith icon = B.buttonWith icon <| always ()
 
 
 toggle : Bool -> B.Builder ()
@@ -81,7 +81,7 @@ bool : Bool -> B.Builder ()
 bool = toggle
 
 
-nest : PanelShape -> CellShape -> B.Set String -> B.Builder ()
+nest : PanelShape -> CellShape -> B.Set () -> B.Builder ()
 nest = B.nest
 
 
@@ -126,7 +126,7 @@ strings
     -> String
     -> B.Builder ()
 strings options current =
-    B.strings options current identity
+    B.strings options current <| always ()
 
 
 labels
