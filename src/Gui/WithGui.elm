@@ -179,6 +179,11 @@ tryTransmitting options rawUpdate =
     case getCommunication options of
         SendJson { transmit } ->
             transmit rawUpdate
+        SendStrings { transmit } ->
+            transmit
+                ( rawUpdate.labelPath |> String.join "/"
+                , rawUpdate.stringValue
+                )
         _ -> Cmd.none
 
 

@@ -36,6 +36,9 @@ type alias NestShape = ( Shape, CellShape )
 type alias Label = String
 
 
+type alias LabelPath = List String
+
+
 type Property msg
     = Nil
     | Number (Number.Control msg)
@@ -191,22 +194,53 @@ unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
--- TODO: replace : (Path -> Property msgA -> Property msgB) -> Property msgA -> Property msgB
---       or : (Path -> msgA -> msgB) -> ...
---       then, implement `addPath` with it
 replace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
-replace f root =
+replace = replaceWithPath <| always identity
+
+
+replaceWithPath
+    :  (Path -> msgA -> msgB)
+    -> (Path -> Property msgB -> Property msgB)
+    -> Property msgA
+    -> Property msgB
+replaceWithPath msgMap f =
+    replaceWithPaths (Tuple.first >> msgMap) (Tuple.first >> f)
+
+
+replaceWithLabeledPath
+    :  (LabelPath -> msgA -> msgB)
+    -> (LabelPath -> Property msgB -> Property msgB)
+    -> Property msgA
+    -> Property msgB
+replaceWithLabeledPath msgMap f =
+    replaceWithPaths (Tuple.second >> msgMap) (Tuple.second >> f)
+
+
+replaceWithPaths
+    :  (( Path, LabelPath ) -> msgA -> msgB)
+    -> (( Path, LabelPath ) -> Property msgB -> Property msgB)
+    -> Property msgA
+    -> Property msgB
+replaceWithPaths msgMap f root =
+    -- FIXME: should be just another `fold` actually
+
     let
 
-        -- TODO: replaceItem : Path -> Int -> ( Label, Property msgA ) -> ( Label, Property msgB )
-        replaceItem : Path -> Int -> ( Label, Property msg ) -> ( Label, Property msg )
-        replaceItem parentPath index ( label, innerItem ) =
+        replaceItem
+            :  ( Path, LabelPath )
+            -> Int
+            -> ( Label, Property msgA )
+            -> ( Label, Property msgB )
+        replaceItem ( parentPath, parentLabelPath ) index ( label, innerItem ) =
             ( label
-            , helper (parentPath |> Path.advance index) innerItem
+            , helper
+                ( parentPath |> Path.advance index
+                , parentLabelPath ++ [ label ]
+                )
+                innerItem
             )
 
-        -- TODO: replaceItem : helper : Path -> Property msgA -> Property msgB
-        helper : Path -> Property msg -> Property msg
+        helper : ( Path, LabelPath ) -> Property msgA -> Property msgB
         helper curPath item =
             case item of
                 Choice focus shape control ->
@@ -214,17 +248,21 @@ replace f root =
                         <| Choice
                             focus
                             shape
-                        <| (control |> Nest.indexedMapItems (replaceItem curPath))
+                        <| (control
+                                |> Nest.indexedMapItems (replaceItem curPath)
+                                |> Control.map (msgMap curPath))
                 Group focus shape control ->
                     f curPath
                         <| Group
                             focus
                             shape
-                        <| (control |> Nest.indexedMapItems (replaceItem curPath))
-                _ -> f curPath item
+                        <| (control
+                                |> Nest.indexedMapItems (replaceItem curPath)
+                                |> Control.map (msgMap curPath))
+                _ -> f curPath <| map (msgMap curPath) <| item
 
     in
-        helper Path.start root
+        helper ( Path.start, [] )  root
 
 
 addPathFrom : Path -> Property msg -> Property ( Path, msg )
@@ -266,46 +304,17 @@ addPathFrom from root =
 
 addPath : Property msg -> Property ( Path, msg )
 addPath =
-    addPathFrom Path.start
+    replaceWithPath (Tuple.pair) (always identity)
 
 
-addLabeledPathFrom : List String -> Property msg -> Property ( List String, msg )
-addLabeledPathFrom from root =
-    let
-        replaceItem : List String -> ( Label, Property msg ) -> ( Label, Property (List String, msg ) )
-        replaceItem parentPath ( label, innerItem ) =
-            ( label
-            , helper (parentPath ++ [ label ]) innerItem
-            )
-
-        helper : List String -> Property msg -> Property ( List String, msg )
-        helper curPath item =
-            case item of
-                Choice focus shape control ->
-                    Choice
-                        focus
-                        shape
-                        (control
-                            |> Nest.mapItems (replaceItem curPath)
-                            |> Control.map (Tuple.pair curPath)
-                        )
-                Group focus shape control ->
-                    Group
-                        focus
-                        shape
-                        (control
-                            |> Nest.mapItems (replaceItem curPath)
-                            |> Control.map (Tuple.pair curPath)
-                        )
-                prop -> map (Tuple.pair curPath) prop
-
-    in
-        helper from root
-
-
-addLabeledPath : Property msg -> Property ( List String, msg )
+addLabeledPath : Property msg -> Property ( LabelPath, msg )
 addLabeledPath =
-    addLabeledPathFrom []
+    replaceWithLabeledPath (Tuple.pair) (always identity)
+
+
+addPaths : Property msg -> Property ( ( Path, LabelPath ), msg )
+addPaths =
+    replaceWithPaths (Tuple.pair) (always identity)
 
 
 updateAt : Path -> (Property msg -> Property msg) -> Property msg -> Property msg

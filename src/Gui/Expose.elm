@@ -41,6 +41,8 @@ type alias Update =
 type alias RawUpdate =
     { path : RawPath
     , value : E.Value
+    , stringValue : String
+    , labelPath : List String
     , type_ : String
     , client : RawClientId
     }
@@ -102,14 +104,16 @@ toExposed : Property msg -> Property ( RawUpdate, msg )
 toExposed prop =
     prop
         |> toProxied
-        |> Gui.Property.addPath
+        |> Gui.Property.addPaths
          -- FIXME: `Expose.encodeUpdate` does the same as above
         |> Gui.Property.map
-            (\(path, (proxyVal, msg)) ->
+            (\((path, labelPath), (proxyVal, msg)) ->
                 (
                     { path = Path.toList path
+                    , labelPath = labelPath
                     , type_ = getTypeString proxyVal
                     , value = ProxyValue.encode proxyVal
+                    , stringValue = ProxyValue.toString proxyVal
                     , client = E.null
                     }
                 , msg
@@ -378,6 +382,7 @@ encodeAck maybeClient =
     }
 
 
+{-
 encodeUpdate : Maybe HashId -> Path -> Property msg -> RawUpdate
 encodeUpdate maybeClient path prop =
     let
@@ -420,6 +425,7 @@ encodeUpdate maybeClient path prop =
         , type_ = type_
         , client = encodeClientId maybeClient
         }
+-}
 
 
 -- select : Path -> Gui msg -> Gui msg
