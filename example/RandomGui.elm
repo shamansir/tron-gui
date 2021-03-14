@@ -8,7 +8,7 @@ import Axis exposing (Axis)
 
 import Gui exposing (Gui)
 import Gui.Control as Core exposing (Control(..))
-import Gui.Control.Nest exposing (ChoiceControl, GroupControl, NestState(..), SelectedAt(..), expand, getItems)
+import Gui.Control.Nest exposing (ChoiceControl, GroupControl, Form(..), ItemId, expand, getItems)
 import Gui.Control.Toggle exposing (ToggleState(..))
 import Gui.Control.Text exposing (TextState(..))
 import Gui.Control.Button as Button exposing (Face(..), Icon(..))
@@ -186,10 +186,14 @@ choice deep =
                         ) -}
                     (Random.constant cs)
                     (Random.map2
-                        Tuple.pair
-                        expandState
-                        (Random.map SelectedAt
-                            <| Random.int 0 <| Array.length cs - 1)
+                        (\f s ->
+                            { form = f
+                            , selected = s
+                            , page = 0
+                            }
+                        )
+                        form
+                        (Random.int 0 <| Array.length cs - 1)
                     )
                     handler
             )
@@ -203,10 +207,13 @@ group deep =
                 Random.map3
                     Control
                     (Random.constant cs)
-                    (Random.map2
-                        Tuple.pair
-                        expandState
-                        (Random.constant ())
+                    (Random.map
+                        (\f ->
+                            { form = f
+                            , page = 0
+                            }
+                        )
+                        form
                     )
                     handler
             )
@@ -258,8 +265,8 @@ toggleState =
         |> Random.map (\n -> if n < 40 then TurnedOff else TurnedOn)
 
 
-expandState : Random.Generator NestState
-expandState =
+form : Random.Generator Form
+form =
     Random.int 0 100
         |> Random.map (\n -> if n < 40 then Collapsed else Expanded)
 

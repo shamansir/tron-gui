@@ -1,13 +1,12 @@
 port module ReportToJsString.Main exposing (main)
 
 
-import Browser
-import Html exposing (Html)
+import Html
 
-import Gui as Tron
 import Gui.Style.Theme as Theme
 import Gui.Style.Dock as Dock
-import Gui.Expose as Exp
+import Gui.Option as Option
+import Gui.WithGui as WithGui exposing (ProgramWithGui)
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -26,71 +25,22 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
-type Msg
-    = ToTron Tron.Msg
-    | ToSend (String, String)
+port sendUpdate : ( String, String ) -> Cmd msg
 
 
-type alias Model =
-    Tron.Gui (String, String)
-
-
-init : flags -> ( Model, Cmd Msg )
-init _ =
-    let
-        example = Example.init
-        ( gui, guiEffect ) =
-            ExampleGui.for example
-                |> Exp.toStrExposed
-                |> Tron.init
-    in
-        ( gui |> Tron.dock Dock.topRight
-        , guiEffect
-            |> Cmd.map ToTron
-        )
-
-
-view : Model -> Html Msg
-view gui =
-    Html.div
-        [ ]
-        [ Tron.view Theme.dark gui
-            |> Html.map ToTron
-        ]
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg gui =
-    case msg of
-        ToTron tronMsg ->
-            let
-                ( nextGui, updateToSend ) =
-                    gui |> Tron.update tronMsg
-            in
-                ( nextGui
-                , updateToSend
-                    |> Cmd.map ToSend
-                )
-        ToSend rawMsg ->
-            ( gui
-            , sendUpdate rawMsg
-            )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions gui =
-    Tron.subscriptions gui
-        |> Sub.map ToTron
-
-
-main : Program () Model Msg
+main : ProgramWithGui () Example.Model Example.Msg
 main =
-    Browser.element
-        { init = init
-        , view = view
-        , subscriptions = subscriptions
-        , update = update
+    WithGui.element
+        [ Option.sendStrings
+            { transmit = sendUpdate
+            }
+        , Option.appearance Dock.middleRight Theme.dark
+        ]
+        { for = ExampleGui.for
+        , init = always ( Example.init, Cmd.none )
+        , view = always <| Html.div [] [] -- Example.view
+        , update = Example.update
+        , subscriptions = always Sub.none
         }
 
 
-port sendUpdate : ( String, String ) -> Cmd msg

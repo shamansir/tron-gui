@@ -155,7 +155,6 @@ update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
             -- , nextDetach |> Detach.ack -- FIXME:
             )
 
-
         SendUpdate rawUpdate ->
             ( ( model, gui )
             , rawUpdate
@@ -210,25 +209,25 @@ nextClientId =
 
 
 element
-    :
-        { options : List (Option msg)
-        , for : model -> Builder.Builder msg
+    :   List (Option msg)
+    ->
+        { for : model -> Builder.Builder msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Html msg
         , update : msg -> model -> ( model, Cmd msg )
         }
     -> ProgramWithGui flags model msg
-element def =
+element options def =
     Browser.element
         { init =
-            init ( def.init, def.for ) def.options
+            init ( def.init, def.for ) options
         , view =
-            view def.view def.options
+            view def.view options
         , subscriptions =
-            subscriptions def.subscriptions def.options
+            subscriptions def.subscriptions options
         , update =
-            update ( def.update, def.for ) def.options
+            update ( def.update, def.for ) options
         }
 
 
