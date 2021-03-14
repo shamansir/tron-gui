@@ -26,63 +26,70 @@ import Gui.Control.Nest exposing (Form(..), ItemId)
 import Gui.ProxyValue exposing (ProxyValue(..))
 
 
-none : B.Builder ProxyValue
+type alias Builder = B.Builder ProxyValue
+
+
+type alias Set = B.Set ProxyValue
+
+
+
+none : Builder
 none = B.none
 
 
-root : B.Set ProxyValue -> B.Builder ProxyValue
+root : Set -> Builder
 root = B.root
 
 
-float : Axis -> Float -> B.Builder ProxyValue
+float : Axis -> Float -> Builder
 float axis default = B.float axis default FromSlider
 
 
-int : { min: Int, max : Int, step : Int } -> Int -> B.Builder ProxyValue
+int : { min: Int, max : Int, step : Int } -> Int -> Builder
 int axis default = B.int axis default (toFloat >> FromSlider)
 
 
-number : Axis -> Float -> B.Builder ProxyValue
+number : Axis -> Float -> Builder
 number = float
 
 
-xy : ( Axis, Axis ) -> ( Float, Float ) -> B.Builder ProxyValue
+xy : ( Axis, Axis ) -> ( Float, Float ) -> Builder
 xy xAxis yAxis = B.xy xAxis yAxis FromXY
 
 
-coord : ( Axis, Axis ) -> ( Float, Float ) -> B.Builder ProxyValue
+coord : ( Axis, Axis ) -> ( Float, Float ) -> Builder
 coord = xy
 
 
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> B.Builder ProxyValue
+input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Builder
 input toString fromString current = B.input toString fromString current (toString >> FromInput)
 
 
-text : String -> B.Builder ProxyValue
+text : String -> Builder
 text default = B.text default FromInput
 
 
-color : Color -> B.Builder ProxyValue
+color : Color -> Builder
 color current = B.color current FromColor
 
 
-button : B.Builder ProxyValue
+button : Builder
 button = B.button <| always FromButton
 
 
-buttonWith : Icon -> B.Builder ProxyValue
-buttonWith icon = B.buttonWith icon <| always FromButton
+buttonWith : Icon -> Builder
+buttonWith icon_ = B.buttonWith icon_ <| always FromButton
 
 
-toggle : Bool -> B.Builder ProxyValue
+toggle : Bool -> Builder
 toggle current = B.toggle current (boolToToggle >> FromToggle)
 
 
-bool : Bool -> B.Builder ProxyValue
+bool : Bool -> Builder
 bool = toggle
 
 
-nest : PanelShape -> CellShape -> B.Set ProxyValue -> B.Builder ProxyValue
+nest : PanelShape -> CellShape -> Set -> Builder
 nest = B.nest
 
 
@@ -93,7 +100,7 @@ choice -- TODO: remove, make choicesAuto default, change to List ( a, Label )
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> B.Builder ProxyValue
+    -> Builder
 choice pShape cShape toLabel =
     choiceHelper
         ( pShape, cShape )
@@ -111,7 +118,7 @@ choiceIcons -- TODO: remove, make choicesAuto default, change to List ( a, Label
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> B.Builder ProxyValue
+    -> Builder
 choiceIcons pShape cShape toLabelAndIcon =
     choiceHelper
         ( pShape, cShape )
@@ -130,7 +137,7 @@ choiceAuto
     -> ( comparable -> Label )
     -> List comparable
     -> comparable
-    -> B.Builder ProxyValue
+    -> Builder
 choiceAuto pShape cShape f items v =
     choice pShape cShape f items v (==)
 
@@ -139,7 +146,7 @@ choiceAuto pShape cShape f items v =
 strings
      : List String
     -> String
-    -> B.Builder ProxyValue
+    -> Builder
 strings options current =
     choice
         (cols 1)
@@ -155,7 +162,7 @@ labels -- TODO: remove, make labelsAuto default
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> B.Builder ProxyValue
+    -> Builder
 labels toLabel options current compare =
     choice
         (cols 1)
@@ -170,7 +177,7 @@ labelsAuto
      : ( comparable -> Label )
     -> List comparable
     -> comparable
-    -> B.Builder ProxyValue
+    -> Builder
 labelsAuto toLabel options current =
     labels toLabel options current (==)
 
@@ -180,7 +187,7 @@ palette
      : PanelShape
     -> List Color
     -> Color
-    -> B.Builder ProxyValue
+    -> Builder
 palette shape options current =
     choiceHelper
         ( shape, CS.half )
@@ -203,11 +210,11 @@ palette shape options current =
 
 choiceHelper
      : ( PanelShape, CellShape )
-    -> ( (ItemId -> ProxyValue) -> Int -> a -> ( Label, B.Builder ProxyValue ) )
+    -> ( (ItemId -> ProxyValue) -> Int -> a -> ( Label, Builder ) )
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> B.Builder ProxyValue
+    -> Builder
 choiceHelper ( shape, cellShape ) toBuilder options current compare =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
@@ -238,3 +245,7 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare =
                         |> Maybe.withDefault 0
                 }
                 (Just <| .selected >> callByIndex)
+
+
+icon : String -> Icon
+icon = Icon

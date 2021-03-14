@@ -7,7 +7,7 @@ import Gui exposing (Gui)
 import Gui.Build as Gui
 import Gui.Property  exposing (Property)
 import Gui.Property as Property exposing (Label)
-import Gui.Style.Shape exposing (..)
+import Gui.Style.PanelShape exposing (..)
 import Gui.Style.CellShape exposing (..)
 
 
@@ -170,7 +170,3 @@ choiceToLabel c =
         B -> "The B"
         C -> "The C"
         D -> "The D"
-
-
-updatedBy : Msg -> Bool
-updatedBy _ = False

@@ -25,63 +25,69 @@ import Gui.Control.XY exposing (xyToString, xyFromString)
 import Gui.Control.Nest exposing (Form(..))
 
 
-none : B.Builder ()
+type alias Builder = B.Builder ()
+
+
+type alias Set = B.Set ()
+
+
+none : Builder
 none = B.none
 
 
-root : B.Set () -> B.Builder ()
+root : Set -> Builder
 root = B.root
 
 
-float : Axis -> Float -> B.Builder ()
+float : Axis -> Float -> Builder
 float axis current = B.float axis current <| always ()
 
 
-int : { min: Int, max : Int, step : Int } -> Int -> B.Builder ()
+int : { min: Int, max : Int, step : Int } -> Int -> Builder
 int axis current = B.int axis current <| always ()
 
 
-number : Axis -> Float -> B.Builder ()
+number : Axis -> Float -> Builder
 number = float
 
 
-xy : ( Axis, Axis ) -> ( Float, Float ) -> B.Builder ()
+xy : ( Axis, Axis ) -> ( Float, Float ) -> Builder
 xy xAxis yAxis = B.xy xAxis yAxis <| always ()
 
 
-coord : ( Axis, Axis ) -> ( Float, Float ) -> B.Builder ()
+coord : ( Axis, Axis ) -> ( Float, Float ) -> Builder
 coord = xy
 
 
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> B.Builder ()
+input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Builder
 input toString fromString current = B.input toString fromString current <| always ()
 
 
-text : String -> B.Builder ()
+text : String -> Builder
 text default = B.text default <| always ()
 
 
-color : Color -> B.Builder ()
+color : Color -> Builder
 color current = B.color current <| always ()
 
 
-button : B.Builder ()
+button : Builder
 button = B.button <| always ()
 
 
-buttonWith : Icon -> B.Builder ()
-buttonWith icon = B.buttonWith icon <| always ()
+buttonWith : Icon -> Builder
+buttonWith icon_ = B.buttonWith icon_ <| always ()
 
 
-toggle : Bool -> B.Builder ()
+toggle : Bool -> Builder
 toggle current = B.toggle current <| always ()
 
 
-bool : Bool -> B.Builder ()
+bool : Bool -> Builder
 bool = toggle
 
 
-nest : PanelShape -> CellShape -> B.Set () -> B.Builder ()
+nest : PanelShape -> CellShape -> Set -> Builder
 nest = B.nest
 
 
@@ -92,7 +98,7 @@ choice
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> B.Builder ()
+    -> Builder
 choice pShape cShape toLabel items current compare =
     B.choice pShape cShape toLabel items current compare <| always ()
 
@@ -104,7 +110,7 @@ choiceIcons
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> B.Builder ()
+    -> Builder
 choiceIcons pShape cShape toLabel items current compare =
     B.choiceIcons pShape cShape toLabel items current compare <| always ()
 
@@ -115,7 +121,7 @@ choiceAuto
     -> ( comparable -> Label )
     -> List comparable
     -> comparable
-    -> B.Builder ()
+    -> Builder
 choiceAuto pShape cShape toLabel items current =
     B.choiceAuto pShape cShape toLabel items current <| always ()
 
@@ -124,7 +130,7 @@ choiceAuto pShape cShape toLabel items current =
 strings
      : List String
     -> String
-    -> B.Builder ()
+    -> Builder
 strings options current =
     B.strings options current <| always ()
 
@@ -134,7 +140,7 @@ labels
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> B.Builder ()
+    -> Builder
 labels toLabel items current compare =
     B.labels toLabel items current compare <| always ()
 
@@ -143,7 +149,7 @@ labelsAuto
      : ( comparable -> Label )
     -> List comparable
     -> comparable
-    -> B.Builder ()
+    -> Builder
 labelsAuto toLabel items current =
     B.labelsAuto toLabel items current <| always ()
 
@@ -152,6 +158,10 @@ palette
      : PanelShape
     -> List Color
     -> Color
-    -> B.Builder ()
+    -> Builder
 palette shape options current =
     B.palette shape options current <| always ()
+
+
+icon : String -> Icon
+icon = Icon

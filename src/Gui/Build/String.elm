@@ -25,63 +25,69 @@ import Gui.Control.XY exposing (xyToString, xyFromString)
 import Gui.Control.Nest exposing (Form(..), ItemId)
 
 
-none : B.Builder String
+type alias Builder = B.Builder String
+
+
+type alias Set = B.Set String
+
+
+none : Builder
 none = B.none
 
 
-root : B.Set String -> B.Builder String
+root : Set -> Builder
 root = B.root
 
 
-float : Axis -> Float -> B.Builder String
+float : Axis -> Float -> Builder
 float axis current = B.float axis current <| String.fromFloat
 
 
-int : { min: Int, max : Int, step : Int } -> Int -> B.Builder String
+int : { min: Int, max : Int, step : Int } -> Int -> Builder
 int axis current = B.int axis current <| String.fromInt
 
 
-number : Axis -> Float -> B.Builder String
+number : Axis -> Float -> Builder
 number = float
 
 
-xy : ( Axis, Axis ) -> ( Float, Float ) -> B.Builder String
+xy : ( Axis, Axis ) -> ( Float, Float ) -> Builder
 xy xAxis yAxis = B.xy xAxis yAxis xyToString
 
 
-coord : ( Axis, Axis ) -> ( Float, Float ) -> B.Builder String
+coord : ( Axis, Axis ) -> ( Float, Float ) -> Builder
 coord = xy
 
 
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> B.Builder String
+input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Builder
 input toString fromString current = B.input toString fromString current toString
 
 
-text : String -> B.Builder String
+text : String -> Builder
 text default = B.text default identity
 
 
-color : Color -> B.Builder String
+color : Color -> Builder
 color current = B.color current Color.toCssString
 
 
-button : B.Builder String
+button : Builder
 button = B.button <| always ""
 
 
-buttonWith : Icon -> B.Builder String
-buttonWith icon = B.buttonWith icon <| always ""
+buttonWith : Icon -> Builder
+buttonWith icon_ = B.buttonWith icon_ <| always ""
 
 
-toggle : Bool -> B.Builder String
+toggle : Bool -> Builder
 toggle current = B.toggle current (boolToToggle >> toggleToString)
 
 
-bool : Bool -> B.Builder String
+bool : Bool -> Builder
 bool = toggle
 
 
-nest : PanelShape -> CellShape -> B.Set String -> B.Builder String
+nest : PanelShape -> CellShape -> Set -> Builder
 nest = B.nest
 
 
@@ -92,7 +98,7 @@ choice
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> B.Builder String
+    -> Builder
 choice pShape cShape toLabel items current compare =
     B.choice pShape cShape toLabel items current compare toLabel
 
@@ -104,7 +110,7 @@ choiceIcons
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> B.Builder String
+    -> Builder
 choiceIcons pShape cShape toLabel items current compare =
     B.choiceIcons pShape cShape toLabel items current compare (toLabel >> Tuple.first)
 
@@ -115,7 +121,7 @@ choiceAuto
     -> ( comparable -> Label )
     -> List comparable
     -> comparable
-    -> B.Builder String
+    -> Builder
 choiceAuto pShape cShape toLabel items current =
     B.choiceAuto pShape cShape toLabel items current toLabel
 
@@ -124,7 +130,7 @@ choiceAuto pShape cShape toLabel items current =
 strings
      : List String
     -> String
-    -> B.Builder String
+    -> Builder
 strings options current =
     B.strings options current identity
 
@@ -134,7 +140,7 @@ labels
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> B.Builder String
+    -> Builder
 labels toLabel items current compare =
     B.labels toLabel items current compare toLabel
 
@@ -143,7 +149,7 @@ labelsAuto
      : ( comparable -> Label )
     -> List comparable
     -> comparable
-    -> B.Builder String
+    -> Builder
 labelsAuto toLabel items current =
     B.labelsAuto toLabel items current toLabel
 
@@ -152,6 +158,10 @@ palette
      : PanelShape
     -> List Color
     -> Color
-    -> B.Builder String
+    -> Builder
 palette shape options current =
     B.palette shape options current Color.toCssString
+
+
+icon : String -> Icon
+icon = Icon

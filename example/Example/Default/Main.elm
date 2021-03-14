@@ -14,22 +14,13 @@ import Gui.Build as Gui
 
 import Example.Default.Gui
 import Example.Default.Model exposing (..)
-import Example.Default.Model as Model exposing (init)
+import Example.Default.Model as Model
 import Example.Default.Msg exposing (..)
 
 
 init : ( Model, Cmd Msg )
 init =
-    (
-        { int = 0
-        , float = 0.0
-        , string = "foobar"
-        , choice = A
-        , color = Color.rgb255 255 194 0
-        , toggle = False
-        , xy = ( 0, 0 )
-        , buttonPressed = C
-        }
+    ( Model.default
     , Cmd.none
     )
 

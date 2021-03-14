@@ -17,7 +17,7 @@ import Example.Goose.Gui as ExampleGui
 
 
 {-
--- Change to a more boring example
+-- Change to `Default` example
 -- by just commenting out `.Goose` imports above
 -- and removing the comment here
 import Example.Default.Main as Example

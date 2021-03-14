@@ -64,9 +64,10 @@ for model =
             ( "boots on"
             ,
                 Gui.toggle
-                    (case model.shoes of
-                        None -> False
-                        Boots -> True
+                    (
+                        case model.shoes of
+                            None -> False
+                            Boots -> True
                     )
                     (\v -> ChangeShoes <| if v then Boots else None)
             )
