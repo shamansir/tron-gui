@@ -15,32 +15,6 @@ type alias Model =
     }
 
 
-init : Model
-init =
-    { honk =
-        ( True
-        ,
-            { text = "CAI!"
-            , size = 36
-            , position = ( 0, 0 )
-            , color = Color.black
-            }
-        )
-    , eye =
-        EyeConfig ( 0, 0 ) 5
-    , lookAt = Left
-    , shoes = None
-    , punk = False
-    , colors =
-        { feathers = Color.rgb255 236 41 123 -- #ec297b
-        , skin = Color.rgb255 253 182 13 -- #fdb60d
-        , eye = Color.black
-        , background = Color.gray -- Color.white
-        , iroquois = Color.black
-        }
-    }
-
-
 type alias HonkConfig =
     { text : String
     , size : Int
@@ -71,4 +45,30 @@ type alias Colors =
     , eye : Color
     , background : Color
     , iroquois : Color
+    }
+
+
+default : Model
+default =
+    { honk =
+        ( True
+        ,
+            { text = "CAI!"
+            , size = 36
+            , position = ( 0, 0 )
+            , color = Color.black
+            }
+        )
+    , eye =
+        EyeConfig ( 0, 0 ) 5
+    , lookAt = Left
+    , shoes = None
+    , punk = False
+    , colors =
+        { feathers = Color.rgb255 236 41 123 -- #ec297b
+        , skin = Color.rgb255 253 182 13 -- #fdb60d
+        , eye = Color.black
+        , background = Color.gray -- Color.white
+        , iroquois = Color.black
+        }
     }

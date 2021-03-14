@@ -1,4 +1,4 @@
-module Example.Default.Main exposing (view, update)
+module Example.Default.Main exposing (init, view, update, subscriptions)
 
 
 import Browser
@@ -18,9 +18,25 @@ import Example.Default.Model as Model exposing (init)
 import Example.Default.Msg exposing (..)
 
 
-update : Msg -> Model -> Model
+init : ( Model, Cmd Msg )
+init =
+    (
+        { int = 0
+        , float = 0.0
+        , string = "foobar"
+        , choice = A
+        , color = Color.rgb255 255 194 0
+        , toggle = False
+        , xy = ( 0, 0 )
+        , buttonPressed = C
+        }
+    , Cmd.none
+    )
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    ( case msg of
         NoOp -> model
         ChangeInt int -> { model | int = int }
         ChangeFloat float -> { model | float = float }
@@ -63,6 +79,8 @@ update msg model =
         Choose choice -> { model | choice = choice }
         Switch to -> { model | toggle = to }
         Pressed choice -> { model | buttonPressed = choice }
+    , Cmd.none
+    )
 
 
 view : Model -> Html msg
@@ -85,5 +103,5 @@ view model =
         ]
 
 
-
-
+subscriptions : Model -> Sub Msg
+subscriptions _ = Sub.none

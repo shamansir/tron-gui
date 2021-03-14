@@ -23,19 +23,6 @@ type alias Model =
     }
 
 
-init : Model
-init =
-    { int = 0
-    , float = 0.0
-    , string = "foobar"
-    , choice = A
-    , color = Color.rgb255 255 194 0
-    , toggle = False
-    , xy = ( 0, 0 )
-    , buttonPressed = C
-    }
-
-
 compareChoices : Choice -> Choice -> Bool
 compareChoices cA cB =
     case ( cA, cB ) of

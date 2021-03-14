@@ -1,4 +1,4 @@
-module Example.Goose.Gui exposing (..)
+module Example.Goose.Gui exposing (for)
 
 
 import Gui exposing (Gui)
@@ -93,7 +93,7 @@ honkGui config =
                 Gui.text
                     (String.fromInt <| config.size)
                     (String.toInt
-                        >> Maybe.withDefault (init.honk |> Tuple.second |> .size)
+                        >> Maybe.withDefault (default.honk |> Tuple.second |> .size)
                         >> ChangeHonkTextSize)
             )
         ,

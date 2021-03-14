@@ -1,11 +1,20 @@
-module Example.Goose.Main exposing (..)
+module Example.Goose.Main exposing (init, view, update, subscriptions)
 
 
+import Color
 import Svg exposing (Svg)
 
 import Example.Goose.Model exposing (..)
-import Example.Goose.View as V exposing (view)
+import Example.Goose.Model as Model
+import Example.Goose.View as V
 import Example.Goose.Msg exposing (..)
+
+
+init : ( Model, Cmd Msg )
+init =
+    ( Model.default
+    , Cmd.none
+    )
 
 
 view : Model -> Svg msg
@@ -61,3 +70,6 @@ update msg model =
     , Cmd.none
     )
 
+
+subscriptions : Model -> Sub Msg
+subscriptions _ = Sub.none
