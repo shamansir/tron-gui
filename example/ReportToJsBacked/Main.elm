@@ -1,4 +1,4 @@
-port module ReportToJsAndStore.Main exposing (..)
+port module ReportToJsBacked.Main exposing (..)
 
 
 import Gui.Style.Theme as Theme
