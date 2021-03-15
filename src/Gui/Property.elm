@@ -194,35 +194,43 @@ unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
+-- `replace` -- find better name
 replace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
-replace = replaceWithPath <| always identity
+replace = replaceMap <| always identity
 
 
-replaceWithPath
+replaceWithLabeledPath
+    : (LabelPath -> Property msg -> Property msg) -> Property msg -> Property msg
+replaceWithLabeledPath =
+    replaceWithLabeledPathMap <| always identity
+
+
+-- aren't `...Map` functions are compositions like `replace << map`?
+replaceMap
     :  (Path -> msgA -> msgB)
     -> (Path -> Property msgB -> Property msgB)
     -> Property msgA
     -> Property msgB
-replaceWithPath msgMap f =
-    replaceWithPaths (Tuple.first >> msgMap) (Tuple.first >> f)
+replaceMap msgMap f =
+    replaceWithPathsMap (Tuple.first >> msgMap) (Tuple.first >> f)
 
 
-replaceWithLabeledPath
+replaceWithLabeledPathMap
     :  (LabelPath -> msgA -> msgB)
     -> (LabelPath -> Property msgB -> Property msgB)
     -> Property msgA
     -> Property msgB
-replaceWithLabeledPath msgMap f =
-    replaceWithPaths (Tuple.second >> msgMap) (Tuple.second >> f)
+replaceWithLabeledPathMap msgMap f =
+    replaceWithPathsMap (Tuple.second >> msgMap) (Tuple.second >> f)
 
 
-replaceWithPaths
+replaceWithPathsMap
     :  (( Path, LabelPath ) -> msgA -> msgB)
     -> (( Path, LabelPath ) -> Property msgB -> Property msgB)
     -> Property msgA
     -> Property msgB
-replaceWithPaths msgMap f root =
-    -- FIXME: should be just another `fold` actually
+replaceWithPathsMap msgMap f root =
+    -- FIXME: should be just another `fold` actually?
 
     let
 
@@ -304,17 +312,17 @@ addPathFrom from root =
 
 addPath : Property msg -> Property ( Path, msg )
 addPath =
-    replaceWithPath (Tuple.pair) (always identity)
+    replaceMap (Tuple.pair) (always identity)
 
 
 addLabeledPath : Property msg -> Property ( LabelPath, msg )
 addLabeledPath =
-    replaceWithLabeledPath (Tuple.pair) (always identity)
+    replaceWithLabeledPathMap (Tuple.pair) (always identity)
 
 
 addPaths : Property msg -> Property ( ( Path, LabelPath ), msg )
 addPaths =
-    replaceWithPaths (Tuple.pair) (always identity)
+    replaceWithPathsMap (Tuple.pair) (always identity)
 
 
 updateAt : Path -> (Property msg -> Property msg) -> Property msg -> Property msg
@@ -398,6 +406,9 @@ executeAt path root =
 
 
 
+-- TODO: make `Control` decide what transient state is:
+-- it is smth that should be kept when the value is replaced,
+-- but structure is not affected (i.e. `Form` for the nests)
 loadTransientState : Property msg -> TransientState
 loadTransientState prop =
     ( loadExpanded prop

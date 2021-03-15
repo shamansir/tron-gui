@@ -1,4 +1,4 @@
-port module ReportToJsString.Main exposing (main)
+module ReportToJsAndStore.Main exposing (..)
 
 
 import Html
@@ -9,28 +9,34 @@ import Gui.Option as Option
 import Gui.WithGui as WithGui exposing (ProgramWithGui)
 
 
-import Example.Goose.Main as Example
-import Example.Goose.Model as Example
-import Example.Goose.Msg as Example
-import Example.Goose.Gui as ExampleGui
+import Example.Unit.Main as Example
+import Example.Unit.Model as Example
+import Example.Unit.Msg as Example
+import Example.Unit.Gui as ExampleGui
 
 
-{-
--- Change to `Default` example
--- by just commenting out `.Goose` imports above
--- and removing the comment here
-import Example.Default.Main as Example
-import Example.Default.Model as Example
-import Example.Default.Msg as Example
-import Example.Default.Gui as ExampleGui
--}
+type alias Model = Dict String String
 
+
+type alias Msg = ( String, String )
+
+
+init = ( Dict.empty, Cmd.none )
+
+
+update ( key, value ) dict = ( dict |> Dict.insert key value , Cmd.none )
+
+
+view _ = Htm.div [] []
+
+
+subscriptions _ = Sub.none
 
 
 port sendUpdate : ( String, String ) -> Cmd msg
 
 
-main : ProgramWithGui () Example.Model Example.Msg
+main : ProgramWithGui () Model Msg
 main =
     WithGui.element
         [ Option.sendStrings

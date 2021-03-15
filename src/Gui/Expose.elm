@@ -1,5 +1,7 @@
 module Gui.Expose exposing (..)
 
+
+import Dict exposing (Dict)
 import Color exposing (Color)
 import HashId exposing (HashId)
 
@@ -121,7 +123,7 @@ toExposed prop =
             )
 
 
-toStrExposed : Property msg -> Property ( ( String, String ), msg )
+toStrExposed : Property msg -> Property ( ( LabelPath, String ), msg )
 toStrExposed prop =
     prop
         |> toProxied
@@ -129,7 +131,7 @@ toStrExposed prop =
         |> Gui.Property.map
             (\(path, (proxyVal, msg)) ->
                 (
-                    ( String.join "/" path
+                    ( path
                     , ProxyValue.toString proxyVal
                     )
                     , msg
@@ -227,6 +229,145 @@ apply { path, value } prop =
                                 (Tuple.mapSecond <| apply { path = next, value = value })
                         |> Choice focus shape
                 _ -> prop
+
+
+loadValues : Dict LabelPath String -> Property msg -> Property msg
+loadValues dict prop =
+    Gui.Property.replaceWithLabeledPath
+        (\labelPath innerProp ->
+            Dict.get labelPath dict
+                |> Maybe.andThen (\strValue -> applyStringValue strValue innerProp)
+                |> Maybe.withDefault innerProp
+        )
+        prop
+
+
+applyStringValue : String -> Property msg -> Maybe (Property msg)
+applyStringValue str prop =
+    let
+        helper typeStr maybeFn =
+            str
+                |> D.decodeString (valueDecoder typeStr)
+                |> Result.toMaybe
+                |> Maybe.andThen maybeFn
+
+    in case prop of
+
+        Nil ->
+
+            helper
+                "ghost"
+                (\v ->
+                    case v of
+                        Other ->
+                            Just Nil
+                        _ -> Nothing
+                )
+
+        Number control ->
+
+            helper
+                "slider"
+                (\v ->
+                    case v of
+                        FromSlider n ->
+                            control
+                                |> Control.setValue n
+                                |> Number
+                                |> Just
+                        _ -> Nothing
+                )
+
+        Coordinate control ->
+
+            helper
+                "xy"
+                (\v ->
+                    case v of
+                        FromXY n ->
+                            control
+                                |> Control.setValue n
+                                |> Coordinate
+                                |> Just
+
+                        _ -> Nothing
+                )
+
+        Text control ->
+
+            helper
+                "text"
+                (\v ->
+                    case v of
+                        FromInput n ->
+                            control
+                                |> Text.updateText n
+                                |> Text
+                                |> Just
+
+                        _ -> Nothing
+                )
+
+        Color control ->
+
+            helper
+                "color"
+                (\v ->
+                    case v of
+                        FromColor n ->
+                            control
+                                |> Control.setValue n
+                                |> Color
+                                |> Just
+
+                        _ -> Nothing
+                )
+
+        Toggle control ->
+
+            helper
+                "toggle"
+                (\v ->
+                    case v of
+                        FromToggle n ->
+                            control
+                                |> Control.setValue n
+                                |> Toggle
+                                |> Just
+
+                        _ -> Nothing
+                )
+
+        Action control ->
+
+            helper
+                "button"
+                (\v ->
+                    case v of
+                        FromButton ->
+                            Just <| Action control
+                        _ -> Nothing
+                )
+
+        Choice focus shape control ->
+
+            helper
+                "choice"
+                (\v ->
+                    case v of
+                        FromChoice n ->
+                            control
+                                |> Nest.select n
+                                |> Choice focus shape
+                                |> Just
+                        _ -> Nothing
+                )
+
+
+        Group _ _ _ ->
+
+            Nothing
+
 
 
 encodeRawPath : RawPath -> E.Value

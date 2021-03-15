@@ -19,7 +19,7 @@ import Gui.Style.PanelShape as Shape exposing (find, rows, cols)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Gui.Control.Text exposing (TextState(..))
-import Gui.Control.Button exposing (Face(..), Icon(..))
+import Gui.Control.Button as Button  exposing (Face(..), Icon(..))
 import Gui.Control.Toggle exposing (boolToToggle, toggleToBool, toggleToString)
 import Gui.Control.XY exposing (xyToString, xyFromString)
 import Gui.Control.Nest exposing (Form(..), ItemId)
@@ -164,4 +164,4 @@ palette shape options current =
 
 
 icon : String -> Icon
-icon = Icon
+icon = Button.icon

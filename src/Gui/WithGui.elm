@@ -5,6 +5,7 @@ import Browser
 import Html exposing (Html)
 --import Either exposing (Either(..))
 import Random
+import Dict exposing (Dict)
 
 import Gui as Tron
 import Gui.Build as Builder exposing (Builder)
@@ -14,6 +15,7 @@ import Gui.Expose as Exp
 import Gui.Option exposing (..)
 import Gui.Msg exposing (Msg_(..))
 import Gui.Detach as Detach
+import Gui.Property as Property exposing (LabelPath)
 
 
 type alias ProgramWithGui flags model msg =
@@ -233,4 +235,44 @@ element options def =
             subscriptions def.subscriptions options
         , update =
             update ( def.update, def.for ) options
+        }
+
+
+stored
+    :  List (Option ( LabelPath, String ))
+    -> Builder ()
+    -> ProgramWithGui () (Dict LabelPath String) ( LabelPath, String )
+stored options tree =
+    let
+
+        tree_ : Builder ( LabelPath, String )
+        tree_ = tree |> Exp.toStrExposed |> Property.map Tuple.first
+
+        for_ : Dict LabelPath String -> Builder ( LabelPath, String )
+        for_ dict = tree_ |> Exp.loadValues dict
+
+        init_ : () -> ( Dict LabelPath String, Cmd ( LabelPath, String ) )
+        init_ _ = ( Dict.empty, Cmd.none )
+
+        update_
+            :  ( LabelPath, String )
+            -> Dict LabelPath String
+            -> ( Dict LabelPath String, Cmd ( LabelPath, String ) )
+        update_ (path, val) dict = ( dict |> Dict.insert path val, Cmd.none )
+
+        view_ : Dict LabelPath String -> Html ( LabelPath, String )
+        view_ _ = Html.div [] []
+
+
+        subscriptions_ : Dict LabelPath String -> Sub ( LabelPath, String )
+        subscriptions_ _ = Sub.none
+
+    in
+    element
+        options
+        { for = for_
+        , init = init_
+        , update = update_
+        , view = view_
+        , subscriptions = subscriptions_
         }

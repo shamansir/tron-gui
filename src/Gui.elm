@@ -2,8 +2,8 @@ module Gui exposing
     ( Gui
     , view, update, init, subscriptions, run, Msg
     , map, over, use
-    , encode, toExposed --, applyRaw, initRaw
     , dock, reshape
+    , encode, toExposed
     )
 
 
@@ -93,6 +93,7 @@ import Color
 import Browser.Events as Browser
 import Html exposing (Html)
 import Json.Encode as E
+import Dict exposing (Dict)
 
 import BinPack exposing (Bounds)
 import Size exposing (..)

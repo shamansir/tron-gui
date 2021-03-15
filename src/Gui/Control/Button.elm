@@ -18,3 +18,5 @@ type Face
 type alias Control msg = Core.Control Face () msg
 
 
+icon : String -> Icon
+icon = Icon

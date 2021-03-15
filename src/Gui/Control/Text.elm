@@ -26,4 +26,4 @@ finishEditing =
 updateText : String -> Control msg -> Control msg
 updateText newValue =
     update
-        <| \(s, v) -> ( s, newValue )
+        <| \(s, _) -> ( s, newValue )
