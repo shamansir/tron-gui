@@ -27,8 +27,8 @@ type PortCommunication msg
     | Detachable
         { toUrl : Detach.ClientId -> Path -> Maybe Detach.LocalUrl
         , ack : Exp.Ack -> Cmd msg
-        , send : Exp.RawUpdate -> Cmd msg
-        , receive : ((Exp.RawUpdate -> Msg_) -> Sub Msg_)
+        , transmit : Exp.RawUpdate -> Cmd msg
+        --, receive : ((Exp.RawUpdate -> msg) -> Sub msg)
         }
     | DatGui {}
 
@@ -37,6 +37,34 @@ type PortCommunication msg
 type Option msg
     = RenderTo RenderTarget
     | Ports (PortCommunication msg)
+
+
+map : (a -> b) -> Option a -> Option b
+map f opt =
+    case opt of
+        RenderTo target -> RenderTo target
+        Ports NoCommunication -> Ports NoCommunication
+        Ports (SendJson { ack, transmit }) ->
+            SendJson
+                { ack = ack >> Cmd.map f
+                , transmit = transmit >> Cmd.map f
+                }
+                |> Ports
+        Ports (SendStrings { transmit }) ->
+            SendStrings
+                { transmit = transmit >> Cmd.map f
+                }
+                |> Ports
+        Ports (Detachable d) ->
+            Detachable
+                { ack = d.ack >> Cmd.map f
+                , transmit = d.transmit >> Cmd.map f
+                --, receive = d.receive >> Sub.map f
+                , toUrl = d.toUrl
+                }
+                |> Ports
+        Ports (DatGui d) ->
+            Ports <| DatGui d
 
 
 {- This is the only function you need to make your `GUI` _detachable*_. However, this function requires some ports to be present as an argument, so you'll need a pair of ports as well. And a WebSocket server. But that's it!

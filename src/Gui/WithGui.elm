@@ -239,7 +239,7 @@ element options def =
 
 
 stored
-    :  List (Option ( LabelPath, String ))
+    :  List (Option cmd)
     -> Builder ()
     -> ProgramWithGui () (Dict LabelPath String) ( LabelPath, String )
 stored options tree =
@@ -269,7 +269,7 @@ stored options tree =
 
     in
     element
-        options
+        (options |> List.map (Gui.Option.map <| always ( [], "")))
         { for = for_
         , init = init_
         , update = update_
