@@ -11,10 +11,6 @@ import Gui.Style.PanelShape exposing (..)
 import Gui.Style.CellShape exposing (..)
 
 
-import Example.Unit.Model exposing (..)
-import Example.Unit.Msg exposing (..)
-
-
 type Choice = A | B | C | D
 
 
@@ -22,47 +18,58 @@ choices : List Choice
 choices = [ A, B, C, D ]
 
 
-for : Model -> Gui.Builder
-for model =
+gui : Gui.Builder
+gui =
     Gui.root
         [ ( "ghost", Gui.none )
-        , ( "int",
-                Gui.int
+        ,
+            ( "int"
+            , Gui.int
                     { min = -20, max = 20, step = 5 }
-                    0 )
-        , ( "float",
-                Gui.float
-                    { min = -10.5, max = 10.5, step = 0.5 }
-                    0.0 )
-        , ( "xy",
+                    0
+            )
+        ,
+            ( "float"
+            , Gui.float
+                { min = -10.5, max = 10.5, step = 0.5 }
+                0.0
+            )
+        ,
+            ( "xy",
                 Gui.xy
                     ( { min = -20, max = 20, step = 5 }
                     , { min = -20, max = 20, step = 5 }
                     )
-                    ( 0, 0) )
-        , ( "text",
-                Gui.text "foobar" )
-        , ( "color",
+                    ( 0, 0 )
+            )
+        ,
+            ( "text"
+            , Gui.text "foobar"
+            )
+        ,
+            ( "color",
                 Gui.color
-                    <| Color.rgb255 255 194 0 )
-        , ( "choice",
+                    <| Color.rgb255 255 194 0
+            )
+        ,
+            ( "choice",
                 Gui.choice
                     ( cols 1 )
                     single
                     choiceToLabel
                     choices
                     A
-                    compareChoices )
-        , ( "nest",
-                nestedButtons C
-                -- allControlsNest model
-          )
-        , ( "button",
-                Gui.buttonWith (Gui.icon "export")
-          )
-        , ( "toggle",
-                Gui.toggle False
-          )
+                    compareChoices
+            )
+        ,
+            ( "nest", nestedButtons C )
+        ,
+            ( "button"
+            , Gui.buttonWith (Gui.icon "export")
+            )
+
+        ,
+            ( "toggle", Gui.toggle False )
         ]
 
 

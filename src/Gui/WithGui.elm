@@ -238,33 +238,42 @@ element options def =
         }
 
 
-stored
+type alias BackedStorage = Dict LabelPath String
+
+
+type alias BackedMsg = ( LabelPath, String ) -- message is just key & value to put in the dict
+
+
+type alias BackedWithGui = ProgramWithGui () BackedStorage BackedMsg
+
+
+backed
     :  List (Option cmd)
     -> Builder ()
-    -> ProgramWithGui () (Dict LabelPath String) ( LabelPath, String )
-stored options tree =
+    -> BackedWithGui
+backed options tree =
     let
 
-        tree_ : Builder ( LabelPath, String )
+        tree_ : Builder BackedMsg
         tree_ = tree |> Exp.toStrExposed |> Property.map Tuple.first
 
-        for_ : Dict LabelPath String -> Builder ( LabelPath, String )
+        for_ : BackedStorage -> Builder BackedMsg
         for_ dict = tree_ |> Exp.loadValues dict
 
-        init_ : () -> ( Dict LabelPath String, Cmd ( LabelPath, String ) )
+        init_ : () -> ( BackedStorage, Cmd BackedMsg )
         init_ _ = ( Dict.empty, Cmd.none )
 
         update_
-            :  ( LabelPath, String )
-            -> Dict LabelPath String
-            -> ( Dict LabelPath String, Cmd ( LabelPath, String ) )
+            :  BackedMsg
+            -> BackedStorage
+            -> ( BackedStorage, Cmd BackedMsg )
         update_ (path, val) dict = ( dict |> Dict.insert path val, Cmd.none )
 
-        view_ : Dict LabelPath String -> Html ( LabelPath, String )
+        view_ : BackedStorage -> Html BackedMsg
         view_ _ = Html.div [] []
 
 
-        subscriptions_ : Dict LabelPath String -> Sub ( LabelPath, String )
+        subscriptions_ : BackedStorage -> Sub BackedMsg
         subscriptions_ _ = Sub.none
 
     in
