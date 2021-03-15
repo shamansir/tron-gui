@@ -267,7 +267,7 @@ backed options tree =
             :  BackedMsg
             -> BackedStorage
             -> ( BackedStorage, Cmd BackedMsg )
-        update_ (path, val) dict = ( dict |> Dict.insert path val, Cmd.none )
+        update_ (path, val) dict = ( dict |> Dict.insert path val |> Debug.log "", Cmd.none )
 
         view_ : BackedStorage -> Html BackedMsg
         view_ _ = Html.div [] []
