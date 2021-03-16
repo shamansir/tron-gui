@@ -30,14 +30,16 @@ type PortCommunication msg
         , ack : Exp.Ack -> Cmd msg
         , transmit : Exp.RawUpdate -> Cmd msg
         , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
+        --, receive : Sub Exp.RawUpdate
         }
     | DatGui
         { ack : Exp.RawProperty -> Cmd msg
         , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
+        --, receive : Sub Exp.RawUpdate
         }
 
 
-mapPorts : (msgA -> msgB) -> PortCommunication msgA -> PortCommunication msgB
+{- mapPorts : (msgA -> msgB) -> PortCommunication msgA -> PortCommunication msgB
 mapPorts f ports =
     case ports of
         NoCommunication -> NoCommunication
@@ -54,11 +56,11 @@ mapPorts f ports =
             Detachable
                 { ack = d.ack >> Cmd.map f
                 , transmit = d.transmit >> Cmd.map f
-                , receive = d.receive >> Sub.map f
+                , receive = (d.receive << Sub.map f)
                 , toUrl = d.toUrl
                 }
         DatGui d ->
-            DatGui d
+            DatGui d -}
 
 
 
@@ -106,6 +108,7 @@ withDatGui
     :
         { ack : Exp.RawProperty -> Cmd msg
         , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
+        --, receive : Sub Exp.RawUpdate
         }
     -> PortCommunication msg
 withDatGui = DatGui

@@ -63,24 +63,10 @@ main : ProgramWithGui () Model Msg
 main =
     WithGui.element
         (Option.toHtml Dock.middleRight Theme.dark)
-        (Option.sendJson
-                { ack = initGui
-                , transmit = sendUpdate
-                }
-        )
-        { for = ExampleGui.for
-        , init = always Example.init
-        , view = always <| Html.div [] [] -- Example.view
-        , update = Example.update
-        , subscriptions = always Sub.none
-        }
-
-    WithGui.element
-        [ Option.appearance Dock.middleLeft Theme.dark
-        ]
+        Option.noCommunication
         { for = for
         , init = init
         , view = view
-        , subscriptions = subscriptions
         , update = update
+        , subscriptions = subscriptions
         }

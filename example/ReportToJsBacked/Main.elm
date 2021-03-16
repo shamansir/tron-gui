@@ -17,10 +17,7 @@ main : BackedWithGui
 main =
     WithGui.backed
         (Option.toHtml Dock.middleRight Theme.dark)
-        (Option.sendStrings
-            { transmit = sendUpdate
-            }
-        )
+        sendUpdate
         ExampleGui.gui
 
 

@@ -251,10 +251,10 @@ type alias BackedWithGui = ProgramWithGui () BackedStorage BackedMsg
 
 backed
     :  RenderTarget
-    -> PortCommunication msg
+    -> (( String, String ) -> Cmd msg)
     -> Builder ()
     -> BackedWithGui
-backed renderTarget ports tree =
+backed renderTarget transmit tree =
     let
 
         tree_ : Builder BackedMsg
@@ -282,7 +282,10 @@ backed renderTarget ports tree =
     in
     element
         renderTarget
-        (ports |> (Gui.Option.mapPorts <| always ( [], "")))
+        (SendStrings
+            { transmit = transmit >> Cmd.map (always ([], ""))
+            }
+        )
         { for = for_
         , init = init_
         , update = update_

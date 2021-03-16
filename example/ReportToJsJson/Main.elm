@@ -43,9 +43,9 @@ main =
     WithGui.element
         (Option.toHtml Dock.middleRight Theme.dark)
         (Option.sendJson
-                { ack = initGui
-                , transmit = sendUpdate
-                }
+            { ack = initGui
+            , transmit = sendUpdate
+            }
         )
         { for = ExampleGui.for
         , init = always Example.init
