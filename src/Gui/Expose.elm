@@ -15,6 +15,7 @@ import Gui.Control as Control exposing (..)
 import Gui.Control.Nest as Nest exposing (Form(..))
 import Gui.Control.Text as Text exposing (TextState(..))
 import Gui.Control.Toggle as Toggle exposing (ToggleState(..))
+import Gui.Control.XY as XY
 import Gui.Path as Path exposing (Path, toList)
 import Gui.Property exposing (..)
 import Gui.ProxyValue as ProxyValue exposing (ProxyValue(..))
@@ -601,7 +602,7 @@ encodeAck maybeClient =
                        ( "slider", E.float val )
                    Coordinate ( Control _ ( x, y ) _ ) ->
                        ( "xy"
-                       , E.string <| String.fromFloat x ++ "|" ++ String.fromFloat y
+                       , E.string <| String.fromFloat x ++ XY.separator ++ String.fromFloat y
                        )
                    Text ( Control _ ( _, val ) _ ) ->
                        ( "text", E.string val )
@@ -715,7 +716,7 @@ fromString type_ str =
                 |> Result.mapError D.errorToString
 
         "xy" ->
-            case str |> String.split "|" of
+            case str |> String.split XY.separator of
                 v1 :: v2 :: _ ->
                     Maybe.map2
                         Tuple.pair
@@ -787,7 +788,7 @@ decodeCoord =
     D.string
         |> D.andThen
             (\str ->
-                case str |> String.split "|" of
+                case str |> String.split XY.separator of
                     v1 :: v2 :: _ ->
                         Maybe.map2
                             Tuple.pair

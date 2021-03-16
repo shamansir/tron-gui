@@ -12,6 +12,7 @@ import Json.Encode as E
 import Color exposing (Color)
 import Gui.Control.Nest exposing (ItemId)
 import Gui.Control.Toggle exposing (ToggleState, toggleToBool, toggleToString)
+import Gui.Control.XY as XY
 
 
 type ProxyValue
@@ -58,7 +59,7 @@ toString v =
         FromSlider f ->
             String.fromFloat f
         FromXY ( x, y ) ->
-            String.fromFloat x ++ ":" ++ String.fromFloat y
+            String.fromFloat x ++ XY.separator ++ String.fromFloat y
         FromInput t ->
             t
         FromChoice i ->
