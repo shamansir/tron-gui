@@ -8,6 +8,7 @@ import Dict exposing (Dict)
 import HashId exposing (HashId)
 import Json.Decode as D
 import Json.Encode as E
+import Color.Convert as Color
 
 
 import Gui.Control as Control exposing (..)
@@ -280,9 +281,7 @@ applyStringValue str prop =
     let
         helper typeStr maybeFn =
             str
-                |> Debug.log "str"
                 |> fromString typeStr
-                |> Debug.log "aaa"
                 |> Result.toMaybe
                 |> Maybe.andThen maybeFn
     in
@@ -732,19 +731,7 @@ fromString type_ str =
             Ok <| FromInput str
 
         "color" ->
-            case String.split "," str of
-                    r :: g :: b :: a :: _ ->
-                        Maybe.map4
-                            Color.rgba
-                            (String.toFloat r)
-                            (String.toFloat g)
-                            (String.toFloat b)
-                            (String.toFloat a)
-                            |> Maybe.map (FromColor >> Ok)
-                            |> Maybe.withDefault (Err <| "failed to parse color: " ++ str)
-
-                    _ ->
-                        Err <| "failed to parse color: " ++ str
+            Color.hexToColor str |> Result.map FromColor
 
         "choice" ->
             str
@@ -779,13 +766,8 @@ fromPort portUpdate =
 
 
 encodeColor : Color -> E.Value
-encodeColor color =
-    E.string <|
-        case Color.toRgba color of
-            { red, green, blue, alpha } ->
-                [ red, green, blue, alpha ]
-                    |> List.map String.fromFloat
-                    |> String.join ","
+encodeColor =
+    E.string << Color.colorToHexWithAlpha
 
 
 decodeColor : D.Decoder Color
@@ -793,19 +775,10 @@ decodeColor =
     D.string
         |> D.andThen
             (\str ->
-                case String.split "," str of
-                    r :: g :: b :: a :: _ ->
-                        Maybe.map4
-                            Color.rgba
-                            (String.toFloat r)
-                            (String.toFloat g)
-                            (String.toFloat b)
-                            (String.toFloat a)
-                            |> Maybe.map D.succeed
-                            |> Maybe.withDefault (D.fail <| "failed to parse color: " ++ str)
-
-                    _ ->
-                        D.fail <| "failed to parse color: " ++ str
+                str
+                    |> Color.hexToColor
+                    |> Result.map D.succeed
+                    |> Result.withDefault (D.fail <| "failed to parse color: " ++ str)
             )
 
 

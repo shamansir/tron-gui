@@ -66,6 +66,7 @@ However, it is ok to use any name you like, for sure. Be it `Gui.` or `Def.` or 
 
 import Array
 import Color exposing (Color)
+import Color.Convert as Color
 import Axis exposing (Axis)
 
 import Gui.Control exposing (..)
@@ -671,7 +672,7 @@ palette shape options current =
     choiceHelper
         ( shape, CS.half )
         (\callByIndex index val ->
-            ( Color.toCssString val
+            ( Color.colorToHexWithAlpha val
             , buttonByFace (WithColor val) <| always <| callByIndex index
             )
         )

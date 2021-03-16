@@ -2,6 +2,7 @@ module Gui.ProxyValue exposing (..)
 
 
 import Color
+import Color.Convert as Color
 
 
 import Json.Decode as D
@@ -44,7 +45,7 @@ encode v =
                         , ( "green", E.float green )
                         , ( "blue", E.float blue )
                         , ( "alpha", E.float alpha )
-                        , ( "css", E.string <| Color.toCssString c )
+                        , ( "css", E.string <| Color.colorToHexWithAlpha c )
                         ]
         FromToggle t -> E.bool <| toggleToBool t
         FromButton -> E.string ""
@@ -63,7 +64,7 @@ toString v =
         FromChoice i ->
             String.fromInt i
         FromColor c ->
-            Color.toCssString c
+            Color.colorToHexWithAlpha c
         FromToggle t ->
             toggleToString t
         FromButton ->

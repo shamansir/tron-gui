@@ -5,6 +5,7 @@ import Gui.Build as B
 
 import Array
 import Color exposing (Color)
+import Color.Convert as Color
 import Axis exposing (Axis)
 
 import Gui.Control exposing (..)
@@ -192,7 +193,7 @@ palette shape options current =
     choiceHelper
         ( shape, CS.half )
         (\callByIndex index val ->
-            ( Color.toCssString val
+            ( Color.colorToHexWithAlpha val
             , B.colorButton val <| always <| callByIndex index
             )
         )

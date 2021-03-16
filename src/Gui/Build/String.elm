@@ -5,6 +5,7 @@ import Gui.Build as B
 
 import Array
 import Color exposing (Color)
+import Color.Convert as Color
 import Axis exposing (Axis)
 
 import Gui.Control exposing (..)
@@ -68,7 +69,7 @@ text default = B.text default identity
 
 
 color : Color -> Builder
-color current = B.color current Color.toCssString
+color current = B.color current Color.colorToHexWithAlpha
 
 
 button : Builder
@@ -160,7 +161,7 @@ palette
     -> Color
     -> Builder
 palette shape options current =
-    B.palette shape options current Color.toCssString
+    B.palette shape options current Color.colorToHexWithAlpha
 
 
 icon : String -> Icon
