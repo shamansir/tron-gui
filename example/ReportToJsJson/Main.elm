@@ -41,12 +41,12 @@ import Example.Unit.Gui as ExampleGui
 main : ProgramWithGui () Example.Model Example.Msg
 main =
     WithGui.element
-        [ Option.sendJson
+        (Option.toHtml Dock.middleRight Theme.dark)
+        (Option.sendJson
                 { ack = initGui
                 , transmit = sendUpdate
                 }
-        , Option.appearance Dock.middleRight Theme.dark
-        ]
+        )
         { for = ExampleGui.for
         , init = always Example.init
         , view = always <| Html.div [] [] -- Example.view

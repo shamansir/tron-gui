@@ -33,11 +33,11 @@ port sendUpdate : ( String, String ) -> Cmd msg
 main : ProgramWithGui () Example.Model Example.Msg
 main =
     WithGui.element
-        [ Option.sendStrings
+        (Option.toHtml Dock.middleRight Theme.dark)
+        (Option.sendStrings
             { transmit = sendUpdate
             }
-        , Option.appearance Dock.middleRight Theme.dark
-        ]
+        )
         { for = ExampleGui.for
         , init = always Example.init
         , view = always <| Html.div [] [] -- Example.view

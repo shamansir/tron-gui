@@ -33,10 +33,11 @@ type WithGuiMsg msg
 
 init
     :  ( flags -> ( model, Cmd msg ), model -> Builder msg )
-    -> List (Option msg)
+    -> RenderTarget
+    -> PortCommunication msg
     -> flags
     -> ( ( model, Tron.Gui msg ), Cmd (WithGuiMsg msg) )
-init ( userInit, userFor ) options flags =
+init ( userInit, userFor ) renderTarget ports flags =
     let
         ( initialModel, userEffect ) =
             userInit flags
@@ -47,26 +48,26 @@ init ( userInit, userFor ) options flags =
     in
         (
             ( initialModel
-            , gui |> addInitOptions options
+            , gui |> addInitOptions renderTarget
             )
         , Cmd.batch
             [ userEffect |> Cmd.map ToUser
             , guiEffect |> Cmd.map ToTron
-            , performInitEffects options gui |> Cmd.map ToUser
+            , performInitEffects ports gui |> Cmd.map ToUser
             ]
         )
 
 
 view
     :  (model -> Html msg)
-    -> List (Option msg)
+    -> RenderTarget
     -> (model, Tron.Gui msg)
     -> Html (WithGuiMsg msg)
-view userView options ( model, gui ) =
+view userView renderTarget ( model, gui ) =
     Html.div
         [ ]
         [ gui
-            |> useRenderTarget options
+            |> useRenderTarget renderTarget
             |> Html.map ToTron
         , userView model
             |> Html.map ToUser
@@ -75,24 +76,24 @@ view userView options ( model, gui ) =
 
 subscriptions
     :  ( model -> Sub msg )
-    -> List (Option msg)
+    -> PortCommunication msg
     -> ( model, Tron.Gui msg )
     -> Sub (WithGuiMsg msg)
-subscriptions userSubscriptions options ( model, gui ) =
+subscriptions userSubscriptions ports ( model, gui ) =
     Sub.batch
         [ userSubscriptions model |> Sub.map ToUser
         , Tron.subscriptions gui |> Sub.map ToTron
-        , addSubscriptionsOptions options gui |> Sub.map ToUser
+        , addSubscriptionsOptions ports gui |> Sub.map ToUser
         ]
 
 
 update
     :  ( msg -> model -> (model, Cmd msg), model -> Builder msg )
-    -> List (Option msg)
+    -> PortCommunication msg
     -> WithGuiMsg msg
     -> ( model, Tron.Gui msg )
     -> ( ( model, Tron.Gui msg ), Cmd (WithGuiMsg msg) )
-update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
+update ( userUpdate, userFor ) ports withGuiMsg (model, gui) =
     case withGuiMsg of
 
         ToUser userMsg ->
@@ -160,15 +161,15 @@ update ( userUpdate, userFor ) options withGuiMsg (model, gui) =
         SendUpdate rawUpdate ->
             ( ( model, gui )
             , rawUpdate
-                |> tryTransmitting options
+                |> tryTransmitting ports
                 |> Cmd.map ToUser
             )
 
 
 
-performInitEffects : List (Option msg) -> Tron.Gui msg -> Cmd msg
-performInitEffects options gui =
-    case getCommunication options of
+performInitEffects : PortCommunication msg -> Tron.Gui msg -> Cmd msg
+performInitEffects ports gui =
+    case ports of
         SendJson { ack } ->
             gui
                 |> Tron.encode
@@ -176,9 +177,9 @@ performInitEffects options gui =
         _ -> Cmd.none
 
 
-tryTransmitting : List (Option msg) -> Exp.RawUpdate -> Cmd msg
-tryTransmitting options rawUpdate =
-    case getCommunication options of
+tryTransmitting : PortCommunication msg -> Exp.RawUpdate -> Cmd msg
+tryTransmitting ports rawUpdate =
+    case ports of
         SendJson { transmit } ->
             transmit rawUpdate
         SendStrings { transmit } ->
@@ -189,25 +190,25 @@ tryTransmitting options rawUpdate =
         _ -> Cmd.none
 
 
-addInitOptions : List (Option msg) -> Tron.Gui msg -> Tron.Gui msg
-addInitOptions options gui =
-    case getRenderTarget options of
+addInitOptions : RenderTarget -> Tron.Gui msg -> Tron.Gui msg
+addInitOptions target gui =
+    case target of
         Html dock _ -> gui |> Tron.dock dock
         Nowhere -> gui
-        Aframe -> gui
+        Aframe _ -> gui
 
 
-addSubscriptionsOptions : List (Option msg) -> Tron.Gui msg -> Sub msg
-addSubscriptionsOptions options gui =
+addSubscriptionsOptions : PortCommunication msg -> Tron.Gui msg -> Sub msg
+addSubscriptionsOptions ports gui =
     Sub.none -- FIXME:
 
 
-useRenderTarget : List (Option msg) -> Tron.Gui msg -> Html Tron.Msg
-useRenderTarget options gui =
-    case getRenderTarget options of
+useRenderTarget : RenderTarget -> Tron.Gui msg -> Html Tron.Msg
+useRenderTarget target gui =
+    case target of
         Html dock theme -> gui |> Tron.dock dock |> Tron.view theme
         Nowhere -> Html.div [] []
-        Aframe -> Html.div [] [] -- FIXME
+        Aframe _ -> Html.div [] [] -- FIXME
 
 
 nextClientId : Cmd (WithGuiMsg msg)
@@ -216,7 +217,8 @@ nextClientId =
 
 
 element
-    :   List (Option msg)
+    :  RenderTarget
+    -> PortCommunication msg
     ->
         { for : model -> Builder.Builder msg
         , init : flags -> ( model, Cmd msg )
@@ -225,16 +227,16 @@ element
         , update : msg -> model -> ( model, Cmd msg )
         }
     -> ProgramWithGui flags model msg
-element options def =
+element renderTarget ports def =
     Browser.element
         { init =
-            init ( def.init, def.for ) options
+            init ( def.init, def.for ) renderTarget ports
         , view =
-            view def.view options
+            view def.view renderTarget
         , subscriptions =
-            subscriptions def.subscriptions options
+            subscriptions def.subscriptions ports
         , update =
-            update ( def.update, def.for ) options
+            update ( def.update, def.for ) ports
         }
 
 
@@ -248,10 +250,11 @@ type alias BackedWithGui = ProgramWithGui () BackedStorage BackedMsg
 
 
 backed
-    :  List (Option cmd)
+    :  RenderTarget
+    -> PortCommunication msg
     -> Builder ()
     -> BackedWithGui
-backed options tree =
+backed renderTarget ports tree =
     let
 
         tree_ : Builder BackedMsg
@@ -278,7 +281,8 @@ backed options tree =
 
     in
     element
-        (options |> List.map (Gui.Option.map <| always ( [], "")))
+        renderTarget
+        (ports |> (Gui.Option.mapPorts <| always ( [], "")))
         { for = for_
         , init = init_
         , update = update_

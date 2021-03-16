@@ -18,9 +18,6 @@ type alias ItemId = Int
 type alias PageNum = Int
 
 
--- TODO: move focus outside, only selection matters in the component for logic
--- TODO: may be even (Shape, CellShape) should also be outside
-
 type alias GroupControl item msg =
     Core.Control
         ( Array item )

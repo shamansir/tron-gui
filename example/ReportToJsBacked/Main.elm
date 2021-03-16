@@ -16,11 +16,11 @@ port sendUpdate : ( String, String ) -> Cmd msg
 main : BackedWithGui
 main =
     WithGui.backed
-        [ Option.sendStrings
+        (Option.toHtml Dock.middleRight Theme.dark)
+        (Option.sendStrings
             { transmit = sendUpdate
             }
-        , Option.appearance Dock.middleRight Theme.dark
-        ]
+        )
         ExampleGui.gui
 
 

@@ -7,11 +7,12 @@ import Gui.Expose as Exp
 import Gui.Detach as Detach
 import Gui.Msg exposing (Msg_)
 import Gui.Path exposing (Path)
+import Gui.Msg exposing (Msg_(..))
 
 
 type RenderTarget
     = Html Dock Theme
-    | Aframe
+    | Aframe Theme
     | Nowhere
 
 
@@ -28,43 +29,37 @@ type PortCommunication msg
         { toUrl : Detach.ClientId -> Path -> Maybe Detach.LocalUrl
         , ack : Exp.Ack -> Cmd msg
         , transmit : Exp.RawUpdate -> Cmd msg
-        --, receive : ((Exp.RawUpdate -> msg) -> Sub msg)
+        , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
         }
-    | DatGui {}
+    | DatGui
+        { ack : Exp.RawProperty -> Cmd msg
+        , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
+        }
 
 
-
-type Option msg
-    = RenderTo RenderTarget
-    | Ports (PortCommunication msg)
-
-
-map : (a -> b) -> Option a -> Option b
-map f opt =
-    case opt of
-        RenderTo target -> RenderTo target
-        Ports NoCommunication -> Ports NoCommunication
-        Ports (SendJson { ack, transmit }) ->
+mapPorts : (msgA -> msgB) -> PortCommunication msgA -> PortCommunication msgB
+mapPorts f ports =
+    case ports of
+        NoCommunication -> NoCommunication
+        SendJson { ack, transmit } ->
             SendJson
                 { ack = ack >> Cmd.map f
                 , transmit = transmit >> Cmd.map f
                 }
-                |> Ports
-        Ports (SendStrings { transmit }) ->
+        SendStrings { transmit } ->
             SendStrings
                 { transmit = transmit >> Cmd.map f
                 }
-                |> Ports
-        Ports (Detachable d) ->
+        Detachable d ->
             Detachable
                 { ack = d.ack >> Cmd.map f
                 , transmit = d.transmit >> Cmd.map f
-                --, receive = d.receive >> Sub.map f
+                , receive = d.receive >> Sub.map f
                 , toUrl = d.toUrl
                 }
-                |> Ports
-        Ports (DatGui d) ->
-            Ports <| DatGui d
+        DatGui d ->
+            DatGui d
+
 
 
 {- This is the only function you need to make your `GUI` _detachable*_. However, this function requires some ports to be present as an argument, so you'll need a pair of ports as well. And a WebSocket server. But that's it!
@@ -75,54 +70,56 @@ map f opt =
     -}
 
 
+noCommunication : PortCommunication msg
+noCommunication = NoCommunication
+
+
 sendJson
     :
         { ack : Exp.RawProperty -> Cmd msg
         , transmit : Exp.RawUpdate -> Cmd msg
         }
-    -> Option msg
-sendJson = Ports << SendJson
+    -> PortCommunication msg
+sendJson = SendJson
 
 
 sendStrings
     :
         { transmit : ( String, String ) -> Cmd msg
         }
-    -> Option msg
-sendStrings = Ports << SendStrings
+    -> PortCommunication msg
+sendStrings = SendStrings
 
 
-hidden : Option msg
-hidden = RenderTo Nowhere
+detachable
+    :
+        { toUrl : Detach.ClientId -> Path -> Maybe Detach.LocalUrl
+        , ack : Exp.Ack -> Cmd msg
+        , transmit : Exp.RawUpdate -> Cmd msg
+        , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
+        }
+    -> PortCommunication msg
+detachable = Detachable
 
 
-appearance : Dock -> Theme -> Option msg
-appearance dock theme = RenderTo <| Html dock theme
+withDatGui
+    :
+        { ack : Exp.RawProperty -> Cmd msg
+        , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
+        }
+    -> PortCommunication msg
+withDatGui = DatGui
 
 
-aframe : Option msg
-aframe = RenderTo Aframe
+hidden : RenderTarget
+hidden = Nowhere
 
 
-getRenderTarget : List (Option msg) -> RenderTarget
-getRenderTarget =
-    List.foldl
-        (\option prev ->
-            case option of
-                RenderTo target -> Just target
-                _ -> prev
-        )
-        Nothing
-    >> Maybe.withDefault (Html Dock.center Theme.light)
+toHtml : Dock -> Theme -> RenderTarget
+toHtml = Html
 
 
-getCommunication : List (Option msg) -> PortCommunication msg
-getCommunication =
-    List.foldl
-        (\option prev ->
-            case option of
-                Ports comm -> Just comm
-                _ -> prev
-        )
-        Nothing
-    >> Maybe.withDefault NoCommunication
+toVr : Theme -> RenderTarget
+toVr = Aframe
+
+
