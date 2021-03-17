@@ -2,6 +2,7 @@ module Gui.WithGui exposing (..)
 
 
 import Browser
+import Url exposing (Url)
 import Html exposing (Html)
 --import Either exposing (Either(..))
 import Random
@@ -29,15 +30,18 @@ type WithGuiMsg msg
     | SendUpdate Exp.RawUpdate
     | ReceiveRaw Exp.RawUpdate
     | SetClientId Detach.ClientId
+    | UrlChange Url
+    | UrlRequest Browser.UrlRequest
 
 
 init
     :  ( flags -> ( model, Cmd msg ), model -> Builder msg )
+    -> Maybe Url
     -> RenderTarget
     -> PortCommunication msg
     -> flags
     -> ( ( model, Tron.Gui msg ), Cmd (WithGuiMsg msg) )
-init ( userInit, userFor ) renderTarget ports flags =
+init ( userInit, userFor ) maybeUrl renderTarget ports flags =
     let
         ( initialModel, userEffect ) =
             userInit flags
@@ -165,6 +169,11 @@ update ( userUpdate, userFor ) ports withGuiMsg (model, gui) =
                 |> Cmd.map ToUser
             )
 
+        _ -> -- FIXME: implement handlers
+            ( ( model, gui )
+            , Cmd.none
+            )
+
 
 
 performInitEffects : PortCommunication msg -> Tron.Gui msg -> Cmd msg
@@ -230,13 +239,44 @@ element
 element renderTarget ports def =
     Browser.element
         { init =
-            init ( def.init, def.for ) renderTarget ports
+            init ( def.init, def.for ) Nothing renderTarget ports
+        , update =
+            update ( def.update, def.for ) ports
         , view =
             view def.view renderTarget
         , subscriptions =
             subscriptions def.subscriptions ports
+        }
+
+
+application
+    :  RenderTarget
+    -> PortCommunication msg
+    ->
+        { for : model -> Builder.Builder msg
+        , init : flags -> ( model, Cmd msg )
+        , subscriptions : model -> Sub msg
+        , view : model -> Html msg
+        , update : msg -> model -> ( model, Cmd msg )
+        }
+    -> ProgramWithGui flags model msg
+application renderTarget ports def =
+    Browser.application
+        { init =
+            \flags url key ->
+                init ( def.init, def.for ) (Just url) renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
+        , view =
+            \model ->
+                { title = "Tron GUI"
+                , body =
+                    [ view def.view renderTarget model ]
+                }
+        , subscriptions =
+            subscriptions def.subscriptions ports
+        , onUrlChange = UrlChange
+        , onUrlRequest = UrlRequest
         }
 
 

@@ -1,6 +1,8 @@
 module Gui.Option exposing (..)
 
 
+import Url exposing (Url)
+
 import Gui.Style.Theme as Theme exposing (Theme(..))
 import Gui.Style.Dock as Dock exposing (Dock(..))
 import Gui.Expose as Exp
@@ -26,8 +28,7 @@ type PortCommunication msg
         { transmit : ( String, String ) -> Cmd msg
         }
     | Detachable
-        { toUrl : Detach.ClientId -> Path -> Maybe Detach.LocalUrl
-        , ack : Exp.Ack -> Cmd msg
+        { ack : Exp.Ack -> Cmd msg
         , transmit : Exp.RawUpdate -> Cmd msg
         , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
         --, receive : Sub Exp.RawUpdate
@@ -95,8 +96,7 @@ sendStrings = SendStrings
 
 detachable
     :
-        { toUrl : Detach.ClientId -> Path -> Maybe Detach.LocalUrl
-        , ack : Exp.Ack -> Cmd msg
+        { ack : Exp.Ack -> Cmd msg
         , transmit : Exp.RawUpdate -> Cmd msg
         , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
         }

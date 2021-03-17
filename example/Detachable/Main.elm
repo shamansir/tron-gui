@@ -10,9 +10,12 @@ import Html.Attributes as Attr exposing (class)
 
 import Gui as Tron exposing (Gui, init, view, update, subscriptions)
 import Gui.Style.Theme as Theme exposing (Theme(..))
+import Gui.Style.Dock as Dock
 import Gui.Detach as Detach exposing (fromUrl)
 import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
 import Gui.Build as Builder exposing (map)
+import Gui.WithGui as WithGui exposing (ProgramWithGui)
+import Gui.Option as Option
 
 
 import Example.Goose.Main as Example
@@ -32,7 +35,7 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
-type Msg
+{- type Msg
     = NoOp
     | ToExample Example.Msg
     | ToTron Tron.Msg
@@ -123,21 +126,24 @@ update msg ( example, gui ) =
 
 subscriptions : Model -> Sub Msg
 subscriptions ( _, gui ) =
-    Tron.subscriptions gui |> Sub.map ToTron
+    Tron.subscriptions gui |> Sub.map ToTron -}
 
 
-main : Program () Model Msg
+main : ProgramWithGui () Example.Model Example.Msg
 main =
-    Browser.application
-        { init = always init
-        , view = \model ->
-            { title = "Tron GUI"
-            , body = [ view model ]
+    WithGui.application
+        (Option.toHtml Dock.center Theme.light)
+        (Option.detachable
+            { ack = ackToWs
+            , transmit = sendUpdateToWs
+            , receive = receieveUpdateFromWs
             }
-        , subscriptions = subscriptions
-        , update = update
-        , onUrlRequest = always NoOp
-        , onUrlChange = always NoOp
+        )
+        { for = ExampleGui.for
+        , init = always Example.init
+        , view = Example.view
+        , update = Example.update
+        , subscriptions = always Sub.none
         }
 
 
