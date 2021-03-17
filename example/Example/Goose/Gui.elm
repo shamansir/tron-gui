@@ -155,13 +155,3 @@ colorsGui isPunk colors =
                 else Gui.none
             )
         ]
-
-
-updatedBy : Msg -> Bool
-updatedBy msg =
-    case msg of
-        HonkOn -> True
-        HonkOff -> True
-        PunkOn -> True
-        PunkOff -> True
-        _ -> False

@@ -18,7 +18,7 @@ import Random
 import Url exposing (Url)
 
 import Gui exposing (Gui)
-import Gui as Gui exposing (view, detachable, subscriptions)
+import Gui as Gui exposing (view, subscriptions)
 import Gui.Expose as Exp exposing (Update)
 import Gui as Tron exposing (Gui)
 import Gui.Mouse exposing (Position)
@@ -45,6 +45,21 @@ import Example.Default.Model as Example
 import Example.Default.Msg as Example
 import Example.Default.Gui as ExampleGui
 -}
+
+
+{-
+
+IMPORTANT:
+
+The code in this example is a collection of all the possible Tron features + random GUI generation.
+Switching these deatures during the usual application cycle is not supported by public Tron API,
+trying to be as minimalistic as possible. Hence the code here is very complex and unfriendly.
+
+Please, don't treat it as the sample code of Tron usage.
+
+For the actual examples of using Tron in your applications, see other examples nearby.
+-}
+
 
 import RandomGui as Gui exposing (generator)
 
@@ -79,7 +94,7 @@ type alias Model =
 init : Url -> Navigation.Key -> ( Model, Cmd Msg )
 init url _ =
     let
-        initialModel = Example.init
+        ( initialModel, initEffects ) = Example.init
         ( gui, startGui ) =
             initialModel
                 |> exampleGui url
@@ -93,7 +108,10 @@ init url _ =
                 |> Gui.dock Dock.bottomLeft
             , url = url
             }
-        , startGui
+        , Cmd.batch
+            [ initEffects |> Cmd.map ToExample
+            , startGui
+            ]
         )
 
 
@@ -176,14 +194,22 @@ update msg model =
                 )
 
         ( ToExample dmsg, _ ) ->
-            (
-                -- If your GUI structure never changes (unlike with `Goose` example),
-                -- you need neither `updatedBy` function nor this condition check,
-                -- at all! Just leave the `else` part in your code.
-                if ExampleGui.updatedBy dmsg then
+            -- If your GUI structure never changes (unlike with `Goose` example),
+            -- you need neither `updatedBy` function nor this condition check,
+            -- at all! Just leave the `else` part in your code.
+--                if ExampleGui.updatedBy dmsg then
+                -- HonkOn -> True
+                -- HonkOff -> True
+                -- PunkOn -> True
+                -- PunkOff -> True
+                -- _ -> False
 
-                    let nextExample = model.example |> Example.update dmsg
-                    in
+
+                let
+                    ( nextExample, updateEffects ) =
+                        model.example |> Example.update dmsg
+                in
+                    (
                         { model
                         | example = nextExample
                         , gui =
@@ -192,13 +218,13 @@ update msg model =
                                     (ExampleGui.for nextExample
                                         |> Builder.map ToExample)
                         }
-                else
-                    { model
-                    | example =
-                        Example.update dmsg model.example
-                    }
-            , Cmd.none
-            )
+                    , updateEffects |> Cmd.map ToExample
+                    )
+            {- else
+                { model
+                | example =
+                    Example.update dmsg model.example
+                } -}
 
         ( ToTron guiMsg, TronGui ) ->
             case model.gui |> Gui.update guiMsg of
@@ -252,14 +278,19 @@ update msg model =
 
         ( TriggerDefault, _ ) ->
             let
+                ( example, exampleEffects ) =
+                    Example.init
                 ( gui, startGui ) =
-                    Example.init |> exampleGui model.url
+                    example |> exampleGui model.url
             in
                 (
                     { model
                     | gui = gui
                     }
-                , startGui
+                , Cmd.batch
+                    [ exampleEffects |> Cmd.map ToExample
+                    , startGui
+                    ]
                 )
 
         ( SwitchTheme, _ ) ->
@@ -312,12 +343,12 @@ exampleGui url model =
             ExampleGui.for model
                 |> Gui.init
         ( nextGui, launchDetachable )
-            = gui
-                |> Gui.detachable
-                    url
-                    ackToWs
-                    sendUpdateToWs
-                    receieveUpdateFromWs
+            = ( gui, Cmd.none )
+                -- |> Gui.detachable FIXME
+                --     url
+                --     ackToWs
+                --     sendUpdateToWs
+                --     receieveUpdateFromWs
     in
         ( nextGui
             |> Gui.map ToExample

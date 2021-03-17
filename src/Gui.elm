@@ -4,6 +4,7 @@ module Gui exposing
     , map, over, use
     , dock, reshape
     , encode, toExposed
+    , applyRaw
     )
 
 
