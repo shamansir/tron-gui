@@ -17,75 +17,36 @@ import Example.Default.Gui as ExampleGui
 import AFrame.Render.Layout as AFrame exposing (view)
 
 
-type Msg
-    = ToExample Example.Msg
-    | ToTron Tron.Msg
+import Gui.Style.Dock as Dock
+import Gui.Option as Option
+import Gui.WithGui as WithGui exposing (ProgramWithGui)
 
 
-type alias Model =
-    ( Example.Model, Tron.Gui Msg )
+import Example.Goose.Main as Example
+import Example.Goose.Model as Example
+import Example.Goose.Msg as Example
+import Example.Goose.Gui as ExampleGui
 
 
-init : flags -> ( Model, Cmd Msg )
-init _ =
-    let
-        example = Example.init
-        ( gui, guiEffect ) =
-            ExampleGui.for example
-                |> Tron.init
-    in
-        (
-            ( example
-            , gui |> Tron.map ToExample
-            )
-        , guiEffect |> Cmd.map ToTron
-        )
+{-
+-- Change to `Default` example
+-- by just commenting out `.Goose` imports above
+-- and removing the comment here
+import Example.Default.Main as Example
+import Example.Default.Model as Example
+import Example.Default.Msg as Example
+import Example.Default.Gui as ExampleGui
+-}
 
 
-view : Model -> Html Msg
-view ( example, gui ) =
-    Html.div
-        [ ]
-        [ gui
-            |> AFrame.view Theme.light
-            |> Html.map ToTron
-        --, Default.view example
-        ]
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ( example, gui ) =
-    case msg of
-
-        ToExample dmsg ->
-            (
-                ( example |> Example.update dmsg
-                , gui
-                )
-            , Cmd.none
-            )
-
-        ToTron guiMsg ->
-            case gui |> Tron.update guiMsg of
-                ( nextGui, cmds ) ->
-                    (
-                        ( example
-                        , nextGui
-                        )
-                    , cmds
-                    )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions ( _, gui ) =
-    Tron.subscriptions gui |> Sub.map ToTron
-
-
-main : Program () Model Msg
+main : ProgramWithGui () Example.Model Example.Msg
 main =
-    Browser.element
-        { init = init
-        , view = view
-        , subscriptions = subscriptions
-        , update = update
+    WithGui.element
+        (Option.toVr Theme.light)
+        Option.noCommunication
+        { for = ExampleGui.for
+        , init = always Example.init
+        , view = Example.view
+        , update = Example.update
+        , subscriptions = always Sub.none
         }

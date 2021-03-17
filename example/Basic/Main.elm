@@ -8,6 +8,9 @@ import Html.Attributes as Attr exposing (class)
 import Gui as Tron exposing (Gui, Msg, init, view, update, subscriptions)
 import Gui.Build as Builder exposing (map)
 import Gui.Style.Theme as Theme exposing (Theme(..))
+import Gui.Style.Dock as Dock
+import Gui.Option as Option
+import Gui.WithGui as WithGui exposing (ProgramWithGui)
 
 
 import Example.Goose.Main as Example
@@ -27,88 +30,14 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
-type Msg
-    = ToExample Example.Msg
-    | ToTron Tron.Msg
-
-
-type alias Model =
-    ( Example.Model, Tron.Gui Msg )
-
-
-init : flags -> ( Model, Cmd Msg )
-init _ =
-    let
-        example = Example.init
-        ( gui, guiEffect ) =
-            ExampleGui.for example
-                |> Tron.init
-    in
-        (
-            ( example
-            , gui |> Tron.map ToExample
-            )
-        , guiEffect |> Cmd.map ToTron
-        )
-
-
-view : Model -> Html Msg
-view ( example, gui ) =
-    Html.div
-        [ ]
-        [ gui
-            |> Tron.view Theme.light
-            |> Html.map ToTron
-        , Example.view example
-        ]
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ( example, gui ) =
-    case msg of
-
-        ToExample dmsg ->
-            (
-                -- If your GUI structure never changes (unlike with `Goose` example),
-                -- you need neither `updatedBy` function nor this condition check,
-                -- at all! Just leave the `else` part in your code.
-                if ExampleGui.updatedBy dmsg then
-                    -- FIXME: we're skipping Commands here
-                    let ( nextModel, _ ) = example |> Example.update dmsg
-                    in
-                        ( nextModel
-                        , gui
-                            |> Tron.over
-                                (ExampleGui.for nextModel |> Builder.map ToExample)
-                        )
-                else
-                    ( example |> Example.update dmsg |> Tuple.first -- FIXME: we're skipping Commands here
-                    , gui
-                    )
-            , Cmd.none
-            )
-
-        ToTron guiMsg ->
-            case gui |> Tron.update guiMsg of
-                ( nextGui, cmds ) ->
-                    (
-                        ( example
-                        , nextGui
-                        )
-                    , cmds
-                    )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions ( _, gui ) =
-    Tron.subscriptions gui |> Sub.map ToTron
-
-
-main : Program () Model Msg
+main : ProgramWithGui () Example.Model Example.Msg
 main =
-    Browser.element
-        { init = init
-        , view = view
-        , subscriptions = subscriptions
-        , update = update
+    WithGui.element
+        (Option.toHtml Dock.center Theme.dark)
+        Option.noCommunication
+        { for = ExampleGui.for
+        , init = always Example.init
+        , view = Example.view
+        , update = Example.update
+        , subscriptions = always Sub.none
         }
