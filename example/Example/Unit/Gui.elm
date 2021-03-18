@@ -3,12 +3,12 @@ module Example.Unit.Gui exposing (..)
 
 import Color exposing (Color)
 
-import Gui exposing (Gui)
-import Gui.Build.Unit as Gui
-import Gui.Property  exposing (Property)
-import Gui.Property as Property exposing (Label)
-import Gui.Style.PanelShape exposing (..)
-import Gui.Style.CellShape exposing (..)
+import Tron exposing (Tron)
+import Tron.Build.Unit as Gui
+import Tron.Property  exposing (Property)
+import Tron.Property as Property exposing (Label)
+import Tron.Style.PanelShape exposing (..)
+import Tron.Style.CellShape exposing (..)
 
 
 type Choice = A | B | C | D

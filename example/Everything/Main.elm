@@ -17,18 +17,17 @@ import Task as Task
 import Random
 import Url exposing (Url)
 
-import Gui exposing (Gui)
-import Gui as Gui exposing (view, subscriptions)
-import Gui.Expose as Exp exposing (Update)
-import Gui as Tron exposing (Gui)
-import Gui.Mouse exposing (Position)
-import Gui.Build as Tron exposing (Builder)
-import Gui.Build as Builder exposing (map)
-import Gui.Detach as Detach exposing (fromUrl)
-import Gui.Style.Theme exposing (Theme)
-import Gui.Style.Theme as Theme
-import Gui.Style.Dock exposing (Dock)
-import Gui.Style.Dock as Dock
+import Tron exposing (Tron, view, subscriptions)
+import Tron as T
+import Tron.Expose as Exp exposing (Update)
+import Tron.Mouse exposing (Position)
+import Tron.Build as Tron exposing (Builder)
+import Tron.Build as Builder exposing (map)
+import Tron.Detach as Detach exposing (fromUrl)
+import Tron.Style.Theme exposing (Theme)
+import Tron.Style.Theme as Theme
+import Tron.Style.Dock exposing (Dock)
+import Tron.Style.Dock as Dock
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -85,7 +84,7 @@ type Mode
 type alias Model =
     { mode : Mode
     , theme : Theme
-    , gui : Tron.Gui Msg
+    , gui : Tron Msg
     , example : Example.Model
     , url : Url
     }
@@ -104,8 +103,8 @@ init url _ =
             , example = initialModel
             , theme = Theme.light
             , gui = gui
-                |> Gui.reshape ( 7, 7 )
-                |> Gui.dock Dock.bottomLeft
+                |> Tron.reshape ( 7, 7 )
+                |> Tron.dock Dock.bottomLeft
             , url = url
             }
         , Cmd.batch
@@ -157,7 +156,7 @@ view { mode, gui, example, theme } =
             DatGui -> Html.div [] []
             TronGui ->
                 gui
-                    |> Gui.view theme
+                    |> Tron.view theme
                     |> Html.map ToTron
         , Example.view example
         ]
@@ -227,7 +226,7 @@ update msg model =
                 } -}
 
         ( ToTron guiMsg, TronGui ) ->
-            case model.gui |> Gui.update guiMsg of
+            case model.gui |> Tron.update guiMsg of
                 ( nextGui, cmds ) ->
                     (
                         { model
@@ -258,13 +257,13 @@ update msg model =
         ( Randomize newTree, _ ) ->
             let
                 ( newGui, startGui ) =
-                    newTree |> Gui.init
+                    newTree |> Tron.init
             in
                 (
                     { model
                     | gui = newGui
-                        |> Gui.map (always NoOp)
-                        |> Gui.dock Dock.bottomCenter
+                        |> T.map (always NoOp)
+                        |> Tron.dock Dock.bottomCenter
                     }
                 , case model.mode of
                     DatGui ->
@@ -304,7 +303,7 @@ update msg model =
         ( ChangeDock newDock, _ ) ->
             (
                 { model
-                | gui = model.gui |> Gui.dock newDock
+                | gui = model.gui |> Tron.dock newDock
                 }
             , Cmd.none
             )
@@ -318,7 +317,7 @@ subscriptions { mode, gui } =
         DatGui ->
             updateFromDatGui FromDatGui
         TronGui ->
-            Gui.subscriptions gui |> Sub.map ToTron
+            Tron.subscriptions gui |> Sub.map ToTron
 
 
 main : Program () Model Msg
@@ -336,12 +335,12 @@ main =
         }
 
 
-exampleGui : Url -> Example.Model -> ( Gui Msg, Cmd Msg )
+exampleGui : Url -> Example.Model -> ( Tron Msg, Cmd Msg )
 exampleGui url model =
     let
         ( gui, startGui ) =
             ExampleGui.for model
-                |> Gui.init
+                |> Tron.init
         ( nextGui, launchDetachable )
             = ( gui, Cmd.none )
                 -- |> Gui.detachable FIXME
@@ -351,7 +350,7 @@ exampleGui url model =
                 --     receieveUpdateFromWs
     in
         ( nextGui
-            |> Gui.map ToExample
+            |> T.map ToExample
         , Cmd.batch
             [ startGui
             , launchDetachable

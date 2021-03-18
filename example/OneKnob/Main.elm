@@ -3,11 +3,11 @@ module OneKnob.Main exposing (main)
 
 import Html exposing (Html)
 
-import Gui.WithGui as WithGui exposing (ProgramWithGui)
-import Gui.Option as Option
-import Gui.Build as Builder exposing (Builder)
-import Gui.Style.Theme as Theme exposing (Theme(..))
-import Gui.Style.Dock as Dock exposing (Dock(..))
+import WithTron exposing (ProgramWithTron)
+import Tron.Option as Option
+import Tron.Build as Builder exposing (Builder)
+import Tron.Style.Theme as Theme exposing (Theme(..))
+import Tron.Style.Dock as Dock exposing (Dock(..))
 
 
 type alias Amount = Float
@@ -59,9 +59,9 @@ subscriptions _=
     Sub.none
 
 
-main : ProgramWithGui () Model Msg
+main : ProgramWithTron () Model Msg
 main =
-    WithGui.element
+    WithTron.element
         (Option.toHtml Dock.middleRight Theme.dark)
         Option.noCommunication
         { for = for

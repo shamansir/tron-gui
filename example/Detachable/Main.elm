@@ -8,14 +8,14 @@ import Browser.Navigation as Navigation exposing (Key)
 import Html exposing (Html, div)
 import Html.Attributes as Attr exposing (class)
 
-import Gui as Tron exposing (Gui, init, view, update, subscriptions)
-import Gui.Style.Theme as Theme exposing (Theme(..))
-import Gui.Style.Dock as Dock
-import Gui.Detach as Detach exposing (fromUrl)
-import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
-import Gui.Build as Builder exposing (map)
-import Gui.WithGui as WithGui exposing (ProgramWithGui)
-import Gui.Option as Option
+import WithTron exposing (ProgramWithTron)
+import Tron exposing (Tron, init, view, update, subscriptions)
+import Tron.Style.Theme as Theme exposing (Theme(..))
+import Tron.Style.Dock as Dock
+import Tron.Detach as Detach exposing (fromUrl)
+import Tron.Expose as Exp exposing (RawProperty, RawUpdate)
+import Tron.Build as Builder exposing (map)
+import Tron.Option as Option
 
 
 import Example.Goose.Main as Example
@@ -129,9 +129,9 @@ subscriptions ( _, gui ) =
     Tron.subscriptions gui |> Sub.map ToTron -}
 
 
-main : ProgramWithGui () Example.Model Example.Msg
+main : ProgramWithTron () Example.Model Example.Msg
 main =
-    WithGui.application
+    WithTron.application
         (Option.toHtml Dock.center Theme.light)
         (Option.detachable
             { ack = ackToWs

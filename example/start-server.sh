@@ -1,1 +1,1 @@
-node ./example/ws-server.js
+node ./ws-server.js

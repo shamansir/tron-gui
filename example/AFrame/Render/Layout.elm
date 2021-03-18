@@ -20,16 +20,16 @@ import AFrame.Components.Material.Flat as AM exposing (..)
 import AFrame.Components.Text as AT exposing (..)
 
 
-import Gui exposing (Gui)
-import Gui.Msg exposing (Msg_(..))
-import Gui.Style.Theme exposing (Theme)
-import Gui.Layout exposing (Layout)
-import Gui.Layout as Layout exposing (Cell(..), pack, unfold)
-import Gui.Property as Gui exposing (find)
-import Gui.Control as Gui exposing (Control(..))
-import Gui.Control.Toggle as Gui exposing (ToggleState(..))
-import Gui.Control.Button as Button exposing (Face(..), Icon(..))
-import Gui.Path exposing (Path)
+import Tron exposing (Tron)
+import Tron.Msg exposing (Msg_(..))
+import Tron.Style.Theme exposing (Theme)
+import Tron.Layout exposing (Layout)
+import Tron.Layout as Layout exposing (Cell(..), pack, unfold)
+import Tron.Property as Gui exposing (find)
+import Tron.Control as Gui exposing (Control(..))
+import Tron.Control.Toggle as Gui exposing (ToggleState(..))
+import Tron.Control.Button as Button exposing (Face(..), Icon(..))
+import Tron.Path exposing (Path)
 import BinPack exposing (Bounds)
 
 
@@ -51,7 +51,7 @@ yOffset = 2
 xOffset = -5
 
 
-view : Theme -> Gui msg -> Html Msg_
+view : Theme -> Tron msg -> Html Msg_
 view theme gui =
     let
 

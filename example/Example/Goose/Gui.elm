@@ -1,11 +1,11 @@
 module Example.Goose.Gui exposing (for)
 
 
-import Gui exposing (Gui)
-import Gui.Build as Gui
-import Gui.Style.PanelShape exposing (cols)
-import Gui.Style.PanelShape as Shape exposing (auto)
-import Gui.Style.CellShape as Cell exposing (single)
+import Tron exposing (Tron)
+import Tron.Build as Gui
+import Tron.Style.PanelShape exposing (cols)
+import Tron.Style.PanelShape as Shape exposing (auto)
+import Tron.Style.CellShape as Cell exposing (single)
 
 import Example.Goose.Model exposing (..)
 import Example.Goose.Msg exposing (..)

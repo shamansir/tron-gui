@@ -5,12 +5,12 @@ import Browser exposing (element)
 import Html exposing (Html, div)
 import Html.Attributes as Attr exposing (class)
 
-import Gui as Tron exposing (Gui, Msg, init, view, update, subscriptions)
-import Gui.Build as Builder exposing (map)
-import Gui.Style.Theme as Theme exposing (Theme(..))
-import Gui.Style.Dock as Dock
-import Gui.Option as Option
-import Gui.WithGui as WithGui exposing (ProgramWithGui)
+import Tron exposing (Tron, Msg, init, view, update, subscriptions)
+import Tron.Build as Builder exposing (map)
+import Tron.Style.Theme as Theme exposing (Theme(..))
+import Tron.Style.Dock as Dock
+import Tron.Option as Option
+import WithTron exposing (ProgramWithTron)
 
 
 import Example.Goose.Main as Example
@@ -30,9 +30,9 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
-main : ProgramWithGui () Example.Model Example.Msg
+main : ProgramWithTron () Example.Model Example.Msg
 main =
-    WithGui.element
+    WithTron.element
         (Option.toHtml Dock.center Theme.dark)
         Option.noCommunication
         { for = ExampleGui.for
