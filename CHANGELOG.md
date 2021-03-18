@@ -7,9 +7,10 @@ DONE:
 * One-Control example;
 * Color button control;
 * Examples for sending GUI updates to JS, in JSON or in Strings;
-* Rename `Gui.Message` to `Gui.Msg` to be consistent with usual Elm style;
 * Helpers, optional to use, based on the examples, like `detachable`, `communicateJS`...
 * Rename `Gui` module to `Tron`;
+* Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
+* Let user refer to icons using `Url` rather than filename and allow to be dependent on `Theme`;
 
 ### 4.0.0
 

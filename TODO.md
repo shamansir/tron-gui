@@ -1,7 +1,7 @@
 * New design;
 * Pagination in panels which don't fit the inner buttons;
 * Re-check the examples to work;
-* Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
+* Close `Tron` (previously `Gui`) API with `Msg` and stuff, only expose the `WithTron` API;
 * Multiple-choice control;
 * Include links to the examples in the docs;
 * Fix `cols` vs `rows` to be bound to docking orientation;

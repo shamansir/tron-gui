@@ -41,6 +41,7 @@ import Tron.Style.Selected exposing (Selected(..))
 import Tron.Style.Cell as Cell
 
 import Color as Color exposing (..)
+import Url
 
 
 view
@@ -404,7 +405,8 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
         WithIcon (Icon icon) ->
             let
                 iconUrl =
-                    "./assets/" ++ icon ++ "_" ++ Theme.toString theme ++ ".svg"
+                    icon theme |> Url.toString
+                    --"./assets/" ++ icon ++ "_" ++ Theme.toString theme ++ ".svg"
                 ( iconWidth, iconHeight ) = ( bounds.width / 2.25, bounds.height / 2.25 )
                 ( iconX, iconY ) =
                     if CS.isHorizontal cellShape

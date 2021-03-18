@@ -4,7 +4,7 @@ module Tron.Builder exposing
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
     , nest, choice, choiceAuto, choiceIcons, strings, labels, labelsAuto, palette
-    , icon
+    , icon, themedIcon
     , map, mapSet
     , expand, collapse
     )
@@ -68,6 +68,7 @@ import Array
 import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
+import Url exposing (Url)
 
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
@@ -78,10 +79,11 @@ import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
 import Tron.Style.PanelShape as Shape exposing (find, rows, cols)
+import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Text exposing (TextState(..))
-import Tron.Control.Button exposing (Face(..), Icon(..))
+import Tron.Control.Button as Button exposing (Face(..), Icon(..))
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Nest exposing (Form(..), ItemId, PageNum)
 
@@ -206,19 +208,19 @@ Actually it is just an alias for the nested row of controls, always expanded.
                     [
                         ( "sine"
                         , Builder.buttonWith
-                            (Builder.icon "sinewave")
+                            (Builder.icon <| Url.Builder.relative [ "sawwave.svg" ] [])
                             (always <| ChangeShape Sine)
                         )
                     ,
                         ( "square"
                         , Builder.buttonWith
-                            (Builder.icon "squarewave")
+                            (Builder.icon <| Url.Builder.relative [ "squarewave.svg" ] [])
                             (always <| ChangeShape Square)
                         )
                     ,
                         ( "saw"
                         , Builder.buttonWith
-                            (Builder.icon "sawwave")
+                            (Builder.icon <| Url.Builder.relative [ "sawwave.svg" ] [])
                             (always <| ChangeShape Saw)
                         )
                     ]
@@ -362,11 +364,17 @@ button =
 {-| Create an `Icon` from its URL or filename.
 
     Builder.icon "myicon"
-
-NB: Icons are expected to be SVG only (for now) and to be accessible from `./assets/{icon}_{theme}.svg`. So you are free to put them in some directory inside `assets`, but every icon needs to have `_dark` and `_light` variants. This is debatable and could be changed in later versions.
 -}
-icon : String -> Icon
-icon = Icon
+icon : Url -> Icon
+icon = Button.icon
+
+
+{-| Create an `Icon` from its URL or filename.
+
+    Builder.icon "myicon"
+-}
+themedIcon : (Theme -> Url) -> Icon
+themedIcon = Button.themedIcon
 
 
 {-| Same as `button`, but with icon instead of a boring square. See `icon` function as a helper to define icon using its URL. SVG files preferred, keep in mind that you'll need to host them somewhere nearby, for example using simple HTTP server.

@@ -7,6 +7,7 @@ import Array
 import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
+import Url exposing (Url)
 
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
@@ -17,6 +18,7 @@ import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
 import Tron.Style.PanelShape as Shape exposing (find, rows, cols)
+import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Text exposing (TextState(..))
@@ -248,5 +250,9 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare =
                 (Just <| .selected >> callByIndex)
 
 
-icon : String -> Icon
+icon : Url -> Icon
 icon = Button.icon
+
+
+themedIcon : (Theme -> Url) -> Icon
+themedIcon = Button.themedIcon
