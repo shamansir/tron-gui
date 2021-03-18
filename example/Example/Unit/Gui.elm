@@ -2,6 +2,7 @@ module Example.Unit.Gui exposing (..)
 
 
 import Color exposing (Color)
+import Url.Builder as Url
 
 import Tron exposing (Tron)
 import Tron.Builder.Unit as Gui
@@ -9,13 +10,17 @@ import Tron.Property  exposing (Property)
 import Tron.Property as Property exposing (Label)
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
+import Tron.Style.Theme as Theme
 
 
-type Choice = A | B | C | D
+type Choice
+    = A | B | C | D | E | F | G
+    | H | I | J | K | L | M | N | O | P
+    | Q | R | S | T | U | V | W | X | Y | Z
 
 
 choices : List Choice
-choices = [ A, B, C, D ]
+choices = [ A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z ]
 
 
 gui : Gui.Builder
@@ -54,18 +59,26 @@ gui =
         ,
             ( "choice",
                 Gui.choice
-                    ( cols 1 )
+                    ( cols 3 )
                     single
                     choiceToLabel
                     choices
                     A
                     compareChoices
+                    |> Gui.expand
             )
         ,
             ( "nest", nestedButtons C )
         ,
             ( "button"
-            , Gui.buttonWith (Gui.icon "export")
+            , Gui.buttonWith
+                <| Gui.themedIcon
+                    (\theme ->
+                        Gui.makeUrl
+                            <| Url.relative
+                                [ "assets", "export_" ++ Theme.toString theme ++ ".svg" ]
+                                []
+                    )
             )
 
         ,
@@ -110,6 +123,28 @@ choiceToLabel c =
         B -> "The B"
         C -> "The C"
         D -> "The D"
+        E -> "The E"
+        F -> "The F"
+        G -> "The G"
+        H -> "The H"
+        I -> "The I"
+        J -> "The J"
+        K -> "The K"
+        L -> "The L"
+        M -> "The M"
+        N -> "The N"
+        O -> "The O"
+        P -> "The P"
+        Q -> "The Q"
+        R -> "The R"
+        S -> "The S"
+        T -> "The T"
+        U -> "The U"
+        V -> "The V"
+        W -> "The W"
+        X -> "The X"
+        Y -> "The Y"
+        Z -> "The Z"
 
 
 compareChoices : Choice -> Choice -> Bool

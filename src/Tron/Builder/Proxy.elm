@@ -7,7 +7,6 @@ import Array
 import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
-import Url exposing (Url)
 
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
@@ -22,7 +21,7 @@ import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Text exposing (TextState(..))
-import Tron.Control.Button as Button exposing (Face(..), Icon(..))
+import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url)
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Nest exposing (Form(..), ItemId)
 
@@ -250,9 +249,48 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare =
                 (Just <| .selected >> callByIndex)
 
 
+{-| Create an `Icon` from its URL or filename.
+
+    import Url.Builder as Url
+
+    Builder.icon
+        <| makeUrl <| Url.relative [ "assets", "myicon.svg" ] []
+-}
 icon : Url -> Icon
 icon = Button.icon
 
 
+{-| Create an `Icon` from its URL or filename.
+
+    import Url.Builder as Url
+
+    Builder.themedIcon
+        <| \theme ->
+            makeUrl <| Url.relative [ "assets", "myicon_" ++ Theme.toString theme ++ ".svg" ] []
+-}
 themedIcon : (Theme -> Url) -> Icon
 themedIcon = Button.themedIcon
+
+
+{-| Make URL from String
+-}
+makeUrl : String -> Url
+makeUrl = Button.makeUrl
+
+
+{-| Forcefully expand the nesting:
+
+    Builder.nest ... |> Builder.expand
+    Builder.choice ... |> Builder.expand
+-}
+expand : Builder -> Builder
+expand = B.expand
+
+
+{-| Forcefully collapse the nesting:
+
+    Builder.nest ... |> Builder.collapse
+    Builder.choice ... |> Builder.collapse
+-}
+collapse : Builder -> Builder
+collapse = B.collapse

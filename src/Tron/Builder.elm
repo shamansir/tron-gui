@@ -4,7 +4,7 @@ module Tron.Builder exposing
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
     , nest, choice, choiceAuto, choiceIcons, strings, labels, labelsAuto, palette
-    , icon, themedIcon
+    , icon, themedIcon, makeUrl
     , map, mapSet
     , expand, collapse
     )
@@ -68,7 +68,6 @@ import Array
 import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
-import Url exposing (Url)
 
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
@@ -83,7 +82,7 @@ import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Text exposing (TextState(..))
-import Tron.Control.Button as Button exposing (Face(..), Icon(..))
+import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Nest exposing (Form(..), ItemId, PageNum)
 
@@ -363,7 +362,10 @@ button =
 
 {-| Create an `Icon` from its URL or filename.
 
-    Builder.icon "myicon"
+    import Url.Builder as Url
+
+    Builder.icon
+        <| makeUrl <| Url.relative [ "assets", "myicon.svg" ] []
 -}
 icon : Url -> Icon
 icon = Button.icon
@@ -371,10 +373,20 @@ icon = Button.icon
 
 {-| Create an `Icon` from its URL or filename.
 
-    Builder.icon "myicon"
+    import Url.Builder as Url
+
+    Builder.themedIcon
+        <| \theme ->
+            makeUrl <| Url.relative [ "assets", "myicon_" ++ Theme.toString theme ++ ".svg" ] []
 -}
 themedIcon : (Theme -> Url) -> Icon
 themedIcon = Button.themedIcon
+
+
+{-| Make URL from String
+-}
+makeUrl : String -> Url
+makeUrl = Button.makeUrl
 
 
 {-| Same as `button`, but with icon instead of a boring square. See `icon` function as a helper to define icon using its URL. SVG files preferred, keep in mind that you'll need to host them somewhere nearby, for example using simple HTTP server.
@@ -711,4 +723,4 @@ expand = Property.expand
     Builder.choice ... |> Builder.collapse
 -}
 collapse : Builder msg -> Builder msg
-collapse = Property.expand
+collapse = Property.collapse

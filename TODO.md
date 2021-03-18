@@ -1,10 +1,10 @@
 * New design;
 * Pagination in panels which don't fit the inner buttons;
 * Re-check the examples to work;
-* Close `Tron` (previously `Gui`) API with `Msg` and stuff, only expose the `WithTron` API;
+* Hide `Tron` (previously `Gui`) API with `Msg`, `init`, `view`... and stuff, only expose the `WithTron` API;
 * Multiple-choice control;
 * Include links to the examples in the docs;
-* Fix `cols` vs `rows` to be bound to docking orientation;
+* Fix `cols` vs `rows` to be bound to docking orientation (or just don't change direction of panels when docking);
 * Include minimal `OneControl` example into the docs, as well as `Basic` one and `ReportToJs*` ones;
 * Consider having `Nil (Property msg)` instead of just `Nil`, so that any property could be hidden, but not absent in the tree;
 * Get rid of functions in the `Model`:

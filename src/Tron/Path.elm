@@ -60,6 +60,11 @@ pop (Path l) =
                 )
 
 
+tail : Path -> Maybe Int
+tail =
+    pop >> Maybe.map Tuple.second
+
+
 toString : Path -> String
 toString (Path list) =
     list

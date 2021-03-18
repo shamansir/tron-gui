@@ -1,7 +1,6 @@
 module Tron.Render.Property exposing (..)
 
 
-
 import BinPack exposing (Bounds)
 
 import Svg exposing (Svg)
@@ -19,7 +18,7 @@ import Tron.Focus exposing (Focused(..))
 import Tron.Control as Core exposing (Control(..))
 
 import Tron.Control.Text exposing (TextState(..))
-import Tron.Control.Button exposing (Face(..), Icon(..))
+import Tron.Control.Button exposing (Face(..), Icon(..), urlToString)
 import Tron.Control.Toggle exposing (ToggleState(..))
 import Tron.Control.Nest as Nest exposing (getForm, Form(..))
 import Tron.Control.Number as Number exposing (Control)
@@ -405,7 +404,7 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
         WithIcon (Icon icon) ->
             let
                 iconUrl =
-                    icon theme |> Url.toString
+                    icon theme |> urlToString
                     --"./assets/" ++ icon ++ "_" ++ Theme.toString theme ++ ".svg"
                 ( iconWidth, iconHeight ) = ( bounds.width / 2.25, bounds.height / 2.25 )
                 ( iconX, iconY ) =

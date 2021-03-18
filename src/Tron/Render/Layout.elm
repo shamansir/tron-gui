@@ -74,7 +74,7 @@ viewProperty
     -> Svg Msg_
 viewProperty
     theme
-    ( ( _, focus, _ ) as state )
+    ( ( _, focus, selected ) as state )
     path
     pixelBounds
     maybeSelectedInside
@@ -91,6 +91,9 @@ viewProperty
                     <| [ rect_ "white" pixelBounds
                     , boundsDebug pixelBounds -- FIXME: were in cells before, not in pixels
                     , textAt 5 20 <| Focus.toString focus
+                    , case selected of
+                        Usual -> Svg.none
+                        Selected -> textAt 5 55 "selected"
                     , positionAt 0 30
                         <| propertyDebug ( label, prop )
                     ]
@@ -184,8 +187,8 @@ collectPlatesAndCells ( rootPath, root ) =
                                 } :: prevPlates
                             ,
                                 (innerCells
-                                    |> List.indexedMap
-                                        (\index ( cellPath, cellBounds ) ->
+                                    |> List.map
+                                        (\( cellPath, cellBounds ) ->
                                             case root
                                                 |> Property.find1 (Path.sub rootPath cellPath) of
                                                 Just ( cellLabel, cellSource ) ->
@@ -194,7 +197,7 @@ collectPlatesAndCells ( rootPath, root ) =
                                                     , parent = Just source
                                                     , bounds = B.multiplyBy Cell.width cellBounds
                                                     , source = cellSource
-                                                    , index = Just index
+                                                    , index = Path.tail cellPath
                                                     } |> Just
                                                 Nothing -> Nothing
                                         )
@@ -247,7 +250,7 @@ view theme dock bounds detach getDetachAbility root layout =
                             else OnAPlate
                         , focused root cell.path
                         , if Maybe.map2 isSelected cell.parent cell.index
-                                |> Maybe.withDefault False
+                            |> Maybe.withDefault False
                             then Selected
                             else Usual
                         )
