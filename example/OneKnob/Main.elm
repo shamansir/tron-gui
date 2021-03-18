@@ -5,7 +5,7 @@ import Html exposing (Html)
 
 import WithTron exposing (ProgramWithTron)
 import Tron.Option as Option
-import Tron.Build as Builder exposing (Builder)
+import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock as Dock exposing (Dock(..))
 

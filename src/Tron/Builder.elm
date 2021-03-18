@@ -1,4 +1,4 @@
-module Tron.Build exposing
+module Tron.Builder exposing
     ( Builder, Set
     , root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
@@ -36,7 +36,7 @@ Cell shapes are usually just 1x1 (`CellShape.single`), but in some specific case
 
 In the examples below, we use `Builder.` as a prefix in the places where we reference functions from this module. This assumes that you did something like this in your code:
 
-    import Tron.Build as Builder exposing (..)
+    import Tron.Builder as Builder exposing (..)
 
 However, it is ok to use any name you like, for sure. Be it `Tron.` or `Def.` or whatever...
 

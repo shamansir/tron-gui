@@ -9,7 +9,7 @@ import Random
 import Dict exposing (Dict)
 
 import Tron exposing (Tron)
-import Tron.Build as Builder exposing (Builder)
+import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Expose as Exp

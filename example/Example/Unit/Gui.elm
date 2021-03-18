@@ -4,7 +4,7 @@ module Example.Unit.Gui exposing (..)
 import Color exposing (Color)
 
 import Tron exposing (Tron)
-import Tron.Build.Unit as Gui
+import Tron.Builder.Unit as Gui
 import Tron.Property  exposing (Property)
 import Tron.Property as Property exposing (Label)
 import Tron.Style.PanelShape exposing (..)

@@ -14,7 +14,7 @@ import Tron.Control.Text exposing (TextState(..))
 import Tron.Control.Button as Button exposing (Face(..), Icon(..))
 import Tron.Property  exposing (Property(..))
 import Tron.Property as Gui exposing ( Label )
-import Tron.Build exposing (Builder)
+import Tron.Builder exposing (Builder)
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS exposing (..)
 

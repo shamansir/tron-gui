@@ -14,7 +14,7 @@ import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock as Dock
 import Tron.Detach as Detach exposing (fromUrl)
 import Tron.Expose as Exp exposing (RawProperty, RawUpdate)
-import Tron.Build as Builder exposing (map)
+import Tron.Builder as Builder exposing (map)
 import Tron.Option as Option
 
 

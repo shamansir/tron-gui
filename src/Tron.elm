@@ -10,7 +10,7 @@ module Tron exposing
 
 {-| `Tron` is the component-like module to be connected with your application.
 
-When you have defined the structure of you GUI using `Tron.Build` module and got the `Builder msg` (where `msg` is the `Msg` of your application) in response, use:
+When you have defined the structure of you GUI using `Tron.Builder` module and got the `Builder msg` (where `msg` is the `Msg` of your application) in response, use:
 
 * `init` function to wrap a `Tron msg` over it;
 * `subscribe` to make GUI receive all the mouse/keyboard information it requires;
@@ -124,7 +124,7 @@ import Tron.Style.Dock as Dock exposing (..)
 import Tron.Style.Theme exposing (Theme)
 import Tron.Style.Logic as Style exposing (..)
 import Tron.Style.Cell as Cell exposing (..)
-import Tron.Build exposing (..)
+import Tron.Builder exposing (..)
 import Tron.Detach exposing (State(..))
 
 
@@ -178,11 +178,11 @@ map f gui =
     }
 
 
-{-| Initialize Tron from `Builder msg`. See `Tron.Build` module for documentation on how
+{-| Initialize Tron from `Builder msg`. See `Tron.Builder` module for documentation on how
 to build your GUI from the model, usually it is something like:
 
     import Tron exposing (Tron)
-    import Tron.Build as Builder exposing (..)
+    import Tron.Builder as Builder exposing (..)
 
     type Msg = MyMsgOne Int | MyMsgTwo Bool | ... | ToTron Tron.Message
 

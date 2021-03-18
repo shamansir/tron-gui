@@ -8,6 +8,8 @@ DONE:
 * Color button control;
 * Examples for sending GUI updates to JS, in JSON or in Strings;
 * Rename `Gui.Message` to `Gui.Msg` to be consistent with usual Elm style;
+* Helpers, optional to use, based on the examples, like `detachable`, `communicateJS`...
+* Rename `Gui` module to `Tron`;
 
 ### 4.0.0
 

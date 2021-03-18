@@ -1,7 +1,7 @@
-module Tron.Build.Proxy exposing (..)
+module Tron.Builder.Proxy exposing (..)
 
 
-import Tron.Build as B
+import Tron.Builder as B
 
 import Array
 import Color exposing (Color)

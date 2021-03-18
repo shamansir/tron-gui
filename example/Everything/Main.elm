@@ -21,8 +21,8 @@ import Tron exposing (Tron, view, subscriptions)
 import Tron as T
 import Tron.Expose as Exp exposing (Update)
 import Tron.Mouse exposing (Position)
-import Tron.Build as Tron exposing (Builder)
-import Tron.Build as Builder exposing (map)
+import Tron.Builder as Tron exposing (Builder)
+import Tron.Builder as Builder exposing (map)
 import Tron.Detach as Detach exposing (fromUrl)
 import Tron.Style.Theme exposing (Theme)
 import Tron.Style.Theme as Theme

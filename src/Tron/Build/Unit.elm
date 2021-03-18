@@ -1,7 +1,7 @@
-module Tron.Build.Unit exposing (..)
+module Tron.Builder.Unit exposing (..)
 
 
-import Tron.Build as B
+import Tron.Builder as B
 
 import Array
 import Color exposing (Color)
