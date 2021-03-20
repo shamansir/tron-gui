@@ -11,3 +11,4 @@
     * do not store tree in the `Gui msg`, build it every time;
     * store the actual messages for the current value in the controls, not the handlers;
     * for `.over`, traverse two trees with the same structure (don't forget about ghosts) and move transient states between them;
+* Check `indexedMap` usages, so that usage of the index is kept to minimum for nested items;

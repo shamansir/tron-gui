@@ -16,9 +16,11 @@ import Tron.Style.Dock exposing (Dock)
 import Tron.Style.Dock as Dock
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
+import Tron.Paging exposing (..)
 
-import Tron.Control.Nest exposing (Form(..))
+import Tron.Control.Nest exposing (Form(..), PageNum)
 import Tron.Control.Nest as Nest exposing (getItems)
+
 
 
 type Cell_ a
@@ -120,7 +122,7 @@ packItemsAtRoot size rp shape items =
 
         firstLevel =
             items
-                |> Array.indexedMap Tuple.pair
+                |> Array.indexedMap Tuple.pair -- FIXME: consider pages
                 |> Array.foldl
                     (\(index, (_, theProp)) layout ->
                         if not <| isGhost theProp
@@ -158,7 +160,7 @@ packItemsAtRoot size rp shape items =
                                 else plateLayout
                         )
                         (BinPack.container w h)
-                    <| Array.indexedMap Tuple.pair
+                    <| Array.indexedMap Tuple.pair -- FIXME: consider pages
                     <| plateItems
                 )
 
@@ -168,7 +170,7 @@ packItemsAtRoot size rp shape items =
             -> BinPack (Cell_ Path)
             -> Control
                     ( Array ( Label, Property msg ) )
-                    { a | form : Form }
+                    { a | form : Form, page : PageNum }
                     msg
             -> BinPack (Cell_ Path)
         packGroupControl
@@ -178,19 +180,24 @@ packItemsAtRoot size rp shape items =
             control =
             if Nest.is Expanded control then
                 let
+                    page = 2 -- Nest.getPage control
+                    items_ =
+                        Nest.getItems control
+                        |> atPage page
+                        |> Debug.log "items"
                     withPlate
                         = layout
                             |> packMany
                                 path
                                 innerShape
                                 cellShape
-                                (Nest.getItems control)
+                                items_
                 in
-                    packPlatesOf path withPlate <| Nest.getItems control
+                    packPlatesOf path withPlate items_
             else layout
 
         packPlatesOf path layout =
-            Array.indexedMap Tuple.pair
+            Array.indexedMap Tuple.pair -- FIXME: consider pages
                 >> Array.foldl
                     (\(index, ( _, innerProp) ) prevLayout ->
                         let
@@ -246,4 +253,3 @@ unfold f def ( dock, size, bp ) =
 toList : Layout -> List ( Cell ( Path, Bounds ) )
 toList =
     unfold (::) []
-

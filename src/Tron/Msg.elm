@@ -16,4 +16,6 @@ type Msg_
     | MouseDown Path
     | KeyDown Int
     | TextInput Path String
+    -- | NextPage Path
+    -- | PrevPage Path
     | Detach Path

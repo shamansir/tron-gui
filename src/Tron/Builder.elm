@@ -471,7 +471,7 @@ nest shape cellShape items =
             ( Array.fromList items
             )
             { form = Collapsed
-            , page = 0
+            , page = 1
             }
             Nothing -- (Tuple.first >> handler)
 
@@ -615,7 +615,7 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
                                     else Nothing
                             )
                         |> Maybe.withDefault 0
-                , page = 0
+                , page = 1
                 }
                 (Just <| .selected >> callByIndex)
 

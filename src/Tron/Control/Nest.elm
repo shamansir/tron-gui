@@ -120,7 +120,7 @@ toggle (Core.Control setup state handler) =
         handler
 
 
-getForm : Core.Control a { a | form : Form } msg -> Form
+getForm : Core.Control setup { a | form : Form } msg -> Form
 getForm (Core.Control _ { form } _) = form
 
 
@@ -183,3 +183,6 @@ withItem id f ( Core.Control items state handler ) =
         )
         state
         handler
+
+getPage : Core.Control setup { a | page : PageNum } msg -> PageNum
+getPage (Core.Control _ { page } _) = page
