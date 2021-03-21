@@ -7,6 +7,7 @@ import Json.Decode as Json
 
 import Bounds
 import BinPack exposing (..)
+import Size exposing (..)
 
 import Tron.Control exposing (Control(..))
 import Tron.Path as Path exposing (Path)
@@ -25,12 +26,12 @@ import Tron.Control.Nest as Nest exposing (getItems)
 
 type Cell_ a
     = One_ a
-    | Many_ a (BinPack a)
+    | Many_ a Paging (BinPack a)
 
 
 type Cell a
     = One a
-    | Many a (List a)
+    | Many a Paging (List a)
 
 
 type alias Layout = ( Dock, ( Float, Float ), BinPack (Cell_ Path) )
@@ -70,13 +71,22 @@ find ( dock, size, layout ) pos =
         case layout |> BinPack.find adaptedPos of
             Just ( One_ path, _ ) ->
                 Just path
-            Just ( Many_ _ innerLayout, bounds ) ->
-                BinPack.find
-                    { x = adaptedPos.x - bounds.x
-                    , y = adaptedPos.y - bounds.y
-                    }
-                    innerLayout
-                    |> Maybe.map Tuple.first
+            Just ( Many_ _ paging innerLayout, bounds ) ->
+                case paging of
+                    SinglePage ->
+                        BinPack.find
+                            { x = adaptedPos.x - bounds.x
+                            , y = adaptedPos.y - bounds.y
+                            }
+                            innerLayout
+                            |> Maybe.map Tuple.first
+                    At (Page curPage) (Pages totalPages) (Size (pageWidth, pageHeight)) ->
+                        BinPack.find
+                            { x = adaptedPos.x - bounds.x
+                            , y = adaptedPos.y - bounds.y
+                            }
+                            innerLayout
+                            |> Maybe.map Tuple.first
             Nothing ->
                 Nothing
 
@@ -145,7 +155,7 @@ packItemsAtRoot size rp shape items =
                 , Path.fromList path
                 )
 
-        packMany path (w, h) cellShape plateItems =
+        packMany path pageNum (w, h) cellShape plateItems =
             BinPack.carelessPack
                 (
                     { width = w
@@ -180,15 +190,13 @@ packItemsAtRoot size rp shape items =
             control =
             if Nest.is Expanded control then
                 let
-                    page = 2 -- Nest.getPage control
-                    items_ =
-                        Nest.getItems control
-                        |> atPage page
-                        |> Debug.log "items"
+                    items_ = Nest.getItems control
+
                     withPlate
                         = layout
                             |> packMany
                                 path
+                                (Nest.getPage control)
                                 innerShape
                                 cellShape
                                 items_
@@ -231,7 +239,7 @@ unfold f def ( dock, size, bp ) =
                             ( One ( path, adaptBounds bounds ) )
                             prev
 
-                    Many_ path innerBp ->
+                    Many_ _ path innerBp ->
                         f
                             ( Many
                                 ( path, adaptBounds bounds )
