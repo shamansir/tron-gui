@@ -27,6 +27,7 @@ import Tron.Focus exposing (Focused(..))
 import Tron.Focus as Focus exposing (toString)
 import Tron.FocusLogic as Focus exposing (focused)
 import Tron.Detach as Detach exposing (Ability(..))
+import Tron.Pages as Pages
 
 import Tron.Render.Util exposing (..)
 import Tron.Render.Util as Svg exposing (none)
@@ -175,7 +176,7 @@ collectPlatesAndCells ( rootPath, root ) =
                         Nothing -> prevCells
                     )
 
-                Many ( originPath, plateBounds ) innerCells ->
+                Many ( originPath, plateBounds ) innerPages ->
 
                     case root |> Property.find1 (Path.sub rootPath originPath) of
                         Just ( label, source ) ->
@@ -186,7 +187,9 @@ collectPlatesAndCells ( rootPath, root ) =
                                 , source = source
                                 } :: prevPlates
                             ,
-                                (innerCells
+                                (innerPages
+                                    |> Pages.getCurrent
+                                    |> Maybe.withDefault []
                                     |> List.map
                                         (\( cellPath, cellBounds ) ->
                                             case root
