@@ -137,6 +137,19 @@ viewPlateControls detach theme path pixelBounds ( label, source )  =
             Fancy ->
                 Plate.controls detach theme path pixelBounds ( label, source )
 
+viewPagingControls
+     : Theme
+    -> Bounds
+    -> ( Pages.PageNum, Pages.Count )
+    -> Svg Msg_
+viewPagingControls theme pixelBounds paging  =
+    positionAt_ pixelBounds <|
+        case mode of
+            Debug ->
+                S.g [ ] [ ]
+            Fancy ->
+                Plate.paging theme pixelBounds paging
+
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
     :  ( Path, Property msg )
@@ -147,6 +160,7 @@ collectPlatesAndCells -- FIXME: a complicated function, split into many
             , label : String
             , bounds : Bounds
             , source : Property msg
+            , pages : Pages.Count
             }
         , List
             { path : Path
@@ -185,6 +199,7 @@ collectPlatesAndCells ( rootPath, root ) =
                                 , label = label
                                 , bounds = B.multiplyBy Cell.width plateBounds
                                 , source = source
+                                , pages = Pages.count innerPages
                                 } :: prevPlates
                             ,
                                 (innerPages
@@ -238,12 +253,12 @@ view theme dock bounds detach getDetachAbility root layout =
         ( plates, cells ) =
             collectPlatesAndCells ( rootPath, root ) layout
 
-        ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
-
-            ( plates
+        platesBacksRendered =
+            plates
                 |> List.map (.bounds >> viewPlateBack theme )
 
-            , cells |> List.map
+        cellsRendered =
+            cells |> List.map
                 (\cell ->
 
                     viewProperty
@@ -268,21 +283,36 @@ view theme dock bounds detach getDetachAbility root layout =
 
                 )
 
-            , plates |> List.map
+        platesControlsRendered =
+            plates
+                |> List.map
+                    (\plate ->
+                        if plate.source
+                            |> Property.getCellShape
+                            |> Maybe.withDefault CS.default
+                            |> CS.isSquare then
+                            viewPlateControls
+                                (getDetachAbility plate.path)
+                                theme
+                                plate.path
+                                plate.bounds
+                                ( plate.label, plate.source )
+                        else Svg.none
+                    )
+
+        platesPagingRendered =
+            plates |> List.map
                 (\plate ->
-                    if plate.source
-                        |> Property.getCellShape
-                        |> Maybe.withDefault CS.default
-                        |> CS.isSquare then
-                        viewPlateControls
-                            (getDetachAbility plate.path)
-                            theme
-                            plate.path
-                            plate.bounds
-                            ( plate.label, plate.source )
-                    else Svg.none
+                    case plate.source
+                        |> Property.getPageNum of
+                        Just 1 -> Svg.none
+                        Just n ->
+                            viewPagingControls
+                                theme
+                                plate.bounds
+                                ( n, plate.pages )
+                        _ -> Svg.none
                 )
-            )
 
         detachButtonPos =
             case Dock.firstCellAt dock bounds of
@@ -322,6 +352,7 @@ view theme dock bounds detach getDetachAbility root layout =
                     [ Svg.g [ SA.class "grid__backs" ] platesBacksRendered
                     , Svg.g [ SA.class "grid__cells" ] cellsRendered
                     , Svg.g [ SA.class "grid__plate-controls" ] platesControlsRendered
+                    , Svg.g [ SA.class "grid__plate-paging" ] platesPagingRendered
                     ,
                         case getDetachAbility rootPath of
                             CanBeDetached localUrl ->

@@ -7,6 +7,7 @@ import BinPack exposing (Bounds)
 
 import Tron.Path exposing (Path)
 import Tron.Msg exposing (Msg_(..))
+import Tron.Pages as Pages
 import Tron.Detach as Detach exposing (Ability(..), ClientId, localUrlToString, LocalUrl)
 import Tron.Property exposing (Label, Property)
 
@@ -76,6 +77,17 @@ controls detachAbility theme path bounds ( label, prop ) =
             path
             ( bounds.width - Cell.gap - 10, Cell.gap )
         ]
+
+
+paging
+     : Theme
+    -> Bounds
+    -> ( Pages.PageNum, Pages.Count )
+    -> Svg Msg_
+paging _ _ _ =
+    Svg.g
+        []
+        []
 
 
 detach : Theme -> Svg msg

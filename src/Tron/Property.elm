@@ -621,6 +621,16 @@ getCellShape prop =
         _ -> Nothing
 
 
+getPageNum : Property msg -> Maybe Pages.PageNum
+getPageNum prop =
+    case prop of
+        Choice _ _ control ->
+            Just <| Nest.getPage control
+        Group _ _ control ->
+            Just <| Nest.getPage control
+        _ -> Nothing
+
+
 getSelected : Property msg -> Maybe ( Label, Property msg )
 getSelected prop =
     case prop of
