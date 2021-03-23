@@ -91,16 +91,25 @@ paging _ path _ ( current, total ) =
         <| List.map
             (\page ->
                 if page == current then
-                    Svg.text_
-                        [ ]
-                        [ Svg.text <| "[" ++ String.fromInt page ++ "]" ]
-                else
-                    Svg.text_
-                        [ SA.x <| String.fromInt <| page * 20
-                        , SA.style "pointer-events: all;"
+                    Svg.circle
+                        [ SA.cx <| String.fromInt <| 16 + (page * 15)
+                        , SA.cy <| String.fromFloat -5
+                        , SA.r <| String.fromFloat 4.0
+                        , SA.style "pointer-events: none; cursor: none;"
+                        , SA.fill "lightgray"
                         , HE.onClick <| SwitchPage path page
                         ]
-                        [ Svg.text <| "(" ++ String.fromInt page ++ ")" ]
+                        [  ]
+                else
+                    Svg.circle
+                        [ SA.cx <| String.fromInt <| 16 + (page * 15)
+                        , SA.cy <| String.fromFloat -5
+                        , SA.r <| String.fromFloat 4.0
+                        , SA.style "pointer-events: all; cursor: pointer;"
+                        , SA.fill "gray"
+                        , HE.onClick <| SwitchPage path page
+                        ]
+                        [ ]
             )
         <| List.range 0 (total - 1)
 

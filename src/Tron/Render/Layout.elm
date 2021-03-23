@@ -304,16 +304,18 @@ view theme dock bounds detach getDetachAbility root layout =
         platesPagingRendered =
             plates |> List.map
                 (\plate ->
-                    case plate.source
-                        |> Property.getPageNum of
-                        Just 1 -> Svg.none
-                        Just n ->
+                    case plate.pages of
+                        1 -> Svg.none
+                        n ->
                             viewPagingControls
                                 theme
                                 plate.path
                                 plate.bounds
-                                ( n, plate.pages )
-                        _ -> Svg.none
+                                ( plate.source
+                                    |> Property.getPageNum
+                                    |> Maybe.withDefault 1
+                                , n
+                                )
                 )
 
         detachButtonPos =

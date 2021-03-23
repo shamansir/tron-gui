@@ -36,16 +36,17 @@ getCurrentNum (Pages num _ _) = num
 
 
 getCurrent : Pages a -> Maybe a
-getCurrent (Pages num fst other) =
+getCurrent pages =
+    get (getCurrentNum pages) pages
+
+
+get : PageNum -> Pages a -> Maybe a
+get num (Pages _ fst other) =
     case num of
         0 -> Just fst
         n ->
             Array.fromList other
-                |> Array.get n
-
-
-get : PageNum -> Maybe a
-get pageNum = Nothing
+                |> Array.get (n - 1)
 
 
 create : a -> List a -> Pages a

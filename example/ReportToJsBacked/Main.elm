@@ -16,7 +16,7 @@ port sendUpdate : ( String, String ) -> Cmd msg
 main : BackedWithTron
 main =
     WithTron.backed
-        (Option.toHtml Dock.bottomRight Theme.dark)
+        (Option.toHtml Dock.bottomLeft Theme.dark)
         sendUpdate
         ExampleGui.gui
 
