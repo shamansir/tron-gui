@@ -722,7 +722,7 @@ layout : Tron msg -> ( Property msg, Layout )
 layout gui =
     let
         ( Size cellsSize ) = getSizeInCells gui
-        size = cellsSize |> Tuple.mapBoth toFloat toFloat
+        size = cellsSize |> Tuple.mapBoth toFloat toFloat |> SizeF
     in
     case gui.detach
         |> Tuple.second

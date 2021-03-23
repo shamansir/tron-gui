@@ -35,23 +35,13 @@ type Cell a
     | Many a (Pages (List a))
 
 
-type alias Layout = ( Dock, ( Float, Float ), BinPack (Cell_ Path) )
-
-
-{-
-type Cells = Cells
-
-type Pixels = Pixels
-
-
-type Size a = Size ( Int, Int )
+type alias Layout = ( Dock, SizeF Cells, BinPack (Cell_ Path) )
 
 
 type Position a = Position { x : Float, y : Float }
--}
 
 
-init : Dock -> ( Float, Float ) -> Layout
+init : Dock -> SizeF Cells -> Layout
 init dock size =
     ( dock
     , size
@@ -59,8 +49,8 @@ init dock size =
     )
 
 
-initBinPack : ( Float, Float ) -> BinPack a
-initBinPack ( maxCellsByX, maxCellsByY )
+initBinPack : SizeF Cells -> BinPack a
+initBinPack (SizeF ( maxCellsByX, maxCellsByY ))
     = container maxCellsByX maxCellsByY
 
 
@@ -86,11 +76,11 @@ find ( dock, size, layout ) pos =
                 Nothing
 
 
-pack : Dock -> ( Float, Float ) -> Property msg -> Layout
+pack : Dock -> SizeF Cells -> Property msg -> Layout
 pack dock size = pack1 dock size Path.start
 
 
-pack1 : Dock -> ( Float, Float ) -> Path -> Property msg -> Layout
+pack1 : Dock -> SizeF Cells -> Path -> Property msg -> Layout
 pack1 dock size rootPath prop =
     case prop of
         Nil ->
@@ -116,7 +106,7 @@ pack1 dock size rootPath prop =
 
 
 packItemsAtRoot
-    :  ( Float, Float )
+    :  SizeF Cells
     -> Path
     -> PanelShape
     -> Array (Label, Property msg)
