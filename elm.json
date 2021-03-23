@@ -5,13 +5,12 @@
     "license": "BSD-3-Clause",
     "version": "4.0.0",
     "exposed-modules": [
-        "Gui",
-        "Gui.Build",
-        "Gui.Style.Theme",
-        "Gui.Style.Dock",
-        "Gui.Style.PanelShape",
-        "Gui.Style.CellShape",
-        "Gui.Msg"
+        "WithTron",
+        "Tron.Builder",
+        "Tron.Style.Theme",
+        "Tron.Style.Dock",
+        "Tron.Style.PanelShape",
+        "Tron.Style.CellShape"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
