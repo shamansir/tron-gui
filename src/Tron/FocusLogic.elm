@@ -109,8 +109,9 @@ shift direction root =
         curFocusArr = currentFocus |> Path.toList |> Array.fromList
         indexOfLast = Array.length curFocusArr - 1
         focusedOnSmth = Array.length curFocusArr > 0
+        -- FIXME: consider pages (move page when focus changed)
         nextFocus =
-            Path.fromList <| Array.toList <| -- FIXME: causes a lot of conversio
+            Path.fromList <| Array.toList <| -- FIXME: causes a lot of conversions
                 case direction of
                     Up ->
                         curFocusArr |> Array.push 0

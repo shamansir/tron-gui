@@ -79,12 +79,13 @@ import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
 import Tron.Style.PanelShape as Shape exposing (find, rows, cols)
 import Tron.Style.Theme exposing (Theme)
+import Tron.Pages exposing (PageNum)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Text exposing (TextState(..))
 import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
-import Tron.Control.Nest exposing (Form(..), ItemId, PageNum)
+import Tron.Control.Nest exposing (Form(..), ItemId)
 
 
 {-| `Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instance `Builder msg`.
@@ -461,10 +462,10 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
 See also: `Style.Shape`, `Style.CellShape`
 -}
 nest : PanelShape -> CellShape -> Set msg -> Builder msg
-nest shape cellShape items =
+nest panelShape cellShape items =
     Group
         Nothing
-        ( findShape cellShape shape (items |> List.map Tuple.second)
+        ( panelShape -- findShape cellShape shape (items |> List.map Tuple.second)
         , cellShape
         )
         <| Control
@@ -579,7 +580,7 @@ choiceHelper
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Builder msg
-choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
+choiceHelper ( panelShape, cellShape ) toBuilder options current compare toMsg =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
         callByIndex indexToCall =
@@ -593,17 +594,17 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare toMsg =
                     )
                 |> Maybe.map toMsg
                 |> Maybe.withDefault (toMsg current)
-        set =
-            options
-                |> List.indexedMap (toBuilder callByIndex)
     in
         Choice
             Nothing
-            ( findShape cellShape shape (set |> List.map Tuple.second)
+            ( panelShape
             , cellShape
             )
             <| Control
-                ( set |> Array.fromList )
+                ( options
+                    |> List.indexedMap (toBuilder callByIndex)
+                    |> Array.fromList
+                )
                 { form = Collapsed
                 , selected =
                     indexedOptions

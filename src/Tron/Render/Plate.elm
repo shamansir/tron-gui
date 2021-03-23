@@ -7,6 +7,7 @@ import BinPack exposing (Bounds)
 
 import Tron.Path exposing (Path)
 import Tron.Msg exposing (Msg_(..))
+import Tron.Pages as Pages
 import Tron.Detach as Detach exposing (Ability(..), ClientId, localUrlToString, LocalUrl)
 import Tron.Property exposing (Label, Property)
 
@@ -76,6 +77,41 @@ controls detachAbility theme path bounds ( label, prop ) =
             path
             ( bounds.width - Cell.gap - 10, Cell.gap )
         ]
+
+
+paging
+     : Theme
+    -> Path
+    -> Bounds
+    -> ( Pages.PageNum, Pages.Count )
+    -> Svg Msg_
+paging _ path _ ( current, total ) =
+    Svg.g
+        []
+        <| List.map
+            (\page ->
+                if page == current then
+                    Svg.circle
+                        [ SA.cx <| String.fromInt <| 16 + (page * 15)
+                        , SA.cy <| String.fromFloat -5
+                        , SA.r <| String.fromFloat 4.0
+                        , SA.style "pointer-events: none; cursor: none;"
+                        , SA.fill "lightgray"
+                        , HE.onClick <| SwitchPage path page
+                        ]
+                        [  ]
+                else
+                    Svg.circle
+                        [ SA.cx <| String.fromInt <| 16 + (page * 15)
+                        , SA.cy <| String.fromFloat -5
+                        , SA.r <| String.fromFloat 4.0
+                        , SA.style "pointer-events: all; cursor: pointer;"
+                        , SA.fill "gray"
+                        , HE.onClick <| SwitchPage path page
+                        ]
+                        [ ]
+            )
+        <| List.range 0 (total - 1)
 
 
 detach : Theme -> Svg msg

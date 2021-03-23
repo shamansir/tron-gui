@@ -100,10 +100,10 @@ bottomRight = Dock ( Right, Bottom )
 {-| Given current `Dock` setting and size of the screen, move the requsted top-left-based bounds to the new area accoring to the docking state. -}
 adaptBounds
      : Dock
-    -> ( Float, Float )
+    -> SizeF Cells
     -> { x : Float, y : Float, width : Float, height : Float }
     -> { x : Float, y : Float, width : Float, height : Float }
-adaptBounds (Dock ( horz, vert )) ( width, height ) innerBounds =
+adaptBounds (Dock ( horz, vert )) (SizeF ( width, height )) innerBounds =
     { width =
         case horz of
             Left -> innerBounds.height
@@ -129,8 +129,8 @@ adaptBounds (Dock ( horz, vert )) ( width, height ) innerBounds =
 
 
 {-| Given current `Dock` setting and size of the screen, move the requsted top-left-based point to the new position accoring to the docking state. -}
-adaptPosition : Dock -> ( Float, Float ) -> { x : Float, y : Float } -> { x : Float, y : Float }
-adaptPosition (Dock ( horz, vert )) ( width, height ) { x, y } =
+adaptPosition : Dock -> SizeF Cells -> { x : Float, y : Float } -> { x : Float, y : Float }
+adaptPosition (Dock ( horz, vert )) (SizeF ( width, height )) { x, y } =
     { x =
         case ( horz, vert ) of
             ( Center, _ ) -> x
@@ -146,11 +146,11 @@ adaptPosition (Dock ( horz, vert )) ( width, height ) { x, y } =
 
 
 {-| Flip the sides if docking happens in the center. -}
-adaptSize : Dock -> ( Float, Float ) -> ( Float, Float )
-adaptSize (Dock (horz, _)) ( w, h ) =
+adaptSize : Dock -> SizeF Cells -> SizeF Cells
+adaptSize (Dock (horz, _)) (SizeF ( w, h )) =
     case horz of
-        Center -> ( w, h )
-        _ -> ( h, w )
+        Center -> SizeF ( w, h )
+        _ -> SizeF ( h, w )
 
 
 {-| Where the first cell is located with current dock setting and Docking state. -}

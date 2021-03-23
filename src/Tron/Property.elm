@@ -20,6 +20,9 @@ import Tron.Control.Color as Color exposing (..)
 import Tron.Control.Toggle as Toggle exposing (..)
 import Tron.Control.Nest as Nest exposing (..)
 
+import Tron.Pages as Pages
+import Size exposing (..)
+
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.PanelShape as Shape exposing (PanelShape)
 
@@ -30,7 +33,7 @@ type FocusAt = FocusAt Int
 type alias Shape = ( Float, Float )
 
 
-type alias NestShape = ( Shape, CellShape )
+type alias NestShape = ( PanelShape, CellShape )
 
 
 type alias Label = String
@@ -524,6 +527,16 @@ detach prop =
         _ -> prop
 
 
+switchPage : Pages.PageNum -> Property msg -> Property msg
+switchPage pageNum prop =
+    case prop of
+        Group focus shape control ->
+            Group focus shape <| Nest.switchTo pageNum <| control
+        Choice focus shape control ->
+            Choice focus shape <| Nest.switchTo pageNum <| control
+        _ -> prop
+
+
 expandAt : Path -> Property msg -> Property msg
 expandAt path =
     updateAt path expand
@@ -532,6 +545,11 @@ expandAt path =
 detachAt : Path -> Property msg -> Property msg
 detachAt path =
     updateAt path detach
+
+
+switchPageAt : Path -> Pages.PageNum -> Property msg -> Property msg
+switchPageAt path pageNum =
+    updateAt path <| switchPage pageNum
 
 
 detachAll : Property msg -> Property msg
@@ -618,6 +636,16 @@ getCellShape prop =
         _ -> Nothing
 
 
+getPageNum : Property msg -> Maybe Pages.PageNum
+getPageNum prop =
+    case prop of
+        Choice _ _ control ->
+            Just <| Nest.getPage control
+        Group _ _ control ->
+            Just <| Nest.getPage control
+        _ -> Nothing
+
+
 getSelected : Property msg -> Maybe ( Label, Property msg )
 getSelected prop =
     case prop of
@@ -634,7 +662,8 @@ isSelected prop index =
         _ -> False
 
 
-findShape : CellShape -> PanelShape -> List (Property msg) -> ( Float, Float )
-findShape cellShape panelShape =
+findShape : PanelShape -> CellShape -> List (Property msg) -> ( Pages.Count, SizeF Cells )
+findShape panelShape cellShape =
     noGhosts
-        >> Shape.find cellShape panelShape
+        >> List.length
+        >> Shape.find panelShape cellShape

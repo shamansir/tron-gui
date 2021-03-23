@@ -398,6 +398,17 @@ update msg gui =
                 , Cmd.none -- FIXME: Detach.sendTree gui.detach nextRoot
                 )
 
+        SwitchPage path pageNum ->
+            let
+                nextRoot = switchPageAt path pageNum gui.tree
+            in
+                (
+                    { gui
+                    | tree = nextRoot
+                    }
+                , Cmd.none
+                )
+
 
 {-| `applyRaw` is needed only for the cases of replacing Tron interface with `dat.gui` or any other JS interpretation. See `example/DatGui` for reference.
 
@@ -722,7 +733,7 @@ layout : Tron msg -> ( Property msg, Layout )
 layout gui =
     let
         ( Size cellsSize ) = getSizeInCells gui
-        size = cellsSize |> Tuple.mapBoth toFloat toFloat
+        size = cellsSize |> Tuple.mapBoth toFloat toFloat |> SizeF
     in
     case gui.detach
         |> Tuple.second

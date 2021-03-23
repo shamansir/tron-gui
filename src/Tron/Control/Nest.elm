@@ -4,6 +4,7 @@ module Tron.Control.Nest exposing (..)
 import Array exposing (Array)
 
 import Tron.Control as Core exposing (Control)
+import Tron.Pages exposing (PageNum)
 
 
 type Form
@@ -13,9 +14,6 @@ type Form
 
 
 type alias ItemId = Int
-
-
-type alias PageNum = Int
 
 
 type alias GroupControl item msg =
@@ -120,7 +118,7 @@ toggle (Core.Control setup state handler) =
         handler
 
 
-getForm : Core.Control a { a | form : Form } msg -> Form
+getForm : Core.Control setup { a | form : Form } msg -> Form
 getForm (Core.Control _ { form } _) = form
 
 
@@ -183,3 +181,17 @@ withItem id f ( Core.Control items state handler ) =
         )
         state
         handler
+
+getPage : Core.Control setup { a | page : PageNum } msg -> PageNum
+getPage (Core.Control _ { page } _) = page
+
+
+switchTo
+    :  PageNum
+    -> Core.Control setup { a | page : PageNum } msg
+    -> Core.Control setup { a | page : PageNum } msg
+switchTo pageNum (Core.Control setup state hanlder) =
+    Core.Control
+        setup
+        { state | page = pageNum }
+        hanlder

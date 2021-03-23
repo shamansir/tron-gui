@@ -27,6 +27,7 @@ import Tron.Focus exposing (Focused(..))
 import Tron.Focus as Focus exposing (toString)
 import Tron.FocusLogic as Focus exposing (focused)
 import Tron.Detach as Detach exposing (Ability(..))
+import Tron.Pages as Pages
 
 import Tron.Render.Util exposing (..)
 import Tron.Render.Util as Svg exposing (none)
@@ -136,6 +137,20 @@ viewPlateControls detach theme path pixelBounds ( label, source )  =
             Fancy ->
                 Plate.controls detach theme path pixelBounds ( label, source )
 
+viewPagingControls
+     : Theme
+    -> Path
+    -> Bounds
+    -> ( Pages.PageNum, Pages.Count )
+    -> Svg Msg_
+viewPagingControls path theme pixelBounds paging  =
+    positionAt_ pixelBounds <|
+        case mode of
+            Debug ->
+                S.g [ ] [ ]
+            Fancy ->
+                Plate.paging path theme pixelBounds paging
+
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
     :  ( Path, Property msg )
@@ -146,6 +161,7 @@ collectPlatesAndCells -- FIXME: a complicated function, split into many
             , label : String
             , bounds : Bounds
             , source : Property msg
+            , pages : Pages.Count
             }
         , List
             { path : Path
@@ -175,7 +191,7 @@ collectPlatesAndCells ( rootPath, root ) =
                         Nothing -> prevCells
                     )
 
-                Many ( originPath, plateBounds ) innerCells ->
+                Many ( originPath, plateBounds ) innerPages ->
 
                     case root |> Property.find1 (Path.sub rootPath originPath) of
                         Just ( label, source ) ->
@@ -184,9 +200,12 @@ collectPlatesAndCells ( rootPath, root ) =
                                 , label = label
                                 , bounds = B.multiplyBy Cell.width plateBounds
                                 , source = source
+                                , pages = Pages.count innerPages
                                 } :: prevPlates
                             ,
-                                (innerCells
+                                (innerPages
+                                    |> Pages.getCurrent
+                                    |> Maybe.withDefault []
                                     |> List.map
                                         (\( cellPath, cellBounds ) ->
                                             case root
@@ -235,12 +254,12 @@ view theme dock bounds detach getDetachAbility root layout =
         ( plates, cells ) =
             collectPlatesAndCells ( rootPath, root ) layout
 
-        ( platesBacksRendered, cellsRendered, platesControlsRendered ) =
-
-            ( plates
+        platesBacksRendered =
+            plates
                 |> List.map (.bounds >> viewPlateBack theme )
 
-            , cells |> List.map
+        cellsRendered =
+            cells |> List.map
                 (\cell ->
 
                     viewProperty
@@ -265,21 +284,39 @@ view theme dock bounds detach getDetachAbility root layout =
 
                 )
 
-            , plates |> List.map
+        platesControlsRendered =
+            plates
+                |> List.map
+                    (\plate ->
+                        if plate.source
+                            |> Property.getCellShape
+                            |> Maybe.withDefault CS.default
+                            |> CS.isSquare then
+                            viewPlateControls
+                                (getDetachAbility plate.path)
+                                theme
+                                plate.path
+                                plate.bounds
+                                ( plate.label, plate.source )
+                        else Svg.none
+                    )
+
+        platesPagingRendered =
+            plates |> List.map
                 (\plate ->
-                    if plate.source
-                        |> Property.getCellShape
-                        |> Maybe.withDefault CS.default
-                        |> CS.isSquare then
-                        viewPlateControls
-                            (getDetachAbility plate.path)
-                            theme
-                            plate.path
-                            plate.bounds
-                            ( plate.label, plate.source )
-                    else Svg.none
+                    case plate.pages of
+                        1 -> Svg.none
+                        n ->
+                            viewPagingControls
+                                theme
+                                plate.path
+                                plate.bounds
+                                ( plate.source
+                                    |> Property.getPageNum
+                                    |> Maybe.withDefault 1
+                                , n
+                                )
                 )
-            )
 
         detachButtonPos =
             case Dock.firstCellAt dock bounds of
@@ -306,6 +343,7 @@ view theme dock bounds detach getDetachAbility root layout =
             ]
 
             [ Svg.svg
+
                 [ SA.width <| String.fromFloat bounds.width ++ "px"
                 , SA.height <| String.fromFloat bounds.height ++ "px"
                 , SA.style <| "transform: translate("
@@ -319,6 +357,7 @@ view theme dock bounds detach getDetachAbility root layout =
                     [ Svg.g [ SA.class "grid__backs" ] platesBacksRendered
                     , Svg.g [ SA.class "grid__cells" ] cellsRendered
                     , Svg.g [ SA.class "grid__plate-controls" ] platesControlsRendered
+                    , Svg.g [ SA.class "grid__plate-paging" ] platesPagingRendered
                     ,
                         case getDetachAbility rootPath of
                             CanBeDetached localUrl ->
