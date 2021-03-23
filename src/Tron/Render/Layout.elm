@@ -139,16 +139,17 @@ viewPlateControls detach theme path pixelBounds ( label, source )  =
 
 viewPagingControls
      : Theme
+    -> Path
     -> Bounds
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
-viewPagingControls theme pixelBounds paging  =
+viewPagingControls path theme pixelBounds paging  =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g [ ] [ ]
             Fancy ->
-                Plate.paging theme pixelBounds paging
+                Plate.paging path theme pixelBounds paging
 
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
@@ -309,6 +310,7 @@ view theme dock bounds detach getDetachAbility root layout =
                         Just n ->
                             viewPagingControls
                                 theme
+                                plate.path
                                 plate.bounds
                                 ( n, plate.pages )
                         _ -> Svg.none
@@ -339,6 +341,7 @@ view theme dock bounds detach getDetachAbility root layout =
             ]
 
             [ Svg.svg
+
                 [ SA.width <| String.fromFloat bounds.width ++ "px"
                 , SA.height <| String.fromFloat bounds.height ++ "px"
                 , SA.style <| "transform: translate("

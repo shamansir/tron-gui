@@ -398,6 +398,17 @@ update msg gui =
                 , Cmd.none -- FIXME: Detach.sendTree gui.detach nextRoot
                 )
 
+        SwitchPage path pageNum ->
+            let
+                nextRoot = switchPageAt path pageNum gui.tree
+            in
+                (
+                    { gui
+                    | tree = nextRoot
+                    }
+                , Cmd.none
+                )
+
 
 {-| `applyRaw` is needed only for the cases of replacing Tron interface with `dat.gui` or any other JS interpretation. See `example/DatGui` for reference.
 

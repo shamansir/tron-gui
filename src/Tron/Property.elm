@@ -527,6 +527,16 @@ detach prop =
         _ -> prop
 
 
+switchPage : Pages.PageNum -> Property msg -> Property msg
+switchPage pageNum prop =
+    case prop of
+        Group focus shape control ->
+            Group focus shape <| Nest.switchTo pageNum <| control
+        Choice focus shape control ->
+            Choice focus shape <| Nest.switchTo pageNum <| control
+        _ -> prop
+
+
 expandAt : Path -> Property msg -> Property msg
 expandAt path =
     updateAt path expand
@@ -535,6 +545,11 @@ expandAt path =
 detachAt : Path -> Property msg -> Property msg
 detachAt path =
     updateAt path detach
+
+
+switchPageAt : Path -> Pages.PageNum -> Property msg -> Property msg
+switchPageAt path pageNum =
+    updateAt path <| switchPage pageNum
 
 
 detachAll : Property msg -> Property msg

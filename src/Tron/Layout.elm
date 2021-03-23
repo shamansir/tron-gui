@@ -163,7 +163,8 @@ packItemsAtRoot size rp shape items =
                                     (BinPack.container pageWidth pageHeight)
                                 )
                             <| Pages.switchTo pageNum
-                            <| Pages.distribute 9 -- FIXME: floor (w * h)
+                            <| Pages.distribute 9
+                            -- <| Pages.distributeOver pageCount
                             <| Array.toList
                             <| Array.indexedMap Tuple.pair
                             <| plateItems

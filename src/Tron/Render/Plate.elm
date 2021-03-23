@@ -81,21 +81,25 @@ controls detachAbility theme path bounds ( label, prop ) =
 
 paging
      : Theme
+    -> Path
     -> Bounds
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
-paging _ _ ( current, total ) =
+paging _ path _ ( current, total ) =
     Svg.g
         []
         <| List.map
             (\page ->
                 if page == current then
                     Svg.text_
-                        []
+                        [ ]
                         [ Svg.text <| "[" ++ String.fromInt page ++ "]" ]
                 else
                     Svg.text_
-                        [ SA.x <| String.fromInt <| page * 20 ]
+                        [ SA.x <| String.fromInt <| page * 20
+                        , SA.style "pointer-events: all;"
+                        , HE.onClick <| SwitchPage path page
+                        ]
                         [ Svg.text <| "(" ++ String.fromInt page ++ ")" ]
             )
         <| List.range 0 (total - 1)

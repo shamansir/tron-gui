@@ -184,3 +184,14 @@ withItem id f ( Core.Control items state handler ) =
 
 getPage : Core.Control setup { a | page : PageNum } msg -> PageNum
 getPage (Core.Control _ { page } _) = page
+
+
+switchTo
+    :  PageNum
+    -> Core.Control setup { a | page : PageNum } msg
+    -> Core.Control setup { a | page : PageNum } msg
+switchTo pageNum (Core.Control setup state hanlder) =
+    Core.Control
+        setup
+        { state | page = pageNum }
+        hanlder
