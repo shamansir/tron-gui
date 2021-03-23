@@ -84,10 +84,21 @@ paging
     -> Bounds
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
-paging _ _ _ =
+paging _ _ ( current, total ) =
     Svg.g
         []
-        []
+        <| List.map
+            (\page ->
+                if page == current then
+                    Svg.text_
+                        []
+                        [ Svg.text <| "[" ++ String.fromInt page ++ "]" ]
+                else
+                    Svg.text_
+                        [ SA.x <| String.fromInt <| page * 20 ]
+                        [ Svg.text <| "(" ++ String.fromInt page ++ ")" ]
+            )
+        <| List.range 0 (total - 1)
 
 
 detach : Theme -> Svg msg
