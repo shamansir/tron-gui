@@ -4,6 +4,7 @@ module Tron.Control.Nest exposing (..)
 import Array exposing (Array)
 
 import Tron.Control as Core exposing (Control)
+import Tron.Pages exposing (PageNum)
 
 
 type Form
@@ -13,9 +14,6 @@ type Form
 
 
 type alias ItemId = Int
-
-
-type alias PageNum = Int
 
 
 type alias GroupControl item msg =

@@ -3,9 +3,15 @@ module Tron.Pages exposing (..)
 
 import Array exposing (Array)
 
-import Tron.Control.Nest as Nest exposing (..)
+--import Tron.Control.Nest as Nest exposing (..)
 
 import Size exposing (..)
+
+
+type alias PageNum = Int
+
+
+type alias Count = Int
 
 
 type Pages a = Pages PageNum a (List a) -- i.e. NonEmpty array
@@ -77,5 +83,5 @@ distribute : Int -> List a -> Pages (List a)
 distribute maxItems = distributeBy (\list _ -> (List.length list + 1) <= maxItems)
 
 
-count : Pages a -> Int
+count : Pages a -> Count
 count (Pages _ _ list) = List.length list + 1

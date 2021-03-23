@@ -26,6 +26,8 @@ You are not required to specify both sides, just use `rows` or `cols` helpers to
 
 
 import Tron.Style.CellShape exposing (CellShape(..), numify)
+import Tron.Pages as Pages
+import Size exposing (..)
 
 
 {-| -}
@@ -56,20 +58,28 @@ by : Int -> Int -> PanelShape
 by = Shape
 
 
-{-| Get numeric size of a panel in cells. Floats, since there could be half-cells. -}
-find : CellShape -> PanelShape -> List a -> ( Float, Float )
-find cellShape shape items =
+maxCols : Int
+maxCols = 3
+
+
+maxRows : Int
+maxRows = 3
+
+
+{-| Get numeric size of a panel in cells, and a number of pages required, if there are overflows. Floats, since there could be half-cells. -}
+find : PanelShape -> CellShape -> Int -> ( Pages.Count, SizeF Cells )
+find panelShape cellShape itemCount =
     let
         ( cellXMultiplier, cellYMultiplier ) =
             numify cellShape
         otherSide n =
-            if (modBy n <| List.length items) == 0
-                then List.length items // n
-                else List.length items // n + 1
+            if (modBy n itemCount) == 0
+                then itemCount // n
+                else itemCount // n + 1
     in
-        ( case shape of
+        ( case panelShape of
             Auto ->
-                let n = List.length items // 2
+                let n = itemCount // 2
                 in
                     ( n
                     , otherSide n
@@ -86,6 +96,18 @@ find cellShape shape items =
                 ( nc
                 , nr
                 )
-        ) |> Tuple.mapBoth
-            (\c -> toFloat c * cellXMultiplier)
-            (\r -> toFloat r * cellYMultiplier)
+        )
+        |>
+            (\(c, r) ->
+                if c > maxCols
+                then ( c // maxCols + 1, ( maxCols, r ) )
+                else if r > maxRows
+                then ( r // maxRows + 1, ( c, maxRows ) )
+                else ( 1, (r, c) )
+            )
+        |> Tuple.mapSecond
+            (Tuple.mapBoth
+                (\c -> toFloat c * cellXMultiplier)
+                (\r -> toFloat r * cellYMultiplier)
+                >> SizeF
+            )

@@ -20,6 +20,9 @@ import Tron.Control.Color as Color exposing (..)
 import Tron.Control.Toggle as Toggle exposing (..)
 import Tron.Control.Nest as Nest exposing (..)
 
+import Tron.Pages as Pages
+import Size exposing (..)
+
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.PanelShape as Shape exposing (PanelShape)
 
@@ -30,7 +33,7 @@ type FocusAt = FocusAt Int
 type alias Shape = ( Float, Float )
 
 
-type alias NestShape = ( Shape, CellShape )
+type alias NestShape = ( PanelShape, CellShape )
 
 
 type alias Label = String
@@ -634,7 +637,8 @@ isSelected prop index =
         _ -> False
 
 
-findShape : CellShape -> PanelShape -> List (Property msg) -> ( Float, Float )
-findShape cellShape panelShape =
+findShape : PanelShape -> CellShape -> List (Property msg) -> ( Pages.Count, SizeF Cells )
+findShape panelShape cellShape =
     noGhosts
-        >> Shape.find cellShape panelShape
+        >> List.length
+        >> Shape.find panelShape cellShape

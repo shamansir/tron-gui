@@ -17,9 +17,10 @@ import Tron.Style.Dock exposing (Dock)
 import Tron.Style.Dock as Dock
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
-import Tron.Pages as Pages exposing (Pages)
+import Tron.Style.PanelShape exposing (PanelShape)
+import Tron.Pages as Pages exposing (Pages, PageNum)
 
-import Tron.Control.Nest exposing (Form(..), PageNum)
+import Tron.Control.Nest exposing (Form(..))
 import Tron.Control.Nest as Nest exposing (getItems)
 
 
@@ -117,7 +118,7 @@ pack1 dock size rootPath prop =
 packItemsAtRoot
     :  ( Float, Float )
     -> Path
-    -> Shape
+    -> PanelShape
     -> Array (Label, Property msg)
     -> BinPack (Cell_ Path)
 packItemsAtRoot size rp shape items =
@@ -149,33 +150,38 @@ packItemsAtRoot size rp shape items =
                 , Path.fromList path
                 )
 
-        packMany path pageNum (w, h) cellShape plateItems =
-            BinPack.carelessPack
-                (
-                    { width = w
-                    , height = h
-                    }
-                , Many_
-                        (Path.fromList path)
-                        <| Pages.map
-                            (List.foldl
-                                (\(index, ( _, innerProp)) plateLayout ->
-                                    if not <| isGhost innerProp
-                                        then packOneSub (path ++ [index]) cellShape plateLayout
-                                        else plateLayout
+        packMany path pageNum panelShape cellShape plateItems =
+            let
+                ( pageCount, SizeF ( pageWidth, pageHeight ) ) =
+                    Property.findShape panelShape cellShape <| Array.toList plateItems
+            in
+
+                BinPack.carelessPack
+                    (
+                        { width = pageWidth
+                        , height = pageHeight
+                        }
+                    , Many_
+                            (Path.fromList path)
+                            <| Pages.map
+                                (List.foldl
+                                    (\(index, innerProp) plateLayout ->
+                                        if not <| isGhost innerProp
+                                            then packOneSub (path ++ [index]) cellShape plateLayout
+                                            else plateLayout
+                                    )
+                                    (BinPack.container pageWidth pageHeight)
                                 )
-                                (BinPack.container w h)
-                            )
-                        <| Pages.switchTo pageNum
-                        <| Pages.distribute 9 -- FIXME: floor (w * h)
-                        <| Array.toList
-                        <| Array.indexedMap Tuple.pair
-                        <| plateItems
-                )
+                            <| Pages.switchTo pageNum
+                            <| Pages.distribute 9 -- FIXME: floor (w * h)
+                            <| Array.toList
+                            <| Array.indexedMap Tuple.pair
+                            <| plateItems
+                    )
 
         packGroupControl
             :  List Int
-            -> ( Shape, CellShape )
+            -> ( PanelShape, CellShape )
             -> BinPack (Cell_ Path)
             -> Control
                     ( Array ( Label, Property msg ) )
@@ -184,7 +190,7 @@ packItemsAtRoot size rp shape items =
             -> BinPack (Cell_ Path)
         packGroupControl
             path
-            ( innerShape, cellShape )
+            ( panelShape, cellShape )
             layout
             control =
             if Nest.is Expanded control then
@@ -196,9 +202,9 @@ packItemsAtRoot size rp shape items =
                             |> packMany
                                 path
                                 (Nest.getPage control)
-                                innerShape
+                                panelShape
                                 cellShape
-                                items_
+                                (items_ |> Array.map Tuple.second)
                 in
                     packPlatesOf path withPlate items_
             else layout
