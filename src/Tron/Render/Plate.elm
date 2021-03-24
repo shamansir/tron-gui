@@ -85,33 +85,65 @@ paging
     -> Bounds
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
-paging _ path _ ( current, total ) =
+paging _ path bounds ( current, total ) =
+    let
+        itemWidth = (bounds.width - 20) / toFloat total
+        backgroundRect =
+            Svg.rect
+            [ SA.x <| String.fromFloat <| 10
+            , SA.y <| String.fromFloat <| bounds.height - 20
+            , SA.rx <| String.fromFloat <| 5.0
+            , SA.ry <| String.fromFloat <| 5.0
+            , SA.width <| String.fromFloat <| bounds.width - 20
+            , SA.height <| String.fromFloat 10.0
+            , SA.style "pointer-events: none; cursor: pointer;"
+            , SA.fill "rgba(200,200,200,0.3)"
+            ]
+            []
+        currentPageRect page =
+            Svg.rect
+                [ SA.x <| String.fromFloat <| 10 + (toFloat page * itemWidth)
+                , SA.y <| String.fromFloat <| bounds.height - 20
+                , SA.rx <| String.fromFloat <| 5.0
+                , SA.ry <| String.fromFloat <| 5.0
+                , SA.width <| String.fromFloat <| itemWidth
+                , SA.height <| String.fromFloat 10.0
+                , SA.style "pointer-events: none; cursor: pointer;"
+                , SA.fill "gray"
+                ]
+                [ ]
+        switchingRect page =
+            Svg.rect
+                [ SA.x <| String.fromFloat <| 10 + (toFloat page * itemWidth)
+                , SA.y <| String.fromFloat <| bounds.height - 24
+                , SA.width <| String.fromFloat <| itemWidth
+                , SA.height <| String.fromFloat 17.0
+                , SA.style "pointer-events: all; cursor: pointer;"
+                , HE.onClick <| SwitchPage path page
+                , SA.fill "transparent"
+                ]
+                [ ]
+
+    in
     Svg.g
         []
-        <| List.map
+        [ backgroundRect
+        , Svg.g
+            []
+            <| List.map
             (\page ->
                 if page == current then
-                    Svg.circle
-                        [ SA.cx <| String.fromInt <| 16 + (page * 15)
-                        , SA.cy <| String.fromFloat -5
-                        , SA.r <| String.fromFloat 4.0
-                        , SA.style "pointer-events: none; cursor: none;"
-                        , SA.fill "lightgray"
-                        , HE.onClick <| SwitchPage path page
+                    Svg.g
+                        []
+                        [ currentPageRect page
+                        , switchingRect page
                         ]
-                        [  ]
+
                 else
-                    Svg.circle
-                        [ SA.cx <| String.fromInt <| 16 + (page * 15)
-                        , SA.cy <| String.fromFloat -5
-                        , SA.r <| String.fromFloat 4.0
-                        , SA.style "pointer-events: all; cursor: pointer;"
-                        , SA.fill "gray"
-                        , HE.onClick <| SwitchPage path page
-                        ]
-                        [ ]
+                    switchingRect page
             )
-        <| List.range 0 (total - 1)
+            <| List.range 0 (total - 1)
+        ]
 
 
 detach : Theme -> Svg msg
