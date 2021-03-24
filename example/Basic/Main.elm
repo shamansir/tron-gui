@@ -5,89 +5,39 @@ import Browser exposing (element)
 import Html exposing (Html, div)
 import Html.Attributes as Attr exposing (class)
 
-import Gui as Tron exposing (Gui, init, view, update, subscriptions)
-import Gui.Msg as Tron exposing (Msg(..))
-import Gui.Render.Style as Tron exposing (Theme(..))
-
-import Default.Main as Default
-import Default.Model as Default
-import Default.Msg as Default
-import Default.Gui as DefaultGui
+import Tron exposing (Tron, Msg, init, view, update, subscriptions)
+import Tron.Builder as Builder exposing (map)
+import Tron.Style.Theme as Theme exposing (Theme(..))
+import Tron.Style.Dock as Dock
+import Tron.Option as Option
+import WithTron exposing (ProgramWithTron)
 
 
-type Msg
-    = ToDefault Default.Msg
-    | ToTron Tron.Msg
+import Example.Goose.Main as Example
+import Example.Goose.Model as Example
+import Example.Goose.Msg as Example
+import Example.Goose.Gui as ExampleGui
 
 
-type alias Example
-    = Default.Model
+{-
+-- Change to `Default` example
+-- by just commenting out `.Goose` imports above
+-- and removing the comment here
+import Example.Default.Main as Example
+import Example.Default.Model as Example
+import Example.Default.Msg as Example
+import Example.Default.Gui as ExampleGui
+-}
 
 
-type alias Model =
-    ( Example, Tron.Gui Msg )
-
-
-init : flags -> ( Model, Cmd Msg )
-init _ =
-    let
-        example = Default.init
-        ( gui, guiEffect ) =
-            DefaultGui.for example
-                |> Tron.init
-    in
-        (
-            ( example
-            , gui |> Tron.map ToDefault
-            )
-        , guiEffect |> Cmd.map ToTron
-        )
-
-
-view : Model -> Html Msg
-view ( example, gui ) =
-    Html.div
-        [ ]
-        [ gui
-            |> Tron.view Tron.Light
-            |> Html.map ToTron
-        , Default.view example
-        ]
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ( example, gui ) =
-    case msg of
-
-        ToDefault dmsg ->
-            (
-                ( example |> Default.update dmsg
-                , gui
-                )
-            , Cmd.none
-            )
-
-        ToTron guiMsg ->
-            case gui |> Tron.update guiMsg of
-                ( nextGui, cmds ) ->
-                    (
-                        ( example
-                        , nextGui
-                        )
-                    , cmds
-                    )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions ( _, gui ) =
-    Tron.subscriptions gui |> Sub.map ToTron
-
-
-main : Program () Model Msg
+main : ProgramWithTron () Example.Model Example.Msg
 main =
-    Browser.element
-        { init = init
-        , view = view
-        , subscriptions = subscriptions
-        , update = update
+    WithTron.element
+        (Option.toHtml Dock.center Theme.dark)
+        Option.noCommunication
+        { for = ExampleGui.for
+        , init = always Example.init
+        , view = Example.view
+        , update = Example.update
+        , subscriptions = always Sub.none
         }

@@ -4,87 +4,41 @@ port module DatGui.Main exposing (main)
 import Browser exposing (element)
 import Html exposing (Html, div)
 
-import Gui as Tron exposing (Gui, initRaw, view)
+import Gui as Tron exposing (Gui, view)
 import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
+import Gui.WithGui as WithGui exposing (ProgramWithGui)
+import Gui.Option as Option
 
-import Default.Main as Default
-import Default.Model as Default
-import Default.Msg as Default
-import Default.Gui as DefaultGui
-
-
-type Msg
-    = ToDefault Default.Msg
-    | FromDatGui Exp.RawUpdate
+import Example.Goose.Main as Example
+import Example.Goose.Model as Example
+import Example.Goose.Msg as Example
+import Example.Goose.Gui as ExampleGui
 
 
-type alias Example
-    = Default.Model
+{-
+-- Change to `Default` example
+-- by just commenting out `.Goose` imports above
+-- and removing the comment here
+import Example.Default.Main as Example
+import Example.Default.Model as Example
+import Example.Default.Msg as Example
+import Example.Default.Gui as ExampleGui
+-}
 
 
-type alias Model =
-    ( Example, Tron.Gui Msg )
-
-
-init : flags -> ( Model, Cmd Msg )
-init _ =
-    let
-        example = Default.init
-        gui =
-            DefaultGui.for example
-                |> Tron.initRaw
-    in
-        (
-            ( example
-            , gui |> Tron.map ToDefault
-            )
-        , gui
-            |> Tron.encode
-            |> startDatGui
-        )
-
-
-view : Model -> Html Msg
-view ( example, _ ) =
-    Html.div
-        [ ]
-        [ Default.view example
-        ]
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ( example, gui ) =
-    case msg of
-
-        ToDefault dmsg ->
-            (
-                ( example |> Default.update dmsg
-                , gui
-                )
-            , Cmd.none
-            )
-
-        FromDatGui datGuiMsg ->
-            (
-                ( example
-                , gui
-                )
-            , gui |> Tron.applyRaw datGuiMsg
-            )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    updateFromDatGui FromDatGui
-
-
-main : Program () Model Msg
+main : ProgramWithGui () Example.Model Example.Msg
 main =
-    Browser.element
-        { init = init
-        , view = view
-        , subscriptions = subscriptions
-        , update = update
+    WithGui.element
+        Option.hidden
+        (Option.withDatGui
+            { ack = startDatGui
+            , receive = updateFromDatGui
+            })
+        { for = ExampleGui.for
+        , init = always Example.init
+        , view = Example.view
+        , update = Example.update
+        , subscriptions = Example.subscriptions
         }
 
 

@@ -1,10 +1,25 @@
 const WebSocket = require('ws');
 
-const wss = new WebSocket.Server({ port: 3333 });
+const WSS_PORT = 80;
+
+const http = require('http');
+const server = http.createServer(function (req, res) {
+    var url = req.url;
+    if (url === '/healthz' ){
+       res.writeHead(200, { 'Content-Type': 'text/html' }); // http header
+       res.write('<h1>OK<h1>'); //write a response
+       res.end(); //end the response
+    }
+   });
+
+const wss = new WebSocket.Server({ server });
 
 const updates = {};
 
+console.log('starting server on port', WSS_PORT);
+
 wss.on('connection', function connection(ws) {
+  console.log("new connection!");
   ws.on('message', function incoming(message) {
     let package = JSON.parse(message);
     console.log(`${package.code} ${package.data.client}`);
@@ -37,3 +52,5 @@ function broadcast(from, clientId, data) {
         }
     })
 }
+
+server.listen(WSS_PORT);

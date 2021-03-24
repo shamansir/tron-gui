@@ -1,12 +1,15 @@
 module Bounds exposing (..)
 
 
-type alias Bounds =
+import BinPack exposing (Bounds)
+
+
+{- type alias Bounds =
     { x : Float
     , y : Float
     , width : Float
     , height : Float
-    }
+    } -}
 
 
 zero : Bounds

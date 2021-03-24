@@ -3,14 +3,14 @@
     "name": "shamansir/tron-gui",
     "summary": "Tron: Minimal Universal GUI",
     "license": "BSD-3-Clause",
-    "version": "3.0.0",
+    "version": "4.0.0",
     "exposed-modules": [
-        "Gui",
-        "Gui.Build",
-        "Gui.Style.Theme",
-        "Gui.Style.Flow",
-        "Gui.Style.Shape",
-        "Gui.Style.CellShape"
+        "WithTron",
+        "Tron.Builder",
+        "Tron.Style.Theme",
+        "Tron.Style.Dock",
+        "Tron.Style.PanelShape",
+        "Tron.Style.CellShape"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
@@ -22,7 +22,10 @@
         "elm/random": "1.0.0 <= v < 2.0.0",
         "elm/svg": "1.0.1 <= v < 2.0.0",
         "elm/url": "1.0.0 <= v < 2.0.0",
-        "pdamoc/elm-hashids": "1.0.4 <= v < 2.0.0"
+        "noahzgordon/elm-color-extra": "1.0.2 <= v < 2.0.0",
+        "pdamoc/elm-hashids": "1.0.4 <= v < 2.0.0",
+        "shamansir/bin-pack": "1.3.0 <= v < 2.0.0",
+        "toastal/either": "3.5.2 <= v < 4.0.0"
     },
     "test-dependencies": {}
 }
