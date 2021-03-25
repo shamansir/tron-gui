@@ -35,6 +35,12 @@ type alias ChoiceControl item msg =
         msg
 
 
+type alias Transient =
+    { form : Form
+    , page : PageNum
+    }
+
+
 get : ItemId -> Core.Control ( Array item ) value msg -> Maybe item
 get n = getItems >> Array.get n
 
@@ -195,3 +201,43 @@ switchTo pageNum (Core.Control setup state hanlder) =
         setup
         { state | page = pageNum }
         hanlder
+
+
+getTransientState
+    : Core.Control
+        setup
+        { a | form : Form
+        , page : PageNum
+        }
+        msg
+    -> Transient
+getTransientState (Core.Control _ state _) =
+    { form = state.form
+    , page = state.page
+    }
+
+
+restoreTransientState
+    :  Core.Control
+        setup
+        { a
+        | form : Form
+        , page : PageNum
+        }
+        msg
+    -> Transient
+    -> Core.Control
+        setup
+        { a
+        | form : Form
+        , page : PageNum
+        }
+        msg
+restoreTransientState (Core.Control setup state handler) src =
+    Core.Control
+        setup
+        { state
+        | form = src.form
+        , page = src.page
+        }
+        handler
