@@ -13,6 +13,10 @@ type TextState
 type alias Control msg = Core.Control () ( TextState, String ) msg
 
 
+type alias Transient =
+    TextState
+
+
 ensureEditing : Control msg -> Control msg
 ensureEditing =
     Control.update <| \(_, v) -> ( Editing, v )
@@ -27,3 +31,12 @@ updateText : String -> Control msg -> Control msg
 updateText newValue =
     update
         <| \(s, _) -> ( s, newValue )
+
+
+getTransientState : Control msg -> Transient
+getTransientState (Core.Control _ ( state, _ ) _) = state
+
+
+restoreTransientState : Control msg -> Transient -> Control msg
+restoreTransientState (Control setup ( _, val ) handler) state =
+    Core.Control setup ( state, val ) handler

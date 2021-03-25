@@ -54,15 +54,6 @@ type Property msg
     | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property msg ) msg)
 
 
-type alias ExpandData = List Path
-
-
-type alias EditingData = List Path
-
-
-type alias TransientState = ( ExpandData, EditingData )
-
-
 knobDistance = 90 * 4
 
 
@@ -160,6 +151,19 @@ map f prop =
                 <| (control
                     |> Nest.mapItems (Tuple.mapSecond <| map f)
                     |> Control.map f)
+
+
+{- zip
+    : (Property msgA -> Property msgB -> Property msgC)
+    -> Property msgA
+    -> Property msgB
+    -> Property msgC
+zip f propA propB =
+    case ( propA, propB ) of
+        ( Choice _ _ controlA, Choice _ _ controlB ) ->
+
+        ( Group _ _ controlA, Group _ _ controlB ) ->
+        _ -> f propA propB -}
 
 
 fold : (Path -> Property msg -> a -> a) -> a -> Property msg -> a
@@ -278,6 +282,7 @@ replaceWithPathsMap msgMap f root =
 
 addPathFrom : Path -> Property msg -> Property ( Path, msg )
 addPathFrom from root =
+    -- FIXME: should be just another `fold` actually?
     let
         replaceItem : Path -> Int -> ( Label, Property msg ) -> ( Label, Property (Path, msg) )
         replaceItem parentPath index ( label, innerItem ) =
@@ -408,61 +413,49 @@ executeAt path root =
         Nothing -> []
 
 
-
--- TODO: make `Control` decide what transient state is:
--- it is smth that should be kept when the value is replaced,
--- but structure is not affected (i.e. `Form` for the nests)
-loadTransientState : Property msg -> TransientState
-loadTransientState prop =
-    ( loadExpanded prop
-    , loadTextEditing prop
-    )
-
-
-loadExpanded : Property msg -> ExpandData
-loadExpanded =
-    unfold
-        >> List.filterMap
-            (\(path, innerProp) ->
-                case innerProp of
-                    Group _ _ control ->
-                        if control |> Nest.is Expanded then Just path else Nothing
-                    Choice _ _ control ->
-                        if control |> Nest.is Expanded then Just path else Nothing
-                    _ -> Nothing
-            )
-
-
-loadTextEditing : Property msg -> EditingData
-loadTextEditing =
-    unfold
-        >> List.filterMap
-            (\(path, innerProp) ->
-                case innerProp of
-                    Text (Control _ ( Text.Editing, _) _ ) ->
-                        Just path
-                    _ -> Nothing
-            )
-
-
-applyExpanded : Property msg -> ExpandData -> Property msg
-applyExpanded =
-    -- expanded
-    --     |> List.foldl expandAt prop
-    List.foldl expandAt -- FIXME: not very efficient since goes through the structure several times
-
-
-applyTextEditing : Property msg -> EditingData -> Property msg
-applyTextEditing =
-    -- expanded
-    --     |> List.foldl expandAt prop
-    List.foldl ensureEditingAt -- FIXME: not very efficient since goes through the structure several times
-
-
--- FIXME: instead, traverse two trees with the same structure and move transient states between them
-applyTransientState : Property msg -> TransientState -> Property msg
-applyTransientState prop ( expanded, editing ) =
-    editing |> applyTextEditing (expanded |> applyExpanded prop)
+transferTransientState : Property msg -> Property msg -> Property msg
+transferTransientState propA propB =
+    let
+        f propA_ propB_ =
+            case ( propA_, propB_ ) of
+                ( Choice focusA _ controlA, Choice _ shapeB controlB ) ->
+                    Choice focusA shapeB
+                        (Nest.getTransientState controlA
+                            |> Nest.restoreTransientState controlB)
+                ( Group focusA _ controlA, Group _ shapeB controlB ) ->
+                    Group focusA shapeB
+                        (Nest.getTransientState controlA
+                            |> Nest.restoreTransientState controlB)
+                ( Text controlA, Text controlB ) ->
+                    Text
+                        (Text.getTransientState controlA
+                            |> Text.restoreTransientState controlB)
+                _ -> propB_
+        zipItems controlA controlB =
+            let
+                itemsA = Nest.getItems controlA
+                itemsB = Nest.getItems controlB
+            in
+                List.map2
+                    (\(labelA, propA_) (labelB, propB_) ->
+                        (labelB, transferTransientState propA_ propB_)
+                    )
+                    (itemsA |> Array.toList)
+                    (itemsB |> Array.toList)
+                    |> Array.fromList
+    in
+    case ( propA, propB ) of
+        ( Choice _ _ controlA, Choice _ _ controlB ) ->
+            case f propA propB of
+                Choice focus shape control ->
+                    Choice focus shape <| Nest.setItems (zipItems controlA controlB) <| control
+                otherProp -> otherProp
+        ( Group _ _ controlA, Group _ _ controlB ) ->
+            case f propA propB of
+                Group focus shape control ->
+                    Group focus shape <| Nest.setItems (zipItems controlA controlB) <| control
+                otherProp -> otherProp
+        _ -> f propA propB
 
 
 -- TODO: better use the functions below directly from their controls

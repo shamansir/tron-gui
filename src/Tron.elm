@@ -266,8 +266,9 @@ over prop gui =
     in
         { gui
         | tree =
-            loadTransientState gui.tree
-                |> applyTransientState (Focus.on prop lastFocus)
+            transferTransientState gui.tree prop --<| Focus.on prop lastFocus
+            -- loadTransientState gui.tree
+            --     |> applyTransientState (Focus.on prop lastFocus)
         }
 
 
