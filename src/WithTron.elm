@@ -225,6 +225,28 @@ nextClientId =
     Random.generate SetClientId Detach.clientIdGenerator
 
 
+sandbox
+    :  RenderTarget
+    -> PortCommunication msg
+    ->
+        { for : model -> Builder.Builder msg
+        , init : model
+        , view : model -> Html msg
+        , update : msg -> model -> model
+        }
+    -> ProgramWithTron flags model msg
+sandbox renderTarget ports impl =
+    element
+        renderTarget
+        ports
+        { for = impl.for
+        , init = \_ -> ( impl.init, Cmd.none )
+        , view = impl.view
+        , update = \msg model -> ( impl.update msg model, Cmd.none )
+        , subscriptions = \_ -> Sub.none
+        }
+
+
 element
     :  RenderTarget
     -> PortCommunication msg
@@ -249,6 +271,42 @@ element renderTarget ports def =
         }
 
 
+document
+    :  RenderTarget
+    -> PortCommunication msg
+    ->
+        { for : model -> Builder.Builder msg
+        , init : flags -> ( model, Cmd msg )
+        , subscriptions : model -> Sub msg
+        , view : model -> Browser.Document msg
+        , update : msg -> model -> ( model, Cmd msg )
+        }
+    -> ProgramWithTron flags model msg
+document renderTarget ports def =
+    Browser.document
+        { init =
+            \flags ->
+                init ( def.init, def.for ) Nothing renderTarget ports flags
+        , update =
+            update ( def.update, def.for ) ports
+        , view =
+            \(userModel, gui) ->
+                { title = (def.view userModel).title
+                , body =
+                    [ view
+                        (\umodel ->
+                            -- FIXME: we calculate view two times, it seems
+                            Html.div [] <| (def.view umodel).body
+                        )
+                        renderTarget
+                        (userModel, gui)
+                    ]
+                }
+        , subscriptions =
+            subscriptions def.subscriptions ports
+        }
+
+
 application
     :  RenderTarget
     -> PortCommunication msg
@@ -256,8 +314,10 @@ application
         { for : model -> Builder.Builder msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
-        , view : model -> Html msg
+        , view : model -> Browser.Document msg
         , update : msg -> model -> ( model, Cmd msg )
+        , onUrlChange : Url.Url -> msg
+        , onUrlRequest : Browser.UrlRequest -> msg
         }
     -> ProgramWithTron flags model msg
 application renderTarget ports def =
@@ -268,10 +328,17 @@ application renderTarget ports def =
         , update =
             update ( def.update, def.for ) ports
         , view =
-            \model ->
-                { title = "Tron GUI"
+            \(userModel, gui) ->
+                { title = (def.view userModel).title
                 , body =
-                    [ view def.view renderTarget model ]
+                    [ view
+                        (\umodel ->
+                            -- FIXME: we calculate view two times, it seems
+                            Html.div [] <| (def.view umodel).body
+                        )
+                        renderTarget
+                        (userModel, gui)
+                    ]
                 }
         , subscriptions =
             subscriptions def.subscriptions ports

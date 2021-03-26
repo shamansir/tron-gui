@@ -159,9 +159,9 @@ firstCellAt (Dock ( horz, vert )) bounds =
     ( case horz of
         Right -> bounds.width - Cell.width
         _ -> 0
-    , case vert  of
-       Bottom -> bounds.height - Cell.height
-       _ -> 0
+    , case vert of
+        Bottom -> bounds.height - Cell.height
+        _ -> 0
     )
 
 

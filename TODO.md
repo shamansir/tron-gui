@@ -10,6 +10,8 @@
 * Consider having `Nil (Property msg)` instead of just `Nil`, so that any property could be hidden, but not absent in the tree;
 * Get rid of functions in the `Model`:
     * do not store tree in the `Gui msg`, build it every time;
-    * store the actual messages for the current value in the controls, not the handlers;
+    * store the actual messages for the current value in the controls, not the handlers (i.e. just `msg` instead of `v -> msg`);
     * for `.over`, traverse two trees with the same structure (don't forget about ghosts) and move transient states between them;
 * Check `indexedMap` usages, so that usage of the index is kept to minimum for nested items;
+* Do not store cell size in the `Gui msg`, it should be recalculated every time;
+* Do not store dock in the `Gui msg`, it should be recalculated every time;
