@@ -35,17 +35,16 @@ type Cell a
     | Many a (Pages (List a))
 
 
-type alias Layout = ( Dock, SizeF Cells, BinPack (Cell_ Path) )
+type alias Layout = ( SizeF Cells, BinPack (Cell_ Path) )
 
 
 type Position a = Position { x : Float, y : Float }
 
 
-init : Dock -> SizeF Cells -> Layout
-init dock size =
-    ( dock
-    , size
-    , initBinPack <| Dock.adaptSize dock size
+init : SizeF Cells -> Layout
+init size =
+    ( size
+    , initBinPack size
     )
 
 
@@ -55,52 +54,46 @@ initBinPack (SizeF ( maxCellsByX, maxCellsByY ))
 
 
 find : Layout -> { x : Float, y : Float } -> Maybe Path
-find ( dock, size, layout ) pos =
-    let
-        adaptedPos = Dock.adaptPosition dock size pos
-    in
-        case layout |> BinPack.find adaptedPos of
-            Just ( One_ path, _ ) ->
-                Just path
-            Just ( Many_ _ innerPages, bounds ) ->
-                innerPages
-                    |> Pages.getCurrent
-                    |> Maybe.andThen
-                        (BinPack.find
-                            { x = adaptedPos.x - bounds.x
-                            , y = adaptedPos.y - bounds.y
-                            }
-                        )
-                    |> Maybe.map Tuple.first
-            Nothing ->
-                Nothing
+find ( size, layout ) pos =
+    case layout |> BinPack.find pos of
+        Just ( One_ path, _ ) ->
+            Just path
+        Just ( Many_ _ innerPages, bounds ) ->
+            innerPages
+                |> Pages.getCurrent
+                |> Maybe.andThen
+                    (BinPack.find
+                        { x = pos.x - bounds.x
+                        , y = pos.y - bounds.y
+                        }
+                    )
+                |> Maybe.map Tuple.first
+        Nothing ->
+            Nothing
 
 
-pack : Dock -> SizeF Cells -> Property msg -> Layout
-pack dock size = pack1 dock size Path.start
+pack : SizeF Cells -> Property msg -> Layout
+pack size = pack1 size Path.start
 
 
-pack1 : Dock -> SizeF Cells -> Path -> Property msg -> Layout
-pack1 dock size rootPath prop =
+pack1 : SizeF Cells -> Path -> Property msg -> Layout
+pack1 size rootPath prop =
     case prop of
         Nil ->
-            init dock size
+            init size
         Group _ ( shape, _ ) control ->
-            ( dock
-            , size
-            , packItemsAtRoot (Dock.adaptSize dock size) rootPath shape
+            ( size
+            , packItemsAtRoot size rootPath shape
                 <| Nest.getItems control
             )
         Choice _ ( shape, _ ) control ->
-            ( dock
-            , size
-            , packItemsAtRoot (Dock.adaptSize dock size) rootPath shape
+            ( size
+            , packItemsAtRoot size rootPath shape
                 <| Nest.getItems control
             )
         _ ->
-            ( dock
-            , size
-            , initBinPack (Dock.adaptSize dock size)
+            ( size
+            , initBinPack size
                 |> BinPack.carelessPack ( { width = 1, height = 1 }, One_ <| Path.start )
             )
 
@@ -222,38 +215,34 @@ packItemsAtRoot size rp shape items =
 
 
 unfold : ( Cell ( Path, Bounds ) -> a -> a ) -> a -> Layout -> a
-unfold f def ( dock, size, bp ) =
-    let
-        adaptBounds =
-            Dock.adaptBounds dock <| Dock.adaptSize dock size
-    in
-        BinPack.foldGeometry
-            (\( c, bounds ) prev ->
-                case c of
-                    One_ path ->
-                        f
-                            ( One ( path, adaptBounds bounds ) )
-                            prev
+unfold f def ( _, bp ) =
+    BinPack.foldGeometry
+        (\( c, bounds ) prev ->
+            case c of
+                One_ path ->
+                    f
+                        ( One ( path, bounds ) )
+                        prev
 
-                    Many_ path bpPages ->
-                        f
-                            ( Many
-                                ( path, adaptBounds bounds )
-                                <| Pages.map
-                                    (List.map
-                                        (Tuple.mapSecond
-                                            <| adaptBounds << Bounds.shift bounds
-                                        )
-                                    << BinPack.foldGeometry
-                                        (::)
-                                        []
+                Many_ path bpPages ->
+                    f
+                        ( Many
+                            ( path, bounds )
+                            <| Pages.map
+                                (List.map
+                                    (Tuple.mapSecond
+                                        <| Bounds.shift bounds
                                     )
-                                <| bpPages
-                            )
-                            prev
-            )
-            def
-            bp
+                                << BinPack.foldGeometry
+                                    (::)
+                                    []
+                                )
+                            <| bpPages
+                        )
+                        prev
+        )
+        def
+        bp
 
 
 toList : Layout -> List ( Cell ( Path, Bounds ) )
