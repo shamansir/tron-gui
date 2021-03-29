@@ -153,7 +153,8 @@ viewPagingControls path theme pixelBounds paging  =
 
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
-    :  ( Path, Property msg )
+    :  Dock
+    -> ( Path, Property msg )
     -> Layout
     ->
         ( List
@@ -172,7 +173,7 @@ collectPlatesAndCells -- FIXME: a complicated function, split into many
             , index : Maybe Int
             }
         )
-collectPlatesAndCells ( rootPath, root ) =
+collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
     Layout.unfold
         (\cell ( prevPlates, prevCells ) ->
             case cell of
@@ -184,7 +185,10 @@ collectPlatesAndCells ( rootPath, root ) =
                             { path = cellPath
                             , label = label
                             , parent = Nothing
-                            , bounds = B.multiplyBy Cell.width cellBounds
+                            , bounds =
+                                cellBounds
+                                    |> Dock.adaptBounds dock size
+                                    |> B.multiplyBy Cell.width
                             , source = source
                             , index = Nothing
                             } :: prevCells
@@ -198,7 +202,10 @@ collectPlatesAndCells ( rootPath, root ) =
                             (
                                 { path = originPath
                                 , label = label
-                                , bounds = B.multiplyBy Cell.width plateBounds
+                                , bounds =
+                                    plateBounds
+                                        |> Dock.adaptBounds dock size
+                                        |> B.multiplyBy Cell.width
                                 , source = source
                                 , pages = Pages.count innerPages
                                 } :: prevPlates
@@ -214,7 +221,14 @@ collectPlatesAndCells ( rootPath, root ) =
                                                     { path = cellPath
                                                     , label = cellLabel
                                                     , parent = Just source
-                                                    , bounds = B.multiplyBy Cell.width cellBounds
+                                                    , bounds =
+                                                        cellBounds
+                                                            |> Dock.adaptBounds dock size
+                                                            -- |> B.shift
+                                                            --     (plateBounds
+                                                            --         |> Dock.adaptBounds dock size
+                                                            --     )
+                                                            |> B.multiplyBy Cell.width
                                                     , source = cellSource
                                                     , index = Path.tail cellPath
                                                     } |> Just
@@ -228,6 +242,7 @@ collectPlatesAndCells ( rootPath, root ) =
 
         )
         ( [], [] )
+        ( size, bp )
 
 
 view
@@ -252,7 +267,7 @@ view theme dock bounds detach getDetachAbility root layout =
                 |> Maybe.withDefault Path.start
 
         ( plates, cells ) =
-            collectPlatesAndCells ( rootPath, root ) layout
+            collectPlatesAndCells dock ( rootPath, root ) layout
 
         platesBacksRendered =
             plates
