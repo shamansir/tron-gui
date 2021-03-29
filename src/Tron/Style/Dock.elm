@@ -104,27 +104,17 @@ adaptBounds
     -> { x : Float, y : Float, width : Float, height : Float }
     -> { x : Float, y : Float, width : Float, height : Float }
 adaptBounds (Dock ( horz, vert )) (SizeF ( width, height )) innerBounds =
-    { width =
-        case horz of
-            Left -> innerBounds.height
-            Center -> innerBounds.width
-            Right -> innerBounds.height
-    , height =
-        case horz of
-            Left -> innerBounds.width
-            Center -> innerBounds.height
-            Right -> innerBounds.width
+    { width = innerBounds.width
+    , height = innerBounds.height
     , x =
         case horz of
-            Left -> innerBounds.y
-            Center -> innerBounds.x
-            Right -> height - innerBounds.y - innerBounds.height
+            Left -> innerBounds.x
+            Center -> innerBounds.x -- (width / 2) - innerBounds.width + innerBounds.x
+            Right -> width - innerBounds.x - innerBounds.width
     , y =
         case ( horz, vert ) of
-            ( Center, Bottom ) -> height - innerBounds.y - innerBounds.height
-            ( Center, _ ) -> innerBounds.y
-            ( _, Bottom ) -> width - innerBounds.x - innerBounds.width
-            _ -> innerBounds.x
+            ( _, Bottom ) -> height - innerBounds.y - innerBounds.height
+            _ -> innerBounds.y
     }
 
 
