@@ -10,6 +10,7 @@ import Svg exposing (..)
 import Svg.Attributes as S exposing (..)
 import Task
 
+import Array
 import Size exposing (..)
 import SmartPack exposing (SmartPack)
 import SmartPack as SP
@@ -61,7 +62,7 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     (
-        { mode = Rects
+        { mode = Matrix
         , smartPack = SP.container <| Size ( 0, 0 )
         , nextRect = Nothing
         , nextPos = Nothing
@@ -230,23 +231,47 @@ update msg model =
 
 -- VIEW
 
+scale = 30
+
 
 view : Model -> Html Msg
 view model =
     let
-        rect color bounds stroke =
+        rect color bounds =
             Svg.rect
-                [ S.x <| String.fromFloat bounds.x
-                , S.y <| String.fromFloat bounds.y
-                , S.width <| String.fromFloat bounds.width
-                , S.height <| String.fromFloat bounds.height
+                [ S.x <| String.fromFloat <| bounds.x * scale
+                , S.y <| String.fromFloat <| bounds.y * scale
+                , S.width <| String.fromFloat <| bounds.width * scale
+                , S.height <| String.fromFloat <| bounds.height * scale
                 , S.fill color
                 , S.strokeWidth "1"
-                , S.stroke stroke
+                , S.stroke "black"
                 ]
                 []
         viewItem (bounds, color)
-            = rect color bounds "black"
+            = rect color bounds
+        viewCell { x, y, color, value } =
+            Svg.g
+                []
+                [ Svg.rect
+                    [ S.x <| String.fromFloat <| x * scale
+                    , S.y <| String.fromFloat <| y * scale
+                    , S.width <| String.fromFloat scale
+                    , S.height <| String.fromFloat scale
+                    , S.fill color
+                    , S.strokeWidth "1"
+                    , S.stroke "black"
+                    ]
+                    []
+                , Svg.text_
+                    [ S.x <| String.fromFloat <| (x * scale) + 5
+                    , S.y <| String.fromFloat <| (y * scale) + 5
+                    , S.dominantBaseline "hanging"
+                    ]
+                    [ Svg.text <| String.fromInt value ]
+                ]
+        rowsToCells _ =
+            Array.fromList [ { x = 1, y = 1, color = "blue", value = -1 }]
     in
         div
             []
@@ -257,8 +282,10 @@ view model =
                         <| SP.asList model.smartPack
                 Matrix ->
                     svg [ S.width "300", S.height "300" ]
-                        <| List.map viewItem
-                        <| SP.asList model.smartPack
+                        <| Array.toList
+                        <| Array.map viewCell
+                        <| rowsToCells
+                        <| SP.toMatrix model.smartPack
                 RectsAndMatrix ->
                     svg [ S.width "300", S.height "300" ]
                         <| List.map viewItem
