@@ -1,4 +1,4 @@
-module BinPackDemo exposing (..)
+module SmartPackDemo exposing (..)
 
 
 import Browser
@@ -10,8 +10,9 @@ import Svg exposing (..)
 import Svg.Attributes as S exposing (..)
 import Task
 
-import BinPack exposing (BinPack)
-import BinPack as BinPack exposing (..)
+import Size exposing (..)
+import SmartPack exposing (SmartPack)
+import SmartPack as SP
 
 
 -- MAIN
@@ -33,6 +34,9 @@ main =
 type alias Color = String
 
 
+type alias Pos = ( Float, Float )
+
+
 type alias Rect =
     { width : Float
     , height : Float
@@ -41,23 +45,26 @@ type alias Rect =
 
 
 type RenderMode
-    = OnlyRects
-    | RectsAndFreeSpace
+    = Rects
+    | Matrix
+    | RectsAndMatrix
 
 
 type alias Model =
     { mode : RenderMode
-    , binPack : BinPack Color
+    , smartPack : SmartPack Color
     , nextRect : Maybe Rect
+    , nextPos : Maybe Pos
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     (
-        { mode = OnlyRects
-        , binPack = container 0 0
+        { mode = Rects
+        , smartPack = SP.container <| Size ( 0, 0 )
         , nextRect = Nothing
+        , nextPos = Nothing
         }
     , Task.succeed ()
         |> Task.perform (always Randomize)
@@ -73,8 +80,11 @@ type Msg
   | Randomize
   | PackAll (List Rect)
   | PackOne Rect
+  | PackOneAt ( Float, Float ) Rect
   | SetNextRectWidth Float
   | SetNextRectHeight Float
+  | SetNextRectX Float
+  | SetNextRectY Float
   | Clear
   | Error Rect
 
@@ -96,7 +106,7 @@ update msg model =
     Randomize ->
        (
            { model
-           | binPack = container 300 300
+           | smartPack = SP.container <| Size ( 20, 20 )
            }
        , Random.generate
             PackAll
@@ -106,21 +116,34 @@ update msg model =
     PackAll rects ->
         (
             { model
-            | binPack =
+            | smartPack =
                 rects
-                    |> List.map rectToTuple
-                    |> List.foldl BinPack.pack1 model.binPack
+                    |> List.foldl
+                        (\{ width, height, color } ->
+                            SP.carelessPack (SizeF ( width, height)) color
+                        )
+                        model.smartPack
             }
 
         , Cmd.none
         )
 
-    PackOne rect ->
+    PackOne { width, height, color } ->
         (
             { model
-            | binPack =
-                model.binPack
-                    |> BinPack.pack1 (rectToTuple rect)
+            | smartPack =
+                model.smartPack
+                    |> SP.carelessPack (SizeF ( width, height )) color
+            }
+        , Cmd.none
+        )
+
+    PackOneAt (x, y) { width, height, color } ->
+        (
+            { model
+            | smartPack =
+                model.smartPack
+                    |> SP.carelessPackAt (x, y) (SizeF ( width, height )) color
             }
         , Cmd.none
         )
@@ -165,10 +188,37 @@ update msg model =
         , Cmd.none
         )
 
+
+    SetNextRectX x ->
+        (
+            { model
+            | nextPos =
+                case model.nextPos of
+                    Just (_, y) ->
+                        Just (x, y)
+                    Nothing ->
+                        Just (x, 0)
+            }
+        , Cmd.none
+        )
+
+    SetNextRectY y ->
+        (
+            { model
+            | nextPos =
+                case model.nextPos of
+                    Just (x, _) ->
+                        Just (x, y)
+                    Nothing ->
+                        Just (0, y)
+            }
+        , Cmd.none
+        )
+
     Clear ->
         (
             { model
-            | binPack = container 300 300
+            | smartPack = SP.container <| Size ( 300, 300 )
             }
         , Cmd.none
         )
@@ -176,10 +226,6 @@ update msg model =
     Error rect ->
       ( model, Cmd.none )
 
-
-
-rectToTuple { width, height, color }
-    = ( { width = width , height = height }, color )
 
 
 -- VIEW
@@ -199,26 +245,24 @@ view model =
                 , S.stroke stroke
                 ]
                 []
-        viewItem (color, bounds)
+        viewItem (bounds, color)
             = rect color bounds "black"
-        viewBP ( bp, bounds )
-            = case bp of
-                Node _ _ item ->
-                    viewItem ( item, bounds )
-                Free _ ->
-                    rect "yellow" bounds "red"
     in
         div
             []
             [ case model.mode of
-                OnlyRects ->
+                Rects ->
                     svg [ S.width "300", S.height "300" ]
                         <| List.map viewItem
-                        <| BinPack.unpack model.binPack
-                RectsAndFreeSpace ->
+                        <| SP.asList model.smartPack
+                Matrix ->
                     svg [ S.width "300", S.height "300" ]
-                        <| List.map viewBP
-                        <| BinPack.unpack1 model.binPack
+                        <| List.map viewItem
+                        <| SP.asList model.smartPack
+                RectsAndMatrix ->
+                    svg [ S.width "300", S.height "300" ]
+                        <| List.map viewItem
+                        <| SP.asList model.smartPack
             , div
                 []
                 [ input
@@ -231,24 +275,27 @@ view model =
             , div
                 []
                 [ input
-                    [ H.type_ "button", onClick <| ChangeMode OnlyRects, H.value "Only Rectangles" ]
-                    [ Html.text "Only Rectangles" ]
+                    [ H.type_ "button", onClick <| ChangeMode Rects, H.value "Rectangles" ]
+                    [ Html.text "Rectangles" ]
                 , input
-                    [ H.type_ "button", onClick <| ChangeMode RectsAndFreeSpace, H.value "Rectangles and Free Space" ]
-                    [ Html.text "Rectangles and Free Space" ]
+                    [ H.type_ "button", onClick <| ChangeMode Matrix, H.value "Matrix" ]
+                    [ Html.text "Matrix" ]
+                , input
+                    [ H.type_ "button", onClick <| ChangeMode Matrix, H.value "Rectangles & Matrix" ]
+                    [ Html.text "Rectangles & Matrix" ]
                 ]
             , div
                 [ ]
                 [ input
                     [ H.type_ "number"
                     , onInput (String.toFloat >> Maybe.map SetNextRectWidth >> Maybe.withDefault NoOp)
-                    , H.placeholder "20" ]
+                    , H.placeholder "4" ]
                     [ ]
                 , Html.text "x"
                 , input
                     [ H.type_ "number"
                     , onInput (String.toFloat >> Maybe.map SetNextRectHeight >> Maybe.withDefault NoOp)
-                    , H.placeholder "20" ]
+                    , H.placeholder "2" ]
                     [ ]
                 , input
                     [ H.type_ "button"
@@ -280,14 +327,14 @@ randomRect : Random.Generator Rect
 randomRect =
     Random.map3
         Rect
-        (Random.float 0 70)
-        (Random.float 0 70)
+        (Random.float 1 4)
+        (Random.float 1 4)
         randomColor
 
 
 random : Random.Generator (List Rect)
 random =
-    Random.int 10 200
+    Random.int 2 15
       |> Random.andThen
           (\len -> Random.list len randomRect)
 

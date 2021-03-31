@@ -187,7 +187,7 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
                             , parent = Nothing
                             , bounds =
                                 cellBounds
-                                    |> Dock.adaptBounds dock size
+                                    --|> Dock.adaptBounds dock size
                                     |> B.multiplyBy Cell.width
                             , source = source
                             , index = Nothing
@@ -204,7 +204,7 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
                                 , label = label
                                 , bounds =
                                     plateBounds
-                                        |> Dock.adaptBounds dock size
+                                        --|> Dock.adaptBounds dock size
                                         |> B.multiplyBy Cell.width
                                 , source = source
                                 , pages = Pages.count innerPages
@@ -223,7 +223,7 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
                                                     , parent = Just source
                                                     , bounds =
                                                         cellBounds
-                                                            |> Dock.adaptBounds dock size
+                                                            --|> Dock.adaptBounds dock size
                                                             -- |> B.shift
                                                             --     (plateBounds
                                                             --         |> Dock.adaptBounds dock size
