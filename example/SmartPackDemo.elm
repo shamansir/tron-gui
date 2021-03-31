@@ -250,7 +250,7 @@ view model =
                 []
         viewItem (bounds, color)
             = rect color bounds
-        viewCell { x, y, color, value } =
+        viewCell { x, y, value, weight } =
             Svg.g
                 []
                 [ Svg.rect
@@ -258,7 +258,7 @@ view model =
                     , S.y <| String.fromFloat <| y * scale
                     , S.width <| String.fromFloat scale
                     , S.height <| String.fromFloat scale
-                    , S.fill color
+                    , S.fill value
                     , S.strokeWidth "1"
                     , S.stroke "black"
                     ]
@@ -268,10 +268,23 @@ view model =
                     , S.y <| String.fromFloat <| (y * scale) + 5
                     , S.dominantBaseline "hanging"
                     ]
-                    [ Svg.text <| String.fromInt value ]
+                    [ Svg.text <| String.fromInt weight ]
                 ]
-        rowsToCells _ =
-            Array.fromList [ { x = 1, y = 1, color = "blue", value = -1 }]
+        rowsToCells rows =
+            rows
+                |> Array.indexedMap
+                    (\y row ->
+                        row
+                            |> Array.indexedMap
+                                (\x ( v, maybeColor ) ->
+                                    { x = toFloat x
+                                    , y = toFloat y
+                                    , weight = v
+                                    , value = maybeColor |> Maybe.withDefault "none"
+                                    }
+                                )
+                    )
+                |> Array.foldl Array.append Array.empty
     in
         div
             []
