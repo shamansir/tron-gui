@@ -340,9 +340,29 @@ view model =
                 , input
                     [ H.type_ "button"
                     , onClick (model.nextRect |> Maybe.map PackOne |> Maybe.withDefault NoOp)
-                    , H.value "Add Rect"
+                    , H.value "Pack Rect"
                     ]
-                    [ Html.text "Add Rect" ]
+                    [ Html.text "Pack Rect" ]
+                , input
+                    [ H.type_ "number"
+                    , onInput (String.toFloat >> Maybe.map SetNextRectX >> Maybe.withDefault NoOp)
+                    , H.placeholder "0" ]
+                    [ ]
+                , Html.text "x"
+                , input
+                    [ H.type_ "number"
+                    , onInput (String.toFloat >> Maybe.map SetNextRectY >> Maybe.withDefault NoOp)
+                    , H.placeholder "0" ]
+                    [ ]
+                , input
+                    [ H.type_ "button"
+                    , onClick
+                        (Maybe.map2 PackOneAt model.nextPos model.nextRect
+                            |> Maybe.withDefault NoOp
+                        )
+                    , H.value "Pack Positioned Rect"
+                    ]
+                    [ Html.text "Pack Positioned Rect" ]
                 ]
             ]
 
