@@ -6,6 +6,7 @@ import Matrix exposing (Matrix)
 
 import BinPack exposing (Bounds)
 import Size exposing (..)
+import Html exposing (a)
 
 
 type Distribution
@@ -48,13 +49,13 @@ pack distribution size v s =
             )
 
 
-packAt : ( Float, Float ) -> SizeF Cells -> a -> SmartPack a -> Maybe (SmartPack a)
+packAt : ( Int, Int ) -> SizeF Cells -> a -> SmartPack a -> Maybe (SmartPack a)
 packAt _ _ _ s = Just s
 
 
 packCloseTo
     :  Distribution
-    -> ( Float, Float )
+    -> ( Int, Int )
     -> SizeF Cells
     -> a
     -> SmartPack a
@@ -62,11 +63,11 @@ packCloseTo
 packCloseTo _ _ _ _ s = Just s
 
 
-carelessPack : Distribution -> SizeF Cells -> a -> SmartPack a -> SmartPack a
+carelessPack : Distribution -> Size Cells -> a -> SmartPack a -> SmartPack a
 carelessPack _ _ _ s = s
 
 
-carelessPackAt : ( Float, Float ) -> SizeF Cells -> a -> SmartPack a -> SmartPack a
+carelessPackAt : ( Int, Int ) -> Size Cells -> a -> SmartPack a -> SmartPack a
 carelessPackAt _ _ _ s = s
 
 
@@ -78,6 +79,11 @@ carelessPackCloseTo
     -> SmartPack a
     -> SmartPack a
 carelessPackCloseTo _ _ _ _ s = s
+
+
+resize : Size Cells -> SmartPack a -> SmartPack a
+resize newSize (SmartPack _ items) =
+    SmartPack newSize items
 
 
 toList : SmartPack a -> List (Bounds, a)
@@ -162,3 +168,10 @@ foldM : (((Int, Int), Maybe a) -> b -> b) -> b -> Matrix (Maybe a) -> b
 foldM f init =
     Matrix.toIndexedList
         >> List.foldl f init
+
+
+get : (Int, Int) -> SmartPack a -> Maybe a
+get pos =
+    toMatrix
+        >> Matrix.get pos
+        >> Maybe.andThen identity
