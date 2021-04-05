@@ -2,6 +2,7 @@ module SmartPackDemo exposing (..)
 
 
 import Browser
+import Browser.Events
 import Html exposing (Html, button, div, text, input, ul, li)
 import Html.Attributes as H exposing (..)
 import Html.Events exposing (onClick, onInput)
@@ -14,6 +15,7 @@ import Array
 import Size exposing (..)
 import SmartPack exposing (SmartPack)
 import SmartPack as SP
+import Matrix exposing (..)
 
 
 -- MAIN
@@ -35,13 +37,21 @@ main =
 type alias Color = String
 
 
-type alias Pos = ( Float, Float )
+type alias Pos = ( Int, Int )
 
 
 type alias Rect =
-    { width : Float
-    , height : Float
+    { width : Int
+    , height : Int
     , color : Color
+    }
+
+
+defaultRect : Rect
+defaultRect =
+    { width = 4
+    , height = 3
+    , color = "aqua"
     }
 
 
@@ -54,7 +64,7 @@ type RenderMode
 type alias Model =
     { mode : RenderMode
     , smartPack : SmartPack Color
-    , nextRect : Maybe Rect
+    , nextRect : Rect
     , nextPos : Maybe Pos
     }
 
@@ -64,7 +74,7 @@ init =
     (
         { mode = Matrix
         , smartPack = SP.container <| Size ( 0, 0 )
-        , nextRect = Nothing
+        , nextRect = defaultRect
         , nextPos = Nothing
         }
     , Task.succeed ()
@@ -81,11 +91,13 @@ type Msg
   | Randomize
   | PackAll (List Rect)
   | PackOne Rect
-  | PackOneAt ( Float, Float ) Rect
-  | SetNextRectWidth Float
-  | SetNextRectHeight Float
-  | SetNextRectX Float
-  | SetNextRectY Float
+  | PackOneAt ( Int, Int ) Rect
+  | SetNextRectWidth Int
+  | SetNextRectHeight Int
+  | SetNextRectX Int
+  | SetNextRectY Int
+  | SetGridWidth Int
+  | SetGridHeight Int
   | Clear
   | Error Rect
 
@@ -121,7 +133,10 @@ update msg model =
                 rects
                     |> List.foldl
                         (\{ width, height, color } ->
-                            SP.carelessPack (SizeF ( width, height)) color
+                            SP.carelessPack
+                                SP.Down
+                                (Size ( width, height))
+                                color
                         )
                         model.smartPack
             }
@@ -134,7 +149,10 @@ update msg model =
             { model
             | smartPack =
                 model.smartPack
-                    |> SP.carelessPack (SizeF ( width, height )) color
+                    |> SP.carelessPack
+                        SP.Down
+                        (Size ( width, height ))
+                        color
             }
         , Cmd.none
         )
@@ -144,7 +162,7 @@ update msg model =
             { model
             | smartPack =
                 model.smartPack
-                    |> SP.carelessPackAt (x, y) (SizeF ( width, height )) color
+                    |> SP.carelessPackAt (x, y) (Size ( width, height )) color
             }
         , Cmd.none
         )
@@ -154,17 +172,10 @@ update msg model =
             { model
             | nextRect =
                 case model.nextRect of
-                    Just r ->
-                        Just
-                            { r
-                            | width = width
-                            }
-                    Nothing ->
-                        Just
-                            { width = width
-                            , height = 0
-                            , color = "#ffffff"
-                            }
+                    r ->
+                        { r
+                        | width = width
+                        }
             }
         , Cmd.none
         )
@@ -174,17 +185,10 @@ update msg model =
             { model
             | nextRect =
                 case model.nextRect of
-                    Just r ->
-                        Just
-                            { r
-                            | height = height
-                            }
-                    Nothing ->
-                        Just
-                            { height = height
-                            , width = 0
-                            , color = "#ffffff"
-                            }
+                    r ->
+                        { r
+                        | height = height
+                        }
             }
         , Cmd.none
         )
@@ -212,6 +216,30 @@ update msg model =
                         Just (x, y)
                     Nothing ->
                         Just (0, y)
+            }
+        , Cmd.none
+        )
+
+    SetGridWidth width ->
+        (
+            { model
+            | smartPack =
+                case SP.dimensions model.smartPack of
+                    (Size (_, height)) ->
+                        model.smartPack
+                            |> SP.resize (Size (width, height))
+            }
+        , Cmd.none
+        )
+
+    SetGridHeight height ->
+        (
+            { model
+            | smartPack =
+                case SP.dimensions model.smartPack of
+                    (Size (width, _)) ->
+                        model.smartPack
+                            |> SP.resize (Size (width, height))
             }
         , Cmd.none
         )
@@ -250,25 +278,19 @@ view model =
                 []
         viewItem (bounds, color)
             = rect color bounds
-        viewCell { x, y, value, weight } =
+        viewMatrixCell (x, y) maybeColor =
             Svg.g
                 []
                 [ Svg.rect
-                    [ S.x <| String.fromFloat <| x * scale
-                    , S.y <| String.fromFloat <| y * scale
+                    [ S.x <| String.fromInt <| x * scale
+                    , S.y <| String.fromInt <| y * scale
                     , S.width <| String.fromFloat scale
                     , S.height <| String.fromFloat scale
-                    , S.fill value
+                    , S.fill <| Maybe.withDefault "none" <| maybeColor
                     , S.strokeWidth "1"
-                    , S.stroke "black"
+                    , S.stroke "lightgray"
                     ]
                     []
-                , Svg.text_
-                    [ S.x <| String.fromFloat <| (x * scale) + 5
-                    , S.y <| String.fromFloat <| (y * scale) + 5
-                    , S.dominantBaseline "hanging"
-                    ]
-                    [ Svg.text <| String.fromInt weight ]
                 ]
         rowsToCells rows =
             rows
@@ -292,17 +314,27 @@ view model =
                 Rects ->
                     svg [ S.width "300", S.height "300" ]
                         <| List.map viewItem
-                        <| SP.asList model.smartPack
+                        <| SP.toList model.smartPack
                 Matrix ->
                     svg [ S.width "300", S.height "300" ]
-                        <| Array.toList
-                        <| Array.map viewCell
-                        <| rowsToCells
+                        <| List.concat
+                        <| Matrix.toList
+                        <| Matrix.indexedMap viewMatrixCell
                         <| SP.toMatrix model.smartPack
                 RectsAndMatrix ->
                     svg [ S.width "300", S.height "300" ]
                         <| List.map viewItem
-                        <| SP.asList model.smartPack
+                        <| SP.toList model.smartPack
+            ,
+                case model.nextRect of
+                    { width, height, color } ->
+                        svg [ S.width <| String.fromInt <| width * scale
+                            , S.height <| String.fromInt <| height * scale
+                            ]
+                            [ rect
+                                color
+                                { x = 0, y = 0, width = toFloat width, height = toFloat height }
+                            ]
             , div
                 []
                 [ input
@@ -328,43 +360,28 @@ view model =
                 [ ]
                 [ input
                     [ H.type_ "number"
-                    , onInput (String.toFloat >> Maybe.map SetNextRectWidth >> Maybe.withDefault NoOp)
+                    , onInput (String.toInt >> Maybe.map SetNextRectWidth >> Maybe.withDefault NoOp)
                     , H.placeholder "4" ]
                     [ ]
                 , Html.text "x"
                 , input
                     [ H.type_ "number"
-                    , onInput (String.toFloat >> Maybe.map SetNextRectHeight >> Maybe.withDefault NoOp)
+                    , onInput (String.toInt >> Maybe.map SetNextRectHeight >> Maybe.withDefault NoOp)
                     , H.placeholder "2" ]
                     [ ]
                 , input
                     [ H.type_ "button"
-                    , onClick (model.nextRect |> Maybe.map PackOne |> Maybe.withDefault NoOp)
+                    , onClick (model.nextRect |> PackOne)
                     , H.value "Pack Rect"
                     ]
                     [ Html.text "Pack Rect" ]
-                , input
-                    [ H.type_ "number"
-                    , onInput (String.toFloat >> Maybe.map SetNextRectX >> Maybe.withDefault NoOp)
-                    , H.placeholder "0" ]
-                    [ ]
-                , Html.text "x"
-                , input
-                    [ H.type_ "number"
-                    , onInput (String.toFloat >> Maybe.map SetNextRectY >> Maybe.withDefault NoOp)
-                    , H.placeholder "0" ]
-                    [ ]
-                , input
-                    [ H.type_ "button"
-                    , onClick
-                        (Maybe.map2 PackOneAt model.nextPos model.nextRect
-                            |> Maybe.withDefault NoOp
-                        )
-                    , H.value "Pack Positioned Rect"
-                    ]
-                    [ Html.text "Pack Positioned Rect" ]
                 ]
             ]
+
+
+-- subscriptions : Model -> Sub Msg
+-- subscriptions model =
+--     Browser.Events.onMouseMove
 
 
 -- RANDOM
@@ -387,8 +404,8 @@ randomRect : Random.Generator Rect
 randomRect =
     Random.map3
         Rect
-        (Random.float 1 4)
-        (Random.float 1 4)
+        (Random.int 1 4)
+        (Random.int 1 4)
         randomColor
 
 
