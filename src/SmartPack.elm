@@ -6,7 +6,6 @@ import Matrix exposing (Matrix)
 
 import BinPack exposing (Bounds)
 import Size exposing (..)
-import Html exposing (a)
 
 
 type Distribution

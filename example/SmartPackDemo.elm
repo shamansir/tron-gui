@@ -10,6 +10,7 @@ import Random
 import Svg exposing (..)
 import Svg.Attributes as S exposing (..)
 import Task
+import Json.Decode as D
 
 import Array
 import Size exposing (..)
@@ -27,7 +28,7 @@ main =
       { init = always init
       , update = update
       , view = view
-      , subscriptions = always Sub.none
+      , subscriptions = subscriptions
       }
 
 
@@ -55,10 +56,17 @@ defaultRect =
     }
 
 
+defaultSize : Size Cells
+defaultSize = Size ( 20, 20 )
+
+
+defaultDistribution : SP.Distribution
+defaultDistribution = SP.Right
+
+
 type RenderMode
     = Rects
-    | Matrix
-    | RectsAndMatrix
+    | Grid
 
 
 type alias Model =
@@ -66,16 +74,18 @@ type alias Model =
     , smartPack : SmartPack Color
     , nextRect : Rect
     , nextPos : Maybe Pos
+    , distribution : Maybe SP.Distribution
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     (
-        { mode = Matrix
-        , smartPack = SP.container <| Size ( 0, 0 )
+        { mode = Grid
+        , smartPack = SP.container defaultSize
         , nextRect = defaultRect
         , nextPos = Nothing
+        , distribution = Nothing
         }
     , Task.succeed ()
         |> Task.perform (always Randomize)
@@ -119,7 +129,7 @@ update msg model =
     Randomize ->
        (
            { model
-           | smartPack = SP.container <| Size ( 20, 20 )
+           | smartPack = SP.container defaultSize
            }
        , Random.generate
             PackAll
@@ -133,14 +143,17 @@ update msg model =
                 rects
                     |> List.foldl
                         (\{ width, height, color } ->
+
                             SP.carelessPack
-                                SP.Down
+                                (model.distribution
+                                    |> Maybe.withDefault defaultDistribution
+                                )
                                 (Size ( width, height))
                                 color
+
                         )
                         model.smartPack
             }
-
         , Cmd.none
         )
 
@@ -148,11 +161,15 @@ update msg model =
         (
             { model
             | smartPack =
+
                 model.smartPack
                     |> SP.carelessPack
-                        SP.Down
+                        (model.distribution
+                            |> Maybe.withDefault defaultDistribution
+                        )
                         (Size ( width, height ))
                         color
+
             }
         , Cmd.none
         )
@@ -247,7 +264,7 @@ update msg model =
     Clear ->
         (
             { model
-            | smartPack = SP.container <| Size ( 300, 300 )
+            | smartPack = SP.container defaultSize
             }
         , Cmd.none
         )
@@ -278,7 +295,7 @@ view model =
                 []
         viewItem (bounds, color)
             = rect color bounds
-        viewMatrixCell (x, y) maybeColor =
+        viewGridCell (x, y) maybeColor =
             Svg.g
                 []
                 [ Svg.rect
@@ -310,26 +327,27 @@ view model =
     in
         div
             []
-            [ case model.mode of
-                Rects ->
-                    svg [ S.width "300", S.height "300" ]
+            [ case ( model.mode, SP.dimensions model.smartPack ) of
+                ( Rects, Size ( width, height ) ) ->
+                    svg [ S.width <| String.fromInt <| width * scale
+                        , S.height <| String.fromInt <| height * scale
+                        ]
                         <| List.map viewItem
                         <| SP.toList model.smartPack
-                Matrix ->
-                    svg [ S.width "300", S.height "300" ]
+                ( Grid, Size ( width, height ) ) ->
+                    svg [ S.width <| String.fromInt <| width * scale
+                        , S.height <| String.fromInt <| height * scale
+                        ]
                         <| List.concat
                         <| Matrix.toList
-                        <| Matrix.indexedMap viewMatrixCell
+                        <| Matrix.indexedMap viewGridCell
                         <| SP.toMatrix model.smartPack
-                RectsAndMatrix ->
-                    svg [ S.width "300", S.height "300" ]
-                        <| List.map viewItem
-                        <| SP.toList model.smartPack
             ,
                 case model.nextRect of
                     { width, height, color } ->
                         svg [ S.width <| String.fromInt <| width * scale
                             , S.height <| String.fromInt <| height * scale
+                            , S.style "position: absolute; top: 20px; margin-left: 50px;"
                             ]
                             [ rect
                                 color
@@ -350,24 +368,25 @@ view model =
                     [ H.type_ "button", onClick <| ChangeMode Rects, H.value "Rectangles" ]
                     [ Html.text "Rectangles" ]
                 , input
-                    [ H.type_ "button", onClick <| ChangeMode Matrix, H.value "Matrix" ]
-                    [ Html.text "Matrix" ]
-                , input
-                    [ H.type_ "button", onClick <| ChangeMode Matrix, H.value "Rectangles & Matrix" ]
-                    [ Html.text "Rectangles & Matrix" ]
+                    [ H.type_ "button", onClick <| ChangeMode Grid, H.value "Grid" ]
+                    [ Html.text "Grid" ]
                 ]
             , div
                 [ ]
                 [ input
                     [ H.type_ "number"
                     , onInput (String.toInt >> Maybe.map SetNextRectWidth >> Maybe.withDefault NoOp)
-                    , H.placeholder "4" ]
+                    , H.placeholder <| String.fromInt <| model.nextRect.width
+                    , H.value <| String.fromInt <| model.nextRect.width
+                    ]
                     [ ]
                 , Html.text "x"
                 , input
                     [ H.type_ "number"
                     , onInput (String.toInt >> Maybe.map SetNextRectHeight >> Maybe.withDefault NoOp)
-                    , H.placeholder "2" ]
+                    , H.placeholder <| String.fromInt <| model.nextRect.height
+                    , H.value <| String.fromInt <| model.nextRect.height
+                    ]
                     [ ]
                 , input
                     [ H.type_ "button"
@@ -379,10 +398,13 @@ view model =
             ]
 
 
--- subscriptions : Model -> Sub Msg
--- subscriptions model =
---     Browser.Events.onMouseMove
-
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Browser.Events.onMouseMove
+        (whereIsMouse model
+            |> D.map (Debug.log "mm")
+            |> D.map (always NoOp)
+        )
 
 -- RANDOM
 
@@ -414,4 +436,39 @@ random =
     Random.int 2 15
       |> Random.andThen
           (\len -> Random.list len randomRect)
+
+
+type MouseAt
+    = AtGrid ( Int, Int ) Bool
+    | AtRect ( Int, Int ) Bool
+    | Somewhere
+
+
+whereIsMouse : Model -> D.Decoder MouseAt
+whereIsMouse model =
+    D.map3
+        (\pageX pageY buttons ->
+            ( ( pageX, pageY ), buttons == 1 )
+        )
+        (D.field "pageX" D.float |> D.map floor)
+        (D.field "pageY" D.float |> D.map floor)
+        (D.field "buttons" D.int)
+    |> D.map
+        (\((pageX, pageY), leftButtonDown) ->
+            case model.smartPack |> SP.dimensions of
+                Size ( width, height ) ->
+                    if pageX <= width * scale && pageY <= height * scale then
+                        AtGrid
+                            ( pageX // scale, pageY // scale )
+                            leftButtonDown
+                    else
+                        if pageX > (width * scale + 20) && pageY <= height * scale then
+                            AtRect
+                                ( (pageX - 20 - width * scale) // scale
+                                , pageY // scale
+                                )
+                                leftButtonDown
+                        else Somewhere
+
+        )
 
