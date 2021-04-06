@@ -69,11 +69,19 @@ type RenderMode
     | Grid
 
 
+type MouseAt
+    = AtGrid ( Int, Int ) Bool
+    | AtRect ( Int, Int ) Bool
+    | Somewhere
+
+
 type alias Model =
     { mode : RenderMode
     , smartPack : SmartPack Color
     , nextRect : Rect
     , nextPos : Maybe Pos
+    , gridPreview : Maybe ( Pos, Rect )
+    , rectPreview : Maybe Rect
     , distribution : Maybe SP.Distribution
     }
 
@@ -83,6 +91,9 @@ init =
     (
         { mode = Grid
         , smartPack = SP.container defaultSize
+        --, mouse = Somewhere
+        , gridPreview = Nothing
+        , rectPreview = Nothing
         , nextRect = defaultRect
         , nextPos = Nothing
         , distribution = Nothing
@@ -102,6 +113,9 @@ type Msg
   | PackAll (List Rect)
   | PackOne Rect
   | PackOneAt ( Int, Int ) Rect
+  | AddGridPreview ( Int, Int ) Rect
+  | AddRectPreview Rect
+  | SetNextRect Rect
   | SetNextRectWidth Int
   | SetNextRectHeight Int
   | SetNextRectX Int
@@ -184,6 +198,14 @@ update msg model =
         , Cmd.none
         )
 
+    SetNextRect rect ->
+        (
+            { model
+            | nextRect = rect
+            }
+        , Cmd.none
+        )
+
     SetNextRectWidth width ->
         (
             { model
@@ -257,6 +279,22 @@ update msg model =
                     (Size (width, _)) ->
                         model.smartPack
                             |> SP.resize (Size (width, height))
+            }
+        , Cmd.none
+        )
+
+    AddGridPreview pos rect ->
+        (
+            { model
+            | gridPreview = Just ( pos, rect )
+            }
+        , Cmd.none
+        )
+
+    AddRectPreview rect ->
+        (
+            { model
+            | rectPreview = Just rect
             }
         , Cmd.none
         )
@@ -400,11 +438,18 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Browser.Events.onMouseMove
-        (whereIsMouse model
-            |> D.map (Debug.log "mm")
-            |> D.map (always NoOp)
-        )
+    Sub.batch
+        [ Browser.Events.onMouseMove
+            (whereIsMouse model
+                --|> D.map (Debug.log "mouseAt")
+            )
+        , Browser.Events.onMouseDown
+            (whereIsMouse model
+                --|> D.map (Debug.log "mouseDown")
+            )
+        ]
+    |> Sub.map (mouseToMessage model)
+
 
 -- RANDOM
 
@@ -438,12 +483,6 @@ random =
           (\len -> Random.list len randomRect)
 
 
-type MouseAt
-    = AtGrid ( Int, Int ) Bool
-    | AtRect ( Int, Int ) Bool
-    | Somewhere
-
-
 whereIsMouse : Model -> D.Decoder MouseAt
 whereIsMouse model =
     D.map3
@@ -469,6 +508,28 @@ whereIsMouse model =
                                 )
                                 leftButtonDown
                         else Somewhere
-
         )
 
+
+mouseToMessage : Model -> MouseAt -> Msg
+mouseToMessage model mouseAt =
+    case mouseAt of
+        AtGrid pos mouseDown ->
+            if mouseDown then
+                PackOneAt pos model.nextRect
+            else
+                AddGridPreview pos model.nextRect
+        AtRect ( width, height ) mouseDown ->
+            if mouseDown then
+                SetNextRect
+                    { width = width
+                    , height = height
+                    , color = model.nextRect.color
+                    }
+            else
+                AddRectPreview
+                    { width = width
+                    , height = height
+                    , color = model.nextRect.color
+                    }
+        Somewhere -> NoOp
