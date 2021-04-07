@@ -347,6 +347,25 @@ view model =
                     ]
                     []
                 ]
+        viewRectGrid (x, y) (width, height) background posToColor =
+            Svg.g
+                []
+                <| [ rect
+                    background
+                    { x = toFloat x
+                    , y = toFloat y
+                    , width = toFloat width
+                    , height = toFloat height
+                    }
+                ] ++ (
+                    Matrix.initialize (width, height) (always background)
+                        |> Matrix.toIndexedList
+                        |> List.map Tuple.first
+                        |> List.map
+                            (\(x_, y_)->
+                                viewGridCell (x_, y_) <| posToColor (x_, y_)
+                            )
+                )
         rowsToCells rows =
             rows
                 |> Array.indexedMap
@@ -376,6 +395,17 @@ view model =
                     svg [ S.width <| String.fromInt <| width * scale
                         , S.height <| String.fromInt <| height * scale
                         ]
+                        <| List.append
+                            (case model.gridPreview of
+                                Nothing -> []
+                                Just ( pos, preview ) ->
+                                    [ viewRectGrid
+                                        pos
+                                        (preview.width, preview.height)
+                                        "brown"
+                                        (always Nothing)
+                                    ]
+                            )
                         <| List.concat
                         <| Matrix.toList
                         <| Matrix.indexedMap viewGridCell
@@ -383,14 +413,36 @@ view model =
             ,
                 case model.nextRect of
                     { width, height, color } ->
-                        svg [ S.width <| String.fromInt <| width * scale
-                            , S.height <| String.fromInt <| height * scale
-                            , S.style "position: absolute; top: 20px; margin-left: 50px;"
-                            ]
-                            [ rect
-                                color
-                                { x = 0, y = 0, width = toFloat width, height = toFloat height }
-                            ]
+                        case model.rectPreview of
+                            Nothing ->
+                                svg [ S.width <| String.fromInt <| width * scale
+                                    , S.height <| String.fromInt <| height * scale
+                                    , S.style "position: absolute; top: 20px; margin-left: 50px; cursor: pointer;"
+                                    ]
+                                    [ viewRectGrid
+                                        (0, 0)
+                                        (width, height)
+                                        "aqua"
+                                        (always Nothing)
+                                    ]
+                            Just preview ->
+                                svg [ S.width <| String.fromInt
+                                        <| (Basics.max preview.width width) * scale
+                                    , S.height <| String.fromInt
+                                        <| (Basics.max preview.width width) * scale
+                                    , S.style "position: absolute; top: 20px; margin-left: 50px; cursor: pointer;"
+                                    ]
+                                    [ viewRectGrid
+                                        (0, 0)
+                                        (width, height)
+                                        "aqua"
+                                        (always Nothing)
+                                    , viewRectGrid
+                                        (0, 0)
+                                        (preview.width, preview.height)
+                                        "brown"
+                                        (always Nothing)
+                                    ]
             , div
                 []
                 [ input
@@ -413,7 +465,11 @@ view model =
                 [ ]
                 [ input
                     [ H.type_ "number"
-                    , onInput (String.toInt >> Maybe.map SetNextRectWidth >> Maybe.withDefault NoOp)
+                    , onInput
+                        (String.toInt
+                            >> Maybe.map SetNextRectWidth
+                            >> Maybe.withDefault NoOp
+                        )
                     , H.placeholder <| String.fromInt <| model.nextRect.width
                     , H.value <| String.fromInt <| model.nextRect.width
                     ]
@@ -421,7 +477,11 @@ view model =
                 , Html.text "x"
                 , input
                     [ H.type_ "number"
-                    , onInput (String.toInt >> Maybe.map SetNextRectHeight >> Maybe.withDefault NoOp)
+                    , onInput
+                        (String.toInt
+                            >> Maybe.map SetNextRectHeight
+                            >> Maybe.withDefault NoOp
+                        )
                     , H.placeholder <| String.fromInt <| model.nextRect.height
                     , H.value <| String.fromInt <| model.nextRect.height
                     ]
