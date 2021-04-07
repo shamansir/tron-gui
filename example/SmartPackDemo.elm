@@ -171,7 +171,7 @@ update msg model =
         , Cmd.none
         )
 
-    PackOne { width, height, color } ->
+    PackOne rect ->
         (
             { model
             | smartPack =
@@ -181,19 +181,25 @@ update msg model =
                         (model.distribution
                             |> Maybe.withDefault defaultDistribution
                         )
-                        (Size ( width, height ))
-                        color
+                        (Size ( rect.width, rect.height ))
+                        rect.color
 
+            , gridPreview = Nothing
+            , rectPreview = Nothing
+            , nextRect = rect
             }
         , Cmd.none
         )
 
-    PackOneAt (x, y) { width, height, color } ->
+    PackOneAt (x, y) rect ->
         (
             { model
             | smartPack =
                 model.smartPack
-                    |> SP.carelessPackAt (x, y) (Size ( width, height )) color
+                    |> SP.carelessPackAt (x, y) (Size ( rect.width, rect.height )) rect.color
+            , gridPreview = Nothing
+            , rectPreview = Nothing
+            , nextRect = rect
             }
         , Cmd.none
         )
@@ -287,6 +293,7 @@ update msg model =
         (
             { model
             | gridPreview = Just ( pos, rect )
+            , rectPreview = Nothing
             }
         , Cmd.none
         )
@@ -295,6 +302,7 @@ update msg model =
         (
             { model
             | rectPreview = Just rect
+            , gridPreview = Nothing
             }
         , Cmd.none
         )
@@ -320,6 +328,9 @@ scale = 30
 view : Model -> Html Msg
 view model =
     let
+        ( mainWidth, mainHeight ) =
+            case SP.dimensions model.smartPack of
+                Size ( w, h ) -> ( w, h )
         rect color bounds =
             Svg.rect
                 [ S.x <| String.fromFloat <| bounds.x * scale
@@ -384,28 +395,34 @@ view model =
     in
         div
             []
-            [ case ( model.mode, SP.dimensions model.smartPack ) of
-                ( Rects, Size ( width, height ) ) ->
-                    svg [ S.width <| String.fromInt <| width * scale
-                        , S.height <| String.fromInt <| height * scale
+            [ case model.mode of
+                Rects ->
+                    svg [ S.width <| String.fromInt <| mainWidth * scale
+                        , S.height <| String.fromInt <| mainHeight * scale
                         ]
                         <| List.map viewItem
                         <| SP.toList model.smartPack
-                ( Grid, Size ( width, height ) ) ->
-                    svg [ S.width <| String.fromInt <| width * scale
-                        , S.height <| String.fromInt <| height * scale
+                Grid ->
+                    svg [ S.width <| String.fromInt <| mainWidth * scale
+                        , S.height <| String.fromInt <| mainHeight * scale
                         ]
                         <| List.append
+
                             (case model.gridPreview of
                                 Nothing -> []
                                 Just ( pos, preview ) ->
-                                    [ viewRectGrid
-                                        pos
-                                        (preview.width, preview.height)
-                                        "brown"
-                                        (always Nothing)
+
+                                    [ Svg.g
+                                        [ S.style "cursor: pointer;" ]
+                                        [ viewRectGrid
+                                            pos
+                                            (preview.width, preview.height)
+                                            "brown"
+                                            (always Nothing)
+                                        ]
                                     ]
                             )
+
                         <| List.concat
                         <| Matrix.toList
                         <| Matrix.indexedMap viewGridCell
@@ -417,7 +434,7 @@ view model =
                             Nothing ->
                                 svg [ S.width <| String.fromInt <| width * scale
                                     , S.height <| String.fromInt <| height * scale
-                                    , S.style "position: absolute; top: 20px; margin-left: 50px; cursor: pointer;"
+                                    , S.style "position: absolute; top: 40px; margin-left: 50px; cursor: pointer;"
                                     ]
                                     [ viewRectGrid
                                         (0, 0)
@@ -429,8 +446,8 @@ view model =
                                 svg [ S.width <| String.fromInt
                                         <| (Basics.max preview.width width) * scale
                                     , S.height <| String.fromInt
-                                        <| (Basics.max preview.width width) * scale
-                                    , S.style "position: absolute; top: 20px; margin-left: 50px; cursor: pointer;"
+                                        <| (Basics.max preview.height height) * scale
+                                    , S.style "position: absolute; top: 40px; margin-left: 50px; cursor: pointer;"
                                     ]
                                     [ viewRectGrid
                                         (0, 0)
@@ -444,7 +461,7 @@ view model =
                                         (always Nothing)
                                     ]
             , div
-                []
+                [ ]
                 [ input
                     [ H.type_ "button", onClick Randomize, H.value "Random" ]
                     [ Html.text "Random" ]
@@ -462,9 +479,13 @@ view model =
                     [ Html.text "Grid" ]
                 ]
             , div
-                [ ]
+                [ H.style "position" "fixed"
+                , H.style "left" <| (String.fromInt <| mainWidth * scale + 40) ++ "px"
+                , H.style "top" "5px"
+                ]
                 [ input
                     [ H.type_ "number"
+                    , H.style "max-width" "25px"
                     , onInput
                         (String.toInt
                             >> Maybe.map SetNextRectWidth
@@ -477,6 +498,7 @@ view model =
                 , Html.text "x"
                 , input
                     [ H.type_ "number"
+                    , H.style "max-width" "25px"
                     , onInput
                         (String.toInt
                             >> Maybe.map SetNextRectHeight
