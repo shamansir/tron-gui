@@ -60,8 +60,8 @@ defaultSize : Size Cells
 defaultSize = Size ( 20, 20 )
 
 
-defaultDistribution : List SP.Distribution
-defaultDistribution = [ SP.Right, SP.Down ]
+defaultDistribution : SP.Distribution
+defaultDistribution = SP.Right
 
 
 type RenderMode
@@ -82,7 +82,7 @@ type alias Model =
     , nextPos : Maybe Pos
     , gridPreview : Maybe ( Pos, Rect )
     , rectPreview : Maybe Rect
-    , distribution : List SP.Distribution
+    , distribution : SP.Distribution
     }
 
 

@@ -38,7 +38,7 @@ container : Size Cells -> SmartPack a
 container size = SmartPack size []
 
 
-pack : List Distribution -> Size Cells -> a -> SmartPack a -> Maybe (SmartPack a)
+pack : Distribution -> Size Cells -> a -> SmartPack a -> Maybe (SmartPack a)
 pack distribution size v s =
     s
         |> findSpot distribution size
@@ -72,7 +72,7 @@ packCloseTo
 packCloseTo _ _ _ _ s = Just s
 
 
-carelessPack : List Distribution -> Size Cells -> a -> SmartPack a -> SmartPack a
+carelessPack : Distribution -> Size Cells -> a -> SmartPack a -> SmartPack a
 carelessPack distribution size v sp =
     pack distribution size v sp |> Maybe.withDefault sp
 
@@ -127,12 +127,12 @@ toMatrix (SmartPack (Size (w, h)) items) =
             (Matrix.initialize (w, h) <| always Nothing)
 
 
-findSpot : List Distribution -> Size Cells -> SmartPack a -> Maybe ( Int, Int )
-findSpot distributions size = toMatrix >> findSpotM distributions size
+findSpot : Distribution -> Size Cells -> SmartPack a -> Maybe ( Int, Int )
+findSpot distribution size = toMatrix >> findSpotM distribution size
 
 
-findSpotM : List Distribution -> Size Cells -> Matrix (Maybe a) -> Maybe ( Int, Int )
-findSpotM distributions (Size (wc, hc)) matrix =
+findSpotM : Distribution -> Size Cells -> Matrix (Maybe a) -> Maybe ( Int, Int )
+findSpotM distribution (Size (wc, hc)) matrix =
     let
         ( mw, mh ) = Matrix.size matrix
 
@@ -151,14 +151,10 @@ findSpotM distributions (Size (wc, hc)) matrix =
 
         maybeNext d (x, y) =
             case d of
-                Down -> if y < mh - 1 then Just (x, y + 1) else Nothing
-                     -- maybeNext Right (x + 1, y)
-                Up -> if y > 0 then Just (x, y - 1) else Nothing
-                    -- maybeNext Right (x + 1, y)
-                Right -> if x < mw - 1 then Just (x + 1, y) else Nothing
-                    -- else maybeNext Down (x, y + 1)
-                Left -> if x > 0 then Just (x - 1, y) else Nothing
-                    -- maybeNext Down (x, y + 1)
+                Down -> if y < mh - 1 then Just (x, y + 1) else maybeNext Right (x, 0)
+                Up -> if y > 0 then Just (x, y - 1) else maybeNext Right (x, 0)
+                Right -> if x < mw - 1 then Just (x + 1, y) else maybeNext Down (0, y)
+                Left -> if x > 0 then Just (x - 1, y) else maybeNext Down (0, y)
 
         helper d (x, y) =
             if fitsAt (x, y) then
@@ -170,13 +166,7 @@ findSpotM distributions (Size (wc, hc)) matrix =
         if (wc > 0) && (hc > 0)
             && not (Matrix.isEmpty matrix)
             && (mw >= wc) && (mh >= hc)
-            then distributions
-                |> List.foldl
-                    (\d prev -> case prev of
-                        Just result -> Just result
-                        Nothing -> helper d firstPos
-                    )
-                    Nothing
+            then helper distribution firstPos
             else Nothing
 
 
