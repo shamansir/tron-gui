@@ -223,7 +223,10 @@ update msg model =
                     |> SP.carelessPackAt (x, y) (Size ( rect.width, rect.height )) rect.color
             , gridPreview = Nothing
             , rectPreview = Nothing
-            , nextRect = rect
+            , nextRect =
+                { rect
+                | color = nextColorFor rect.color
+                }
             }
         , Cmd.none
         )
