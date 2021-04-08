@@ -19,8 +19,6 @@ type Distribution
     | Down
     | Right
     | Left
-    | UpAndDown
-    | LeftAndRight
 
 
 type SmartPack a = SmartPack (Size Cells) (List (Bounds, a))
@@ -112,10 +110,11 @@ toMatrix : SmartPack a -> Matrix ( Maybe a )
 toMatrix (SmartPack (Size (w, h)) items) =
     let
         fill bounds v matrix =
-            List.range bounds.x (bounds.width - 1)
+            List.range bounds.x (bounds.x + bounds.width - 1)
                 |> List.map
                     (\x ->
-                        List.range bounds.y (bounds.height - 1) |> List.map (Tuple.pair x)
+                        List.range bounds.y (bounds.y + bounds.height - 1)
+                            |> List.map (Tuple.pair x)
                     )
                 |> List.concat
                 |> List.foldl (\pos -> Matrix.set pos <| Just v) matrix
@@ -135,6 +134,7 @@ findSpot distribution size = toMatrix >> findSpotM distribution size
 findSpotM : Distribution -> Size Cells -> Matrix (Maybe a) -> Maybe ( Int, Int )
 findSpotM distribution (Size (wc, hc)) matrix =
     let
+        ( mw, mh ) = Matrix.size matrix
 
         isEmpty cell =
             case cell of
@@ -149,26 +149,29 @@ findSpotM distribution (Size (wc, hc)) matrix =
         firstPos =
             (0, 0)
 
-        maybeNext (x, y) =
-            Nothing
+        maybeNext d (x, y) =
+            case d of
+                Down -> if y < mh - 1 then Just (x, y + 1) else Nothing
+                     -- maybeNext Right (x + 1, y)
+                Up -> if y > 0 then Just (x, y - 1) else Nothing
+                    -- maybeNext Right (x + 1, y)
+                Right -> if x < mw - 1 then Just (x + 1, y) else Nothing
+                    -- else maybeNext Down (x, y + 1)
+                Left -> if x > 0 then Just (x - 1, y) else Nothing
+                    -- maybeNext Down (x, y + 1)
 
         helper (x, y) =
             if fitsAt (x, y) then
                 Just (x, y)
             else
-                maybeNext (x, y)
-                    |> Maybe.andThen helper
+                maybeNext distribution (x, y) |> Maybe.andThen helper
 
     in
         if (wc > 0) && (hc > 0)
             && not (Matrix.isEmpty matrix)
-            then
-                case Matrix.size matrix of
-                    ( mw, mh ) ->
-                        if (mw > wc) && (mh > hc)
-                            then helper firstPos
-                            else Nothing
-        else Nothing
+            && (mw >= wc) && (mh >= hc)
+            then helper firstPos
+            else Nothing
 
 
 find : ( Float, Float ) -> SmartPack a -> Maybe a
