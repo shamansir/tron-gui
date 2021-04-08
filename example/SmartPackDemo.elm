@@ -98,8 +98,9 @@ init =
         , nextPos = Nothing
         , distribution = Nothing
         }
-    , Task.succeed ()
-        |> Task.perform (always Randomize)
+    , Cmd.none
+        {- Task.succeed ()
+            |> Task.perform (always Randomize) -}
     )
 
 
@@ -325,6 +326,10 @@ update msg model =
 scale = 30
 
 
+previewMarginX = 20
+previewMarginY = 40
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -333,10 +338,10 @@ view model =
                 Size ( w, h ) -> ( w, h )
         rect color bounds =
             Svg.rect
-                [ S.x <| String.fromFloat <| bounds.x * scale
-                , S.y <| String.fromFloat <| bounds.y * scale
-                , S.width <| String.fromFloat <| bounds.width * scale
-                , S.height <| String.fromFloat <| bounds.height * scale
+                [ S.x <| String.fromInt <| bounds.x * scale
+                , S.y <| String.fromInt <| bounds.y * scale
+                , S.width <| String.fromInt <| bounds.width * scale
+                , S.height <| String.fromInt <| bounds.height * scale
                 , S.fill color
                 , S.strokeWidth "1"
                 , S.stroke "black"
@@ -363,10 +368,10 @@ view model =
                 []
                 <| [ rect
                     background
-                    { x = toFloat x
-                    , y = toFloat y
-                    , width = toFloat width
-                    , height = toFloat height
+                    { x = x
+                    , y = y
+                    , width = width
+                    , height = height
                     }
                 ] ++ (
                     Matrix.initialize (width, height) (always background)
@@ -384,8 +389,8 @@ view model =
                         row
                             |> Array.indexedMap
                                 (\x ( v, maybeColor ) ->
-                                    { x = toFloat x
-                                    , y = toFloat y
+                                    { x = x
+                                    , y = y
                                     , weight = v
                                     , value = maybeColor |> Maybe.withDefault "none"
                                     }
@@ -480,7 +485,7 @@ view model =
                 ]
             , div
                 [ H.style "position" "fixed"
-                , H.style "left" <| (String.fromInt <| mainWidth * scale + 40) ++ "px"
+                , H.style "left" <| (String.fromInt <| mainWidth * scale + previewMarginX) ++ "px"
                 , H.style "top" "5px"
                 ]
                 [ input
@@ -583,9 +588,11 @@ whereIsMouse model =
                             ( pageX // scale, pageY // scale )
                             leftButtonDown
                     else
-                        if pageX > (width * scale + 20) && pageY <= height * scale then
+                        if pageX > (width * scale + previewMarginX)
+                        && pageY > previewMarginY
+                        && pageY <= previewMarginY + height * scale then
                             AtRect
-                                ( (pageX - 20 - width * scale) // scale
+                                ( (pageX - previewMarginX - width * scale) // scale
                                 , pageY // scale
                                 )
                                 leftButtonDown
