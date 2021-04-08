@@ -4,8 +4,14 @@ module SmartPack exposing (..)
 import Array exposing (Array)
 import Matrix exposing (Matrix)
 
-import BinPack exposing (Bounds)
 import Size exposing (..)
+
+type alias Bounds =
+    { x : Int
+    , y : Int
+    , width : Int
+    , height : Int
+    }
 
 
 type Distribution
@@ -42,20 +48,26 @@ pack distribution size v s =
             (\(x, y) ->
                 case ( s, size ) of
                     ( SmartPack ps xs, Size ( w, h ) ) ->
-                        SmartPack ps
-                            <| ( { x = toFloat x, y = toFloat y, width = toFloat w, height = toFloat h }, v ) :: xs
-
+                        SmartPack ps <|
+                            (
+                                { x = x
+                                , y = y
+                                , width = w
+                                , height = h
+                                }
+                            , v )
+                            :: xs
             )
 
 
-packAt : ( Int, Int ) -> SizeF Cells -> a -> SmartPack a -> Maybe (SmartPack a)
+packAt : ( Int, Int ) -> Size Cells -> a -> SmartPack a -> Maybe (SmartPack a)
 packAt _ _ _ s = Just s
 
 
 packCloseTo
     :  Distribution
     -> ( Int, Int )
-    -> SizeF Cells
+    -> Size Cells
     -> a
     -> SmartPack a
     -> Maybe (SmartPack a)
@@ -63,21 +75,24 @@ packCloseTo _ _ _ _ s = Just s
 
 
 carelessPack : Distribution -> Size Cells -> a -> SmartPack a -> SmartPack a
-carelessPack _ _ _ s = s
+carelessPack distribution size v sp =
+    pack distribution size v sp |> Maybe.withDefault sp
 
 
 carelessPackAt : ( Int, Int ) -> Size Cells -> a -> SmartPack a -> SmartPack a
-carelessPackAt _ _ _ s = s
+carelessPackAt pos size v sp =
+    packAt pos size v sp |> Maybe.withDefault sp
 
 
 carelessPackCloseTo
-    :  ( Float, Float )
-    -> SizeF Cells
-    -> Distribution
+    :  Distribution
+    -> ( Int, Int )
+    -> Size Cells
     -> a
     -> SmartPack a
     -> SmartPack a
-carelessPackCloseTo _ _ _ _ s = s
+carelessPackCloseTo distribution pos size v sp =
+    packCloseTo distribution pos size v sp |> Maybe.withDefault sp
 
 
 resize : Size Cells -> SmartPack a -> SmartPack a
@@ -96,13 +111,19 @@ dimensions (SmartPack size _) = size
 toMatrix : SmartPack a -> Matrix ( Maybe a )
 toMatrix (SmartPack (Size (w, h)) items) =
     let
-        addBounds bounds matrix =
-            matrix
+        fill bounds v matrix =
+            List.range bounds.x (bounds.width - 1)
+                |> List.map
+                    (\x ->
+                        List.range bounds.y (bounds.height - 1) |> List.map (Tuple.pair x)
+                    )
+                |> List.concat
+                |> List.foldl (\pos -> Matrix.set pos <| Just v) matrix
     in items
         |> List.sortBy (Tuple.first >> .x)
         |> List.foldl
             (\(bounds, v) ->
-                addBounds bounds
+                fill bounds v
             )
             (Matrix.initialize (w, h) <| always Nothing)
 
