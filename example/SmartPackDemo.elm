@@ -60,8 +60,8 @@ defaultSize : Size Cells
 defaultSize = Size ( 20, 20 )
 
 
-defaultDistribution : SP.Distribution
-defaultDistribution = SP.Right
+defaultDistribution : List SP.Distribution
+defaultDistribution = [ SP.Right, SP.Down ]
 
 
 type RenderMode
@@ -82,7 +82,7 @@ type alias Model =
     , nextPos : Maybe Pos
     , gridPreview : Maybe ( Pos, Rect )
     , rectPreview : Maybe Rect
-    , distribution : Maybe SP.Distribution
+    , distribution : List SP.Distribution
     }
 
 
@@ -96,7 +96,7 @@ init =
         , rectPreview = Nothing
         , nextRect = defaultRect
         , nextPos = Nothing
-        , distribution = Nothing
+        , distribution = defaultDistribution
         }
     , Cmd.none
         {- Task.succeed ()
@@ -160,9 +160,7 @@ update msg model =
                         (\{ width, height, color } ->
 
                             SP.carelessPack
-                                (model.distribution
-                                    |> Maybe.withDefault defaultDistribution
-                                )
+                                model.distribution
                                 (Size ( width, height))
                                 color
 
@@ -179,9 +177,7 @@ update msg model =
 
                 model.smartPack
                     |> SP.carelessPack
-                        (model.distribution
-                            |> Maybe.withDefault defaultDistribution
-                        )
+                        model.distribution
                         (Size ( rect.width, rect.height ))
                         rect.color
 

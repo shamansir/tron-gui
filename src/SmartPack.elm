@@ -38,7 +38,7 @@ container : Size Cells -> SmartPack a
 container size = SmartPack size []
 
 
-pack : Distribution -> Size Cells -> a -> SmartPack a -> Maybe (SmartPack a)
+pack : List Distribution -> Size Cells -> a -> SmartPack a -> Maybe (SmartPack a)
 pack distribution size v s =
     s
         |> findSpot distribution size
@@ -72,7 +72,7 @@ packCloseTo
 packCloseTo _ _ _ _ s = Just s
 
 
-carelessPack : Distribution -> Size Cells -> a -> SmartPack a -> SmartPack a
+carelessPack : List Distribution -> Size Cells -> a -> SmartPack a -> SmartPack a
 carelessPack distribution size v sp =
     pack distribution size v sp |> Maybe.withDefault sp
 
@@ -127,12 +127,12 @@ toMatrix (SmartPack (Size (w, h)) items) =
             (Matrix.initialize (w, h) <| always Nothing)
 
 
-findSpot : Distribution -> Size Cells -> SmartPack a -> Maybe ( Int, Int )
-findSpot distribution size = toMatrix >> findSpotM distribution size
+findSpot : List Distribution -> Size Cells -> SmartPack a -> Maybe ( Int, Int )
+findSpot distributions size = toMatrix >> findSpotM distributions size
 
 
-findSpotM : Distribution -> Size Cells -> Matrix (Maybe a) -> Maybe ( Int, Int )
-findSpotM distribution (Size (wc, hc)) matrix =
+findSpotM : List Distribution -> Size Cells -> Matrix (Maybe a) -> Maybe ( Int, Int )
+findSpotM distributions (Size (wc, hc)) matrix =
     let
         ( mw, mh ) = Matrix.size matrix
 
@@ -160,17 +160,23 @@ findSpotM distribution (Size (wc, hc)) matrix =
                 Left -> if x > 0 then Just (x - 1, y) else Nothing
                     -- maybeNext Down (x, y + 1)
 
-        helper (x, y) =
+        helper d (x, y) =
             if fitsAt (x, y) then
                 Just (x, y)
             else
-                maybeNext distribution (x, y) |> Maybe.andThen helper
+                maybeNext d (x, y) |> Maybe.andThen (helper d)
 
     in
         if (wc > 0) && (hc > 0)
             && not (Matrix.isEmpty matrix)
             && (mw >= wc) && (mh >= hc)
-            then helper firstPos
+            then distributions
+                |> List.foldl
+                    (\d prev -> case prev of
+                        Just result -> Just result
+                        Nothing -> helper d firstPos
+                    )
+                    Nothing
             else Nothing
 
 
