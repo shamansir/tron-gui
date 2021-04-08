@@ -146,6 +146,7 @@ type Msg
   | SetNextRectY Int
   | SetGridWidth Int
   | SetGridHeight Int
+  | ChangeDistribution SP.Distribution
   | Clear
   | Error Rect
 
@@ -330,6 +331,14 @@ update msg model =
         , Cmd.none
         )
 
+    ChangeDistribution distribution ->
+        (
+            { model
+            | distribution = distribution
+            }
+        , Cmd.none
+        )
+
     Clear ->
         (
             { model
@@ -506,6 +515,22 @@ view model =
                     [ Html.text "Grid" ]
                 ]
             , div
+                []
+                <| List.map
+                    (\d ->
+                        input
+                            [ H.type_ "button"
+                            , H.style "border" <|
+                                if model.distribution == d then
+                                    "1px solid black"
+                                else "1px solid lightgray"
+                            , onClick <| ChangeDistribution d
+                            , H.value <| labelForDistribution d
+                            ]
+                            [ Html.text "Rectangles" ]
+                    )
+                <| [ SP.Up, SP.Down, SP.Right, SP.Left ]
+            , div
                 [ H.style "position" "fixed"
                 , H.style "left" <| (String.fromInt <| mainWidth * scale + previewMarginX) ++ "px"
                 , H.style "top" "5px"
@@ -644,3 +669,12 @@ mouseToMessage model mouseAt =
                     , color = model.nextRect.color
                     }
         Somewhere -> NoOp
+
+
+labelForDistribution : SP.Distribution -> String
+labelForDistribution d =
+    case d of
+        SP.Up -> "↑"
+        SP.Down -> "↓"
+        SP.Right -> "→"
+        SP.Left -> "←"
