@@ -132,7 +132,7 @@ findSpot distribution size = toMatrix >> findSpotM distribution size
 
 
 findSpotM : Distribution -> Size Cells -> Matrix (Maybe a) -> Maybe ( Int, Int )
-findSpotM distribution (Size (wc, hc)) matrix =
+findSpotM distribution (Size (cw, ch)) matrix =
     let
         ( mw, mh ) = Matrix.size matrix
 
@@ -143,11 +143,15 @@ findSpotM distribution (Size (wc, hc)) matrix =
 
         fitsAt (x, y) =
             matrix
-                |> Matrix.slice (x, y) (x + wc, y + hc)
+                |> Matrix.slice (x, y) (x + cw, y + ch)
                 |> foldM (Tuple.second >> isEmpty >> (&&)) True
 
-        firstPos =
-            (0, 0)
+        firstPos d =
+            case d of
+                Down -> (0, 0)
+                Right -> (0, 0)
+                Left -> (cw - 1, 0)
+                Up -> (0, ch - 1)
 
         maybeNext d (x, y) =
             case d of
@@ -163,10 +167,10 @@ findSpotM distribution (Size (wc, hc)) matrix =
                 maybeNext d (x, y) |> Maybe.andThen (helper d)
 
     in
-        if (wc > 0) && (hc > 0)
+        if (cw > 0) && (ch > 0)
             && not (Matrix.isEmpty matrix)
-            && (mw >= wc) && (mh >= hc)
-            then helper distribution firstPos
+            && (mw >= cw) && (mh >= ch)
+            then helper distribution <| firstPos distribution
             else Nothing
 
 

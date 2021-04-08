@@ -56,6 +56,29 @@ defaultRect =
     }
 
 
+nextColorFor color =
+    case color of
+        "aqua" -> "plum"
+        "plum" -> "antiquewhite"
+        "antiquewhite" -> "beige"
+        "beige" -> "chocolate"
+        "chocolate" -> "cornflowerblue"
+        "cornflowerblue" -> "darkcyan"
+        "darkcyan" -> "darkkhaki"
+        "darkkhaki" -> "darkorange"
+        "darkorange" -> "darkslategrey"
+        "darkslategrey" -> "gold"
+        "gold" -> "lightcoral"
+        "lightcoral" -> "lightseagreen"
+        "lightseagreen" -> "mediumturquoise"
+        "mediumturquoise" -> "orangered"
+        "orangered" -> "navajowhite"
+        "navajowhite" -> "peru"
+        "peru" -> "salmon"
+        "salmon" -> "aqua"
+        _ -> "aqua"
+
+
 defaultSize : Size Cells
 defaultSize = Size ( 20, 20 )
 
@@ -183,7 +206,10 @@ update msg model =
 
             , gridPreview = Nothing
             , rectPreview = Nothing
-            , nextRect = rect
+            , nextRect =
+                { rect
+                | color = nextColorFor rect.color
+                }
             }
         , Cmd.none
         )
@@ -362,14 +388,14 @@ view model =
         viewRectGrid (x, y) (width, height) background posToColor =
             Svg.g
                 []
-                <| [ rect
+                <| rect
                     background
                     { x = x
                     , y = y
                     , width = width
                     , height = height
                     }
-                ] ++ (
+                :: (
                     Matrix.initialize (width, height) (always background)
                         |> Matrix.toIndexedList
                         |> List.map Tuple.first
@@ -418,7 +444,7 @@ view model =
                                         [ viewRectGrid
                                             pos
                                             (preview.width, preview.height)
-                                            "brown"
+                                            "darkgreen"
                                             (always Nothing)
                                         ]
                                     ]
@@ -440,7 +466,7 @@ view model =
                                     [ viewRectGrid
                                         (0, 0)
                                         (width, height)
-                                        "aqua"
+                                        color
                                         (always Nothing)
                                     ]
                             Just preview ->
@@ -453,12 +479,12 @@ view model =
                                     [ viewRectGrid
                                         (0, 0)
                                         (width, height)
-                                        "aqua"
+                                        color
                                         (always Nothing)
                                     , viewRectGrid
                                         (0, 0)
                                         (preview.width, preview.height)
-                                        "brown"
+                                        "darkgreen"
                                         (always Nothing)
                                     ]
             , div
