@@ -1,4 +1,16 @@
-module SmartPack exposing (..)
+module SmartPack exposing
+    ( Distribution(..)
+    , Bounds
+    , SmartPack
+    , map, withBounds
+    , container
+    , pack, carelessPack
+    , packAt, carelessPackAt
+    , packCloseTo, carelessPackCloseTo
+    , resize, dimensions
+    , toMatrix, toList
+    , fold, get, find
+    )
 
 
 import Array exposing (Array)
@@ -39,27 +51,34 @@ container size = SmartPack size []
 
 
 pack : Distribution -> Size Cells -> a -> SmartPack a -> Maybe (SmartPack a)
-pack distribution size v s =
-    s
+pack distribution size v sp =
+    sp
         |> findSpot distribution size
         |> Maybe.map
-            (\(x, y) ->
-                case ( s, size ) of
-                    ( SmartPack ps xs, Size ( w, h ) ) ->
-                        SmartPack ps <|
-                            (
-                                { x = x
-                                , y = y
-                                , width = w
-                                , height = h
-                                }
-                            , v )
-                            :: xs
+            (\pos ->
+                sp |> forceAdd pos size v
             )
 
 
 packAt : ( Int, Int ) -> Size Cells -> a -> SmartPack a -> Maybe (SmartPack a)
-packAt _ _ _ s = Just s
+packAt pos size v sp =
+    if sp |> fitsAt pos size then
+        Just <| forceAdd pos size v <| sp
+    else Nothing
+
+
+forceAdd : ( Int, Int ) -> Size Cells -> a -> SmartPack a -> (SmartPack a)
+forceAdd (x, y) (Size ( w, h )) v (SmartPack ps xs) =
+    SmartPack ps <|
+        (
+            { x = x
+            , y = y
+            , width = w
+            , height = h
+            }
+        , v )
+        :: xs
+
 
 
 packCloseTo
@@ -127,6 +146,25 @@ toMatrix (SmartPack (Size (w, h)) items) =
             (Matrix.initialize (w, h) <| always Nothing)
 
 
+isEmpty : Maybe a -> Bool
+isEmpty cell =
+    case cell of
+        Just _ -> False
+        Nothing -> True
+
+
+fitsAt : ( Int, Int ) -> Size Cells -> SmartPack a -> Bool
+fitsAt (x, y) (Size (cw, ch)) =
+    toMatrix
+        >> fitsAtM (x, y) (cw, ch)
+
+
+fitsAtM : ( Int, Int ) -> ( Int, Int ) -> Matrix (Maybe a) -> Bool
+fitsAtM (x, y) (cw, ch) =
+    Matrix.slice (x, y) (x + cw, y + ch)
+        >> foldM (Tuple.second >> isEmpty >> (&&)) True
+
+
 findSpot : Distribution -> Size Cells -> SmartPack a -> Maybe ( Int, Int )
 findSpot distribution size = toMatrix >> findSpotM distribution size
 
@@ -135,16 +173,8 @@ findSpotM : Distribution -> Size Cells -> Matrix (Maybe a) -> Maybe ( Int, Int )
 findSpotM distribution (Size (cw, ch)) matrix =
     let
         ( mw, mh ) = Matrix.size matrix
-
-        isEmpty cell =
-            case cell of
-                Just _ -> False
-                Nothing -> True
-
-        fitsAt (x, y) =
-            matrix
-                |> Matrix.slice (x, y) (x + cw, y + ch)
-                |> foldM (Tuple.second >> isEmpty >> (&&)) True
+        fitsAt_ (x, y) =
+            fitsAtM (x, y) (cw, ch) matrix
 
         firstPos d =
             case d of
@@ -161,7 +191,7 @@ findSpotM distribution (Size (cw, ch)) matrix =
                 Left -> if x > 0 then Just (x - 1, y) else maybeNext Down (0, y)
 
         helper d (x, y) =
-            if fitsAt (x, y) then
+            if fitsAt_ (x, y) then
                 Just (x, y)
             else
                 maybeNext d (x, y) |> Maybe.andThen (helper d)
