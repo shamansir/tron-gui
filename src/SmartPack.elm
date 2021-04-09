@@ -160,9 +160,14 @@ fitsAt (x, y) (Size (cw, ch)) =
 
 
 fitsAtM : ( Int, Int ) -> ( Int, Int ) -> Matrix (Maybe a) -> Bool
-fitsAtM (x, y) (cw, ch) =
-    Matrix.slice (x, y) (x + cw, y + ch)
-        >> foldM (Tuple.second >> isEmpty >> (&&)) True
+fitsAtM (x, y) (cw, ch) matrix =
+    let (mh, mw) = Matrix.size matrix
+    in
+    if x + cw <= mw && y + ch <= mh then
+        matrix
+            |> Matrix.slice (x, y) (x + cw, y + ch)
+            |> foldM (Tuple.second >> isEmpty >> (&&)) True
+    else False
 
 
 findSpot : Distribution -> Size Cells -> SmartPack a -> Maybe ( Int, Int )
