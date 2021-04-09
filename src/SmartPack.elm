@@ -80,7 +80,6 @@ forceAdd (x, y) (Size ( w, h )) v (SmartPack ps xs) =
         :: xs
 
 
-
 packCloseTo
     :  Distribution
     -> ( Int, Int )
@@ -185,15 +184,15 @@ findSpotM distribution (Size (cw, ch)) matrix =
             case d of
                 Down -> (0, 0)
                 Right -> (0, 0)
-                Left -> (cw - 1, 0)
-                Up -> (0, ch - 1)
+                Left -> (mw - 1, 0)
+                Up -> (0, mh - 1)
 
         maybeNext d (x, y) =
             case d of
                 Down -> if y < mh - 1 then Just (x, y + 1) else maybeNext Right (x, 0)
-                Up -> if y > 0 then Just (x, y - 1) else maybeNext Right (x, 0)
+                Up -> if y > 0 then Just (x, y - 1) else maybeNext Right (x + 1, mh - 1)
                 Right -> if x < mw - 1 then Just (x + 1, y) else maybeNext Down (0, y)
-                Left -> if x > 0 then Just (x - 1, y) else maybeNext Down (0, y)
+                Left -> if x > 0 then Just (x - 1, y) else maybeNext Down (mw - 1, y)
 
         helper d (x, y) =
             if fitsAt_ (x, y) then
