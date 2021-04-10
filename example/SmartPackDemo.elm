@@ -92,9 +92,19 @@ type RenderMode
     | Grid
 
 
+type LeftMouseButton
+    = LMBUp
+    | LMBDown
+
+
+type ShiftKey
+    = ShiftKeyUp
+    | ShiftKeyDown
+
+
 type MouseAt
-    = AtGrid ( Int, Int ) Bool
-    | AtRect ( Int, Int ) Bool
+    = AtGrid ( Int, Int ) LeftMouseButton ShiftKey
+    | AtRect ( Int, Int ) LeftMouseButton ShiftKey
     | Somewhere
 
 
@@ -622,21 +632,27 @@ random =
 
 whereIsMouse : Model -> D.Decoder MouseAt
 whereIsMouse model =
-    D.map3
-        (\pageX pageY buttons ->
-            ( ( pageX, pageY ), buttons == 1 )
+    D.map4
+        (\pageX pageY buttons shiftKey ->
+            ( ( pageX, pageY )
+            , ( if buttons == 1 then LMBDown else LMBUp
+              , if shiftKey then ShiftKeyDown else ShiftKeyUp
+              )
+            )
         )
         (D.field "pageX" D.float |> D.map floor)
         (D.field "pageY" D.float |> D.map floor)
         (D.field "buttons" D.int)
+        (D.field "shiftKey" D.bool)
     |> D.map
-        (\((pageX, pageY), leftButtonDown) ->
+        (\( (pageX, pageY), ( leftMouseButton, shiftKey ) ) ->
             case model.smartPack |> SP.dimensions of
                 Size ( width, height ) ->
                     if pageX <= width * scale && pageY <= height * scale then
                         AtGrid
                             ( pageX // scale, pageY // scale )
-                            leftButtonDown
+                            leftMouseButton
+                            shiftKey
                     else
                         if pageX > (width * scale + previewMarginX)
                         && pageY > previewMarginY
@@ -645,7 +661,8 @@ whereIsMouse model =
                                 ( (pageX - previewMarginX - width * scale) // scale
                                 , pageY // scale
                                 )
-                                leftButtonDown
+                                leftMouseButton
+                                shiftKey
                         else Somewhere
         )
 
@@ -653,13 +670,13 @@ whereIsMouse model =
 mouseToMessage : Model -> MouseAt -> Msg
 mouseToMessage model mouseAt =
     case mouseAt of
-        AtGrid pos mouseDown ->
-            if mouseDown then
+        AtGrid pos mouseDown shiftKey ->
+            if mouseDown == LMBDown then
                 PackOneAt pos model.nextRect
             else
                 AddGridPreview pos model.nextRect
-        AtRect ( width, height ) mouseDown ->
-            if mouseDown then
+        AtRect ( width, height ) mouseDown shiftKey ->
+            if mouseDown == LMBDown then
                 SetNextRect
                     { width = width
                     , height = height
