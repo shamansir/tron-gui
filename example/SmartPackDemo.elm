@@ -104,7 +104,7 @@ type ShiftKey
 
 type MouseAt
     = AtGrid ( Int, Int ) LeftMouseButton ShiftKey
-    | AtRect ( Int, Int ) LeftMouseButton ShiftKey
+    | AtRect ( Int, Int ) LeftMouseButton
     | Somewhere
 
 
@@ -147,6 +147,7 @@ type Msg
   | PackAll (List Rect)
   | PackOne Rect
   | PackOneAt ( Int, Int ) Rect
+  | PackOneCloseTo ( Int, Int ) Rect
   | AddGridPreview ( Int, Int ) Rect
   | AddRectPreview Rect
   | SetNextRect Rect
@@ -231,6 +232,26 @@ update msg model =
             | smartPack =
                 model.smartPack
                     |> SP.carelessPackAt (x, y) (Size ( rect.width, rect.height )) rect.color
+            , gridPreview = Nothing
+            , rectPreview = Nothing
+            , nextRect =
+                { rect
+                | color = nextColorFor rect.color
+                }
+            }
+        , Cmd.none
+        )
+
+    PackOneCloseTo (x, y) rect ->
+        (
+            { model
+            | smartPack =
+                model.smartPack
+                    |> SP.carelessPackCloseTo
+                        model.distribution
+                        (x, y)
+                        (Size ( rect.width, rect.height ))
+                        rect.color
             , gridPreview = Nothing
             , rectPreview = Nothing
             , nextRect =
@@ -457,6 +478,12 @@ view model =
                         ]
                         <| List.append
 
+                            (List.concat
+                                <| Matrix.toList
+                                <| Matrix.indexedMap viewGridCell
+                                <| SP.toMatrix model.smartPack
+                            )
+
                             (case model.gridPreview of
                                 Nothing -> []
                                 Just ( pos, preview ) ->
@@ -471,11 +498,6 @@ view model =
                                         ]
                                     ]
                             )
-
-                        <| List.concat
-                        <| Matrix.toList
-                        <| Matrix.indexedMap viewGridCell
-                        <| SP.toMatrix model.smartPack
             ,
                 case model.nextRect of
                     { width, height, color } ->
@@ -662,7 +684,6 @@ whereIsMouse model =
                                 , pageY // scale
                                 )
                                 leftMouseButton
-                                shiftKey
                         else Somewhere
         )
 
@@ -671,11 +692,13 @@ mouseToMessage : Model -> MouseAt -> Msg
 mouseToMessage model mouseAt =
     case mouseAt of
         AtGrid pos mouseDown shiftKey ->
-            if mouseDown == LMBDown then
+            if shiftKey == ShiftKeyDown && mouseDown == LMBDown then
+                PackOneCloseTo pos model.nextRect
+            else if mouseDown == LMBDown then
                 PackOneAt pos model.nextRect
             else
                 AddGridPreview pos model.nextRect
-        AtRect ( width, height ) mouseDown shiftKey ->
+        AtRect ( width, height ) mouseDown ->
             if mouseDown == LMBDown then
                 SetNextRect
                     { width = width
