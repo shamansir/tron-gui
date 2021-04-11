@@ -87,7 +87,13 @@ packCloseTo
     -> a
     -> SmartPack a
     -> Maybe (SmartPack a)
-packCloseTo _ _ _ _ s = Just s
+packCloseTo distribution pos size v sp =
+    sp
+        |> findSpotCloseTo distribution pos size
+        |> Maybe.map
+            (\foundPos ->
+                sp |> forceAdd foundPos size v
+            )
 
 
 carelessPack : Distribution -> Size Cells -> a -> SmartPack a -> SmartPack a
@@ -205,6 +211,38 @@ findSpotM distribution (Size (cw, ch)) matrix =
             && not (Matrix.isEmpty matrix)
             && (mw >= cw) && (mh >= ch)
             then helper distribution <| firstPos distribution
+            else Nothing
+
+
+findSpotCloseTo : Distribution -> (Int, Int) -> Size Cells -> SmartPack a -> Maybe ( Int, Int )
+findSpotCloseTo distribution pos size = toMatrix >> findSpotCloseToM distribution pos size
+
+
+findSpotCloseToM : Distribution -> ( Int, Int ) -> Size Cells -> Matrix (Maybe a) -> Maybe ( Int, Int )
+findSpotCloseToM distribution (px, py) (Size (cw, ch)) matrix =
+    let
+        ( mw, mh ) = Matrix.size matrix
+        fitsAt_ (x, y) =
+            fitsAtM (x, y) (cw, ch) matrix
+
+        maybeNext d (x, y) =
+            case d of
+                Down -> if y < mh - 1 then Just (x, y + 1) else maybeNext Right (x, py)
+                Up -> if y > 0 then Just (x, y - 1) else maybeNext Right (x + 1, mh - 1)
+                Right -> if x < mw - 1 then Just (x + 1, y) else maybeNext Down (px, y)
+                Left -> if x > 0 then Just (x - 1, y) else maybeNext Down (mw - 1, y)
+
+        helper d (x, y) =
+            if fitsAt_ (x, y) then
+                Just (x, y)
+            else
+                maybeNext d (x, y) |> Maybe.andThen (helper d)
+
+    in
+        if (cw > 0) && (ch > 0)
+            && not (Matrix.isEmpty matrix)
+            && (mw >= cw) && (mh >= ch)
+            then helper distribution (px, py)
             else Nothing
 
 
