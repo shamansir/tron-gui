@@ -195,10 +195,30 @@ findSpotM distribution (Size (cw, ch)) matrix =
 
         maybeNext d (x, y) =
             case d of
-                Down -> if y < mh - 1 then Just (x, y + 1) else maybeNext Right (x, 0)
-                Up -> if y > 0 then Just (x, y - 1) else maybeNext Right (x + 1, mh - 1)
-                Right -> if x < mw - 1 then Just (x + 1, y) else maybeNext Down (0, y)
-                Left -> if x > 0 then Just (x - 1, y) else maybeNext Down (mw - 1, y)
+                Down ->
+                    if y < mh - 1 then
+                        Just (x, y + 1)
+                    else if x < mw - 1 then
+                        Just (x + 1, 0)
+                    else Nothing
+                Up ->
+                    if y > 0 then
+                        Just (x, y - 1)
+                    else if x < mw - 1 then
+                        Just (x + 1, mh - 1)
+                    else Nothing
+                Right ->
+                    if x < mw - 1 then
+                        Just (x + 1, y)
+                    else if y < mh - 1 then
+                        Just (0, y + 1)
+                    else Nothing
+                Left ->
+                    if x > 0 then
+                        Just (x - 1, y)
+                    else if y < mh - 1 then
+                        Just (mw - 1, y + 1)
+                    else Nothing
 
         helper d (x, y) =
             if fitsAt_ (x, y) then
@@ -227,10 +247,30 @@ findSpotCloseToM distribution (px, py) (Size (cw, ch)) matrix =
 
         maybeNext d (x, y) =
             case d of
-                Down -> if y < mh - 1 then Just (x, y + 1) else maybeNext Right (x, py)
-                Up -> if y > 0 then Just (x, y - 1) else maybeNext Right (x + 1, mh - 1)
-                Right -> if x < mw - 1 then Just (x + 1, y) else maybeNext Down (px, y)
-                Left -> if x > 0 then Just (x - 1, y) else maybeNext Down (mw - 1, y)
+                Down ->
+                    if y < mh - 1 then
+                        Just (x, y + 1)
+                    else if x < mw - 1 then
+                        Just (x + 1, py)
+                    else Nothing
+                Up ->
+                    if y > 0 then
+                        Just (x, y - 1)
+                    else if x < mw - 1 then
+                        Just (x + 1, py)
+                    else Nothing
+                Right ->
+                    if x < mw - 1 then
+                        Just (x + 1, y)
+                    else if y < mh - 1 then
+                        Just (px, y + 1)
+                    else Nothing
+                Left ->
+                    if x > 0 then
+                        Just (x - 1, y)
+                    else if y < mh - 1 then
+                        Just (px, y + 1)
+                    else Nothing
 
         helper d (x, y) =
             if fitsAt_ (x, y) then
