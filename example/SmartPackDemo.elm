@@ -146,7 +146,7 @@ type Msg
   = NoOp
   | ChangeMode RenderMode
   | Randomize
-  | PackAll (List Rect)
+  | PackAll (List ( (Int, Int), Rect ) )
   | PackOne Rect
   | PackOneAt ( Int, Int ) Rect
   | PackOneCloseTo ( Int, Int ) Rect
@@ -183,11 +183,11 @@ update msg model =
     Randomize ->
        (
            { model
-           | smartPack = SP.container defaultSize
+           | smartPack = SP.container <| SP.dimensions model.smartPack
            }
        , Random.generate
             PackAll
-            random
+            (random <| SP.dimensions model.smartPack)
        )
 
     PackAll rects ->
@@ -196,10 +196,10 @@ update msg model =
             | smartPack =
                 rects
                     |> List.foldl
-                        (\{ width, height, color } ->
+                        (\(pos, { width, height, color }) ->
 
-                            SP.carelessPack
-                                model.distribution
+                            SP.carelessPackAt
+                                pos
                                 (Size ( width, height))
                                 color
 
@@ -377,14 +377,6 @@ update msg model =
         , Cmd.none
         )
 
-    Clear ->
-        (
-            { model
-            | smartPack = SP.container <| SP.dimensions model.smartPack
-            }
-        , Cmd.none
-        )
-
     MarkCloseMethodOn ->
         (
             { model
@@ -400,6 +392,16 @@ update msg model =
             }
         , Cmd.none
         )
+
+
+    Clear ->
+        (
+            { model
+            | smartPack = SP.container <| SP.dimensions model.smartPack
+            }
+        , Cmd.none
+        )
+
 
     Error rect ->
       ( model, Cmd.none )
@@ -703,11 +705,21 @@ randomRect =
         randomColor
 
 
-random : Random.Generator (List Rect)
-random =
+random : Size Cells -> Random.Generator (List ( (Int, Int), Rect ) )
+random (Size (width, height)) =
     Random.int 2 15
       |> Random.andThen
-          (\len -> Random.list len randomRect)
+          (\len ->
+            Random.list len
+                <| Random.map2
+                    Tuple.pair
+                    (Random.map2
+                        Tuple.pair
+                        (Random.int 0 width)
+                        (Random.int 0 height)
+                    )
+                    randomRect
+          )
 
 
 isShiftKeyDown : D.Decoder ShiftKey
