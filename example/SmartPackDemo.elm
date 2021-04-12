@@ -116,6 +116,7 @@ type alias Model =
     , gridPreview : Maybe ( Pos, Rect )
     , rectPreview : Maybe Rect
     , distribution : SP.Distribution
+    , closeModeOn : Bool
     }
 
 
@@ -130,6 +131,7 @@ init =
         , nextRect = defaultRect
         , nextPos = Nothing
         , distribution = defaultDistribution
+        , closeModeOn = False
         }
     , Cmd.none
         {- Task.succeed ()
@@ -158,6 +160,8 @@ type Msg
   | SetGridWidth Int
   | SetGridHeight Int
   | ChangeDistribution SP.Distribution
+  | MarkCloseMethodOn
+  | MarkCloseMethodOff
   | Clear
   | Error Rect
 
@@ -381,6 +385,22 @@ update msg model =
         , Cmd.none
         )
 
+    MarkCloseMethodOn ->
+        (
+            { model
+            | closeModeOn = True
+            }
+        , Cmd.none
+        )
+
+    MarkCloseMethodOff ->
+        (
+            { model
+            | closeModeOn = False
+            }
+        , Cmd.none
+        )
+
     Error rect ->
       ( model, Cmd.none )
 
@@ -493,7 +513,10 @@ view model =
                                         [ viewRectGrid
                                             pos
                                             (preview.width, preview.height)
-                                            "darkgreen"
+                                            ( if model.closeModeOn
+                                                then "darkblue"
+                                                else "darkgreen"
+                                            )
                                             (always Nothing)
                                         ]
                                     ]
@@ -636,16 +659,23 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Browser.Events.onMouseMove
-            (whereIsMouse model
-                --|> D.map (Debug.log "mouseAt")
-            )
-        , Browser.Events.onMouseDown
-            (whereIsMouse model
-                --|> D.map (Debug.log "mouseDown")
-            )
+        [ Sub.batch
+            [ Browser.Events.onMouseMove
+                (whereIsMouse model
+                    --|> D.map (Debug.log "mouseAt")
+                )
+            , Browser.Events.onMouseDown
+                (whereIsMouse model
+                    --|> D.map (Debug.log "mouseDown")
+                )
+            ]
+            |> Sub.map (mouseToMessage model)
+        , Sub.batch
+            [ Browser.Events.onKeyUp isShiftKeyDown
+            , Browser.Events.onKeyDown isShiftKeyDown
+            ]
+            |> Sub.map keyToMessage
         ]
-    |> Sub.map (mouseToMessage model)
 
 
 -- RANDOM
@@ -678,6 +708,12 @@ random =
     Random.int 2 15
       |> Random.andThen
           (\len -> Random.list len randomRect)
+
+
+isShiftKeyDown : D.Decoder ShiftKey
+isShiftKeyDown =
+    D.field "shiftKey" D.bool
+        |> D.map (\shiftKey -> if shiftKey then ShiftKeyDown else ShiftKeyUp)
 
 
 whereIsMouse : Model -> D.Decoder MouseAt
@@ -740,6 +776,13 @@ mouseToMessage model mouseAt =
                     , color = model.nextRect.color
                     }
         Somewhere -> NoOp
+
+
+keyToMessage : ShiftKey -> Msg
+keyToMessage shiftKey =
+    case shiftKey of
+        ShiftKeyDown -> MarkCloseMethodOn
+        ShiftKeyUp -> MarkCloseMethodOff
 
 
 labelForDistribution : SP.Distribution -> String
