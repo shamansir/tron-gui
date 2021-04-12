@@ -69,8 +69,8 @@ find ( size, layout ) { x, y } =
                 |> Pages.getCurrent
                 |> Maybe.andThen
                     (SmartPack.find
-                        ( x * 2 - Basics.toFloat bounds.x * 2
-                        , y * 2 - Basics.toFloat bounds.y * 2
+                        ( x * 2 - Basics.toFloat bounds.x
+                        , y * 2 - Basics.toFloat bounds.y
                         )
                     )
                 |> Maybe.map Tuple.second
