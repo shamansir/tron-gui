@@ -165,7 +165,7 @@ fitsAt (x, y) (Size (cw, ch)) =
 
 fitsAtM : ( Int, Int ) -> ( Int, Int ) -> Matrix (Maybe a) -> Bool
 fitsAtM (x, y) (cw, ch) matrix =
-    let (mh, mw) = Matrix.size matrix
+    let (mw, mh) = Matrix.size matrix
     in
     if x + cw <= mw && y + ch <= mh then
         matrix
@@ -286,6 +286,7 @@ findSpotCloseToM distribution (px, py) (Size (cw, ch)) matrix =
 
 
 find : ( Float, Float ) -> SmartPack a -> Maybe ( Bounds, a )
+-- find pos = always Nothing
 find pos = toMatrixWithBounds >> findM pos
    -- FIXME: use the stored bounds instead of Matrix? could be faster!
 
