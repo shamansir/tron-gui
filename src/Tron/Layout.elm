@@ -1,12 +1,13 @@
-module Tron.Layout exposing (Layout, Cell(..), init, pack, pack1, unfold, find, toList)
+module Tron.Layout exposing (Layout, Cell(..), init, pack, pack1, fold, find, toList)
 
 
 import Array exposing (..)
 import Json.Decode as Json
 
 
-import Bounds
-import BinPack exposing (..)
+import Bounds exposing (..)
+import SmartPack exposing (..)
+import SmartPack as D exposing (Distribution(..))
 import Size exposing (..)
 
 import Tron.Control exposing (Control(..))
@@ -27,7 +28,7 @@ import Tron.Control.Nest as Nest exposing (getItems)
 
 type Cell_ a
     = One_ a
-    | Many_ a (Pages (BinPack a))
+    | Many_ a (Pages (SmartPack a))
 
 
 type Cell a
@@ -35,48 +36,43 @@ type Cell a
     | Many a (Pages (List a))
 
 
-type alias Layout = ( SizeF Cells, BinPack (Cell_ Path) )
+type alias Layout = ( Size Cells, SmartPack (Cell_ Path) )
 
 
-type Position a = Position { x : Float, y : Float }
+--type Position a = Position { x : Float, y : Float }
 
 
-init : SizeF Cells -> Layout
+init : Size Cells -> Layout
 init size =
     ( size
-    , initBinPack size
+    , SmartPack.container size
     )
 
 
-initBinPack : SizeF Cells -> BinPack a
-initBinPack (SizeF ( maxCellsByX, maxCellsByY ))
-    = container maxCellsByX maxCellsByY
-
-
 find : Layout -> { x : Float, y : Float } -> Maybe Path
-find ( size, layout ) pos =
-    case layout |> BinPack.find pos of
-        Just ( One_ path, _ ) ->
+find ( size, layout ) { x, y } =
+    case layout |> SmartPack.find ( x, y ) of
+        Just ( _, One_ path ) ->
             Just path
-        Just ( Many_ _ innerPages, bounds ) ->
+        Just ( bounds, Many_ _ innerPages ) ->
             innerPages
                 |> Pages.getCurrent
                 |> Maybe.andThen
-                    (BinPack.find
-                        { x = pos.x - bounds.x
-                        , y = pos.y - bounds.y
-                        }
+                    (SmartPack.find
+                        ( x - bounds.x
+                        , y - bounds.y
+                        )
                     )
-                |> Maybe.map Tuple.first
+                |> Maybe.map Tuple.second
         Nothing ->
             Nothing
 
 
-pack : SizeF Cells -> Property msg -> Layout
+pack : Size Cells -> Property msg -> Layout
 pack size = pack1 size Path.start
 
 
-pack1 : SizeF Cells -> Path -> Property msg -> Layout
+pack1 : Size Cells -> Path -> Property msg -> Layout
 pack1 size rootPath prop =
     case prop of
         Nil ->
@@ -93,17 +89,20 @@ pack1 size rootPath prop =
             )
         _ ->
             ( size
-            , initBinPack size
-                |> BinPack.carelessPack ( { width = 1, height = 1 }, One_ <| Path.start )
+            , SmartPack.container size
+                |> SmartPack.carelessPack
+                    D.Up
+                    ( Size ( 2, 2 ) )
+                    ( One_ <| Path.start )
             )
 
 
 packItemsAtRoot
-    :  SizeF Cells
+    :  Size Cells
     -> Path
     -> PanelShape
     -> Array (Label, Property msg)
-    -> BinPack (Cell_ Path)
+    -> SmartPack (Cell_ Path)
 packItemsAtRoot size rp shape items =
     let
         rootPath = Path.toList rp
@@ -117,21 +116,19 @@ packItemsAtRoot size rp shape items =
                             then layout |> packOne (rootPath ++ [index])
                             else layout
                     )
-                    (initBinPack size)
+                    (SmartPack.container size)
 
         packOne path =
-            BinPack.carelessPack
-                ( { width = 1, height = 1 }
-                , One_ <| Path.fromList path
-                )
+            SmartPack.carelessPack
+                D.Up
+                ( Size ( 2, 2 ) )
+                <| One_ <| Path.fromList path
 
         packOneSub path cellShape =
-            BinPack.carelessPack
-                ( case CS.numify cellShape of
-                    ( cw, ch ) ->
-                        { width = cw, height = ch }
-                , Path.fromList path
-                )
+            SmartPack.carelessPack
+                D.Up
+                ( Size <| CS.numify cellShape )
+                <| Path.fromList path
 
         packMany path pageNum panelShape cellShape plateItems =
             let
@@ -139,12 +136,14 @@ packItemsAtRoot size rp shape items =
                     Property.findShape panelShape cellShape <| Array.toList plateItems
             in
 
-                BinPack.carelessPack
-                    (
-                        { width = pageWidth
-                        , height = pageHeight
-                        }
-                    , Many_
+                SmartPack.carelessPack
+                    D.Up
+                    ( Size
+                        ( pageWidth
+                        , pageHeight
+                        )
+                    )
+                    (Many_
                             (Path.fromList path)
                             <| Pages.map
                                 (List.foldl
@@ -153,7 +152,7 @@ packItemsAtRoot size rp shape items =
                                             then packOneSub (path ++ [index]) cellShape plateLayout
                                             else plateLayout
                                     )
-                                    (BinPack.container pageWidth pageHeight)
+                                    ( SmartPack.container <| Size ( pageWidth, pageHeight) )
                                 )
                             <| Pages.switchTo pageNum
                             <| Pages.distribute 9
@@ -166,12 +165,12 @@ packItemsAtRoot size rp shape items =
         packGroupControl
             :  List Int
             -> ( PanelShape, CellShape )
-            -> BinPack (Cell_ Path)
+            -> SmartPack (Cell_ Path)
             -> Control
                     ( Array ( Label, Property msg ) )
                     { a | form : Form, page : PageNum }
                     msg
-            -> BinPack (Cell_ Path)
+            -> SmartPack (Cell_ Path)
         packGroupControl
             path
             ( panelShape, cellShape )
@@ -214,37 +213,37 @@ packItemsAtRoot size rp shape items =
         items |> packPlatesOf rootPath firstLevel
 
 
-unfold : ( Cell ( Path, Bounds ) -> a -> a ) -> a -> Layout -> a
-unfold f def ( _, bp ) =
-    BinPack.foldGeometry
-        (\( c, bounds ) prev ->
-            case c of
-                One_ path ->
-                    f
-                        ( One ( path, bounds ) )
-                        prev
+fold : ( Cell ( Bounds, Path ) -> a -> a ) -> a -> Layout -> a
+fold f def ( _, sp ) =
+    sp
+        |> SmartPack.toList
+        |> List.foldl
+            (\( bounds, c ) prev ->
+                case c of
+                    One_ path ->
+                        f
+                            ( One ( bounds, path ) )
+                            prev
 
-                Many_ path bpPages ->
-                    f
-                        ( Many
-                            ( path, bounds )
-                            <| Pages.map
-                                (List.map
-                                    (Tuple.mapSecond
-                                        <| Bounds.shift bounds
+                    Many_ path bpPages ->
+                        f
+                            ( Many
+                                ( bounds, path )
+                                <| Pages.map
+                                    (List.map
+                                        (Tuple.mapFirst
+                                            <| Bounds.shift bounds
+                                        )
+                                    << SmartPack.toList
                                     )
-                                << BinPack.foldGeometry
-                                    (::)
-                                    []
-                                )
-                            <| bpPages
-                        )
-                        prev
-        )
-        def
-        bp
+                                <| bpPages
+                            )
+                            prev
+            )
+            def
 
 
-toList : Layout -> List ( Cell ( Path, Bounds ) )
+
+toList : Layout -> List ( Cell ( Bounds, Path ) )
 toList =
-    unfold (::) []
+    fold (::) []
