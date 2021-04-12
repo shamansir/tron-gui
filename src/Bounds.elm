@@ -40,6 +40,20 @@ multiplyBy n =
     multiply { x = n, y = n }
 
 
+multiplyF : { x : Float, y : Float } -> BoundsF -> BoundsF
+multiplyF mult bounds =
+    { x = mult.x * bounds.x
+    , y = mult.y * bounds.y
+    , width = mult.x * bounds.width
+    , height = mult.y * bounds.height
+    }
+
+
+multiplyByF : Float -> BoundsF -> BoundsF
+multiplyByF n =
+    multiplyF { x = n, y = n }
+
+
 shift : { a | x : Int, y : Int } -> Bounds -> Bounds
 shift by bounds =
     { x = bounds.x + by.x
