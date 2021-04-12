@@ -69,8 +69,8 @@ find ( size, layout ) { x, y } =
                 |> Pages.getCurrent
                 |> Maybe.andThen
                     (SmartPack.find
-                        ( x - Basics.toFloat bounds.x
-                        , y - Basics.toFloat  bounds.y
+                        ( x * 2 - Basics.toFloat bounds.x * 2
+                        , y * 2 - Basics.toFloat bounds.y * 2
                         )
                     )
                 |> Maybe.map Tuple.second
@@ -101,7 +101,7 @@ pack1 size rootPath prop =
             ( size
             , SmartPack.container (adaptSize size)
                 |> SmartPack.carelessPack
-                    D.Up
+                    D.Right
                     ( Size ( 2, 2 ) )
                     ( One_ <| Path.start )
             )
@@ -130,7 +130,7 @@ packItemsAtRoot size rp shape items =
 
         packOne path =
             SmartPack.carelessPack
-                D.Up
+                D.Right
                 ( Size ( 2, 2 ) )
                 <| One_ <| Path.fromList path
 
@@ -144,7 +144,7 @@ packItemsAtRoot size rp shape items =
                                 , ceiling <| ch * 2
                                 )
             in SmartPack.carelessPack
-                D.Up
+                D.Right
                 cellShape_
                 <| Path.fromList path
 
@@ -161,7 +161,7 @@ packItemsAtRoot size rp shape items =
             in
 
                 SmartPack.carelessPack
-                    D.Up
+                    D.Right
                     pageSize
                     (Many_
                             (Path.fromList path)
@@ -264,7 +264,6 @@ fold f def ( _, sp ) =
                             prev
             )
             def
-
 
 
 toList : Layout -> List ( Cell ( BoundsF, Path ) )
