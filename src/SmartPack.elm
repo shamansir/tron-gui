@@ -1,6 +1,5 @@
 module SmartPack exposing
     ( Distribution(..)
-    , Bounds
     , SmartPack
     , map, withBounds
     , container
@@ -13,17 +12,13 @@ module SmartPack exposing
     )
 
 
+import Bounds exposing (Bounds)
+
+
 import Array exposing (Array)
 import Matrix exposing (Matrix)
 
 import Size exposing (..)
-
-type alias Bounds =
-    { x : Int
-    , y : Int
-    , width : Int
-    , height : Int
-    }
 
 
 type Distribution
@@ -286,11 +281,11 @@ findSpotCloseToM distribution (px, py) (Size (cw, ch)) matrix =
             else Nothing
 
 
-find : ( Float, Float ) -> SmartPack a -> Maybe a
+find : ( Float, Float ) -> SmartPack a -> Maybe ( Bounds, a )
 find pos = toMatrix >> findM pos
 
 
-findM : ( Float, Float ) -> Matrix ( Maybe a ) -> Maybe a
+findM : ( Float, Float ) -> Matrix ( Maybe a ) -> Maybe ( Bounds, a )
 findM pos _ = Nothing
 
 
