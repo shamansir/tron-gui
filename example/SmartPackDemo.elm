@@ -376,7 +376,7 @@ update msg model =
     Clear ->
         (
             { model
-            | smartPack = SP.container defaultSize
+            | smartPack = SP.container <| SP.dimensions model.smartPack
             }
         , Cmd.none
         )
@@ -548,6 +548,34 @@ view model =
                 , input
                     [ H.type_ "button", onClick <| ChangeMode Grid, H.value "Grid" ]
                     [ Html.text "Grid" ]
+                ]
+            , div
+                []
+                [ input
+                    [ H.type_ "number"
+                    , H.style "max-width" "40px"
+                    , onInput
+                        (String.toInt
+                            >> Maybe.map SetGridWidth
+                            >> Maybe.withDefault NoOp
+                        )
+                    , H.placeholder <| String.fromInt <| mainWidth
+                    , H.value <| String.fromInt <| mainWidth
+                    ]
+                    [ ]
+                , Html.text "x"
+                , input
+                    [ H.type_ "number"
+                    , H.style "max-width" "40px"
+                    , onInput
+                        (String.toInt
+                            >> Maybe.map SetGridHeight
+                            >> Maybe.withDefault NoOp
+                        )
+                    , H.placeholder <| String.fromInt <| mainHeight
+                    , H.value <| String.fromInt <| mainHeight
+                    ]
+                    [ ]
                 ]
             , div
                 []
