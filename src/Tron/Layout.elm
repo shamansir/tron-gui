@@ -36,22 +36,32 @@ type Cell a
     | Many a (Pages (List a))
 
 
-type alias Layout = ( Size Cells, SmartPack (Cell_ Path) )
+{-
+    `SmartPack` stores all bounds and positions as `Int` due to its Matrix-based nature.
+    But `Cells` can be half-sized. So we divide and multiply sizes by 2 when going back and forth.
+    The rule is that `Layout` operates and exposes API with usual `Float`-based cells where `Unit` is `One` cell. While inside, when working with `SmartPack`, it proportionally changes the sizes to their `Int` analogues.
+-}
+type alias Layout = ( SizeF Cells, SmartPack (Cell_ Path) )
 
 
 --type Position a = Position { x : Float, y : Float }
 
 
-init : Size Cells -> Layout
+init : SizeF Cells -> Layout
 init size =
     ( size
-    , SmartPack.container size
+    , SmartPack.container <| adaptSize size
     )
+
+
+adaptSize : SizeF Cells -> Size Cells
+adaptSize (SizeF ( w, h )) =
+    Size ( ceiling <| w * 2, ceiling <| h * 2 )
 
 
 find : Layout -> { x : Float, y : Float } -> Maybe Path
 find ( size, layout ) { x, y } =
-    case layout |> SmartPack.find ( x, y ) of
+    case layout |> SmartPack.find ( x * 2, y * 2 ) of
         Just ( _, One_ path ) ->
             Just path
         Just ( bounds, Many_ _ innerPages ) ->
@@ -68,11 +78,11 @@ find ( size, layout ) { x, y } =
             Nothing
 
 
-pack : Size Cells -> Property msg -> Layout
+pack : SizeF Cells -> Property msg -> Layout
 pack size = pack1 size Path.start
 
 
-pack1 : Size Cells -> Path -> Property msg -> Layout
+pack1 : SizeF Cells -> Path -> Property msg -> Layout
 pack1 size rootPath prop =
     case prop of
         Nil ->
@@ -89,7 +99,7 @@ pack1 size rootPath prop =
             )
         _ ->
             ( size
-            , SmartPack.container size
+            , SmartPack.container (adaptSize size)
                 |> SmartPack.carelessPack
                     D.Up
                     ( Size ( 2, 2 ) )
@@ -98,7 +108,7 @@ pack1 size rootPath prop =
 
 
 packItemsAtRoot
-    :  Size Cells
+    :  SizeF Cells
     -> Path
     -> PanelShape
     -> Array (Label, Property msg)
@@ -116,7 +126,7 @@ packItemsAtRoot size rp shape items =
                             then layout |> packOne (rootPath ++ [index])
                             else layout
                     )
-                    (SmartPack.container size)
+                    (SmartPack.container <| adaptSize size)
 
         packOne path =
             SmartPack.carelessPack
