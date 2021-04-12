@@ -59,8 +59,8 @@ find ( size, layout ) { x, y } =
                 |> Pages.getCurrent
                 |> Maybe.andThen
                     (SmartPack.find
-                        ( x - bounds.x
-                        , y - bounds.y
+                        ( x - Basics.toFloat bounds.x
+                        , y - Basics.toFloat  bounds.y
                         )
                     )
                 |> Maybe.map Tuple.second
@@ -125,24 +125,34 @@ packItemsAtRoot size rp shape items =
                 <| One_ <| Path.fromList path
 
         packOneSub path cellShape =
-            SmartPack.carelessPack
+            let
+                cellShape_ =
+                    Size
+                        <| case CS.numify cellShape of
+                            ( cw, ch ) ->
+                                ( ceiling <| cw * 2
+                                , ceiling <| ch * 2
+                                )
+            in SmartPack.carelessPack
                 D.Up
-                ( Size <| CS.numify cellShape )
+                cellShape_
                 <| Path.fromList path
 
         packMany path pageNum panelShape cellShape plateItems =
             let
-                ( pageCount, SizeF ( pageWidth, pageHeight ) ) =
+                ( pageCount, SizeF ( pageWidthF, pageHeightF ) ) =
                     Property.findShape panelShape cellShape <| Array.toList plateItems
+                pageSize =
+                    Size
+                        ( ceiling <| pageWidthF * 2
+                        , ceiling <| pageHeightF * 2
+                        )
+
             in
 
                 SmartPack.carelessPack
                     D.Up
-                    ( Size
-                        ( pageWidth
-                        , pageHeight
-                        )
-                    )
+                    pageSize
                     (Many_
                             (Path.fromList path)
                             <| Pages.map
@@ -152,7 +162,7 @@ packItemsAtRoot size rp shape items =
                                             then packOneSub (path ++ [index]) cellShape plateLayout
                                             else plateLayout
                                     )
-                                    ( SmartPack.container <| Size ( pageWidth, pageHeight) )
+                                    ( SmartPack.container pageSize )
                                 )
                             <| Pages.switchTo pageNum
                             <| Pages.distribute 9
@@ -213,26 +223,29 @@ packItemsAtRoot size rp shape items =
         items |> packPlatesOf rootPath firstLevel
 
 
-fold : ( Cell ( Bounds, Path ) -> a -> a ) -> a -> Layout -> a
+fold : ( Cell ( BoundsF, Path ) -> a -> a ) -> a -> Layout -> a
 fold f def ( _, sp ) =
-    sp
+    let
+        cv bounds =
+            bounds |> Bounds.toFloat |> Bounds.divideBy 2
+    in sp
         |> SmartPack.toList
         |> List.foldl
             (\( bounds, c ) prev ->
                 case c of
                     One_ path ->
                         f
-                            ( One ( bounds, path ) )
+                            ( One ( cv bounds, path ) )
                             prev
 
                     Many_ path bpPages ->
                         f
                             ( Many
-                                ( bounds, path )
+                                ( cv bounds, path )
                                 <| Pages.map
                                     (List.map
                                         (Tuple.mapFirst
-                                            <| Bounds.shift bounds
+                                            <| cv << Bounds.shift bounds
                                         )
                                     << SmartPack.toList
                                     )
@@ -244,6 +257,6 @@ fold f def ( _, sp ) =
 
 
 
-toList : Layout -> List ( Cell ( Bounds, Path ) )
+toList : Layout -> List ( Cell ( BoundsF, Path ) )
 toList =
     fold (::) []
