@@ -126,7 +126,11 @@ dimensions (SmartPack size _) = size
 
 
 toMatrix : SmartPack a -> Matrix ( Maybe a )
-toMatrix (SmartPack (Size (w, h)) items) =
+toMatrix =
+    toMatrixWithBounds >> Matrix.map (Maybe.map Tuple.second)
+
+toMatrixWithBounds : SmartPack a -> Matrix ( Maybe ( Bounds, a ) )
+toMatrixWithBounds (SmartPack (Size (w, h)) items) =
     let
         fill bounds v matrix =
             List.range bounds.x (bounds.x + bounds.width - 1)
@@ -136,7 +140,7 @@ toMatrix (SmartPack (Size (w, h)) items) =
                             |> List.map (Tuple.pair x)
                     )
                 |> List.concat
-                |> List.foldl (\pos -> Matrix.set pos <| Just v) matrix
+                |> List.foldl (\pos -> Matrix.set pos <| Just ( bounds, v )) matrix
     in items
         |> List.sortBy (Tuple.first >> .x)
         |> List.foldl
@@ -282,11 +286,13 @@ findSpotCloseToM distribution (px, py) (Size (cw, ch)) matrix =
 
 
 find : ( Float, Float ) -> SmartPack a -> Maybe ( Bounds, a )
-find pos = toMatrix >> findM pos
+find pos = toMatrixWithBounds >> findM pos
+   -- FIXME: use the stored bounds instead of Matrix? could be faster!
 
 
-findM : ( Float, Float ) -> Matrix ( Maybe a ) -> Maybe ( Bounds, a )
-findM pos _ = Nothing
+findM : ( Float, Float ) -> Matrix ( Maybe ( Bounds, a ) ) -> Maybe ( Bounds, a )
+findM ( x, y ) =
+    Matrix.get ( floor x, floor y ) >> Maybe.andThen identity
 
 
 fold : (((Int, Int), Maybe a) -> b -> b) -> b -> SmartPack a -> b
