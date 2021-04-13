@@ -3,6 +3,7 @@ module Tron.Layout exposing (Layout, Cell(..), init, pack, pack1, fold, find, to
 
 import Array exposing (..)
 import Json.Decode as Json
+import Dict
 
 
 import Bounds exposing (..)
@@ -90,47 +91,66 @@ pack1 size rootPath prop =
         Group _ ( shape, _ ) control ->
             ( size
             , packItemsAtRoot size rootPath shape
+                <| Array.map Tuple.second
                 <| Nest.getItems control
             )
         Choice _ ( shape, _ ) control ->
             ( size
             , packItemsAtRoot size rootPath shape
+                <| Array.map Tuple.second
                 <| Nest.getItems control
             )
         _ ->
-            ( size
-            , SmartPack.container (adaptSize size)
-                |> SmartPack.carelessPack
-                    D.Right
-                    ( Size ( 2, 2 ) )
-                    ( One_ <| Path.start )
-            )
+            let
+                emptyContainer = SmartPack.container (adaptSize size)
+            in
+                ( size
+                , emptyContainer
+                    |> SmartPack.pack
+                        D.Right
+                        ( Size ( 2, 2 ) )
+                        ( One_ <| Path.start )
+                    |> Maybe.map Tuple.second
+                    |> Maybe.withDefault emptyContainer
+                )
 
 
 packItemsAtRoot
     :  SizeF Cells
     -> Path
     -> PanelShape
-    -> Array (Label, Property msg)
+    -> Array (Property msg)
     -> SmartPack (Cell_ Path)
 packItemsAtRoot size rp shape items =
     let
         rootPath = Path.toList rp
-
-        firstLevel =
+        orLayout l =
+            Maybe.map Tuple.second
+                >> Maybe.withDefault l
+        itemsAndPositions =
             items
+                |> Array.indexedMap  -- FIXME: consider pages
+                    (\index item ->
+                        ( (0, index), item ) -- FIXME: find position using Dock
+                    )
+
+        firstLevelLayout =
+            itemsAndPositions
                 |> Array.indexedMap Tuple.pair -- FIXME: consider pages
                 |> Array.foldl
-                    (\(index, (_, theProp)) layout ->
+                    (\(index, ( pos, theProp) ) layout ->
                         if not <| isGhost theProp
-                            then layout |> packOne (rootPath ++ [index])
+                            then
+                                layout
+                                    |> packOneAt (rootPath ++ [index]) pos
+                                    |> Maybe.withDefault layout
                             else layout
                     )
-                    (SmartPack.container <| adaptSize size)
+                    ( SmartPack.container <| adaptSize size )
 
-        packOne path =
-            SmartPack.carelessPack
-                D.Right
+        packOneAt path ( x, y ) =
+            SmartPack.packAt
+                ( x * 2, y * 2 )
                 ( Size ( 2, 2 ) )
                 <| One_ <| Path.fromList path
 
@@ -143,12 +163,12 @@ packItemsAtRoot size rp shape items =
                                 ( ceiling <| cw * 2
                                 , ceiling <| ch * 2
                                 )
-            in SmartPack.carelessPack
+            in SmartPack.pack
                 D.Right
                 cellShape_
                 <| Path.fromList path
 
-        packMany path pageNum panelShape cellShape plateItems =
+        packMany path pageNum panelShape cellShape plateItems parentPos =
             let
                 ( pageCount, SizeF ( pageWidthF, pageHeightF ) ) =
                     Property.findShape panelShape cellShape <| Array.toList plateItems
@@ -157,34 +177,47 @@ packItemsAtRoot size rp shape items =
                         ( ceiling <| pageWidthF * 2
                         , ceiling <| pageHeightF * 2
                         )
+                itemsOverPages =
+                    plateItems
+                        |> Array.indexedMap Tuple.pair
+                        |> Array.toList
+                        -- |> Pages.distributeOver pageCount
+                        |> Pages.distribute 9
+                        |> Pages.switchTo pageNum
+
+                ( positions, packedPages ) =
+                    itemsOverPages |>
+                        Pages.map
+                            (List.foldl
+                                (\(index, innerProp) plateLayout ->
+                                    if not <| isGhost innerProp
+                                        then
+                                            packOneSub
+                                                (path ++ [index])
+                                                cellShape
+                                                plateLayout
+                                            |> orLayout plateLayout
+                                        else plateLayout
+                                )
+                                ( SmartPack.container pageSize )
+                            )
+
 
             in
 
-                SmartPack.carelessPack
+                SmartPack.packCloseTo
                     D.Right
+                    parentPos
                     pageSize
                     (Many_
-                            (Path.fromList path)
-                            <| Pages.map
-                                (List.foldl
-                                    (\(index, innerProp) plateLayout ->
-                                        if not <| isGhost innerProp
-                                            then packOneSub (path ++ [index]) cellShape plateLayout
-                                            else plateLayout
-                                    )
-                                    ( SmartPack.container pageSize )
-                                )
-                            <| Pages.switchTo pageNum
-                            <| Pages.distribute 9
-                            -- <| Pages.distributeOver pageCount
-                            <| Array.toList
-                            <| Array.indexedMap Tuple.pair
-                            <| plateItems
+                        (Path.fromList path)
+                        packedPages
                     )
 
         packGroupControl
             :  List Int
             -> ( PanelShape, CellShape )
+            -> Position
             -> SmartPack (Cell_ Path)
             -> Control
                     ( Array ( Label, Property msg ) )
@@ -194,6 +227,7 @@ packItemsAtRoot size rp shape items =
         packGroupControl
             path
             ( panelShape, cellShape )
+            parentPos
             layout
             control =
             if Nest.is Expanded control then
@@ -208,6 +242,8 @@ packItemsAtRoot size rp shape items =
                                 panelShape
                                 cellShape
                                 (items_ |> Array.map Tuple.second)
+                                parentPos
+                            |> orLayout layout
                 in
                     packPlatesOf path withPlate items_
             else layout
@@ -215,22 +251,22 @@ packItemsAtRoot size rp shape items =
         packPlatesOf path layout =
             Array.indexedMap Tuple.pair -- FIXME: consider pages
                 >> Array.foldl
-                    (\(index, ( _, innerProp) ) prevLayout ->
+                    (\(index, ( pos, innerProp ) ) prevLayout ->
                         let
                             nextPath = path ++ [index]
                         in
                         case innerProp of
                             Choice _ innerShape control ->
-                                control |> packGroupControl nextPath innerShape prevLayout
+                                control |> packGroupControl nextPath innerShape pos prevLayout
                             Group _ innerShape control ->
-                                control |> packGroupControl nextPath innerShape prevLayout
+                                control |> packGroupControl nextPath innerShape pos prevLayout
                             _ ->
                                 prevLayout
                     )
                     layout
 
     in
-        items |> packPlatesOf rootPath firstLevel
+        itemsAndPositions |> packPlatesOf rootPath firstLevelLayout
 
 
 fold : ( Cell ( BoundsF, Path ) -> a -> a ) -> a -> Layout -> a

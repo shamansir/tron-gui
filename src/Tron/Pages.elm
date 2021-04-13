@@ -17,7 +17,7 @@ type alias Count = Int
 type Pages a = Pages PageNum a (List a) -- i.e. NonEmpty array
 
 
-map : (a -> b) -> Pages a  -> Pages b
+map : (a -> b) -> Pages a -> Pages b
 map f (Pages num fst others) =
     Pages num (f fst) <| List.map f <| others
 
