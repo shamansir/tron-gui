@@ -1,11 +1,10 @@
 module SmartPack exposing
     ( Distribution(..)
+    , Position
     , SmartPack
     , map, withBounds
     , container
-    , pack, carelessPack
-    , packAt, carelessPackAt
-    , packCloseTo, carelessPackCloseTo
+    , pack, packAt, packCloseTo
     , resize, dimensions
     , toMatrix, toList
     , fold, get, find
@@ -19,6 +18,8 @@ import Array exposing (Array)
 import Matrix exposing (Matrix)
 
 import Size exposing (..)
+
+type alias Position = (Int, Int)
 
 
 type Distribution
@@ -45,24 +46,40 @@ container : Size Cells -> SmartPack a
 container size = SmartPack size []
 
 
-pack : Distribution -> Size Cells -> a -> SmartPack a -> Maybe (SmartPack a)
+pack : Distribution -> Size Cells -> a -> SmartPack a -> Maybe (Position, SmartPack a)
 pack distribution size v sp =
     sp
         |> findSpot distribution size
         |> Maybe.map
             (\pos ->
-                sp |> forceAdd pos size v
+                ( pos, sp |> forceAdd pos size v )
             )
 
 
-packAt : ( Int, Int ) -> Size Cells -> a -> SmartPack a -> Maybe (SmartPack a)
+packAt : Position -> Size Cells -> a -> SmartPack a -> Maybe (SmartPack a)
 packAt pos size v sp =
     if sp |> fitsAt pos size then
         Just <| forceAdd pos size v <| sp
     else Nothing
 
 
-forceAdd : ( Int, Int ) -> Size Cells -> a -> SmartPack a -> (SmartPack a)
+packCloseTo
+    :  Distribution
+    -> Position
+    -> Size Cells
+    -> a
+    -> SmartPack a
+    -> Maybe (Position, SmartPack a)
+packCloseTo distribution pos size v sp =
+    sp
+        |> findSpotCloseTo distribution pos size
+        |> Maybe.map
+            (\foundPos ->
+                ( foundPos, sp |> forceAdd foundPos size v )
+            )
+
+
+forceAdd : Position -> Size Cells -> a -> SmartPack a -> SmartPack a
 forceAdd (x, y) (Size ( w, h )) v (SmartPack ps xs) =
     SmartPack ps <|
         (
@@ -73,43 +90,6 @@ forceAdd (x, y) (Size ( w, h )) v (SmartPack ps xs) =
             }
         , v )
         :: xs
-
-
-packCloseTo
-    :  Distribution
-    -> ( Int, Int )
-    -> Size Cells
-    -> a
-    -> SmartPack a
-    -> Maybe (SmartPack a)
-packCloseTo distribution pos size v sp =
-    sp
-        |> findSpotCloseTo distribution pos size
-        |> Maybe.map
-            (\foundPos ->
-                sp |> forceAdd foundPos size v
-            )
-
-
-carelessPack : Distribution -> Size Cells -> a -> SmartPack a -> SmartPack a
-carelessPack distribution size v sp =
-    pack distribution size v sp |> Maybe.withDefault sp
-
-
-carelessPackAt : ( Int, Int ) -> Size Cells -> a -> SmartPack a -> SmartPack a
-carelessPackAt pos size v sp =
-    packAt pos size v sp |> Maybe.withDefault sp
-
-
-carelessPackCloseTo
-    :  Distribution
-    -> ( Int, Int )
-    -> Size Cells
-    -> a
-    -> SmartPack a
-    -> SmartPack a
-carelessPackCloseTo distribution pos size v sp =
-    packCloseTo distribution pos size v sp |> Maybe.withDefault sp
 
 
 resize : Size Cells -> SmartPack a -> SmartPack a
@@ -157,14 +137,13 @@ isEmpty cell =
         Nothing -> True
 
 
-fitsAt : ( Int, Int ) -> Size Cells -> SmartPack a -> Bool
-fitsAt (x, y) (Size (cw, ch)) =
-    toMatrix
-        >> fitsAtM (x, y) (cw, ch)
+fitsAt : Position -> Size Cells -> SmartPack a -> Bool
+fitsAt pos size =
+    toMatrix >> fitsAtM pos size
 
 
-fitsAtM : ( Int, Int ) -> ( Int, Int ) -> Matrix (Maybe a) -> Bool
-fitsAtM (x, y) (cw, ch) matrix =
+fitsAtM :Position -> Size Cells -> Matrix (Maybe a) -> Bool
+fitsAtM (x, y) (Size (cw, ch)) matrix =
     let (mw, mh) = Matrix.size matrix
     in
     if x + cw <= mw && y + ch <= mh then
@@ -174,16 +153,16 @@ fitsAtM (x, y) (cw, ch) matrix =
     else False
 
 
-findSpot : Distribution -> Size Cells -> SmartPack a -> Maybe ( Int, Int )
+findSpot : Distribution -> Size Cells -> SmartPack a -> Maybe Position
 findSpot distribution size = toMatrix >> findSpotM distribution size
 
 
-findSpotM : Distribution -> Size Cells -> Matrix (Maybe a) -> Maybe ( Int, Int )
-findSpotM distribution (Size (cw, ch)) matrix =
+findSpotM : Distribution -> Size Cells -> Matrix (Maybe a) -> Maybe Position
+findSpotM distribution (Size (cw, ch) as size) matrix =
     let
         ( mw, mh ) = Matrix.size matrix
         fitsAt_ (x, y) =
-            fitsAtM (x, y) (cw, ch) matrix
+            fitsAtM (x, y) size matrix
 
         firstPos d =
             case d of
@@ -233,16 +212,16 @@ findSpotM distribution (Size (cw, ch)) matrix =
             else Nothing
 
 
-findSpotCloseTo : Distribution -> (Int, Int) -> Size Cells -> SmartPack a -> Maybe ( Int, Int )
+findSpotCloseTo : Distribution -> Position -> Size Cells -> SmartPack a -> Maybe Position
 findSpotCloseTo distribution pos size = toMatrix >> findSpotCloseToM distribution pos size
 
 
-findSpotCloseToM : Distribution -> ( Int, Int ) -> Size Cells -> Matrix (Maybe a) -> Maybe ( Int, Int )
-findSpotCloseToM distribution (px, py) (Size (cw, ch)) matrix =
+findSpotCloseToM : Distribution -> Position -> Size Cells -> Matrix (Maybe a) -> Maybe Position
+findSpotCloseToM distribution (px, py) (Size (cw, ch) as size) matrix =
     let
         ( mw, mh ) = Matrix.size matrix
         fitsAt_ (x, y) =
-            fitsAtM (x, y) (cw, ch) matrix
+            fitsAtM (x, y) size matrix
 
         maybeNext d (x, y) =
             case d of
@@ -296,18 +275,18 @@ findM ( x, y ) =
     Matrix.get ( floor x, floor y ) >> Maybe.andThen identity
 
 
-fold : (((Int, Int), Maybe a) -> b -> b) -> b -> SmartPack a -> b
+fold : ((Position, Maybe a) -> b -> b) -> b -> SmartPack a -> b
 fold f init =
     toMatrix >> foldM f init
 
 
-foldM : (((Int, Int), Maybe a) -> b -> b) -> b -> Matrix (Maybe a) -> b
+foldM : ((Position, Maybe a) -> b -> b) -> b -> Matrix (Maybe a) -> b
 foldM f init =
     Matrix.toIndexedList
         >> List.foldl f init
 
 
-get : (Int, Int) -> SmartPack a -> Maybe a
+get : Position -> SmartPack a -> Maybe a
 get pos =
     toMatrix
         >> Matrix.get pos
