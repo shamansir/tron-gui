@@ -3,7 +3,7 @@ module SmartPack exposing
     , Position
     , SmartPack
     , map, withBounds
-    , container
+    , null, container
     , pack, packAt, packCloseTo
     , resize, dimensions
     , toMatrix, toList
@@ -30,6 +30,11 @@ type Distribution
 
 
 type SmartPack a = SmartPack (Size Cells) (List (Bounds, a))
+
+
+null : SmartPack a
+null =
+    SmartPack (Size ( 0, 0 ) ) []
 
 
 map : (a -> b) -> SmartPack a -> SmartPack b

@@ -258,7 +258,7 @@ packItemsAtRoot size rp shape items =
                                 items_
                                 parentPos
                     itemsAndPositions_ =
-                        items |>
+                        items_ |>
                             Array.indexedMap
                                 (\index item ->
                                     ( positions
