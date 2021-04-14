@@ -168,7 +168,7 @@ packItemsAtRoot size rp shape items =
                 cellShape_
                 <| Path.fromList path
 
-        packMany path pageNum panelShape cellShape plateItems parentPos =
+        packMany path pageNum panelShape cellShape plateItems parentPos layout =
             let
                 ( pageCount, SizeF ( pageWidthF, pageHeightF ) ) =
                     Property.findShape panelShape cellShape <| Array.toList plateItems
@@ -185,34 +185,46 @@ packItemsAtRoot size rp shape items =
                         |> Pages.distribute 9
                         |> Pages.switchTo pageNum
 
-                ( positions, packedPages ) =
+                packedPages =
                     itemsOverPages |>
                         Pages.map
                             (List.foldl
-                                (\(index, innerProp) plateLayout ->
+                                (\(index, innerProp) ( plateLayout, positions ) ->
                                     if not <| isGhost innerProp
                                         then
-                                            packOneSub
+                                            case packOneSub
                                                 (path ++ [index])
                                                 cellShape
-                                                plateLayout
-                                            |> orLayout plateLayout
-                                        else plateLayout
+                                                plateLayout of
+                                                Just ( pos, nextLayout ) ->
+                                                    ( nextLayout
+                                                    , positions
+                                                        |> Dict.insert (path ++ [index]) pos
+                                                    )
+                                                Nothing ->
+                                                    ( plateLayout, positions )
+                                        else ( plateLayout, positions )
                                 )
-                                ( SmartPack.container pageSize )
+                                ( SmartPack.container pageSize, Dict.empty )
                             )
 
 
             in
 
-                SmartPack.packCloseTo
+                ( SmartPack.packCloseTo
                     D.Right
                     parentPos
                     pageSize
                     (Many_
                         (Path.fromList path)
-                        packedPages
+                        (packedPages |> Pages.map Tuple.first)
                     )
+                    layout
+                    |> orLayout layout
+                , packedPages
+                    |> Pages.map Tuple.second
+                    |> Pages.fold Dict.union Dict.empty
+                )
 
         packGroupControl
             :  List Int
@@ -232,20 +244,31 @@ packItemsAtRoot size rp shape items =
             control =
             if Nest.is Expanded control then
                 let
-                    items_ = Nest.getItems control
+                    items_ =
+                        Nest.getItems control
+                        |> Array.map Tuple.second
 
-                    withPlate
+                    ( layoutWithPlate, positions )
                         = layout
                             |> packMany
                                 path
                                 (Nest.getPage control)
                                 panelShape
                                 cellShape
-                                (items_ |> Array.map Tuple.second)
+                                items_
                                 parentPos
-                            |> orLayout layout
+                    itemsAndPositions_ =
+                        items |>
+                            Array.indexedMap
+                                (\index item ->
+                                    ( positions
+                                        |> Dict.get (path ++ [index])
+                                        |> Maybe.withDefault (0, 0)
+                                    , item
+                                    )
+                                )
                 in
-                    packPlatesOf path withPlate items_
+                    packPlatesOf path layoutWithPlate itemsAndPositions_
             else layout
 
         packPlatesOf path layout =

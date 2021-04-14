@@ -22,6 +22,12 @@ map f (Pages num fst others) =
     Pages num (f fst) <| List.map f <| others
 
 
+fold : (a -> b -> b) -> b -> Pages a -> b
+fold f def =
+    -- also : List.foldl f (f fst def) others
+    toList >> List.foldl f def
+
+
 toList : Pages a -> List a
 toList (Pages _ fst other) = fst :: other
 
