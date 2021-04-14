@@ -13,5 +13,7 @@
     * store the actual messages for the current value in the controls, not the handlers (i.e. just `msg` instead of `v -> msg`);
     * for `.over`, traverse two trees with the same structure (don't forget about ghosts) and move transient states between them;
 * Check `indexedMap` usages, so that usage of the index is kept to minimum for nested items;
+* Fix knobs to use current value when user starts dragging;
 * Do not store cell size in the `Gui msg`, it should be recalculated every time;
 * Do not store dock in the `Gui msg`, it should be recalculated every time;
+* _Active_ condition for a button, some effect for when it is pressed;

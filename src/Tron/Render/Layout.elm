@@ -12,7 +12,6 @@ import Json.Decode as Json
 import Dict
 import Url exposing (Url)
 
-import BinPack exposing (Bounds)
 import Bounds exposing (..)
 import Bounds as B exposing (..)
 
@@ -22,7 +21,7 @@ import Tron.Property exposing (..)
 import Tron.Property as Property exposing (find)
 import Tron.Msg exposing (..)
 import Tron.Layout exposing (..)
-import Tron.Layout as Layout exposing (unfold)
+import Tron.Layout as Layout exposing (fold)
 import Tron.Focus exposing (Focused(..))
 import Tron.Focus as Focus exposing (toString)
 import Tron.FocusLogic as Focus exposing (focused)
@@ -68,7 +67,7 @@ viewProperty
     :  Theme
     -> State
     -> Path
-    -> Bounds
+    -> BoundsF
     -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
@@ -109,7 +108,7 @@ viewProperty
                     ( label, prop )
 
 
-viewPlateBack : Theme -> Bounds -> Svg Msg_
+viewPlateBack : Theme -> BoundsF -> Svg Msg_
 viewPlateBack theme pixelBounds =
     positionAt_ pixelBounds <|
         case mode of
@@ -126,7 +125,7 @@ viewPlateControls
      : Detach.Ability
     -> Theme
     -> Path
-    -> Bounds
+    -> BoundsF
     -> ( Label, Property msg )
     -> Svg Msg_
 viewPlateControls detach theme path pixelBounds ( label, source )  =
@@ -140,7 +139,7 @@ viewPlateControls detach theme path pixelBounds ( label, source )  =
 viewPagingControls
      : Theme
     -> Path
-    -> Bounds
+    -> BoundsF
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
 viewPagingControls path theme pixelBounds paging  =
@@ -153,52 +152,59 @@ viewPagingControls path theme pixelBounds paging  =
 
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
-    :  ( Path, Property msg )
+    :  Dock
+    -> ( Path, Property msg )
     -> Layout
     ->
         ( List
             { path : Path
             , label : String
-            , bounds : Bounds
+            , bounds : BoundsF
             , source : Property msg
             , pages : Pages.Count
             }
         , List
             { path : Path
             , label : String
-            , bounds : Bounds
+            , bounds : BoundsF
             , parent : Maybe (Property msg)
             , source : Property msg
             , index : Maybe Int
             }
         )
-collectPlatesAndCells ( rootPath, root ) =
-    Layout.unfold
+collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
+    Layout.fold
         (\cell ( prevPlates, prevCells ) ->
             case cell of
 
-                One ( cellPath, cellBounds ) ->
+                One ( cellBounds, cellPath ) ->
                     ( prevPlates
                     , case root |> Property.find1 (Path.sub rootPath cellPath) of
                         Just ( label, source ) ->
                             { path = cellPath
                             , label = label
                             , parent = Nothing
-                            , bounds = B.multiplyBy Cell.width cellBounds
+                            , bounds =
+                                cellBounds
+                                    --|> Dock.adaptBounds dock size
+                                    |> B.multiplyByF Cell.width
                             , source = source
                             , index = Nothing
                             } :: prevCells
                         Nothing -> prevCells
                     )
 
-                Many ( originPath, plateBounds ) innerPages ->
+                Many ( plateBounds, originPath ) innerPages ->
 
                     case root |> Property.find1 (Path.sub rootPath originPath) of
                         Just ( label, source ) ->
                             (
                                 { path = originPath
                                 , label = label
-                                , bounds = B.multiplyBy Cell.width plateBounds
+                                , bounds =
+                                    plateBounds
+                                        --|> Dock.adaptBounds dock size
+                                        |> B.multiplyByF Cell.width
                                 , source = source
                                 , pages = Pages.count innerPages
                                 } :: prevPlates
@@ -207,14 +213,21 @@ collectPlatesAndCells ( rootPath, root ) =
                                     |> Pages.getCurrent
                                     |> Maybe.withDefault []
                                     |> List.map
-                                        (\( cellPath, cellBounds ) ->
+                                        (\( cellBounds, cellPath ) ->
                                             case root
                                                 |> Property.find1 (Path.sub rootPath cellPath) of
                                                 Just ( cellLabel, cellSource ) ->
                                                     { path = cellPath
                                                     , label = cellLabel
                                                     , parent = Just source
-                                                    , bounds = B.multiplyBy Cell.width cellBounds
+                                                    , bounds =
+                                                        cellBounds
+                                                            --|> Dock.adaptBounds dock size
+                                                            -- |> B.shift
+                                                            --     (plateBounds
+                                                            --         |> Dock.adaptBounds dock size
+                                                            --     )
+                                                            |> B.multiplyByF Cell.width
                                                     , source = cellSource
                                                     , index = Path.tail cellPath
                                                     } |> Just
@@ -228,12 +241,13 @@ collectPlatesAndCells ( rootPath, root ) =
 
         )
         ( [], [] )
+        ( size, bp )
 
 
 view
     :  Theme
     -> Dock
-    -> Bounds
+    -> BoundsF
     -> Detach.State
     -> Detach.GetAbility
     -> Property msg
@@ -252,7 +266,7 @@ view theme dock bounds detach getDetachAbility root layout =
                 |> Maybe.withDefault Path.start
 
         ( plates, cells ) =
-            collectPlatesAndCells ( rootPath, root ) layout
+            collectPlatesAndCells dock ( rootPath, root ) layout
 
         platesBacksRendered =
             plates

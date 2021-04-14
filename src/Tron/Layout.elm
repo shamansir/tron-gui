@@ -1,12 +1,14 @@
-module Tron.Layout exposing (Layout, Cell(..), init, pack, pack1, unfold, find, toList)
+module Tron.Layout exposing (Layout, Cell(..), init, pack, pack1, fold, find, toList)
 
 
 import Array exposing (..)
 import Json.Decode as Json
+import Dict
 
 
-import Bounds
-import BinPack exposing (..)
+import Bounds exposing (..)
+import SmartPack exposing (..)
+import SmartPack as D exposing (Distribution(..))
 import Size exposing (..)
 
 import Tron.Control exposing (Control(..))
@@ -27,7 +29,7 @@ import Tron.Control.Nest as Nest exposing (getItems)
 
 type Cell_ a
     = One_ a
-    | Many_ a (Pages (BinPack a))
+    | Many_ a (Pages (SmartPack a))
 
 
 type Cell a
@@ -35,227 +37,304 @@ type Cell a
     | Many a (Pages (List a))
 
 
-type alias Layout = ( Dock, SizeF Cells, BinPack (Cell_ Path) )
+{-
+    `SmartPack` stores all bounds and positions as `Int` due to its Matrix-based nature.
+    But `Cells` can be half-sized. So we divide and multiply sizes by 2 when going back and forth.
+    The rule is that `Layout` operates and exposes API with usual `Float`-based cells where `Unit` is `One` cell. While inside, when working with `SmartPack`, it proportionally changes the sizes to their `Int` analogues.
+-}
+type alias Layout = ( SizeF Cells, SmartPack (Cell_ Path) )
 
 
-type Position a = Position { x : Float, y : Float }
+--type Position a = Position { x : Float, y : Float }
 
 
-init : Dock -> SizeF Cells -> Layout
-init dock size =
-    ( dock
-    , size
-    , initBinPack <| Dock.adaptSize dock size
+init : SizeF Cells -> Layout
+init size =
+    ( size
+    , SmartPack.container <| adaptSize size
     )
 
 
-initBinPack : SizeF Cells -> BinPack a
-initBinPack (SizeF ( maxCellsByX, maxCellsByY ))
-    = container maxCellsByX maxCellsByY
+adaptSize : SizeF Cells -> Size Cells
+adaptSize (SizeF ( w, h )) =
+    Size ( ceiling <| w * 2, ceiling <| h * 2 )
 
 
 find : Layout -> { x : Float, y : Float } -> Maybe Path
-find ( dock, size, layout ) pos =
-    let
-        adaptedPos = Dock.adaptPosition dock size pos
-    in
-        case layout |> BinPack.find adaptedPos of
-            Just ( One_ path, _ ) ->
-                Just path
-            Just ( Many_ _ innerPages, bounds ) ->
-                innerPages
-                    |> Pages.getCurrent
-                    |> Maybe.andThen
-                        (BinPack.find
-                            { x = adaptedPos.x - bounds.x
-                            , y = adaptedPos.y - bounds.y
-                            }
+find ( size, layout ) { x, y } =
+    case layout |> SmartPack.find ( x * 2, y * 2 ) of
+        Just ( _, One_ path ) ->
+            Just path
+        Just ( bounds, Many_ _ innerPages ) ->
+            innerPages
+                |> Pages.getCurrent
+                |> Maybe.andThen
+                    (SmartPack.find
+                        ( x * 2 - Basics.toFloat bounds.x
+                        , y * 2 - Basics.toFloat bounds.y
                         )
-                    |> Maybe.map Tuple.first
-            Nothing ->
-                Nothing
+                    )
+                |> Maybe.map Tuple.second
+        Nothing ->
+            Nothing
 
 
-pack : Dock -> SizeF Cells -> Property msg -> Layout
-pack dock size = pack1 dock size Path.start
+pack : SizeF Cells -> Property msg -> Layout
+pack size = pack1 size Path.start
 
 
-pack1 : Dock -> SizeF Cells -> Path -> Property msg -> Layout
-pack1 dock size rootPath prop =
+pack1 : SizeF Cells -> Path -> Property msg -> Layout
+pack1 size rootPath prop =
     case prop of
         Nil ->
-            init dock size
+            init size
         Group _ ( shape, _ ) control ->
-            ( dock
-            , size
-            , packItemsAtRoot (Dock.adaptSize dock size) rootPath shape
+            ( size
+            , packItemsAtRoot size rootPath shape
+                <| Array.map Tuple.second
                 <| Nest.getItems control
             )
         Choice _ ( shape, _ ) control ->
-            ( dock
-            , size
-            , packItemsAtRoot (Dock.adaptSize dock size) rootPath shape
+            ( size
+            , packItemsAtRoot size rootPath shape
+                <| Array.map Tuple.second
                 <| Nest.getItems control
             )
         _ ->
-            ( dock
-            , size
-            , initBinPack (Dock.adaptSize dock size)
-                |> BinPack.carelessPack ( { width = 1, height = 1 }, One_ <| Path.start )
-            )
+            let
+                emptyContainer = SmartPack.container (adaptSize size)
+            in
+                ( size
+                , emptyContainer
+                    |> SmartPack.pack
+                        D.Right
+                        ( Size ( 2, 2 ) )
+                        ( One_ <| Path.start )
+                    |> Maybe.map Tuple.second
+                    |> Maybe.withDefault emptyContainer
+                )
 
 
 packItemsAtRoot
     :  SizeF Cells
     -> Path
     -> PanelShape
-    -> Array (Label, Property msg)
-    -> BinPack (Cell_ Path)
+    -> Array (Property msg)
+    -> SmartPack (Cell_ Path)
 packItemsAtRoot size rp shape items =
     let
         rootPath = Path.toList rp
-
-        firstLevel =
+        orLayout l =
+            Maybe.map Tuple.second
+                >> Maybe.withDefault l
+        itemsAndPositions =
             items
+                |> Array.indexedMap  -- FIXME: consider pages
+                    (\index item ->
+                        ( (index, 0), item ) -- FIXME: find position using Dock
+                    )
+
+        firstLevelLayout =
+            itemsAndPositions
                 |> Array.indexedMap Tuple.pair -- FIXME: consider pages
                 |> Array.foldl
-                    (\(index, (_, theProp)) layout ->
+                    (\(index, ( pos, theProp) ) layout ->
                         if not <| isGhost theProp
-                            then layout |> packOne (rootPath ++ [index])
+                            then
+                                layout
+                                    |> packOneAt (rootPath ++ [index]) pos
+                                    |> Maybe.withDefault layout
                             else layout
                     )
-                    (initBinPack size)
+                    ( SmartPack.container <| adaptSize size )
 
-        packOne path =
-            BinPack.carelessPack
-                ( { width = 1, height = 1 }
-                , One_ <| Path.fromList path
-                )
+        packOneAt path ( x, y ) =
+            SmartPack.packAt
+                ( x * 2, y * 2 )
+                ( Size ( 2, 2 ) )
+                <| One_ <| Path.fromList path
 
         packOneSub path cellShape =
-            BinPack.carelessPack
-                ( case CS.numify cellShape of
-                    ( cw, ch ) ->
-                        { width = cw, height = ch }
-                , Path.fromList path
-                )
-
-        packMany path pageNum panelShape cellShape plateItems =
             let
-                ( pageCount, SizeF ( pageWidth, pageHeight ) ) =
+                cellShape_ =
+                    Size
+                        <| case CS.numify cellShape of
+                            ( cw, ch ) ->
+                                ( ceiling <| cw * 2
+                                , ceiling <| ch * 2
+                                )
+            in SmartPack.pack
+                D.Right
+                cellShape_
+                <| Path.fromList path
+
+        packMany path pageNum panelShape cellShape plateItems parentPos layout =
+            let
+                ( pageCount, SizeF ( pageWidthF, pageHeightF ) ) =
                     Property.findShape panelShape cellShape <| Array.toList plateItems
+                pageSize =
+                    Size
+                        ( ceiling <| pageWidthF * 2
+                        , ceiling <| pageHeightF * 2
+                        )
+                itemsOverPages =
+                    plateItems
+                        |> Array.indexedMap Tuple.pair
+                        |> Array.toList
+                        -- |> Pages.distributeOver pageCount
+                        |> Pages.distribute 9
+                        |> Pages.switchTo pageNum
+
+                packedPages =
+                    itemsOverPages |>
+                        Pages.map
+                            (List.foldl
+                                (\(index, innerProp) ( plateLayout, positions ) ->
+                                    if not <| isGhost innerProp
+                                        then
+                                            case packOneSub
+                                                (path ++ [index])
+                                                cellShape
+                                                plateLayout of
+                                                Just ( pos, nextLayout ) ->
+                                                    ( nextLayout
+                                                    , positions
+                                                        |> Dict.insert (path ++ [index]) pos
+                                                    )
+                                                Nothing ->
+                                                    ( plateLayout, positions )
+                                        else ( plateLayout, positions )
+                                )
+                                ( SmartPack.container pageSize, Dict.empty )
+                            )
+
+
             in
 
-                BinPack.carelessPack
-                    (
-                        { width = pageWidth
-                        , height = pageHeight
-                        }
-                    , Many_
-                            (Path.fromList path)
-                            <| Pages.map
-                                (List.foldl
-                                    (\(index, innerProp) plateLayout ->
-                                        if not <| isGhost innerProp
-                                            then packOneSub (path ++ [index]) cellShape plateLayout
-                                            else plateLayout
-                                    )
-                                    (BinPack.container pageWidth pageHeight)
-                                )
-                            <| Pages.switchTo pageNum
-                            <| Pages.distribute 9
-                            -- <| Pages.distributeOver pageCount
-                            <| Array.toList
-                            <| Array.indexedMap Tuple.pair
-                            <| plateItems
+                ( {- SmartPack.pack
+                    D.Right
+                    -}
+                SmartPack.packCloseTo
+                    D.Down
+                    (case parentPos of
+                        (x, y) -> (x * 2, y * 2)
                     )
+                    pageSize
+                    (Many_
+                        (Path.fromList path)
+                        (packedPages |> Pages.map Tuple.first)
+                    )
+                    layout
+                    |> orLayout layout
+                , packedPages
+                    |> Pages.map Tuple.second
+                    |> Pages.fold Dict.union Dict.empty
+                )
 
         packGroupControl
             :  List Int
             -> ( PanelShape, CellShape )
-            -> BinPack (Cell_ Path)
+            -> Position
+            -> SmartPack (Cell_ Path)
             -> Control
                     ( Array ( Label, Property msg ) )
                     { a | form : Form, page : PageNum }
                     msg
-            -> BinPack (Cell_ Path)
+            -> SmartPack (Cell_ Path)
         packGroupControl
             path
             ( panelShape, cellShape )
+            parentPos
             layout
             control =
             if Nest.is Expanded control then
                 let
-                    items_ = Nest.getItems control
+                    items_ =
+                        Nest.getItems control
+                        |> Array.map Tuple.second
 
-                    withPlate
+                    ( layoutWithPlate, positions )
                         = layout
                             |> packMany
                                 path
                                 (Nest.getPage control)
                                 panelShape
                                 cellShape
-                                (items_ |> Array.map Tuple.second)
+                                items_
+                                parentPos
+                    itemsAndPositions_ =
+                        items_ |>
+                            Array.indexedMap
+                                (\index item ->
+                                    ( positions
+                                        |> Dict.get (path ++ [index])
+                                        |> Maybe.map
+                                            (\(x, y) ->
+                                                case parentPos of
+                                                    ( px, py ) -> ( px + x, py + y)
+                                            )
+                                        |> Maybe.withDefault (0, 0)
+                                    , item
+                                    )
+                                )
                 in
-                    packPlatesOf path withPlate items_
+                    packPlatesOf path layoutWithPlate itemsAndPositions_
             else layout
 
         packPlatesOf path layout =
             Array.indexedMap Tuple.pair -- FIXME: consider pages
                 >> Array.foldl
-                    (\(index, ( _, innerProp) ) prevLayout ->
+                    (\(index, ( pos, innerProp ) ) prevLayout ->
                         let
                             nextPath = path ++ [index]
                         in
                         case innerProp of
                             Choice _ innerShape control ->
-                                control |> packGroupControl nextPath innerShape prevLayout
+                                control |> packGroupControl nextPath innerShape pos prevLayout
                             Group _ innerShape control ->
-                                control |> packGroupControl nextPath innerShape prevLayout
+                                control |> packGroupControl nextPath innerShape pos prevLayout
                             _ ->
                                 prevLayout
                     )
                     layout
 
     in
-        items |> packPlatesOf rootPath firstLevel
+        itemsAndPositions |> packPlatesOf rootPath firstLevelLayout
 
 
-unfold : ( Cell ( Path, Bounds ) -> a -> a ) -> a -> Layout -> a
-unfold f def ( dock, size, bp ) =
+fold : ( Cell ( BoundsF, Path ) -> a -> a ) -> a -> Layout -> a
+fold f def ( _, sp ) =
     let
-        adaptBounds =
-            Dock.adaptBounds dock <| Dock.adaptSize dock size
-    in
-        BinPack.foldGeometry
-            (\( c, bounds ) prev ->
+        cv bounds =
+            bounds |> Bounds.toFloat |> Bounds.divideBy 2
+    in sp
+        |> SmartPack.toList
+        |> List.foldl
+            (\( bounds, c ) prev ->
                 case c of
                     One_ path ->
                         f
-                            ( One ( path, adaptBounds bounds ) )
+                            ( One ( cv bounds, path ) )
                             prev
 
                     Many_ path bpPages ->
                         f
                             ( Many
-                                ( path, adaptBounds bounds )
+                                ( cv bounds, path )
                                 <| Pages.map
                                     (List.map
-                                        (Tuple.mapSecond
-                                            <| adaptBounds << Bounds.shift bounds
+                                        (Tuple.mapFirst
+                                            <| cv << Bounds.shift bounds
                                         )
-                                    << BinPack.foldGeometry
-                                        (::)
-                                        []
+                                    << SmartPack.toList
                                     )
                                 <| bpPages
                             )
                             prev
             )
             def
-            bp
 
 
-toList : Layout -> List ( Cell ( Path, Bounds ) )
+toList : Layout -> List ( Cell ( BoundsF, Path ) )
 toList =
-    unfold (::) []
+    fold (::) []

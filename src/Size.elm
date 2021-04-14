@@ -11,3 +11,9 @@ type Pixels = Pixels
 
 
 type Cells = Cells
+
+
+size ( w, h ) = Size ( w, h )
+
+
+sizeF ( w, h ) = SizeF ( w, h )
