@@ -131,7 +131,7 @@ packItemsAtRoot size rp shape items =
             items
                 |> Array.indexedMap  -- FIXME: consider pages
                     (\index item ->
-                        ( (0, index), item ) -- FIXME: find position using Dock
+                        ( (index, 0), item ) -- FIXME: find position using Dock
                     )
 
         firstLevelLayout =
@@ -211,9 +211,14 @@ packItemsAtRoot size rp shape items =
 
             in
 
-                ( SmartPack.packCloseTo
+                ( {- SmartPack.pack
                     D.Right
-                    parentPos
+                    -}
+                SmartPack.packCloseTo
+                    D.Down
+                    (case parentPos of
+                        (x, y) -> (x * 2, y * 2)
+                    )
                     pageSize
                     (Many_
                         (Path.fromList path)
@@ -263,6 +268,11 @@ packItemsAtRoot size rp shape items =
                                 (\index item ->
                                     ( positions
                                         |> Dict.get (path ++ [index])
+                                        |> Maybe.map
+                                            (\(x, y) ->
+                                                case parentPos of
+                                                    ( px, py ) -> ( px + x, py + y)
+                                            )
                                         |> Maybe.withDefault (0, 0)
                                     , item
                                     )
