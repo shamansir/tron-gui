@@ -217,7 +217,7 @@ choiceHelper
     -> a
     -> ( a -> a -> Bool )
     -> Builder
-choiceHelper ( shape, cellShape ) toBuilder options current compare =
+choiceHelper ( panelShape, cellShape ) toBuilder options current compare =
     let
         indexedOptions = options |> List.indexedMap Tuple.pair
         callByIndex indexToCall =
@@ -228,7 +228,7 @@ choiceHelper ( shape, cellShape ) toBuilder options current compare =
     in
         Choice
             Nothing
-            ( findShape cellShape shape (set |> List.map Tuple.second)
+            ( panelShape
             , cellShape
             )
             <| Control

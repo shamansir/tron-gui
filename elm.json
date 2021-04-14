@@ -7,6 +7,9 @@
     "exposed-modules": [
         "WithTron",
         "Tron.Builder",
+        "Tron.Builder.Proxy",
+        "Tron.Builder.String",
+        "Tron.Builder.Unit",
         "Tron.Style.Theme",
         "Tron.Style.Dock",
         "Tron.Style.PanelShape",

@@ -17,6 +17,7 @@ import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
 import Tron.Style.PanelShape as Shape exposing (find, rows, cols)
+import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Text exposing (TextState(..))
