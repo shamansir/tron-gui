@@ -5,6 +5,7 @@ import Random
 import Array exposing (Array)
 import Color exposing (..)
 import Axis exposing (Axis)
+import Url.Builder as Url
 
 import Tron exposing (Tron)
 import Tron.Control as Core exposing (Control(..))
@@ -18,7 +19,7 @@ import Tron.Builder exposing (Builder)
 import Tron.Style.PanelShape exposing (PanelShape, cols)
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS exposing (..)
-import Tron.Style.Theme exposing (Theme)
+import Tron.Style.Theme exposing (Theme(..))
 
 
 type DeepLevel = DeepLevel Int
@@ -289,12 +290,25 @@ toggle =
 
 sourceOf : Icon -> Theme -> Button.Url
 sourceOf icon theme =
-    Button.makeUrl <| case icon of
-        Arm -> "arm"
-        Arrow -> "arrow"
-        Export -> "export"
-        Regenerate -> "regenerate"
-        Goose -> "cai"
+    Button.makeUrl <|
+        Url.relative
+            [ "assets"
+            ,
+                ( case icon of
+                    Arm ->  "arm"
+                    Arrow -> "arrow"
+                    Export -> "export"
+                    Regenerate -> "regenerate"
+                    Goose -> "cai"
+                )
+            ++ "_" ++
+                ( case theme of
+                    Dark -> "dark"
+                    Light -> "light"
+                )
+            ++ ".svg"
+            ]
+            []
 
 
 randomColor : Random.Generator Color
