@@ -15,8 +15,10 @@ import Tron.Control.Button as Button exposing (Face(..), Icon(..))
 import Tron.Property  exposing (Property(..))
 import Tron.Property as Gui exposing ( Label )
 import Tron.Builder exposing (Builder)
+import Tron.Style.PanelShape exposing (PanelShape, cols)
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS exposing (..)
+import Tron.Style.Theme exposing (Theme)
 
 
 type DeepLevel = DeepLevel Int
@@ -138,7 +140,14 @@ color =
 button : Random.Generator ( Control Face () () )
 button =
     Random.uniform Nothing [ Just Arrow, Just Export, Just Regenerate, Just Arm, Just Goose ]
-        |> Random.map (Maybe.map (sourceOf >> Button.Icon >> WithIcon) >> Maybe.withDefault Default)
+        |> Random.map
+                (Maybe.map
+                    (sourceOf
+                        >> Button.themedIcon
+                        >> Button.WithIcon
+                    )
+                >> Maybe.withDefault Default
+                )
         |> Random.map (\icon -> Control icon () <| Just <| always ())
 
 
@@ -221,7 +230,7 @@ group deep =
 
 shapeFor
      : Control (Array ( Label, Builder () )) val msg
-    -> Random.Generator ( Gui.Shape, CS.CellShape )
+    -> Random.Generator ( PanelShape, CS.CellShape )
 shapeFor cs =
     Random.map2
         Tuple.pair
@@ -229,16 +238,10 @@ shapeFor cs =
         (Random.constant CS.default)
 
 
-shape : Int -> Random.Generator Gui.Shape
+shape : Int -> Random.Generator PanelShape
 shape toFit =
     Random.int 1 toFit
-        |> Random.map
-            (\v ->
-                ( v
-                , (toFit // v) + (if toFit - (toFit // v * toFit) > 0 then 1 else 0)
-                )
-            )
-        |> Random.map (Tuple.mapBoth toFloat toFloat)
+        |> Random.map cols
 
 
 group_
@@ -284,9 +287,9 @@ toggle =
             )
 
 
-sourceOf : Icon -> String
-sourceOf icon =
-    case icon of
+sourceOf : Icon -> Theme -> Button.Url
+sourceOf icon theme =
+    Button.makeUrl <| case icon of
         Arm -> "arm"
         Arrow -> "arrow"
         Export -> "export"
