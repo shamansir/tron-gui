@@ -3,8 +3,9 @@ module Tron.Style.Dock exposing
     , topLeft, topCenter, topRight
     , middleLeft, center, middleRight
     , bottomLeft, bottomCenter, bottomRight
-    , adaptBounds, adaptPosition, adaptSize, firstCellAt
+    , adaptBounds, adaptPosition, adaptSize, firstCellAt -- FIXME: do not expose
     , boundsFromSize
+    , rootPosition, toDistribution -- FIXME: do not expose
     , toString
     )
 
@@ -21,6 +22,7 @@ module Tron.Style.Dock exposing
 -}
 
 import Tron.Style.Cell as Cell
+import SmartPack as D exposing (Distribution(..))
 
 import Size exposing (..)
 
@@ -153,6 +155,56 @@ firstCellAt (Dock ( horz, vert )) bounds =
         Bottom -> bounds.height - Cell.height
         _ -> 0
     )
+
+
+{-| -}
+rootPosition : Dock -> Size Cells -> Int -> Int -> ( Int, Int )
+rootPosition (Dock ( horz, vert )) (Size (cw, ch)) itemsCount index =
+    case ( horz, vert ) of
+        ( Left, Top ) ->
+            ( index, 0 )
+        ( Left, Middle ) ->
+            ( 0, ch // 2 - itemsCount // 2 + index )
+        ( Left, Bottom ) ->
+            ( index, ch - 1 )
+        ( Center, Top ) ->
+            ( cw // 2 - itemsCount // 2 + index, 0 )
+        ( Center, Middle ) ->
+            ( cw // 2 - itemsCount // 2 + index, ch // 2 )
+        ( Center, Bottom ) ->
+            ( cw // 2 - itemsCount // 2 + index, ch - 1 )
+        ( Right, Top ) ->
+            ( cw - itemsCount + index, 0 )
+        ( Right, Middle ) ->
+            ( cw - 1, ch // 2 - itemsCount // 2 + index )
+        ( Right, Bottom ) ->
+            ( cw - itemsCount + index, 0 )
+
+
+{-| -}
+toDistribution : Dock -> Int -> Distribution
+toDistribution (Dock (horz, vert)) idx =
+    case ( horz, vert ) of
+        ( Left, Top ) ->
+            D.Down
+        ( Left, Middle ) ->
+            D.Right
+        ( Left, Bottom ) ->
+            D.Up
+        ( Center, Top ) ->
+            D.Down
+        ( Center, Middle ) ->
+            if idx // 2 == 0
+                then D.Up
+                else D.Down
+        ( Center, Bottom ) ->
+            D.Up
+        ( Right, Top ) ->
+            D.Down
+        ( Right, Middle ) ->
+            D.Left
+        ( Right, Bottom ) ->
+            D.Up
 
 
 {-| -}

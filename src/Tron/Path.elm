@@ -60,8 +60,8 @@ pop (Path l) =
                 )
 
 
-tail : Path -> Maybe Int
-tail =
+last : Path -> Maybe Int
+last =
     pop >> Maybe.map Tuple.second
 
 

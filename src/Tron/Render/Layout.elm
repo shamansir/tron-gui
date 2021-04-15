@@ -229,7 +229,7 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
                                                             --     )
                                                             |> B.multiplyByF Cell.width
                                                     , source = cellSource
-                                                    , index = Path.tail cellPath
+                                                    , index = Path.last cellPath
                                                     } |> Just
                                                 Nothing -> Nothing
                                         )

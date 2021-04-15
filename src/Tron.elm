@@ -746,9 +746,9 @@ layout gui =
                     |> Maybe.map (Tuple.pair path)
             ) of
         Nothing ->
-            ( gui.tree, Layout.pack size gui.tree )
+            ( gui.tree, Layout.pack gui.dock size gui.tree )
         Just ( attachedPath, root ) ->
-            ( root, Layout.pack1 size attachedPath root )
+            ( root, Layout.pack1 gui.dock size attachedPath root )
 
 
 {-| Subscribe the updates of the GUI, so it would resize with the window,

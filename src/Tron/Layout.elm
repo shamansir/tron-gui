@@ -79,24 +79,24 @@ find ( size, layout ) { x, y } =
             Nothing
 
 
-pack : SizeF Cells -> Property msg -> Layout
-pack size = pack1 size Path.start
+pack : Dock -> SizeF Cells -> Property msg -> Layout
+pack dock size = pack1 dock size Path.start
 
 
-pack1 : SizeF Cells -> Path -> Property msg -> Layout
-pack1 size rootPath prop =
+pack1 : Dock -> SizeF Cells -> Path -> Property msg -> Layout
+pack1 dock size rootPath prop =
     case prop of
         Nil ->
             init size
         Group _ ( shape, _ ) control ->
             ( size
-            , packItemsAtRoot size rootPath shape
+            , packItemsAtRoot dock size rootPath shape
                 <| Array.map Tuple.second
                 <| Nest.getItems control
             )
         Choice _ ( shape, _ ) control ->
             ( size
-            , packItemsAtRoot size rootPath shape
+            , packItemsAtRoot dock size rootPath shape
                 <| Array.map Tuple.second
                 <| Nest.getItems control
             )
@@ -116,27 +116,38 @@ pack1 size rootPath prop =
 
 
 packItemsAtRoot
-    :  SizeF Cells
+    :  Dock
+    -> SizeF Cells
     -> Path
     -> PanelShape
     -> Array (Property msg)
     -> SmartPack (Cell_ Path)
-packItemsAtRoot size rp shape items =
+packItemsAtRoot dock size rp shape items =
     let
         rootPath = Path.toList rp
+        ghostsCount =
+            items
+                |> Array.filter isGhost
+                |> Array.length
         orLayout l =
             Maybe.map Tuple.second
                 >> Maybe.withDefault l
         itemsAndPositions =
             items
-                |> Array.indexedMap  -- FIXME: consider pages
+                |> Array.indexedMap
                     (\index item ->
-                        ( (index, 0), item ) -- FIXME: find position using Dock
+                        ( Dock.rootPosition
+                            dock
+                            (Size.toInt size)
+                            (Array.length items - ghostsCount)
+                            <| index - ghostsCount
+                        , item
+                        )
                     )
 
         firstLevelLayout =
             itemsAndPositions
-                |> Array.indexedMap Tuple.pair -- FIXME: consider pages
+                |> Array.indexedMap Tuple.pair
                 |> Array.foldl
                     (\(index, ( pos, theProp) ) layout ->
                         if not <| isGhost theProp
@@ -170,6 +181,11 @@ packItemsAtRoot size rp shape items =
 
         packMany path pageNum panelShape cellShape plateItems parentPos layout =
             let
+                parentIdx =
+                    path
+                        |> List.reverse
+                        |> List.head
+                        |> Maybe.withDefault -1
                 ( pageCount, SizeF ( pageWidthF, pageHeightF ) ) =
                     Property.findShape panelShape cellShape <| Array.toList plateItems
                 pageSize =
@@ -182,7 +198,7 @@ packItemsAtRoot size rp shape items =
                         |> Array.indexedMap Tuple.pair
                         |> Array.toList
                         -- |> Pages.distributeOver pageCount
-                        |> Pages.distribute 9
+                        |> Pages.distribute 9 -- FIXME
                         |> Pages.switchTo pageNum
 
                 packedPages =
@@ -196,8 +212,8 @@ packItemsAtRoot size rp shape items =
                                                 (path ++ [index])
                                                 cellShape
                                                 plateLayout of
-                                                Just ( pos, nextLayout ) ->
-                                                    ( nextLayout
+                                                Just ( pos, nextLayout_ ) ->
+                                                    ( nextLayout_
                                                     , positions
                                                         |> Dict.insert (path ++ [index]) pos
                                                     )
@@ -207,25 +223,37 @@ packItemsAtRoot size rp shape items =
                                 )
                                 ( SmartPack.container pageSize, Dict.empty )
                             )
-
-
-            in
-
-                ( {- SmartPack.pack
-                    D.Right
-                    -}
-                SmartPack.packCloseTo
-                    D.Down
-                    (case parentPos of
-                        (x, y) -> (x * 2, y * 2)
-                    )
-                    pageSize
-                    (Many_
+                many =
+                    Many_
                         (Path.fromList path)
                         (packedPages |> Pages.map Tuple.first)
-                    )
-                    layout
-                    |> orLayout layout
+
+
+                maybePackedCloseTo =
+                    {- SmartPack.pack
+                        D.Right
+                        -}
+                    SmartPack.packCloseTo
+                        (Dock.toDistribution dock parentIdx)
+                        (case parentPos of
+                            (x, y) -> (x * 2, y * 2)
+                        )
+                        pageSize
+                        many
+                        layout
+                nextLayout =
+                    case maybePackedCloseTo of
+                        Just ( _, layoutWithPlate ) -> layoutWithPlate
+                        Nothing ->
+                            SmartPack.pack
+                                (Dock.toDistribution dock parentIdx)
+                                pageSize
+                                many
+                                layout
+                                |> orLayout layout
+            in
+
+                ( nextLayout
                 , packedPages
                     |> Pages.map Tuple.second
                     |> Pages.fold Dict.union Dict.empty

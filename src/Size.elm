@@ -17,3 +17,6 @@ size ( w, h ) = Size ( w, h )
 
 
 sizeF ( w, h ) = SizeF ( w, h )
+
+
+toInt (SizeF (w, h)) = Size ( ceiling w, ceiling h )

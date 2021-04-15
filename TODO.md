@@ -17,3 +17,4 @@
 * Do not store cell size in the `Gui msg`, it should be recalculated every time;
 * Do not store dock in the `Gui msg`, it should be recalculated every time;
 * _Active_ condition for a button, some effect for when it is pressed;
+* Move logic functions for `Dock` etc. to a separate module, hidden from user;
