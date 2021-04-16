@@ -146,15 +146,9 @@ adaptSize (Dock (horz, _)) (SizeF ( w, h )) =
 
 
 {-| Where the first cell is located with current dock setting and Docking state. -}
-firstCellAt : Dock ->  { a | width : Float, height : Float } -> ( Float, Float )
-firstCellAt (Dock ( horz, vert )) bounds =
-    ( case horz of
-        Right -> bounds.width - Cell.width
-        _ -> 0
-    , case vert of
-        Bottom -> bounds.height - Cell.height
-        _ -> 0
-    )
+firstCellAt : Dock ->  Size Cells -> Int -> ( Int, Int )
+firstCellAt dock size itemsCount =
+    rootPosition dock size itemsCount 0
 
 
 {-| -}

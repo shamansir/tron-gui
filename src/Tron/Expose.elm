@@ -118,6 +118,7 @@ toProxied prop =
                 |> Group focus shape
 
 
+-- FIXME: make it: Property msg -> Property RawOutUpdate and use `Property.map2` to join
 toExposed : Property msg -> Property ( RawOutUpdate, msg )
 toExposed prop =
     prop
@@ -131,13 +132,14 @@ toExposed prop =
                   , type_ = getTypeString proxyVal
                   , value = ProxyValue.encode proxyVal
                   , stringValue = ProxyValue.toString proxyVal
-                  , client = E.null
+                  , client = E.null -- FIXME: store clientId separately in `Detach`
                   }
                 , msg
                 )
             )
 
 
+-- FIXME: make it: Property msg -> Property ( LabelPath, String ) and use `Property.map2` to join
 toStrExposed : Property msg -> Property ( ( LabelPath, String ), msg )
 toStrExposed prop =
     prop

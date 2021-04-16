@@ -1,4 +1,4 @@
-module Tron.Layout exposing (Layout, Cell(..), init, pack, pack1, fold, find, toList)
+module Tron.Layout exposing (Layout, Cell(..), init, pack, pack1, fold, find, toList, size)
 
 
 import Array exposing (..)
@@ -49,9 +49,9 @@ type alias Layout = ( SizeF Cells, SmartPack (Cell_ Path) )
 
 
 init : SizeF Cells -> Layout
-init size =
-    ( size
-    , SmartPack.container <| adaptSize size
+init size_ =
+    ( size_
+    , SmartPack.container <| adaptSize size_
     )
 
 
@@ -60,8 +60,12 @@ adaptSize (SizeF ( w, h )) =
     Size ( ceiling <| w * 2, ceiling <| h * 2 )
 
 
+size : Layout -> SizeF Cells
+size = Tuple.first
+
+
 find : Layout -> { x : Float, y : Float } -> Maybe Path
-find ( size, layout ) { x, y } =
+find ( _, layout ) { x, y } =
     case layout |> SmartPack.find ( x * 2, y * 2 ) of
         Just ( _, One_ path ) ->
             Just path
@@ -80,31 +84,31 @@ find ( size, layout ) { x, y } =
 
 
 pack : Dock -> SizeF Cells -> Property msg -> Layout
-pack dock size = pack1 dock size Path.start
+pack dock size_ = pack1 dock size_ Path.start
 
 
 pack1 : Dock -> SizeF Cells -> Path -> Property msg -> Layout
-pack1 dock size rootPath prop =
+pack1 dock size_ rootPath prop =
     case prop of
         Nil ->
-            init size
+            init size_
         Group _ ( shape, _ ) control ->
-            ( size
-            , packItemsAtRoot dock size rootPath shape
+            ( size_
+            , packItemsAtRoot dock size_ rootPath shape
                 <| Array.map Tuple.second
                 <| Nest.getItems control
             )
         Choice _ ( shape, _ ) control ->
-            ( size
-            , packItemsAtRoot dock size rootPath shape
+            ( size_
+            , packItemsAtRoot dock size_ rootPath shape
                 <| Array.map Tuple.second
                 <| Nest.getItems control
             )
         _ ->
             let
-                emptyContainer = SmartPack.container (adaptSize size)
+                emptyContainer = SmartPack.container (adaptSize size_)
             in
-                ( size
+                ( size_
                 , emptyContainer
                     |> SmartPack.pack
                         D.Right
@@ -122,7 +126,7 @@ packItemsAtRoot
     -> PanelShape
     -> Array (Property msg)
     -> SmartPack (Cell_ Path)
-packItemsAtRoot dock size rp shape items =
+packItemsAtRoot dock size_ rp shape items =
     let
         rootPath = Path.toList rp
         orLayout l =
@@ -140,7 +144,7 @@ packItemsAtRoot dock size rp shape items =
                             ,
                                 ( Dock.rootPosition
                                     dock
-                                    (Size.toInt size)
+                                    (Size.toInt size_)
                                     visibleCount
                                     <| visIndex
                                 , item
@@ -165,7 +169,7 @@ packItemsAtRoot dock size rp shape items =
                                     |> Maybe.withDefault layout
                             else layout
                     )
-                    ( SmartPack.container <| adaptSize size )
+                    ( SmartPack.container <| adaptSize size_ )
 
         packOneAt path ( x, y ) =
             SmartPack.packAt

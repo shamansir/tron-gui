@@ -27,6 +27,7 @@ import Tron.Focus as Focus exposing (toString)
 import Tron.FocusLogic as Focus exposing (focused)
 import Tron.Detach as Detach exposing (Ability(..))
 import Tron.Pages as Pages
+import Size exposing (Size(..))
 
 import Tron.Render.Util exposing (..)
 import Tron.Render.Util as Svg exposing (none)
@@ -272,6 +273,12 @@ view theme dock bounds detach getDetachAbility root layout =
             plates
                 |> List.map (.bounds >> viewPlateBack theme )
 
+        rootCellsCount =
+            cells
+                |> List.map .path
+                |> List.filter (\cellPath -> (Path.sub rootPath cellPath |> Path.howDeep) == 1)
+                |> List.length
+
         cellsRendered =
             cells |> List.map
                 (\cell ->
@@ -333,9 +340,16 @@ view theme dock bounds detach getDetachAbility root layout =
                 )
 
         detachButtonPos =
-            case Dock.firstCellAt dock bounds of
+            case
+                Dock.firstCellAt
+                    dock
+                    (layout |> Layout.size |> Size.toInt)
+                    rootCellsCount
+                    of
                 ( x, y ) ->
-                    ( x + Cell.gap, y + Cell.gap )
+                    ( Basics.toFloat x * Cell.width + Cell.gap
+                    , Basics.toFloat y * Cell.height + Cell.gap
+                    )
 
         makeClass =
             "gui noselect "
