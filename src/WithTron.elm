@@ -27,8 +27,8 @@ type WithTronMsg msg
     = ToUser msg
     | ToTron Tron.Msg
     --| Ack Exp.Ack
-    | SendUpdate Exp.RawUpdate
-    | ReceiveRaw Exp.RawUpdate
+    | SendUpdate Exp.RawOutUpdate
+    | ReceiveRaw Exp.RawInUpdate
     | SetClientId Detach.ClientId
     | UrlChange Url
     | UrlRequest Browser.UrlRequest
@@ -87,7 +87,7 @@ subscriptions userSubscriptions ports ( model, gui ) =
     Sub.batch
         [ userSubscriptions model |> Sub.map ToUser
         , Tron.subscriptions gui |> Sub.map ToTron
-        , addSubscriptionsOptions ports gui |> Sub.map ToUser
+        , addSubscriptionsOptions ports gui |> Sub.map ReceiveRaw
         ]
 
 
@@ -142,9 +142,9 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
                         | tree = nextRoot
                         }
                     )
-                , Cmd.none {- nextRoot
+                , nextRoot
                     |> Exp.update (Exp.fromPort rawUpdate)
-                    |> Cmd.map ToUser -}
+                    |> Cmd.map ToUser
                 )
 
         SetClientId clientId ->
@@ -183,10 +183,14 @@ performInitEffects ports gui =
             gui
                 |> Tron.encode
                 |> ack
+        DatGui { ack } ->
+            gui
+                |> Tron.encode
+                |> ack
         _ -> Cmd.none
 
 
-tryTransmitting : PortCommunication msg -> Exp.RawUpdate -> Cmd msg
+tryTransmitting : PortCommunication msg -> Exp.RawOutUpdate -> Cmd msg
 tryTransmitting ports rawUpdate =
     case ports of
         SendJson { transmit } ->
@@ -207,9 +211,12 @@ addInitOptions target gui =
         Aframe _ -> gui
 
 
-addSubscriptionsOptions : PortCommunication msg -> Tron msg -> Sub msg
+addSubscriptionsOptions : PortCommunication msg -> Tron msg -> Sub Exp.RawInUpdate
 addSubscriptionsOptions ports gui =
-    Sub.none -- FIXME:
+    case ports of
+        DatGui { receive } ->
+            receive
+        _ -> Sub.none
 
 
 useRenderTarget : RenderTarget -> Tron msg -> Html Tron.Msg

@@ -4,10 +4,10 @@ port module DatGui.Main exposing (main)
 import Browser exposing (element)
 import Html exposing (Html, div)
 
-import Gui as Tron exposing (Gui, view)
-import Gui.Expose as Exp exposing (RawProperty, RawUpdate)
-import Gui.WithGui as WithGui exposing (ProgramWithGui)
-import Gui.Option as Option
+import Tron  exposing (Tron)
+import Tron.Expose as Exp exposing (RawProperty, RawInUpdate)
+import WithTron exposing (ProgramWithTron)
+import Tron.Option as Option
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -26,13 +26,13 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
-main : ProgramWithGui () Example.Model Example.Msg
+main : ProgramWithTron () Example.Model Example.Msg
 main =
-    WithGui.element
+    WithTron.element
         Option.hidden
         (Option.withDatGui
             { ack = startDatGui
-            , receive = updateFromDatGui
+            , receive = updateFromDatGui identity
             })
         { for = ExampleGui.for
         , init = always Example.init
@@ -42,6 +42,6 @@ main =
         }
 
 
-port updateFromDatGui : (Exp.RawUpdate -> msg) -> Sub msg
+port updateFromDatGui : (Exp.RawInUpdate -> msg) -> Sub msg
 
 port startDatGui : Exp.RawProperty -> Cmd msg

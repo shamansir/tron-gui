@@ -40,13 +40,20 @@ type alias Update =
     }
 
 
-type alias RawUpdate =
+type alias RawOutUpdate =
     { path : RawPath
     , value : E.Value
     , stringValue : String
     , labelPath : List String
     , type_ : String
     , client : RawClientId
+    }
+
+
+type alias RawInUpdate =
+    { path : RawPath
+    , value : E.Value
+    , type_ : String
     }
 
 
@@ -111,7 +118,7 @@ toProxied prop =
                 |> Group focus shape
 
 
-toExposed : Property msg -> Property ( RawUpdate, msg )
+toExposed : Property msg -> Property ( RawOutUpdate, msg )
 toExposed prop =
     prop
         |> toProxied
@@ -752,9 +759,18 @@ fromString type_ str =
             Err str
 
 
-fromPort :
+{- fromPort :
     RawUpdate
     -> Update -- FIXME: -> Result
+fromPort portUpdate =
+    fromPort1
+        { path = portUpdate.path
+        , type_ = portUpdate.type_
+        , value = portUpdate.value
+        } -}
+
+
+fromPort : RawInUpdate -> Update
 fromPort portUpdate =
     { path = portUpdate.path
     , value =

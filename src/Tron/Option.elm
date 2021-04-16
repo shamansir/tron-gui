@@ -22,21 +22,21 @@ type PortCommunication msg
     = NoCommunication
     | SendJson
         { ack : Exp.RawProperty -> Cmd msg
-        , transmit : Exp.RawUpdate -> Cmd msg
+        , transmit : Exp.RawOutUpdate -> Cmd msg
         }
     | SendStrings
         { transmit : ( String, String ) -> Cmd msg
         }
     | Detachable
         { ack : Exp.Ack -> Cmd msg
-        , transmit : Exp.RawUpdate -> Cmd msg
-        , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
+        , transmit : Exp.RawOutUpdate -> Cmd msg
+        , receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
         --, receive : Sub Exp.RawUpdate
         }
     | DatGui
         { ack : Exp.RawProperty -> Cmd msg
-        , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
-        --, receive : Sub Exp.RawUpdate
+        --, receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
+        , receive : Sub Exp.RawInUpdate
         }
 
 
@@ -80,7 +80,7 @@ noCommunication = NoCommunication
 sendJson
     :
         { ack : Exp.RawProperty -> Cmd msg
-        , transmit : Exp.RawUpdate -> Cmd msg
+        , transmit : Exp.RawOutUpdate -> Cmd msg
         }
     -> PortCommunication msg
 sendJson = SendJson
@@ -97,8 +97,8 @@ sendStrings = SendStrings
 detachable
     :
         { ack : Exp.Ack -> Cmd msg
-        , transmit : Exp.RawUpdate -> Cmd msg
-        , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
+        , transmit : Exp.RawOutUpdate -> Cmd msg
+        , receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
         }
     -> PortCommunication msg
 detachable = Detachable
@@ -107,8 +107,8 @@ detachable = Detachable
 withDatGui
     :
         { ack : Exp.RawProperty -> Cmd msg
-        , receive : ((Exp.RawUpdate -> msg) -> Sub msg)
-        --, receive : Sub Exp.RawUpdate
+        --, receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
+        , receive : Sub Exp.RawInUpdate
         }
     -> PortCommunication msg
 withDatGui = DatGui

@@ -13,7 +13,8 @@
         "Tron.Style.Theme",
         "Tron.Style.Dock",
         "Tron.Style.PanelShape",
-        "Tron.Style.CellShape"
+        "Tron.Style.CellShape",
+        "Tron.Expose"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

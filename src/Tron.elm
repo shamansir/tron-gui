@@ -1,6 +1,6 @@
 module Tron exposing
-    ( Tron
-    , view, update, init, subscriptions, run, Msg
+    ( Tron, Msg
+    , view, update, init, subscriptions, run -- FIXME: do not expose
     , map, over, use
     , dock, reshape
     , encode, toExposed
@@ -416,7 +416,7 @@ update msg gui =
 It receives the RAW value update (from port in JSON format, for example) and applies it to the GUI so that the proper user message is fired from the handler.
 -}
 applyRaw
-     : Exp.RawUpdate
+     : Exp.RawInUpdate
     -> Tron msg
     -> Cmd msg
 applyRaw rawUpdate =
@@ -635,7 +635,7 @@ handleKeyDown keyCode path gui =
         _ -> ( gui, Cmd.none )
 
 
-toExposed : Tron msg -> Tron ( RawUpdate, msg )
+toExposed : Tron msg -> Tron ( RawOutUpdate, msg )
 toExposed gui =
     { dock = gui.dock
     , viewport = gui.viewport

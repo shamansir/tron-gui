@@ -19,14 +19,16 @@ const sendProxy = (origSend) => {
   }
 };
 
-const toCssColor = (rgbaStr) => {
-  let rgba = rgbaStr.split(',');
-  return 'rgba(' + (rgba[0] * 255) + ',' + (rgba[1] * 255) + ',' + (rgba[2] * 255) + ',' + (rgba[3] || 1) + ')';
+const toCssColor = (hex) => {
+  return hex;
+  /* let rgba = rgbaStr.split(',');
+  return 'rgba(' + (rgba[0] * 255) + ',' + (rgba[1] * 255) + ',' + (rgba[2] * 255) + ',' + (rgba[3] || 1) + ')'; */
 }
 
-const fromCssColor = (css) => {
-  let rgba = css.slice(5,-1).split(',');
-  return (parseFloat(rgba[0]) / 255) + ',' + (parseFloat(rgba[1]) / 255) + ',' + (parseFloat(rgba[2]) / 255) + ',' + parseFloat(rgba[3]);
+const fromCssColor = (hex) => {
+  return hex;
+  /* let rgba = css.slice(5,-1).split(',');
+  return (parseFloat(rgba[0]) / 255) + ',' + (parseFloat(rgba[1]) / 255) + ',' + (parseFloat(rgba[2]) / 255) + ',' + parseFloat(rgba[3]); */
 }
 
 const XY_SEP = '|';

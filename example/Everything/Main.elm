@@ -67,7 +67,7 @@ type Msg
     = NoOp
     | ChangeMode Mode
     | ChangeDock Dock
-    | FromDatGui Exp.RawUpdate
+    | FromDatGui Exp.RawInUpdate
     | ToTron Tron.Msg
     | ToExample Example.Msg
     | Randomize (Tron.Builder ())
