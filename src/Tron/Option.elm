@@ -30,7 +30,7 @@ type PortCommunication msg
     | Detachable
         { ack : Exp.Ack -> Cmd msg
         , transmit : Exp.RawOutUpdate -> Cmd msg
-        , receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
+        , receive : Sub Exp.RawInUpdate
         --, receive : Sub Exp.RawUpdate
         }
     | DatGui
@@ -98,7 +98,7 @@ detachable
     :
         { ack : Exp.Ack -> Cmd msg
         , transmit : Exp.RawOutUpdate -> Cmd msg
-        , receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
+        , receive : Sub Exp.RawInUpdate
         }
     -> PortCommunication msg
 detachable = Detachable

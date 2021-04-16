@@ -6,7 +6,8 @@ import Example.Goose.Model exposing (LookDirection, Shoes)
 
 
 type Msg
-    = HonkOn
+    = NoOp
+    | HonkOn
     | HonkOff
     | PunkOn
     | PunkOff

@@ -1,12 +1,13 @@
 module WithTron exposing (..)
 
 
-import Browser
+import Browser exposing (UrlRequest(..))
 import Url exposing (Url)
 import Html exposing (Html)
 --import Either exposing (Either(..))
 import Random
 import Dict exposing (Dict)
+import Task
 
 import Tron exposing (Tron)
 import Tron.Builder as Builder exposing (Builder)
@@ -30,8 +31,7 @@ type WithTronMsg msg
     | SendUpdate Exp.RawOutUpdate
     | ReceiveRaw Exp.RawInUpdate
     | SetClientId Detach.ClientId
-    | UrlChange Url
-    | UrlRequest Browser.UrlRequest
+    | UrlChange (Maybe msg) Url
 
 
 init
@@ -48,16 +48,19 @@ init ( userInit, userFor ) maybeUrl renderTarget ports flags =
         ( gui, guiEffect ) =
             userFor initialModel
                 |> Tron.init
-
     in
         (
             ( initialModel
-            , gui |> addInitOptions renderTarget
+            , gui
+                |> addInitOptions renderTarget
             )
         , Cmd.batch
             [ userEffect |> Cmd.map ToUser
             , guiEffect |> Cmd.map ToTron
             , performInitEffects ports gui |> Cmd.map ToUser
+            , case maybeUrl of
+                Just url -> applyUrl ports url
+                Nothing -> Cmd.none
             ]
         )
 
@@ -159,7 +162,6 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
                     }
                 )
             , Cmd.none
-            -- , nextDetach |> Detach.ack -- FIXME:
             )
 
         SendUpdate rawUpdate ->
@@ -169,30 +171,45 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
                 |> Cmd.map ToUser
             )
 
-        _ -> -- FIXME: implement handlers
-            ( ( model, gui )
-            , Cmd.none
-            )
-
+        UrlChange maybeUserMsg url ->
+            let
+                detachState = Detach.fromUrl url
+                urlEffects = applyUrl ports url
+            in
+                (
+                    ( model
+                    ,
+                        { gui
+                        | detach = detachState
+                        }
+                    )
+                , Cmd.batch
+                    [ urlEffects
+                    , case maybeUserMsg of
+                        Just userMsg ->
+                            Task.succeed userMsg
+                                |> Task.perform identity
+                                |> Cmd.map ToUser
+                        Nothing -> Cmd.none
+                    ]
+                )
 
 
 performInitEffects : PortCommunication msg -> Tron msg -> Cmd msg
 performInitEffects ports gui =
-    case ports of
-        SendJson { ack } ->
-            gui
-                |> Tron.encode
-                |> ack
-        DatGui { ack } ->
-            gui
-                |> Tron.encode
-                |> ack
-        _ -> Cmd.none
+        case ports of
+            SendJson { ack } ->
+                gui |> Tron.encode |> ack
+            DatGui { ack } ->
+                gui |> Tron.encode |> ack
+            _ -> Cmd.none
 
 
 tryTransmitting : PortCommunication msg -> Exp.RawOutUpdate -> Cmd msg
 tryTransmitting ports rawUpdate =
     case ports of
+        Detachable { transmit } ->
+            transmit rawUpdate
         SendJson { transmit } ->
             transmit rawUpdate
         SendStrings { transmit } ->
@@ -225,6 +242,33 @@ useRenderTarget target gui =
         Html dock theme -> gui |> Tron.dock dock |> Tron.view theme
         Nowhere -> Html.div [] []
         Aframe _ -> Html.div [] [] -- FIXME
+
+
+setDetachState : ( Maybe Detach.ClientId, Detach.State ) -> Tron msg -> Tron msg
+setDetachState st gui =
+    { gui
+    | detach = st
+    }
+
+
+applyUrl
+    :  PortCommunication msg
+    -> Url.Url
+    -> Cmd (WithTronMsg msg)
+applyUrl ports url =
+    let
+        ( maybeClientId, state ) = Detach.fromUrl url
+    in
+        case ( ports, maybeClientId ) of
+            ( Detachable { ack }, Just clientId ) ->
+                Exp.encodeAck clientId
+                    |> ack
+                    |> Cmd.map ToUser
+                -- Task.succeed id
+                --     |> Task.perform SetClientId
+            ( Detachable { ack }, Nothing ) ->
+                nextClientId
+            _ -> Cmd.none
 
 
 nextClientId : Cmd (WithTronMsg msg)
@@ -330,27 +374,36 @@ application
 application renderTarget ports def =
     Browser.application
         { init =
-            \flags url key ->
+            \flags url _ ->
                 init ( def.init, def.for ) (Just url) renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =
             \(userModel, gui) ->
-                { title = (def.view userModel).title
-                , body =
-                    [ view
-                        (\umodel ->
-                            -- FIXME: we calculate view two times, it seems
-                            Html.div [] <| (def.view umodel).body
-                        )
-                        renderTarget
-                        (userModel, gui)
-                    ]
-                }
+                let userView = def.view userModel
+                in
+                    { title = userView.title
+                    , body =
+                        [ view
+                            (\umodel ->
+                                -- FIXME: we calculate view two times, it seems
+                                Html.div [] <| userView.body
+                            )
+                            renderTarget
+                            (userModel, gui)
+                        ]
+                    }
         , subscriptions =
             subscriptions def.subscriptions ports
-        , onUrlChange = UrlChange
-        , onUrlRequest = UrlRequest
+        , onUrlChange =
+            \url -> UrlChange (Just <| def.onUrlChange url) url
+        , onUrlRequest =
+            \req ->
+                case req of
+                    Internal url ->
+                        UrlChange (Just <| def.onUrlRequest req) <| url
+                    External _ ->
+                        ToUser <| def.onUrlRequest req
         }
 
 

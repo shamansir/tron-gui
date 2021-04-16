@@ -584,17 +584,18 @@ encode =
     encodePropertyAt []
 
 
-encodeClientId : Maybe HashId -> E.Value
-encodeClientId maybeClient =
-    maybeClient |> Maybe.map (HashId.toString >> E.string) |> Maybe.withDefault E.null
+encodeClientId : HashId -> E.Value
+encodeClientId =
+    HashId.toString >> E.string
 
 
-encodeAck : Maybe HashId -> Ack
-encodeAck maybeClient =
-    { client =
-        encodeClientId maybeClient
-    }
+encodeAck : HashId -> Ack
+encodeAck =
+    Ack << encodeClientId
 
+
+noClientId : Ack
+noClientId = Ack <| E.null
 
 
 {-

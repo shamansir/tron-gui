@@ -33,6 +33,8 @@ update msg model =
         changeEye f =
             { model | eye = f model.eye }
     in case msg of
+        NoOp ->
+            model
         PunkOn ->
             { model | punk = True }
         PunkOff ->
