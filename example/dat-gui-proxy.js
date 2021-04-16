@@ -31,7 +31,7 @@ const fromCssColor = (hex) => {
   return (parseFloat(rgba[0]) / 255) + ',' + (parseFloat(rgba[1]) / 255) + ',' + (parseFloat(rgba[2]) / 255) + ',' + parseFloat(rgba[3]); */
 }
 
-const XY_SEP = '|';
+const XY_SEP = ';';
 
 const applyDefinition = (config, definition, send) => {
 

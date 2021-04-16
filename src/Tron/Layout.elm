@@ -125,25 +125,33 @@ packItemsAtRoot
 packItemsAtRoot dock size rp shape items =
     let
         rootPath = Path.toList rp
-        ghostsCount =
-            items
-                |> Array.filter isGhost
-                |> Array.length
         orLayout l =
             Maybe.map Tuple.second
                 >> Maybe.withDefault l
+        visibleCount =
+            Array.length items
+                - (items |> Array.filter isGhost |> Array.length)
         itemsAndPositions =
             items
-                |> Array.indexedMap
-                    (\index item ->
-                        ( Dock.rootPosition
-                            dock
-                            (Size.toInt size)
-                            (Array.length items - ghostsCount)
-                            <| index - ghostsCount
-                        , item
-                        )
+                |> Array.foldl
+                    (\item ( visIndex, prevItems ) ->
+                        if not <| isGhost item then
+                            ( visIndex + 1
+                            ,
+                                ( Dock.rootPosition
+                                    dock
+                                    (Size.toInt size)
+                                    visibleCount
+                                    <| visIndex
+                                , item
+                                ) :: prevItems
+                            )
+                        else ( visIndex, ( (-1, -1), item ) :: prevItems )
                     )
+                    ( 0, [] )
+                |> Tuple.second
+                |> List.reverse
+                |> Array.fromList
 
         firstLevelLayout =
             itemsAndPositions
