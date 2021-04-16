@@ -641,7 +641,10 @@ toExposed gui =
     , viewport = gui.viewport
     , size = gui.size
     , mouse = gui.mouse
-    , tree = gui.tree |> Exp.toExposed
+    , tree =
+        gui.tree
+            |> Exp.toExposed
+            |> Property.map (Tuple.mapFirst (Detach.addClientId <| Tuple.first <| gui.detach))
     , detach = gui.detach
     }
 

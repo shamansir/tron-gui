@@ -6,6 +6,7 @@ import Url.Builder as Url
 import Random
 import Dict
 import HashId exposing (HashId)
+import Json.Encode as E
 
 import Tron.Path as Path exposing (Path, toList)
 import Tron.Expose as Exp
@@ -34,39 +35,6 @@ type Ability
 
 type alias GetAbility = Path -> Ability
 
-
-{-
-type Detach msg =
-    Detach
-        { toUrl : ClientId -> Path -> Maybe LocalUrl
-        , attached : State
-        , client : Maybe ClientId
-        }
-
-
-map : (msgA -> msgB) -> Detach msgA -> Detach msgB
-map f (Detach d) =
-    Detach
-        { toUrl = d.toUrl
-        , send = d.send >> Cmd.map f
-        , ack = d.ack >> Cmd.map f
-        , receive = d.receive
-        , attached = d.attached
-        , client = d.client
-        }
-
-
-never : Detach msg
-never =
-    Detach
-        { toUrl = always <| always Nothing
-        , ack = always Cmd.none
-        , send = always Cmd.none
-        , receive = always Sub.none
-        , attached = attachedAtRoot
-        , client = Nothing
-        }
--}
 
 
 clientIdGenerator : Random.Generator ClientId
@@ -120,6 +88,17 @@ localUrlToString fragments =
     in
 
     "#" ++ (String.join "&" <| List.map encodeFragment <| fragments)
+
+
+addClientId : Maybe ClientId -> Exp.RawOutUpdate -> Exp.RawOutUpdate
+addClientId maybeClientId upd =
+    case maybeClientId of
+        Just id_ ->
+            { upd
+            | client = E.string <| HashId.toString id_
+            }
+        Nothing ->
+            upd
 
 
 {-

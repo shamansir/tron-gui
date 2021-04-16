@@ -59,7 +59,9 @@ init ( userInit, userFor ) maybeUrl renderTarget ports flags =
             , guiEffect |> Cmd.map ToTron
             , performInitEffects ports gui |> Cmd.map ToUser
             , case maybeUrl of
-                Just url -> applyUrl ports url
+                Just url ->
+                    Task.succeed url
+                        |> Task.perform (UrlChange Nothing)
                 Nothing -> Cmd.none
             ]
         )
@@ -161,7 +163,12 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
 
                     }
                 )
-            , Cmd.none
+            , case ports of
+                Detachable { ack } ->
+                    Exp.encodeAck clientId
+                        |> ack
+                        |> Cmd.map ToUser
+                _ -> Cmd.none
             )
 
         SendUpdate rawUpdate ->
