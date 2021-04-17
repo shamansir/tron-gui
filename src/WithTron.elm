@@ -1,4 +1,98 @@
-module WithTron exposing (..)
+module WithTron exposing
+    ( ProgramWithTron
+    , sandbox, element, document, application
+    , backed, BackedStorage, BackedWithTron
+    )
+
+
+{-| `WithTron` is the set of functions which wrap Elm `Browser.*` helpers and so
+let you easily add your GUI to the usual Elm-driven flow.
+
+Here is the `OneKnob` example:
+
+The only things that is different from usual `Elm` application is `for` function which allows you to build the Tron GUI using current state of the model:
+
+    import WithTron exposing (ProgramWithTron)
+
+    type alias Amount = Float
+
+    type Msg
+        = AmountChanged Amount
+
+    type alias Model = Amount
+
+    for : Model -> Builder Msg
+    for amount =
+        Builder.root
+            [
+                ( "amount"
+                , Builder.float
+                    { min = 0, max = 1, step = 0.01 }
+                    amount
+                    AmountChanged
+                )
+            ]
+
+    init _ =
+        ( 0, Cmd.none )
+
+    view amount =
+        Html.text
+            <| String.fromFloat amount
+
+    update msg curAmount =
+        case msg of
+
+            AmountChanged newAmount ->
+                ( newAmount
+                , Cmd.none
+                )
+
+    subscriptions _ = Sub.none
+
+    main : ProgramWithTron () Model Msg
+    main =
+        WithTron.element
+            (Option.toHtml Dock.center Theme.dark)
+            Option.noCommunication
+            { for = for
+            , init = init
+            , view = view
+            , update = update
+            , subscriptions = subscriptions
+            }
+
+For help on how to define your interface with `for` function, see the detailed `Tron.Builder` documentation.
+
+Sometimes  you don't even need the `init`/`view`/`update`, for example to connect GUI to the JavaScript or something remote. In this case the `backed` function lets you define the application which just stores the path-to-value map and nothing else.
+
+More examples are in the `README`, and in the `example/*/Main.elm` modules.
+
+See also: `Tron.Option`, `Tron.Builder`, `Tron.Builder.*`.
+
+There are some special types of GUI Builders that can come in handy if you don't want to use messages, but get them as the type-value pairs or add paths to them or just skip them. All of them doesn't require you to specify handling message so, every function from such `Builder` has one argument less:
+
+- `Builder ()` (`Tron.Builder.Unit`) — do not expose values (keeps them inside);
+- `Builder ProxyValue` (`Tron.Builder.Proxy`) — store values as a type-value data, see `Tron.Expose.ProxyValue` for more info;
+- `Builder String` (`Tron.Builder.String`) — store value stringified;
+
+Any `Builder a` can be converted to `Builder ( Path, Value )` using `Builder.addPath`, `Builder.addLabeledPath` and/or `Tron.Expose.Convert` helpers.
+
+# Program
+
+@docs ProgramWithTron
+
+# Program Wrappers
+@docs sandbox, element, document, application
+
+# Backed
+
+_Backed_ is the special type of `Program` that only stores the mapping of path in the interface to the corresponding current value. This is useful when you want to use Tron GUI for some JS application and just send the updates using the ports.
+
+For such cases, see `ReportToJsBacked` example. Another examples that use JS connection and ports, but don't use `Backed` helper, are: `ReportToJsJson`, `ReportToJsString`, `DatGui`.
+
+@docs backed, BackedStorage, BackedWithTron
+-}
 
 
 import Browser exposing (UrlRequest(..))
@@ -14,6 +108,7 @@ import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Expose as Exp
+import Tron.Expose.Convert as Exp
 import Tron.Option exposing (..)
 import Tron.Msg exposing (Msg_(..))
 import Tron.Detach as Detach
@@ -21,6 +116,7 @@ import Tron.Property as Property exposing (LabelPath)
 import Tron.Expose.Data as Exp
 
 
+{-| Adds `Tron msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
 type alias ProgramWithTron flags model msg =
     Program flags ( model, Tron msg ) (WithTronMsg msg)
 
@@ -286,6 +382,7 @@ nextClientId =
     Random.generate SetClientId Detach.clientIdGenerator
 
 
+{-| Wrapper for `Program.sandbox` with `for` function and `Tron` options. -}
 sandbox
     :  RenderTarget
     -> PortCommunication msg
@@ -308,6 +405,7 @@ sandbox renderTarget ports impl =
         }
 
 
+{-| Wrapper for `Program.element` with `for` function and `Tron` options. -}
 element
     :  RenderTarget
     -> PortCommunication msg
@@ -332,6 +430,7 @@ element renderTarget ports def =
         }
 
 
+{-| Wrapper for `Program.document` with `for` function and `Tron` options. -}
 document
     :  RenderTarget
     -> PortCommunication msg
@@ -368,6 +467,7 @@ document renderTarget ports def =
         }
 
 
+{-| Wrapper for `Program.application` with `for` function and `Tron` options. -}
 application
     :  RenderTarget
     -> PortCommunication msg
@@ -417,15 +517,48 @@ application renderTarget ports def =
         }
 
 
+{-| Path-to-value storage, to transmit them to the JS side. -}
 type alias BackedStorage = Dict LabelPath String
 
 
 type alias BackedMsg = ( LabelPath, String ) -- message is just key & value to put in the dict
 
 
+{-| Program, backed with the path-to-value storage. -}
 type alias BackedWithTron = ProgramWithTron () BackedStorage BackedMsg
 
 
+{-| Special helper, that just asks you for the `Unit`-based interface and some port where to send value updates as `(String, String) pairs, which are labeled path and the stringified value.
+
+See `Tron.Builder.Unit` for the functions that will help you define the interface that only operates `()` values and so doesn't need any messages.
+
+    import WithTron exposing (BackedWithTron)
+    import Tron.Builder.Unit exposing (..)
+
+    gui : Float -> Builder
+    gui amount =
+        Builder.root
+            [
+                ( "amount"
+                , Builder.float
+                    { min = 0, max = 1, step = 0.01 }
+                    amount
+                )
+            ]
+
+    port sendUpdate : ( String, String ) -> Cmd msg
+
+    main : BackedWithTron
+    main =
+        WithTron.backed
+            (Option.toHtml Dock.middleRight Theme.dark)
+            sendUpdate
+            gui
+
+
+See `example/ReportToJsBacked` for more details.
+
+ -}
 backed
     :  RenderTarget
     -> (( String, String ) -> Cmd msg)
