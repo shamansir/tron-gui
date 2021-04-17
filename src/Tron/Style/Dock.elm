@@ -22,8 +22,7 @@ module Tron.Style.Dock exposing
 @docs toString
 -}
 
-import Tron.Style.Cell as Cell
-import SmartPack as D exposing (Distribution(..))
+import SmartPack exposing (Distribution(..))
 
 import Size exposing (..)
 

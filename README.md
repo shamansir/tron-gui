@@ -396,7 +396,7 @@ colorsGui isPunk colors =
         ]
 ```
 
-When you don't have any Messages or you want to define GUI only to pass it to JavaScript side, you may use other Builders which don't require specifying messages and convert their values automatically:
+When you don't have any _messages_ or you want to define GUI only to pass it to JavaScript side, you may use other Builders which don't require specifying messages and convert their values automatically:
 
 - `Tron.Builder.Unit` which provides `Builder ()`;
 - `Tron.Builder.String` which provides `Builder (String, String)` and so converts any value to the pair of the labeled path (such as `"honk/color"`, in the case of the _Goose_ example) and stringified value;
@@ -404,6 +404,105 @@ When you don't have any Messages or you want to define GUI only to pass it to Ja
 
 Using functions from `Tron.Expose.Convert`, any of these `Builder`s, or your own `Builder`, may be converted to `Builder (RawOutValue, msg)` or simlar, so that it will carry the port-&-JSON-friendly version of the value along with the messages. Use `Builder.map Tuple.first` on such, to ignore the messages at all.
 
+The example with `Tron.Builder.Unit` (from `example/Example/Default/Goose.elm`):
+
+*NB*: Notice that defining controls this way doesn't require you to specify any message, plus in this case it is `Gui.Builder` rather than `Gui.Builder Msg`, but still it is easy to replace one with another just by changing import and adding/removing messages at the end of the calls:
+
+```elm
+import Tron.Builder.Unit as Gui
+
+gui : Gui.Builder
+gui =
+    Gui.root
+        [ ( "ghost", Gui.none )
+        ,
+            ( "int"
+            , Gui.int
+                    { min = -20, max = 20, step = 5 }
+                    0
+            )
+        ,
+            ( "float"
+            , Gui.float
+                { min = -10.5, max = 10.5, step = 0.5 }
+                0.0
+            )
+        ,
+            ( "xy",
+                Gui.xy
+                    ( { min = -20, max = 20, step = 5 }
+                    , { min = -20, max = 20, step = 5 }
+                    )
+                    ( 0, 0 )
+            )
+        ,
+            ( "text"
+            , Gui.text "foobar"
+            )
+        ,
+            ( "color",
+                Gui.color
+                    <| Color.rgb255 255 194 0
+            )
+        ,
+            ( "choice",
+                Gui.choice
+                    ( cols 3 )
+                    single
+                    choiceToLabel
+                    choices
+                    A
+                    compareChoices
+                    |> Gui.expand
+            )
+        ,
+            ( "nest", nestedButtons C )
+        ,
+            ( "button"
+            , Gui.buttonWith
+                <| Gui.themedIcon
+                    (\theme ->
+                        Gui.makeUrl
+                            <| Url.relative
+                                [ "assets", "export_" ++ Theme.toString theme ++ ".svg" ]
+                                []
+                    )
+            )
+
+        ,
+            ( "toggle", Gui.toggle False )
+        ]
+
+
+nestedButtons : Choice -> Gui.Builder
+nestedButtons curChoice =
+    Gui.nest
+        ( cols 2 )
+        single
+        [ ( "a", Gui.button )
+        , ( "b", Gui.button )
+        , ( "c", Gui.button )
+        , ( "d", Gui.button )
+        , ( "color", colorNest )
+        ]
+
+
+colorNest : Gui.Builder
+colorNest =
+    let
+        colorCompKnob =
+            Gui.float
+                { min = 0, max = 255, step = 1 }
+                0
+    in
+        Gui.nest
+            ( cols 1 )
+            single
+            [ ( "red", colorCompKnob )
+            , ( "green", colorCompKnob )
+            , ( "blue", colorCompKnob )
+            ]
+```
 
 ## Complete Application Examples
 
@@ -415,7 +514,7 @@ There is the `start-example.sh` script that helps to run every one of them, just
 * `Everything` — all the features in one: switching themes, docking, random-generated interface, detachable, ... (NB: _see  note below_);
 * `Detachable` — the parts of GUI may be detached to a separate tab (run `start-server.sh` first);
 * `DatGui` — connecting to `dat.gui` using JS transfer;
-* `OneKnob` — only one control and its value, nothing else;
+* `OneKnob` — only one control and its value, nothing else; also gives the example of the minimal Elm application with Tron GUI, where everything is defined in one module (really doesn't require a lot of code!);
 * `Random` — random interface by a click of a button;
 * `AFrame` — render to virtual reality using A-Frame (currently, the early draft);
 * `ReportToJsBacked` — an example to use when connecting Tron to JS application;

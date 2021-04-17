@@ -7,6 +7,7 @@ module Tron.Builder exposing
     , icon, themedIcon, makeUrl
     , map, mapSet
     , expand, collapse
+    , addPath, addLabeledPath
     )
 
 
@@ -47,13 +48,13 @@ However, it is ok to use any name you like, for sure. Be it `Tron.` or `Def.` or
 @docs root
 
 # Items
-@docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, toggle, bool
+@docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, colorButton, toggle, bool
 
 # Groups
 @docs nest, choice, choiceIcons, choiceAuto, strings, labels, labelsAuto, palette
 
 # Icons
-@docs icon
+@docs icon, themedIcon, makeUrl
 
 # Common Helpers
 @docs map, mapSet
@@ -61,6 +62,8 @@ However, it is ok to use any name you like, for sure. Be it `Tron.` or `Def.` or
 # Force expand / collapse for nesting
 @docs expand, collapse
 
+# Add Path
+@docs addPath, addLabeledPath
 -}
 
 
@@ -69,6 +72,7 @@ import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
 
+import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
 import Tron.Property as Property exposing (expand, collapse)
@@ -88,55 +92,59 @@ import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Nest exposing (Form(..), ItemId)
 
 
-{-| `Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instance `Builder msg`.
+{-| To define the structure of your interface, you need to have the function with this type:
 
-Use the method in the module as the helpers in building your own grid structure.
+    for :: Model -> Builder Msg
 
-When it's done, use `Tron.init` to create the user interface from your description:
+Where `Msg` is the message of your application.
 
-    Tron.init <|
+This module contains all the helpers you need to build your own interface. Here is the excerpt from `OneKnob` example:
+
+    type alias Amount = Float
+
+
+    type Msg
+        = AmountChanged Amount
+
+
+    type alias Model = Amount
+
+
+    for : Model -> Builder Msg
+    for amount =
         Builder.root
-            [ ( "int", Builder.int ... )
-            , ( "float", Builder.float ... )
-            ,
-                ( "nest"
-                , Builder.nest
-                    [ ( "button", Builder.button ... )
-                    , ...
-                    ]
+            [
+                ( "amount"
+                , Builder.float
+                    { min = 0, max = 1, step = 0.01 }
+                    amount
+                    AmountChanged
                 )
             ]
+
+`Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instances of `Builder msg`.
+
+Use the methods in the module as the helpers in building your own grid structure:
+
+    Builder.root
+        [ ( "int", Builder.int ... )
+        , ( "float", Builder.float ... )
+        ,
+            ( "nest"
+            , Builder.nest
+                [ ( "button", Builder.button ... )
+                , ...
+                ]
+            )
+        ]
 
 Using `Builder msg` together with `Builder.map` you may build your GUI from several modules with different messages.
 
-    Tron.init <|
-        Builder.root
-            [ ( "one", ModuleOne.gui model.moduleOne |> Builder.map ModuleOne )
-            , ( "two", ModuleTwo.gui model.moduleTwo |> Builder.map ModuleTwo )
-            , ( "three", ModuleThree.gui model.moduleThree |> Builder.map ModuleThree )
-            ]
-
-It is recommended to use `Tron.init` separately in your application's `init` function, though, and prepare your UI in another one, like:
-
-    for : MyModel -> Builder MyMsg
-    for model =
-        Builder.root
-            ...
-
-    init : ( ( MyModel, Tron MyMsg ), Cmd MyMsg )
-    init =
-        let
-            myModel = MyModel.init -- init your model
-            ( gui, guiEffect ) =
-                for myModel -- create a `Builder MyMsg` from your model
-                    |> Tron.init -- and immediately create the GUI
-        in
-            (
-                ( myModel
-                , gui -- store GUI in your model, as one would do with a component model
-                )
-            , guiEffect |> Cmd.map ToTron -- map the messages of GUI to itself
-            )
+    Builder.root
+        [ ( "one", ModuleOne.gui model.moduleOne |> Builder.map ModuleOne )
+        , ( "two", ModuleTwo.gui model.moduleTwo |> Builder.map ModuleTwo )
+        , ( "three", ModuleThree.gui model.moduleThree |> Builder.map ModuleThree )
+        ]
 
 See `Tron` module documentation and examples in the source code.
 
@@ -393,6 +401,14 @@ makeUrl = Button.makeUrl
 {-| Same as `button`, but with icon instead of a boring square. See `icon` function as a helper to define icon using its URL. SVG files preferred, keep in mind that you'll need to host them somewhere nearby, for example using simple HTTP server.
 
     Builder.button (Builder.icon "red-button.svg") <| always DoABang
+
+Or:
+
+    Builder.button
+        (Builder.themedIcon
+            <| \theme -> "my-icon-" ++ Theme.toString theme ++ ".svg"
+        )
+        <| always DoABang
 -}
 buttonWith : Icon -> (() -> msg) -> Builder msg
 buttonWith icon_ =
@@ -725,3 +741,17 @@ expand = Property.expand
 -}
 collapse : Builder msg -> Builder msg
 collapse = Property.collapse
+
+
+{-| Add the path representing the label-based way to reach the
+particular control in the GUI tree.
+-}
+addPath : Builder msg -> Builder ( List Int, msg )
+addPath = Property.addPath >> map (Tuple.mapFirst Path.toList)
+
+
+{-| Add the path representing the label-based way to reach the
+particular control in the GUI tree.
+-}
+addLabeledPath : Builder msg -> Builder ( List String, msg )
+addLabeledPath = Property.addLabeledPath

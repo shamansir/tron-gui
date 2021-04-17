@@ -1,4 +1,6 @@
 * Fix knobs to use current value when user starts dragging;
+* Breaking: make all the `Builder.choice*` function accept only comparable values;
+* Breaking: in `toStrExposed`, return the path as the list of strings;
 * _Active_ condition for a button, some effect for when it is pressed;
 * Detachable: Add clientId to the URL when it was generated (so that detaching won't lose changes);
 * New design;
