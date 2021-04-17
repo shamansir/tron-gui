@@ -11,6 +11,10 @@ DONE:
 * Rename `Gui` module to `Tron`;
 * Fix URLs for icons not to require `assets/{icon}_{theme}.svg` address;
 * Let user refer to icons using `Url` rather than filename and allow to be dependent on `Theme`;
+* Hide `Tron` (previously `Gui`) API with `Msg`, `init`, `view`... and stuff, only expose the `WithTron` API;
+* Remove unexpected sorting in nested panels;
+* Separate `Dock` and its logic, `Expose` and its datatypes and logic, and hide such logic from user API;
+* Fix `cols` vs `rows` to be bound to docking orientation (or just don't change direction of panels when docking);
 
 ### 4.0.0
 

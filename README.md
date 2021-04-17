@@ -14,13 +14,22 @@ For the moment, the provided controls are:
 * text control;
 * color control;
 * toggle control;
-* button, can have some icon or none;
+* button, can have some icon or none, or be a color switch;
 * choice control — a panel with options;
 * group control — a panel with any other controls;
 
-The whole interface or its parts can be "detached" to another browser window or even device. This feature requires a simple WebSocket server though, so it's optional, but we provide a full example of such feature.
+Group and choice controls support pagination if the items doesn't fit;
+
+The whole interface or its parts can be "detached" to another browser window or even device. This feature requires a simple WebSocket server though, so it's optional, but we provide a full example of such feature; see it buy running `./example/start-example.sh Detachable` with `elm-live`, the sources for this example are in `example/Detachable` folder.
 
 The encoders and decoders for JSON are included, so all the structure can be transferred to JavaScript, all the values updates are easily encoded back and forth as well, this gives you the ability to easily replace the rendered GUI with some JS implementation, [`dat.gui`](https://github.com/dataarts/dat.gui), for example — while keeping the structure define in typed Elm and your messages connected.
+
+Next major features planned are:
+
+* multi-choice control;
+* design improvements;
+* controls with the shapes of 1x0.5, 2x2, 0.5x1 and so on, so that it would be easier to create complex panels; shapes are already there in API, but they are still experimental;
+* support for `a-frame` and rendering to it, which would allow operate Tron in VR; see `AFrame` example for current status;
 
 
 ## Screenshots
@@ -36,10 +45,103 @@ _Tron_ provides the `WithTron`  helper which wraps the core `Browser....` functi
 
 ### `WithTron` Examples
 
+From `example/Example/OneKnob/Main.elm`, similar to `example/Example/Basic/Main.elm`:
+
+```elm
+import WithTron exposing (ProgramWithTron)
+import Tron.Option as Option
+import Tron.Builder as Builder exposing (Builder)
+import Tron.Style.Theme as Theme
+import Tron.Style.Dock as Dock
+
+main : ProgramWithTron () Model Msg
+main =
+    WithTron.element
+        (Option.toHtml Dock.center Theme.dark)
+        Option.noCommunication
+        { for = for -- `for :: Model -> Builder msg`, see examples below
+        , init = init -- your usual `init` function
+        , view = view -- your usual `view` function
+        , update = update -- your usual `update` function
+        , subscriptions = subscriptions -- your usual `subscriptions` function
+        }
+```
+
+From `example/Example/ReportToJsJson/Main.elm`:
+
+```elm
+import WithTron exposing (ProgramWithTron)
+import Tron.Option as Option
+import Tron.Builder as Builder exposing (Builder)
+import Tron.Style.Theme as Theme
+import Tron.Style.Dock as Dock
+
+main : ProgramWithTron () Example.Model Example.Msg
+main =
+    WithTron.element
+        (Option.toHtml Dock.middleRight Theme.dark)
+        (Option.sendJson
+            { ack = initGui
+            , transmit = sendUpdate
+            }
+        )
+        { for = ExampleGui.for
+        , init = always Example.init
+        , view = always <| Html.div [] []
+        , update = Example.update
+        , subscriptions = always Sub.none
+        }
+
+
+port sendUpdate : Exp.RawOutUpdate -> Cmd msg
+
+port initGui : Exp.RawProperty -> Cmd msg
+```
+
+From `example/Example/Detachable/Main.elm`:
+
+```elm
+import WithTron exposing (ProgramWithTron)
+import Tron.Option as Option
+import Tron.Builder as Builder exposing (Builder)
+import Tron.Style.Theme as Theme
+import Tron.Style.Dock as Dock
+
+main : ProgramWithTron () Example.Model Example.Msg
+main =
+    WithTron.application
+        (Option.toHtml Dock.center Theme.light)
+        (Option.detachable
+            { ack = ackToWs
+            , transmit = sendUpdateToWs
+            , receive = receieveUpdateFromWs identity
+            }
+        )
+        { for = ExampleGui.for
+        , init = always Example.init
+        , view =
+            \model ->
+                { title = "Detachable Tron"
+                , body = [ Example.view model ]
+                }
+        , update = Example.update
+        , subscriptions = always Sub.none
+        , onUrlChange = always Example.NoOp
+        , onUrlRequest = always Example.NoOp
+        }
+
+
+port receieveUpdateFromWs : (Exp.RawInUpdate -> msg) -> Sub msg
+
+port sendUpdateToWs : Exp.RawOutUpdate -> Cmd msg
+
+port ackToWs : Exp.Ack -> Cmd msg
+```
+
+
 ### GUI definition Examples
 
-Here's the example of the interface description:
-
+Here are the examples of the interface definitions:
 
 From `example/Example/Default/Gui.elm`:
 
@@ -296,7 +398,7 @@ When you don't have any Messages or you want to define GUI only to pass it to Ja
 - `Tron.Builder.String` which provides `Builder (String, String)` and so converts any value to the pair of the labeled path (such as `"honk/color"`, in the case of the _Goose_ example) and stringified value;
 - `Tron.Builder.Proxy` which provides `Builder ProxyValue` and so converts any value to the special `ProxyValue` which is a data type representing the type of value and its contents, such as `Color (Rgba 0.5 0.5 0.7 1.0)` or `XY -2.5 -2.5` & s.o.;
 
-Using functions from `Tron.Expose.Convert`, any of these `Builder`s, or your own `Builder`, may be converted to `Builder (RawOutValue, msg)` so that it will carry the port-&-JSON-friendly version of the value along with the messages.
+Using functions from `Tron.Expose.Convert`, any of these `Builder`s, or your own `Builder`, may be converted to `Builder (RawOutValue, msg)` or simlar, so that it will carry the port-&-JSON-friendly version of the value along with the messages. Use `Builder.map Tuple.first` on such, to ignore the messages at all.
 
 
 ## Complete Application Examples
