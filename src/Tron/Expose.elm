@@ -792,20 +792,30 @@ encodeColor =
 
 decodeColor : D.Decoder Color
 decodeColor =
-    D.string
-        |> D.andThen
-            (\str ->
-                str
-                    |> Color.hexToColor
-                    |> Result.map D.succeed
-                    |> Result.withDefault (D.fail <| "failed to parse color: " ++ str)
-            )
+    D.oneOf
+        [ D.string
+            |> D.andThen
+                (\str ->
+                    str
+                        |> Color.hexToColor
+                        |> Result.map D.succeed
+                        |> Result.withDefault (D.fail <| "failed to parse color: " ++ str)
+                )
+        , D.map4
+            Color.rgba
+            (D.field "red" D.float)
+            (D.field "green" D.float)
+            (D.field "blue" D.float)
+            (D.field "alpha" D.float)
+        ]
+
 
 
 decodeCoord : D.Decoder ( Float, Float )
 decodeCoord =
-    D.string
-        |> D.andThen
+    D.oneOf
+        [ D.string
+            |> D.andThen
             (\str ->
                 case str |> String.split XY.separator of
                     v1 :: v2 :: _ ->
@@ -819,13 +829,23 @@ decodeCoord =
                     _ ->
                         D.fail <| "failed to parse coord: " ++ str
             )
+        , D.map2
+            Tuple.pair
+            (D.field "x" D.float)
+            (D.field "y" D.float)
+        ]
 
 
 decodeToggle : D.Decoder ToggleState
 decodeToggle =
-    D.string
-        |> D.map
-            (\str ->
+    D.oneOf
+        [ D.bool
+            |> D.map
+                (\bool ->
+                    if bool then TurnedOn else TurnedOff
+                )
+        , D.string
+            |> D.map (\str ->
                 case str of
                     "on" ->
                         TurnedOn
@@ -836,3 +856,5 @@ decodeToggle =
                     _ ->
                         TurnedOff
             )
+        ]
+

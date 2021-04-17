@@ -92,7 +92,7 @@ subscriptions userSubscriptions ports ( model, gui ) =
     Sub.batch
         [ userSubscriptions model |> Sub.map ToUser
         , Tron.subscriptions gui |> Sub.map ToTron
-        , addSubscriptionsOptions ports gui |> Sub.map ReceiveRaw
+        , addSubscriptionsOptions ports |> Sub.map ReceiveRaw
         ]
 
 
@@ -235,9 +235,11 @@ addInitOptions target gui =
         Aframe _ -> gui
 
 
-addSubscriptionsOptions : PortCommunication msg -> Tron msg -> Sub Exp.RawInUpdate
-addSubscriptionsOptions ports gui =
+addSubscriptionsOptions : PortCommunication msg -> Sub Exp.RawInUpdate
+addSubscriptionsOptions ports =
     case ports of
+        Detachable { receive } ->
+            receive
         DatGui { receive } ->
             receive
         _ -> Sub.none

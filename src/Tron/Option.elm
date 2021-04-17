@@ -31,11 +31,9 @@ type PortCommunication msg
         { ack : Exp.Ack -> Cmd msg
         , transmit : Exp.RawOutUpdate -> Cmd msg
         , receive : Sub Exp.RawInUpdate
-        --, receive : Sub Exp.RawUpdate
         }
     | DatGui
         { ack : Exp.RawProperty -> Cmd msg
-        --, receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
         , receive : Sub Exp.RawInUpdate
         }
 
