@@ -6,6 +6,7 @@ DONE:
 
 * One-Control example;
 * Color button control;
+* Add pagination support for groups where number of controls inside exceeds some amount;
 * Examples for sending GUI updates to JS, in JSON or in Strings;
 * Helpers, optional to use, based on the examples, like `detachable`, `communicateJS`...
 * Rename `Gui` module to `Tron`;

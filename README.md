@@ -34,6 +34,10 @@ Next major features planned are:
 
 ## Screenshots
 
+![Light Theme](https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-light.png)
+
+![Dark Theme](https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-dark.png)
+
 ## Adding to your Elm application
 
 _Tron_ provides the `WithTron`  helper which wraps the core `Browser....` functions and request you to define the same
