@@ -20,46 +20,8 @@ import Tron.Path as Path exposing (Path, toList)
 import Tron.Property exposing (..)
 import Tron.ProxyValue as ProxyValue exposing (ProxyValue(..))
 import Tron.Util exposing (findMap)
+import Tron.Expose.Data exposing (..)
 
-
-type alias RawPath =
-    List Int
-
-
-type alias RawProperty =
-    E.Value
-
-
-type alias RawClientId =
-    E.Value
-
-
-type alias Update =
-    { path : RawPath
-    , value : ProxyValue
-    }
-
-
-type alias RawOutUpdate =
-    { path : RawPath
-    , value : E.Value
-    , stringValue : String
-    , labelPath : List String
-    , type_ : String
-    , client : RawClientId
-    }
-
-
-type alias RawInUpdate =
-    { path : RawPath
-    , value : E.Value
-    , type_ : String
-    }
-
-
-type alias Ack =
-    { client : RawClientId
-    }
 
 
 toProxied : Property msg -> Property ( ProxyValue, msg )

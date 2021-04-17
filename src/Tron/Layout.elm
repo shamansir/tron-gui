@@ -17,6 +17,7 @@ import Tron.Property exposing (..)
 import Tron.Property as Property exposing (fold)
 import Tron.Style.Dock exposing (Dock)
 import Tron.Style.Dock as Dock
+import Tron.Style.Logic as Dock exposing (rootPosition)
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
@@ -43,6 +44,7 @@ type Cell a
     The rule is that `Layout` operates and exposes API with usual `Float`-based cells where `Unit` is `One` cell. While inside, when working with `SmartPack`, it proportionally changes the sizes to their `Int` analogues.
 -}
 type alias Layout = ( SizeF Cells, SmartPack (Cell_ Path) )
+-- FIXME : change size to Int size, it cannot be fractional even when cells can be
 
 
 --type Position a = Position { x : Float, y : Float }

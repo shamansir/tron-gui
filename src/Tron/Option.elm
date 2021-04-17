@@ -5,7 +5,7 @@ import Url exposing (Url)
 
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock as Dock exposing (Dock(..))
-import Tron.Expose as Exp
+import Tron.Expose.Data as Exp
 import Tron.Detach as Detach
 import Tron.Msg exposing (Msg_)
 import Tron.Path exposing (Path)

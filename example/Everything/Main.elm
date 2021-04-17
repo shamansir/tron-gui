@@ -361,12 +361,12 @@ exampleGui url model =
 
 port startDatGui : Exp.RawProperty -> Cmd msg
 
-port updateFromDatGui : (Exp.RawUpdate -> msg) -> Sub msg
+port updateFromDatGui : (Exp.RawInUpdate -> msg) -> Sub msg
 
 port destroyDatGui : () -> Cmd msg
 
 port ackToWs : Exp.Ack -> Cmd msg
 
-port receieveUpdateFromWs : (Exp.RawUpdate -> msg) -> Sub msg
+port receieveUpdateFromWs : (Exp.RawOutUpdate -> msg) -> Sub msg
 
-port sendUpdateToWs : Exp.RawUpdate -> Cmd msg
+port sendUpdateToWs : Exp.RawOutUpdate -> Cmd msg

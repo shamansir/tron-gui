@@ -18,6 +18,7 @@ import Tron.Option exposing (..)
 import Tron.Msg exposing (Msg_(..))
 import Tron.Detach as Detach
 import Tron.Property as Property exposing (LabelPath)
+import Tron.Expose.Data as Exp
 
 
 type alias ProgramWithTron flags model msg =

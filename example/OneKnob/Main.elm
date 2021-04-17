@@ -62,7 +62,7 @@ subscriptions _=
 main : ProgramWithTron () Model Msg
 main =
     WithTron.element
-        (Option.toHtml Dock.middleRight Theme.dark)
+        (Option.toHtml Dock.center Theme.dark)
         Option.noCommunication
         { for = for
         , init = init

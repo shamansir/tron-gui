@@ -9,7 +9,7 @@ import HashId exposing (HashId)
 import Json.Encode as E
 
 import Tron.Path as Path exposing (Path, toList)
-import Tron.Expose as Exp
+import Tron.Expose.Data as Exp
 import Tron.Property exposing (Property)
 import Tron.Msg exposing (Msg_(..))
 

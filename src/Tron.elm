@@ -123,9 +123,11 @@ import Tron.Style.Dock exposing (Dock(..))
 import Tron.Style.Dock as Dock exposing (..)
 import Tron.Style.Theme exposing (Theme)
 import Tron.Style.Logic as Style exposing (..)
+import Tron.Style.Logic as Dock exposing (boundsFromSize)
 import Tron.Style.Cell as Cell exposing (..)
 import Tron.Builder exposing (..)
 import Tron.Detach exposing (State(..))
+import Tron.Expose.Data as Exp
 
 
 {-| `Tron msg` is what manages your user interface and the way it looks.
@@ -635,7 +637,7 @@ handleKeyDown keyCode path gui =
         _ -> ( gui, Cmd.none )
 
 
-toExposed : Tron msg -> Tron ( RawOutUpdate, msg )
+toExposed : Tron msg -> Tron ( Exp.RawOutUpdate, msg )
 toExposed gui =
     { dock = gui.dock
     , viewport = gui.viewport

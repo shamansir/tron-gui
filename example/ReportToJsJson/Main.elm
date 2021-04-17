@@ -3,12 +3,11 @@ port module ReportToJsJson.Main exposing (main)
 
 import Html
 
-import Gui.Style.Theme as Theme
-import Gui.Style.Dock as Dock
-import Gui.Expose as Exp
-import Gui.WithGui as WithGui
-import Gui.WithGui exposing (ProgramWithGui)
-import Gui.Option as Option exposing (..)
+import Tron.Style.Theme as Theme
+import Tron.Style.Dock as Dock
+import Tron.Expose.Data as Exp
+import WithTron exposing (ProgramWithTron)
+import Tron.Option as Option exposing (..)
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -38,9 +37,9 @@ import Example.Unit.Gui as ExampleGui
 -}
 
 
-main : ProgramWithGui () Example.Model Example.Msg
+main : ProgramWithTron () Example.Model Example.Msg
 main =
-    WithGui.element
+    WithTron.element
         (Option.toHtml Dock.middleRight Theme.dark)
         (Option.sendJson
             { ack = initGui
@@ -55,6 +54,6 @@ main =
         }
 
 
-port sendUpdate : Exp.RawUpdate -> Cmd msg
+port sendUpdate : Exp.RawOutUpdate -> Cmd msg
 
 port initGui : Exp.RawProperty -> Cmd msg

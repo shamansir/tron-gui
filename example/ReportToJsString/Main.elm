@@ -3,10 +3,10 @@ port module ReportToJsString.Main exposing (main)
 
 import Html
 
-import Gui.Style.Theme as Theme
-import Gui.Style.Dock as Dock
-import Gui.Option as Option
-import Gui.WithGui as WithGui exposing (ProgramWithGui)
+import Tron.Style.Theme as Theme
+import Tron.Style.Dock as Dock
+import Tron.Option as Option
+import WithTron exposing (ProgramWithTron)
 
 
 import Example.Goose.Main as Example
@@ -30,9 +30,9 @@ import Example.Default.Gui as ExampleGui
 port sendUpdate : ( String, String ) -> Cmd msg
 
 
-main : ProgramWithGui () Example.Model Example.Msg
+main : ProgramWithTron () Example.Model Example.Msg
 main =
-    WithGui.element
+    WithTron.element
         (Option.toHtml Dock.middleRight Theme.dark)
         (Option.sendStrings
             { transmit = sendUpdate
