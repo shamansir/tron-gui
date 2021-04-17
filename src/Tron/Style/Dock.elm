@@ -15,8 +15,11 @@ module Tron.Style.Dock exposing
 @docs middleLeft, center, middleRight
 @docs bottomLeft, bottomCenter, bottomRight
 
+# Anchors
+@docs HorzAnchor, VertAnchor, anchors, horzAnchor, vertAnchor
+
 # Helpers
-@docs adaptBounds, adaptPosition, adaptSize, firstCellAt, boundsFromSize, toString
+@docs toString
 -}
 
 import Tron.Style.Cell as Cell
@@ -25,12 +28,14 @@ import SmartPack as D exposing (Distribution(..))
 import Size exposing (..)
 
 
+{-| -}
 type HorzAnchor
     = Left
     | Center
     | Right
 
 
+{-| -}
 type VertAnchor
     = Top
     | Middle
@@ -97,14 +102,17 @@ bottomRight : Dock
 bottomRight = Dock ( Right, Bottom )
 
 
+{-| -}
 anchors : Dock -> ( HorzAnchor, VertAnchor )
 anchors (Dock anchors_) = anchors_
 
 
+{-| -}
 horzAnchor : Dock -> HorzAnchor
 horzAnchor = anchors >> Tuple.first
 
 
+{-| -}
 vertAnchor : Dock -> VertAnchor
 vertAnchor = anchors >> Tuple.second
 

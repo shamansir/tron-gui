@@ -17,5 +17,6 @@
 * Check `indexedMap` usages, so that usage of the index is kept to minimum for nested items (mostly done);
 * Do not store cell size in the `Gui msg`, it should be recalculated every time;
 * Do not store dock in the `Gui msg`, it should be recalculated every time;
+* Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed;
 * Use `Size Cells`, like integer size, in `Layout`;
 * Add some indication of the WS server status to the examples;

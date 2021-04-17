@@ -14,12 +14,11 @@ import Color.Convert as Color
 import Tron.Control as Control exposing (..)
 import Tron.Control.Nest as Nest exposing (Form(..))
 import Tron.Control.Text as Text exposing (TextState(..))
-import Tron.Control.Toggle as Toggle exposing (ToggleState(..))
+import Tron.Control.Toggle exposing (ToggleState(..))
 import Tron.Control.XY as XY
-import Tron.Path as Path exposing (Path, toList)
+import Tron.Path as Path exposing (Path)
 import Tron.Property exposing (..)
-import Tron.ProxyValue as ProxyValue exposing (ProxyValue(..))
-import Tron.Util exposing (findMap)
+import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
 import Tron.Expose.Data exposing (..)
 import Tron.Expose.Convert exposing (..)
 

@@ -15,7 +15,8 @@
         "Tron.Style.PanelShape",
         "Tron.Style.CellShape",
         "Tron.Expose.Data",
-        "Tron.Expose.Convert"
+        "Tron.Expose.Convert",
+        "Tron.Expose.ProxyValue"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

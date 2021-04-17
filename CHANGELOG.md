@@ -1,12 +1,10 @@
 ### 5.0.0
 
-_(in progress)_
-
-DONE:
-
-* One-Control example;
+* New layouting system instead of `BinPack` used previously;
+* Much cleaner API;
 * Color button control;
 * Add pagination support for groups where number of controls inside exceeds some amount;
+* `WithTron` helper that wraps `Browser.*` helpers and allows to add GUI to the existing Elm application easily;
 * Examples for sending GUI updates to JS, in JSON or in Strings;
 * Helpers, optional to use, based on the examples, like `detachable`, `communicateJS`...
 * Rename `Gui` module to `Tron`;
@@ -16,6 +14,7 @@ DONE:
 * Remove unexpected sorting in nested panels;
 * Separate `Dock` and its logic, `Expose` and its datatypes and logic, and hide such logic from user API;
 * Fix `cols` vs `rows` to be bound to docking orientation (or just don't change direction of panels when docking);
+* One-Control example;
 
 ### 4.0.0
 

@@ -25,7 +25,7 @@ import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url)
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Nest exposing (Form(..), ItemId)
 
-import Tron.ProxyValue exposing (ProxyValue(..))
+import Tron.Expose.ProxyValue exposing (ProxyValue(..))
 
 
 type alias Builder = B.Builder ProxyValue

@@ -1,47 +1,36 @@
-module Tron.Expose.Convert exposing (..)
+module Tron.Expose.Convert exposing (toExposed, toProxied, toStrExposed, toUnit)
+
+
+{-| Make your `Builder *` store the additional information along with messages,
+or just get rid of messages at all:
+
+@docs toUnit, toProxied, toExposed, toStrExposed
+-}
 
 
 import Json.Encode as E
 
-import Tron.Path as Path
-import Tron.Expose.Data exposing (..)
-import Tron.Property exposing (..)
-import Tron.ProxyValue as ProxyValue exposing (ProxyValue(..))
 import Tron.Control exposing (mapWithValue)
 import Tron.Control.Nest as Nest
+import Tron.Expose.Data exposing (..)
+import Tron.Path as Path
+import Tron.Property exposing (..)
+import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
 
 
-getTypeString :
-    ProxyValue
-    -> String -- FIXME: move to ProxyValue
-getTypeString value =
-    case value of
-        Other ->
-            "ghost"
-
-        FromSlider _ ->
-            "slider"
-
-        FromXY _ ->
-            "xy"
-
-        FromInput _ ->
-            "text"
-
-        FromColor _ ->
-            "color"
-
-        FromChoice _ ->
-            "choice"
-
-        FromToggle _ ->
-            "toggle"
-
-        FromButton ->
-            "button"
+{-| Instead of messages, store nothing, but values.
+-}
+toUnit : Property msg -> Property ()
+toUnit =
+    map <| always ()
 
 
+{-| Store a `ProxyValue` together with message, which mirrors a value
+as a data type to make it easier to connect with other APIs, where message is not
+important, such as `dat.gui`, or send it to ports along with sending it to user.
 
+Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
+-}
 toProxied : Property msg -> Property ( ProxyValue, msg )
 toProxied prop =
     let
@@ -98,7 +87,20 @@ toProxied prop =
                 |> Group focus shape
 
 
+
 -- FIXME: make it: Property msg -> Property RawOutUpdate and use `Property.map2` to join
+
+{-| Store a `RawOutUpdate` together with message, which is a package that stores all
+the required information about the value, such as:
+
+- the path to it in the Tree, both with labels and integer IDs;
+- the value in JSON;
+- the value as a string;
+- the type of the value, as a string;
+- client ID, for the communication with WebSockets; (will be removed in future versions)
+
+Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
+-}
 toExposed : Property msg -> Property ( RawOutUpdate, msg )
 toExposed prop =
     prop
@@ -109,7 +111,7 @@ toExposed prop =
             (\( ( path, labelPath ), ( proxyVal, msg ) ) ->
                 ( { path = Path.toList path
                   , labelPath = labelPath
-                  , type_ = getTypeString proxyVal
+                  , type_ = ProxyValue.getTypeString proxyVal
                   , value = ProxyValue.encode proxyVal
                   , stringValue = ProxyValue.toString proxyVal
                   , client = E.null -- FIXME: store clientId separately in `Detach`
@@ -119,7 +121,14 @@ toExposed prop =
             )
 
 
+
 -- FIXME: make it: Property msg -> Property ( LabelPath, String ) and use `Property.map2` to join
+
+{-| Store a labeled path (such as `honk/color`) to the property and its stringified value,
+together with message.
+
+Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
+-}
 toStrExposed : Property msg -> Property ( ( LabelPath, String ), msg )
 toStrExposed prop =
     prop
@@ -133,4 +142,3 @@ toStrExposed prop =
                 , msg
                 )
             )
-
