@@ -3,7 +3,7 @@ module Tron.Render.Plate exposing (..)
 
 import Color
 import Url exposing (Url)
-import BinPack exposing (Bounds)
+import Bounds exposing (..)
 
 import Tron.Path exposing (Path)
 import Tron.Msg exposing (Msg_(..))
@@ -33,7 +33,7 @@ state : State
 state = ( AtRoot, NotFocused, Usual )
 
 
-back : Theme -> Bounds -> Svg Msg_
+back : Theme -> BoundsF -> Svg Msg_
 back theme bounds =
     Svg.rect
         [ SA.fill <| Color.toCssString <| Coloring.back theme state
@@ -51,7 +51,7 @@ controls
     :  Detach.Ability
     -> Theme
     -> Path
-    -> Bounds
+    -> BoundsF
     -> ( Label, Property msg )
     -> Svg Msg_
 controls detachAbility theme path bounds ( label, prop ) =
@@ -82,12 +82,12 @@ controls detachAbility theme path bounds ( label, prop ) =
 paging
      : Theme
     -> Path
-    -> Bounds
+    -> BoundsF
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
 paging _ path bounds ( current, total ) =
     let
-        itemWidth = (bounds.width - 20) / toFloat total
+        itemWidth = (bounds.width - 20) / Basics.toFloat total
         backgroundRect =
             Svg.rect
             [ SA.x <| String.fromFloat <| 10
@@ -102,7 +102,7 @@ paging _ path bounds ( current, total ) =
             []
         currentPageRect page =
             Svg.rect
-                [ SA.x <| String.fromFloat <| 10 + (toFloat page * itemWidth)
+                [ SA.x <| String.fromFloat <| 10 + (Basics.toFloat page * itemWidth)
                 , SA.y <| String.fromFloat <| bounds.height - 20
                 , SA.rx <| String.fromFloat <| 5.0
                 , SA.ry <| String.fromFloat <| 5.0
@@ -114,7 +114,7 @@ paging _ path bounds ( current, total ) =
                 [ ]
         switchingRect page =
             Svg.rect
-                [ SA.x <| String.fromFloat <| 10 + (toFloat page * itemWidth)
+                [ SA.x <| String.fromFloat <| 10 + (Basics.toFloat page * itemWidth)
                 , SA.y <| String.fromFloat <| bounds.height - 24
                 , SA.width <| String.fromFloat <| itemWidth
                 , SA.height <| String.fromFloat 17.0

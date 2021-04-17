@@ -2,9 +2,9 @@ module Tron.Style.Logic exposing (..)
 
 
 import Dict exposing (Dict)
+import Bounds exposing (..)
 
 import Color exposing (Color)
-import BinPack exposing (Bounds)
 import Size exposing (..)
 import SmartPack as D exposing (Distribution)
 
@@ -37,7 +37,7 @@ import Tron.Focus exposing (Focused(..))
 
 
 -- TODO: make bounds to be bounded to pariticular units
-toGridCoords : Bounds -> Position -> Position
+toGridCoords : BoundsF -> Position -> Position
 toGridCoords bounds pos =
     { x = (pos.x - bounds.x) / Cell.width
     , y = (pos.y - bounds.y) / Cell.height
@@ -163,18 +163,18 @@ boundsFromSize
     (Size ( gridWidthInCells, gridHeightInCells )) =
     let
         ( gridWidthInPx, gridHeightInPx ) =
-            ( Cell.width * toFloat gridWidthInCells
-            , Cell.height * toFloat gridHeightInCells
+            ( Cell.width * Basics.toFloat gridWidthInCells
+            , Cell.height * Basics.toFloat gridHeightInCells
             )
     in
         { x = case Dock.horzAnchor dock of
             Left -> Cell.gap / 2
-            Center -> (toFloat viewportWidthInPx / 2) - (gridWidthInPx / 2)
-            Right -> toFloat viewportWidthInPx - gridWidthInPx - Cell.gap / 2
+            Center -> (Basics.toFloat viewportWidthInPx / 2) - (gridWidthInPx / 2)
+            Right -> Basics.toFloat viewportWidthInPx - gridWidthInPx - Cell.gap / 2
         , y = case Dock.vertAnchor dock of
             Top -> Cell.gap / 2
-            Middle -> (toFloat viewportHeightInPx / 2) - (gridHeightInPx / 2)
-            Bottom -> toFloat viewportHeightInPx - gridHeightInPx - Cell.gap / 2
+            Middle -> (Basics.toFloat viewportHeightInPx / 2) - (gridHeightInPx / 2)
+            Bottom -> Basics.toFloat viewportHeightInPx - gridHeightInPx - Cell.gap / 2
         , width = gridWidthInPx
         , height = gridHeightInPx
         }

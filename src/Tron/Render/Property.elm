@@ -1,7 +1,7 @@
 module Tron.Render.Property exposing (..)
 
 
-import BinPack exposing (Bounds)
+import Bounds exposing (..)
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
@@ -47,7 +47,7 @@ view
      : Theme
     -> State
     -> Path
-    -> Bounds
+    -> BoundsF
     -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
@@ -81,7 +81,7 @@ viewLabel
     :  Theme
     -> State
     -> CellShape
-    -> Bounds
+    -> BoundsF
     -> Label
     -> Svg msg
 viewLabel theme state cellShape bounds label =
@@ -101,7 +101,7 @@ viewProperty
      : Theme
     -> State
     -> Path
-    -> Bounds
+    -> BoundsF
     -> Maybe ( Label, Property msg )
     -> CellShape
     -> ( Label, Property msg )
@@ -173,7 +173,7 @@ viewProperty
         _ -> Svg.none
 
 
-knob : Theme -> State -> Bounds -> Float -> Svg msg
+knob : Theme -> State -> BoundsF -> Float -> Svg msg
 knob theme state bounds value =
     let
         toAngle v = (-120) + (v * 120 * 2)
@@ -210,7 +210,7 @@ knob theme state bounds value =
             ]
 
 
-coord : Theme -> State -> Bounds -> ( Float, Float ) -> Svg msg
+coord : Theme -> State -> BoundsF -> ( Float, Float ) -> Svg msg
 coord theme state bounds ( valueX, valueY ) =
     let
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
@@ -267,7 +267,7 @@ text
     -> State
     -> ( TextState, String )
     -> (String -> msg)
-    -> Bounds
+    -> BoundsF
     -> Svg msg
 text theme state ( editing, value ) onInput bounds =
     let
@@ -322,7 +322,7 @@ text theme state ( editing, value ) onInput bounds =
                 ]
 
 
-toggle : Theme -> State -> ToggleState -> Bounds -> Svg msg
+toggle : Theme -> State -> ToggleState -> BoundsF -> Svg msg
 toggle theme _ tstate bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) )
@@ -366,7 +366,7 @@ toggle theme _ tstate bounds =
 
 
 
-button : Theme -> State -> Face -> CellShape -> Label -> Bounds -> Svg msg
+button : Theme -> State -> Face -> CellShape -> Label -> BoundsF -> Svg msg
 button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
@@ -448,7 +448,7 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                     ]
 
 
-color : Theme -> State -> Color -> Bounds -> Svg msg
+color : Theme -> State -> Color -> BoundsF -> Svg msg
 color _ _ value bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
@@ -463,7 +463,7 @@ color _ _ value bounds =
         ]
 
 
-arrow : Theme -> State -> Form -> Bounds -> Svg msg
+arrow : Theme -> State -> Form -> BoundsF -> Svg msg
 arrow theme state form bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }

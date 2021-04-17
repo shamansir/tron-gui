@@ -2,7 +2,6 @@ module Tron.Render.Debug exposing (..)
 
 
 import Bounds exposing (..)
-import BinPack exposing (Bounds)
 
 import Svg exposing (Svg)
 import Color
@@ -14,7 +13,7 @@ import Tron.Control.Nest exposing (..)
 import Tron.Render.Util exposing (..)
 
 
-boundsDebug : Bounds -> Svg msg
+boundsDebug : BoundsF -> Svg msg
 boundsDebug b =
     Svg.g []
         [ textAt 5 5 <| "(" ++ String.fromFloat b.x ++ "," ++ String.fromFloat b.y ++ ")"

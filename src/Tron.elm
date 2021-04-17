@@ -8,102 +8,20 @@ module Tron exposing
     )
 
 
-{-| `Tron` is the component-like module to be connected with your application.
-
-When you have defined the structure of you GUI using `Tron.Builder` module and got the `Builder msg` (where `msg` is the `Msg` of your application) in response, use:
-
-* `init` function to wrap a `Tron msg` over it;
-* `subscribe` to make GUI receive all the mouse/keyboard information it requires;
-* `update` to pass inner messages to the GUI;
-* `view` to render it;
-
-See `example/Basic` in the sources for a full example, here are the important excerpts from it:
-
-    import Tron
-
-    type Msg = MyMsgOne | MyMsgTwo | ... | ToTron Tron.Msg
-
-    init _ =
-        let
-            myModel = MyModel.init -- init your model
-            ( gui, guiEffect ) =
-                MyGui.for myModel -- create a `Builder msg` from your model
-                    |> Tron.init -- and immediately create the GUI
-        in
-            (
-                ( myModel
-                , gui -- store GUI in your model, as one would do with a component model
-                )
-            , guiEffect |> Cmd.map ToTron -- map the messages of GUI to itself
-            )
-
-    view ( myModel, gui ) =
-        Html.div [ ]
-            [ gui
-                |> Tron.view Tron.Light -- Light vs. Dark theme
-                |> Html.map ToTron
-            , MyApp.view myModel
-            ]
-
-    update msg ( myModel, gui ) =
-        case msg of
-            MyMsgOne -> ...
-            MyMsgTwo -> ...
-            ... -> ...
-            ToTron guiMsg ->
-                case gui |> Tron.update guiMsg of
-                    ( nextGui, cmds ) ->
-                        ( ( myModel, nextGui )
-                        , cmds
-                        )
-
-    subscriptions ( _, gui ) =
-        Tron.subscriptions gui |> Sub.map ToTron
-
-That's enough to make your application work with Tron!
-
-If you need features that exceed Basic functionality like detachable parts or communication with JS, they can be purchased in the store. It's a joke, just lead to another examples in the `example` folder and to the `Tron.Detach` module documentation.
-
-For controlling the way GUI looks, see `Tron.Render.Style` module.
-
-NB: Don't forget to copy `src/Tron.css` to your application to make GUI look and behave properly.
-
-# Core
-@docs Tron
-
-# Lifecycle
-@docs init, update, view, subscriptions, run, Message
-
-# Dock & Shape
-@docs dock, reshape
-
-# Common Helpers
-@docs map, over, use
-
-# Detaching and Connecting to JavaScript
-@docs detachable, encode, applyRaw, initRaw
-
--}
-
-
 
 import Browser.Dom as Dom
-import Url exposing (Url)
+import Browser.Events as Browser
 import Task
 import Color
-import Browser.Events as Browser
 import Html exposing (Html)
 import Json.Encode as E
-import Dict exposing (Dict)
 
-import BinPack exposing (Bounds)
 import Size exposing (..)
 
 import Tron.Path exposing (Path)
-import Tron.Path as Path exposing (start)
+import Tron.Path as Path
 import Tron.Control exposing (..)
-import Tron.Control as Control exposing (call)
-import Tron.Control.Text as Text exposing (finishEditing)
+import Tron.Control.Text as Text
 import Tron.Property exposing (..)
 import Tron.Property as Property exposing (call, find)
 import Tron.Layout exposing (Layout)
@@ -113,31 +31,24 @@ import Tron.Render.Layout as Layout exposing (..)
 import Tron.Mouse exposing (..)
 import Tron.Mouse as Mouse exposing (..)
 import Tron.Util exposing (..)
--- import Tron.Alt as Alt exposing (Tron)
 import Tron.FocusLogic as Focus exposing (..)
 import Tron.Focus as Focus exposing (..)
 import Tron.Detach as Detach exposing (ClientId)
+import Tron.Detach exposing (State(..))
 import Tron.Expose as Exp exposing (..)
+import Tron.Builder exposing (..)
+
 import Tron.Style.Dock exposing (Dock(..))
---import Tron.Style.Anchor exposing (Anchor(..))
 import Tron.Style.Dock as Dock exposing (..)
 import Tron.Style.Theme exposing (Theme)
 import Tron.Style.Logic as Style exposing (..)
 import Tron.Style.Logic as Dock exposing (boundsFromSize)
 import Tron.Style.Cell as Cell exposing (..)
-import Tron.Builder exposing (..)
-import Tron.Detach exposing (State(..))
+
 import Tron.Expose.Data as Exp
 import Tron.Expose.Convert as Exp
 
 
-{-| `Tron msg` is what manages your user interface and the way it looks.
-
-`msg` here is the root message type of your application, so that `Tron msg` would be able
-to fire all the messages you pass to it in definition. This is similar to how you pass messages in handlers of `Html msg` or `Svg msg`, though in this case `Tron msg` is somewhat a huge component and has its own model and update cycle.
-
-Use `init` to create an instance of `Tron msg`. See the example in the head of the module and `example/` folder for more details.
--}
 type alias Tron msg =
     { dock : Dock
     , viewport : Size Pixels
@@ -148,10 +59,6 @@ type alias Tron msg =
     }
 
 
-{-| GUI inner message, similar to the ones in your application.
-
-You don't need it's constructors, only pass it to some `ToTron` wrapping message as in the example above.
--}
 type alias Msg = Msg_
 
 
@@ -167,9 +74,6 @@ extractMouse : Tron msg -> MouseState
 extractMouse = .mouse
 
 
-{-| Make the same Tron GUI work with other messages, since you provide
-the conversion function.
--}
 map : (msgA -> msgB) -> Tron msgA -> Tron msgB
 map f gui =
     { dock = gui.dock
@@ -181,38 +85,6 @@ map f gui =
     }
 
 
-{-| Initialize Tron from `Builder msg`. See `Tron.Builder` module for documentation on how
-to build your GUI from the model, usually it is something like:
-
-    import Tron exposing (Tron)
-    import Tron.Builder as Builder exposing (..)
-
-    type Msg = MyMsgOne Int | MyMsgTwo Bool | ... | ToTron Tron.Message
-
-    for : MyModel -> Builder MyMsg
-    for myModel =
-        [ ( "int", Builder.int ... MyMsgOne ... )
-        , ( "toggle", Builder.toggle ... MyMsgTwo ... )
-        , ...
-        ]
-
-    init : flags -> ( ( MyModel, Tron MyMsg ), Cmd MyMsg )
-    init _ =
-        let
-            myModel = MyModel.init -- init your model
-            ( gui, guiEffect ) =
-                for myModel -- create a `Builder MyMsg` from your model
-                    |> Tron.init -- and immediately create the GUI
-        in
-            (
-                ( myModel
-                , gui -- store GUI in your model, as one would do with a component model
-                )
-            , guiEffect |> Cmd.map ToTron -- map the messages of GUI to itself
-            )
-
-Tron GUI needs some side-effect initialization, like do a keyboard focus or get the current window size, that's why it also produces `Cmd Tron.Message`. Feel free to `Cmd.batch` it with your effects.
--}
 init : Builder msg -> ( Tron msg, Cmd Msg )
 init root =
     ( initRaw root
@@ -220,26 +92,12 @@ init root =
     )
 
 
-{-| `initRaw` is needed only for the cases of replacing Tron interface with `dat.gui` or any other JS interpretation. See `example/DatGui` for reference.
-
-Since `init builder` is just:
-
-    ( initRaw builder
-    , run
-    ) -> ( Tron.Tron msg, Cmd Tron.Msg )
-
-`dat.gui` doesn't need any side-effects that are produced with `run`, that's why `initRaw` is used there.
--}
 initRaw : Builder msg -> Tron msg
 initRaw root =
     Tron Dock.topLeft (Size ( 0, 0 )) Nothing Tron.Mouse.init root ( Nothing, Detached )
 -- TODO: get rid of initRaw
 
 
-{-| Perform the effects needed for initialization. Call it if you don't use the visual part of Tron (i.e. for `dat.gui`) or when you re-create the GUI.
-
-Tron GUI needs some side-effect initialization, like do a keyboard focus or get the current window size, that's why it produces `Cmd Tron.Message`.
--}
 run : Cmd Msg
 run =
     Cmd.batch
@@ -248,7 +106,7 @@ run =
         ]
 
 
-{-| While keeping other options intact and keeping the expanded panels, rebuild the GUI structure using the new model. If some panels were
+{- While keeping other options intact and keeping the expanded panels, rebuild the GUI structure using the new model. If some panels were
 
 It is useful if the model updated externally, you want to re-build UI using this model,
 but you don't need/want to notify anyone about the updated values or perform initial effects.
@@ -275,7 +133,7 @@ over prop gui =
         }
 
 
-{-| While keeping other options intact, replace the GUI structure completely.
+{- While keeping other options intact, replace the GUI structure completely.
 
 It is useful both if the model updated externally or you have very different model, and you want to re-build UI using this model, but you don't need/want to notify anyone about the updated values or perform initial effects.
 
@@ -295,7 +153,7 @@ use prop gui =
     }
 
 
-{-| Encode any Tron GUI structure into JSON.
+{- Encode any Tron GUI structure into JSON.
 
 That allows you to re-create one from WebSockets or to build the same GUI
 in `dat.gui` and gives many other possibilities.
@@ -309,24 +167,6 @@ encode = .tree >> Exp.encode
 --     over <| Tron.Property.map f prop
 
 
-{-| The usual `update` function, but for `Tron msg` (where `msg` is your message in your application), and it consumes `Tron.Message`.
-
-Install it into your `update` function similarly to:
-
-    type Msg = MyMsgOne | MyMsgTwo | ... | ToTron Tron.Message
-
-    update msg ( myModel, gui ) =
-        case msg of
-            MyMsgOne -> ...
-            MyMsgTwo -> ...
-            ... -> ...
-            ToTron guiMsg ->
-                case gui |> Tron.update guiMsg of
-                    ( nextGui, cmds ) ->
-                        ( ( myModel, nextGui )
-                        , cmds
-                        )
--}
 update
     :  Msg
     -> Tron msg
@@ -414,10 +254,6 @@ update msg gui =
                 )
 
 
-{-| `applyRaw` is needed only for the cases of replacing Tron interface with `dat.gui` or any other JS interpretation. See `example/DatGui` for reference.
-
-It receives the RAW value update (from port in JSON format, for example) and applies it to the GUI so that the proper user message is fired from the handler.
--}
 applyRaw
      : Exp.RawInUpdate
     -> Tron msg
@@ -652,24 +488,6 @@ toExposed gui =
     }
 
 
-{-
-notifyUpdate : Property msg -> Cmd ( msg )
-notifyUpdate prop  =
-    Property.call prop
-    {-
-    Cmd.batch
-        [ Property.call prop |> Cmd.map (Tuple.pair path)
-        , Detach.send detach path prop
-        ] -}
-
-
-notifyUpdates : List ( Property msg ) -> Cmd msg
-notifyUpdates =
-    List.map notifyUpdate >> Cmd.batch
-
--}
-
-
 focus : msg -> Cmd msg
 focus noOp =
     Dom.focus Layout.rootId
@@ -688,7 +506,7 @@ fromWindow passSize =
             )
 
 
-{-| Change dock direction of the GUI to any corner of the window, or its center.
+{- Change dock direction of the GUI to any corner of the window, or its center.
 
 See `Style.Dock` for values.
 -}
@@ -699,7 +517,7 @@ dock to gui =
     }
 
 
-{-| Set custom shape for all the GUI, in cells. By default, it is calulated from current viewport size, but you may want to reduce the amount of cells, so here's the method. This way GUI will be perfectly in the middle when docked to central positions.
+{- Set custom shape for all the GUI, in cells. By default, it is calulated from current viewport size, but you may want to reduce the amount of cells, so here's the method. This way GUI will be perfectly in the middle when docked to central positions.
 -}
 reshape : ( Int, Int ) -> Tron msg -> Tron msg
 reshape cellSize gui =
@@ -757,17 +575,6 @@ layout gui =
             ( root, Layout.pack1 gui.dock size attachedPath root )
 
 
-{-| Subscribe the updates of the GUI, so it would resize with the window,
-track mouse etc.
-
-`Sub.map` it to the message that will wrap `Tron.Message` and send it to `update`:
-
-    subscriptions ( myModel, gui ) =
-        Sub.batch
-            [ ...
-            , Tron.subscribe gui |> Sub.map ToTron
-            ]
--}
 subscriptions : Tron msg -> Sub Msg
 subscriptions gui =
     Sub.batch
@@ -777,21 +584,6 @@ subscriptions gui =
         ]
 
 
-{-| Build the corresponding structure for Tron GUI.
-
-Use it in your `view` function, just `Html.map` it to the message
-that will wrap `Tron.Message` and send it to `update`:
-
-    view ( myModel, gui ) =
-        Html.div [ ]
-            [ gui
-                |> Tron.view Tron.Light
-                |> Html.map ToTron
-            , MyApp.view myModel
-            ]
-
-Use `Theme` from `Tron.Style` to set it to `Dark` or `Light` theme.
--}
 view : Theme -> Tron msg -> Html Msg
 view theme gui =
     let
