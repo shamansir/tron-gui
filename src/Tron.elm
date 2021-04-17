@@ -128,6 +128,7 @@ import Tron.Style.Cell as Cell exposing (..)
 import Tron.Builder exposing (..)
 import Tron.Detach exposing (State(..))
 import Tron.Expose.Data as Exp
+import Tron.Expose.Convert as Exp
 
 
 {-| `Tron msg` is what manages your user interface and the way it looks.

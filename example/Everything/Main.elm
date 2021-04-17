@@ -19,7 +19,7 @@ import Url exposing (Url)
 
 import Tron exposing (Tron, view, subscriptions)
 import Tron as T
-import Tron.Expose as Exp exposing (Update)
+import Tron.Expose.Data as Exp exposing (Update)
 import Tron.Mouse exposing (Position)
 import Tron.Builder as Tron exposing (Builder)
 import Tron.Builder as Builder exposing (map)

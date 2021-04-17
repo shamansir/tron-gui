@@ -7,6 +7,7 @@
 * Fix `cols` vs `rows` to be bound to docking orientation (or just don't change direction of panels when docking);
 * Remove unexpected sorting in nested panels;
 * Include minimal `OneControl` example into the docs, as well as `Basic` one and `ReportToJs*` ones;
+* Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
 * Consider having `Nil (Property msg)` instead of just `Nil`, so that any property could be hidden, but not absent in the tree;
 * Get rid of functions in the `Model`:
     * do not store tree in the `Gui msg`, build it every time;
@@ -19,3 +20,4 @@
 * _Active_ condition for a button, some effect for when it is pressed;
 * Move logic functions for `Dock` etc. to a separate module, hidden from user;
 * Detachable: Add clientId to the URL when it was generated (so that detaching won't lose changes);
+* Add some indication of the WS server status to the examples;

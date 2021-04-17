@@ -20,15 +20,35 @@ For the moment, the provided controls are:
 
 The whole interface or its parts can be "detached" to another browser window or even device. This feature requires a simple WebSocket server though, so it's optional, but we provide a full example of such feature.
 
-The encoders and decoders for JSON are included, so all the structure can be transferred to JavaScript, all the values updates are easily encoded back and forth as well, this gives you the ability to easily replace the GUI with some JS implementation, like [`dat.gui`](https://github.com/dataarts/dat.gui), for example.
+The encoders and decoders for JSON are included, so all the structure can be transferred to JavaScript, all the values updates are easily encoded back and forth as well, this gives you the ability to easily replace the rendered GUI with some JS implementation, [`dat.gui`](https://github.com/dataarts/dat.gui), for example — while keeping the structure define in typed Elm and your messages connected.
 
 
+## Screenshots
+
+## Adding to your Elm application
+
+_Tron_ provides the `WithTron`  helper which wraps the core `Browser....` functions and request you to define the same
+`init`, `view`, `update`, etc., as you usually define, with only few additions:
+
+    - your GUI description as `for` function, see the example below;
+    - the option to select _theme_ (dark/light) and _docking_ (in any corner or in the center);
+    - the way Tron communicates with JS, if it needs to, usually the communication is off;
+
+### `WithTron` Examples
+
+### GUI definition Examples
 
 Here's the example of the interface description:
 
 
+From `example/Example/Default/Gui.elm`:
+
+
 ```elm
-for : Model -> Property Msg
+import Tron.Builder as Gui exposing (Builder)
+
+
+for : Model -> Builder Msg
 for model =
     Gui.root
         [ ( "ghost", Gui.none )
@@ -78,7 +98,7 @@ for model =
         ]
 
 
-nestedButtons : Choice -> Property Msg
+nestedButtons : Choice -> Builder Msg
 nestedButtons curChoice =
     Gui.nestIn
         ( rows 2 )
@@ -91,7 +111,7 @@ nestedButtons curChoice =
         ]
 
 
-colorNest : Property Msg
+colorNest : Builder Msg
 colorNest =
     let
         colorCompKnob msg =
@@ -118,15 +138,185 @@ choiceToLabel c =
         D -> "The D"
 ```
 
+From `example/Example/Default/Goose.elm`:
 
-## Examples
+```elm
+import Tron.Builder as Gui exposing (Builder)
 
-See `example/` folder for more examples:
 
-* `example/Basic` is just the interface for the above description;
-* `example/Detachable` the demo of how the interface can be detached at any nesting (if you run the provided WebScocket server before running the example);
-* `example/DatGui` is about how easy it is to replace Tron GUI with `dat.gui`;
-* `example/Everything` — all of the above, plus randomly generating interface structures;
+for : Model -> Gui.Builder Msg
+for model =
+    Gui.root
+        [
+            ( "honk on"
+            ,
+                Gui.toggle
+                    (Tuple.first model.honk)
+                    (\v -> if v then HonkOn else HonkOff)
+            )
+        ,
+            ( "honk"
+            ,
+                if Tuple.first model.honk then
+                    Tuple.second model.honk
+                        |> honkGui
+                        |> Gui.expand
+                else Gui.none
+            )
+        ,
+            ( "eye"
+            , eyeGui model.eye
+            )
+        ,
+            ( "look at"
+            ,
+                Gui.choice
+                    ( Shape.auto )
+                    Cell.single -- Cell.halfByOne
+                    (\v ->
+                        case v of
+                            Left -> "left"
+                            Right -> "right")
+                    [ Left, Right ]
+                    model.lookAt
+                    (==)
+                    LookAt
+            )
+        ,
+            ( "punk on"
+            ,
+                Gui.toggle
+                    model.punk
+                    (\v -> if v then PunkOn else PunkOff)
+            )
+        ,
+            ( "colors"
+            , colorsGui model.punk model.colors
+            )
+        ,
+            ( "boots on"
+            ,
+                Gui.toggle
+                    (
+                        case model.shoes of
+                            None -> False
+                            Boots -> True
+                    )
+                    (\v -> ChangeShoes <| if v then Boots else None)
+            )
+        ]
+
+
+honkGui : HonkConfig -> Gui.Builder Msg
+honkGui config =
+    Gui.nest
+        ( cols 2 )
+        Cell.single
+        [
+            ( "position"
+            ,
+                let posAxis = { min = -50, max = 50, step = 1 }
+                in Gui.xy
+                    ( posAxis, posAxis )
+                    config.position
+                    ChangeHonkTextPosition
+            )
+        ,
+            ( "size"
+            ,
+                Gui.text
+                    (String.fromInt <| config.size)
+                    (String.toInt
+                        >> Maybe.withDefault (default.honk |> Tuple.second |> .size)
+                        >> ChangeHonkTextSize)
+            )
+        ,
+            ( "text"
+            ,
+                Gui.text
+                    config.text
+                    ChangeHonkText
+            )
+        ,
+            ( "color"
+            ,
+                Gui.color
+                    config.color
+                    ChangeHonkTextColor
+            )
+        ]
+
+
+eyeGui : EyeConfig -> Gui.Builder Msg
+eyeGui config =
+    Gui.nest
+        ( cols 1 )
+        Cell.single
+        [
+            ( "position"
+            ,
+                let posAxis = { min = -5, max = 5, step = 1 }
+                in Gui.xy
+                    ( posAxis, posAxis )
+                    config.position
+                    ChangeEyePosition
+            )
+        ,
+            ( "size"
+            ,
+                Gui.number
+                    { min = 1, max = 10, step = 0.1 }
+                    config.size
+                    ChangeEyeSize
+            )
+        ]
+
+
+colorsGui : Bool -> Colors -> Gui.Builder Msg
+colorsGui isPunk colors =
+    Gui.nest
+        ( cols 2 )
+        Cell.single
+        [ ( "eye", Gui.color colors.eye ChangeEyeColor )
+        , ( "feathers", Gui.color colors.feathers ChangeFeathersColor )
+        , ( "skin", Gui.color colors.skin ChangeSkinColor )
+        , ( "background", Gui.color colors.background ChangeBackground )
+        ,
+            ( "iroquois"
+            , if isPunk
+                then Gui.color colors.iroquois ChangeIroquoisColor
+                else Gui.none
+            )
+        ]
+```
+
+When you don't have any Messages or you want to define GUI only to pass it to JavaScript side, you may use other Builders which don't require specifying messages and convert their values automatically:
+
+- `Tron.Builder.Unit` which provides `Builder ()`;
+- `Tron.Builder.String` which provides `Builder (String, String)` and so converts any value to the pair of the labeled path (such as `"honk/color"`, in the case of the _Goose_ example) and stringified value;
+- `Tron.Builder.Proxy` which provides `Builder ProxyValue` and so converts any value to the special `ProxyValue` which is a data type representing the type of value and its contents, such as `Color (Rgba 0.5 0.5 0.7 1.0)` or `XY -2.5 -2.5` & s.o.;
+
+Using functions from `Tron.Expose.Convert`, any of these `Builder`s, or your own `Builder`, may be converted to `Builder (RawOutValue, msg)` so that it will carry the port-&-JSON-friendly version of the value along with the messages.
+
+
+## Complete Application Examples
+
+See `example/` folder for the whole application examples.
+
+There is the `start-example.sh` script that helps to run every one of them, just pass a name of the example you want to see as an argument:
+
+* `Basic` — just the GUI and the Goose;
+* `Everything` — all the features in one: switching themes, docking, random-generated interface, detachable, ... (NB: _see  note below_);
+* `Detachable` — the parts of GUI may be detached to a separate tab (run `start-server.sh` first);
+* `DatGui` — connecting to `dat.gui` using JS transfer;
+* `OneKnob` — only one control and its value, nothing else;
+* `Random` — random interface by a click of a button;
+* `AFrame` — render to virtual reality using A-Frame (currently, the early draft);
+* `ReportToJsBacked` — an example to use when connecting Tron to JS application;
+* `ReportToJsJson` — a demonstration of sending any value update to port as JSON, as well as the complete GUI structure;
+* `ReportToJsString` — a demonstration of sending any value update to port as labeled path and string value;
+
+**NB**: The _Tron_ GUI is not designed to support all the above features at once, so please consider that `Everything` is not a good example of using Tron API, while _all others_ for sure are.
 
 
 ## Docker
