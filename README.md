@@ -40,14 +40,47 @@ Next major features planned are:
 
 ## Adding to your Elm application
 
-_Tron_ provides the `WithTron`  helper which wraps the core `Browser....` functions and request you to define the same
+_Tron_ provides the `WithTron` helper which wraps the core `Browser....` functions and request you to define the same
 `init`, `view`, `update`, etc., as you usually define, with only few additions:
 
-    - your GUI description as `for` function, see the example below;
-    - the option to select _theme_ (dark/light) and _docking_ (in any corner or in the center);
-    - the way Tron communicates with JS, if it needs to, usually the communication is off;
+- your GUI description as `for` function, see the examples below;
+- the option to select _theme_ (dark/light) and _docking_ (in any corner or in the center);
+- the way Tron communicates with JS, if it needs to, usually the communication is off;
 
-### `WithTron` Examples
+* [`WithTron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Gui-Build) documentation;
+* [`Tron.Builder`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Builder) documentation;
+* [`Tron.Option`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option) documentation;
+
+See some example usages of `WithTron` below.
+
+## Complete Application Examples
+
+See `example/` folder for the whole application examples.
+
+There is the `start-example.sh` script that helps to run every one of them, just pass a name of the example you want to see as an argument:
+
+* `Basic` — just the GUI and the Goose;
+* `Everything` — all the features in one: switching themes, docking, random-generated interface, detachable, ... (NB: _see  note below_);
+* `Detachable` — the parts of GUI may be detached to a separate tab (run `start-server.sh` first);
+* `DatGui` — connecting to `dat.gui` using JS transfer;
+* `OneKnob` — only one control and its value, nothing else; also gives the example of the minimal Elm application with Tron GUI, where everything is defined in one module (really doesn't require a lot of code!);
+* `Random` — random interface by a click of a button;
+* `AFrame` — render to virtual reality using A-Frame (currently, the early draft);
+* `ReportToJsBacked` — an example to use when connecting Tron to JS application;
+* `ReportToJsJson` — a demonstration of sending any value update to port as JSON, as well as the complete GUI structure;
+* `ReportToJsString` — a demonstration of sending any value update to port as labeled path and string value;
+
+**NB**: The _Tron_ GUI is not designed to support all the above features at once, so please consider that `Everything` is not a good example of using Tron API, while _all others_ for sure are.
+
+## Docker
+
+* `docker build . -t tron-example`
+* `docker run -p 8080:8080 tron-example`
+* TODO: instructions to run WebSocket-server
+
+## `WithTron` Examples
+
+### One Knob
 
 From `example/Example/OneKnob/Main.elm`, similar to `example/Example/Basic/Main.elm`:
 
@@ -70,6 +103,8 @@ main =
         , subscriptions = subscriptions -- your usual `subscriptions` function
         }
 ```
+
+### Report to JS
 
 From `example/Example/ReportToJsJson/Main.elm`:
 
@@ -101,6 +136,8 @@ port sendUpdate : Exp.RawOutUpdate -> Cmd msg
 
 port initGui : Exp.RawProperty -> Cmd msg
 ```
+
+### Detachable
 
 From `example/Example/Detachable/Main.elm`:
 
@@ -142,13 +179,13 @@ port sendUpdateToWs : Exp.RawOutUpdate -> Cmd msg
 port ackToWs : Exp.Ack -> Cmd msg
 ```
 
-
-### GUI definition Examples
+## GUI definition Examples
 
 Here are the examples of the interface definitions:
 
 From `example/Example/Default/Gui.elm`:
 
+### Default
 
 ```elm
 import Tron.Builder as Gui exposing (Builder)
@@ -243,6 +280,8 @@ choiceToLabel c =
         C -> "The C"
         D -> "The D"
 ```
+
+### Goose
 
 From `example/Example/Default/Goose.elm`:
 
@@ -396,6 +435,8 @@ colorsGui isPunk colors =
         ]
 ```
 
+## Special Builders
+
 When you don't have any _messages_ or you want to define GUI only to pass it to JavaScript side, you may use other Builders which don't require specifying messages and convert their values automatically:
 
 - `Tron.Builder.Unit` which provides `Builder ()`;
@@ -407,6 +448,8 @@ Using functions from `Tron.Expose.Convert`, any of these `Builder`s, or your own
 The example with `Tron.Builder.Unit` (from `example/Example/Default/Goose.elm`):
 
 *NB*: Notice that defining controls this way doesn't require you to specify any message, plus in this case it is `Gui.Builder` rather than `Gui.Builder Msg`, but still it is easy to replace one with another just by changing import and adding/removing messages at the end of the calls:
+
+### `Builder ()` example
 
 ```elm
 import Tron.Builder.Unit as Gui
@@ -503,29 +546,3 @@ colorNest =
             , ( "blue", colorCompKnob )
             ]
 ```
-
-## Complete Application Examples
-
-See `example/` folder for the whole application examples.
-
-There is the `start-example.sh` script that helps to run every one of them, just pass a name of the example you want to see as an argument:
-
-* `Basic` — just the GUI and the Goose;
-* `Everything` — all the features in one: switching themes, docking, random-generated interface, detachable, ... (NB: _see  note below_);
-* `Detachable` — the parts of GUI may be detached to a separate tab (run `start-server.sh` first);
-* `DatGui` — connecting to `dat.gui` using JS transfer;
-* `OneKnob` — only one control and its value, nothing else; also gives the example of the minimal Elm application with Tron GUI, where everything is defined in one module (really doesn't require a lot of code!);
-* `Random` — random interface by a click of a button;
-* `AFrame` — render to virtual reality using A-Frame (currently, the early draft);
-* `ReportToJsBacked` — an example to use when connecting Tron to JS application;
-* `ReportToJsJson` — a demonstration of sending any value update to port as JSON, as well as the complete GUI structure;
-* `ReportToJsString` — a demonstration of sending any value update to port as labeled path and string value;
-
-**NB**: The _Tron_ GUI is not designed to support all the above features at once, so please consider that `Everything` is not a good example of using Tron API, while _all others_ for sure are.
-
-
-## Docker
-
-* `docker build . -t tron-example`
-* `docker run -p 8080:8080 tron-example`
-* TODO: instructions to run WebSocket-server
