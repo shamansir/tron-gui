@@ -3,8 +3,9 @@ module Tron.Builder.Proxy exposing
     , root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
-    , nest, choice, choiceAuto, choiceIcons, strings, labels, labelsAuto, palette
-    , icon, themedIcon, makeUrl
+    , nest, choice, choiceWithIcons, strings, labels, palette
+    , choiceByCompare, choiceWithIconsByCompare
+    , icon, iconAt, themedIcon, themedIconAt, makeUrl
     , map, mapSet
     , expand, collapse
     , addPath, addLabeledPath
@@ -58,6 +59,7 @@ import Array
 import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
+import Dict
 
 import Tron.Path as Path
 import Tron.Control exposing (..)
@@ -78,6 +80,7 @@ import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Nest exposing (Form(..), ItemId)
 
 import Tron.Expose.ProxyValue exposing (ProxyValue(..))
+import Tron.Builder.Choice as Choice
 
 
 {-| -}
@@ -179,7 +182,44 @@ nest = B.nest
 
 
 {-| -}
-choice -- TODO: remove, make choicesAuto default, change to List ( a, Label )
+choice
+     : PanelShape
+    -> CellShape
+    -> ( comparable -> Label )
+    -> List comparable
+    -> comparable
+    -> Builder
+choice shape cellShape toLabel items current =
+    Choice.proxyHelper
+        ( shape, cellShape )
+        (Choice.withButtons toLabel <| always Default)
+        items
+        current
+        (==)
+
+
+{-| -}
+choiceWithIcons
+     : PanelShape
+    -> CellShape
+    -> ( comparable -> ( Label, Icon ) )
+    -> List comparable
+    -> comparable
+    -> Builder
+choiceWithIcons shape cellShape toLabelAndIcon items current =
+    Choice.proxyHelper
+        ( shape, cellShape )
+        (Choice.withButtons
+            (toLabelAndIcon >> Tuple.first)
+            (toLabelAndIcon >> Tuple.second >> WithIcon)
+        )
+        items
+        current
+        (==)
+
+
+{-| -}
+choiceByCompare
      : PanelShape
     -> CellShape
     -> ( a -> Label )
@@ -187,18 +227,14 @@ choice -- TODO: remove, make choicesAuto default, change to List ( a, Label )
     -> a
     -> ( a -> a -> Bool )
     -> Builder
-choice pShape cShape toLabel =
-    choiceHelper
-        ( pShape, cShape )
-        (\callByIndex index val ->
-            ( toLabel val
-            , B.button <| always <| callByIndex index
-            )
-        )
+choiceByCompare shape cellShape toLabel =
+    Choice.proxyHelper
+        ( shape, cellShape )
+        (Choice.withButtons toLabel <| always Default)
 
 
 {-| -}
-choiceIcons -- TODO: remove, make choicesAuto default, change to List ( a, Label, Icon )
+choiceWithIconsByCompare
      : PanelShape
     -> CellShape
     -> ( a -> ( Label, Icon ) )
@@ -206,28 +242,13 @@ choiceIcons -- TODO: remove, make choicesAuto default, change to List ( a, Label
     -> a
     -> ( a -> a -> Bool )
     -> Builder
-choiceIcons pShape cShape toLabelAndIcon =
-    choiceHelper
-        ( pShape, cShape )
-        (\callByIndex index val ->
-            let ( label, theIcon ) = toLabelAndIcon val
-            in
-                ( label
-                , B.buttonWith theIcon <| always <| callByIndex index
-                )
+choiceWithIconsByCompare shape cellShape toLabelAndIcon =
+    Choice.proxyHelper
+        ( shape, cellShape )
+        (Choice.withButtons
+            (toLabelAndIcon >> Tuple.first)
+            (toLabelAndIcon >> Tuple.second >> WithIcon)
         )
-
-
-{-| -}
-choiceAuto
-     : PanelShape
-    -> CellShape
-    -> ( comparable -> Label )
-    -> List comparable
-    -> comparable
-    -> Builder
-choiceAuto pShape cShape f items v =
-    choice pShape cShape f items v (==)
 
 
 {-| -}
@@ -242,35 +263,28 @@ strings options current =
         identity
         options
         current
-        ((==))
 
 
 {-| -}
-labels -- TODO: remove, make labelsAuto default
+labels
      : ( a -> Label )
     -> List a
     -> a
-    -> ( a -> a -> Bool )
+    -> msg
     -> Builder
-labels toLabel options current compare =
-    choice
+labels toLabel options current fallback =
+    let
+        labelToValue =
+            options
+                |> List.map (\v -> ( toLabel v, v ) )
+                |> Dict.fromList
+
+    in choice
         (cols 1)
         CS.twiceByHalf
-        toLabel
-        options
-        current
-        compare
-
-
-{-| -}
-labelsAuto
-     : ( comparable -> Label )
-    -> List comparable
-    -> comparable
-    -> Builder
-labelsAuto toLabel options current =
-    labels toLabel options current (==)
-
+        identity
+        (options |> List.map toLabel)
+        (toLabel current)
 
 
 {-| -}
@@ -280,12 +294,11 @@ palette
     -> Color
     -> Builder
 palette shape options current =
-    choiceHelper
+    Choice.proxyHelper
         ( shape, CS.half )
-        (\callByIndex index val ->
-            ( Color.colorToHexWithAlpha val
-            , B.colorButton val <| always <| callByIndex index
-            )
+        (Choice.withButtons
+            Color.colorToHexWithAlpha
+            WithColor
         )
         options
         current
@@ -300,46 +313,6 @@ palette shape options current =
 
 
 {-| -}
-choiceHelper
-     : ( PanelShape, CellShape )
-    -> ( (ItemId -> ProxyValue) -> Int -> a -> ( Label, Builder ) )
-    -> List a
-    -> a
-    -> ( a -> a -> Bool )
-    -> Builder
-choiceHelper ( panelShape, cellShape ) toBuilder options current compare =
-    let
-        indexedOptions = options |> List.indexedMap Tuple.pair
-        callByIndex indexToCall =
-            FromChoice indexToCall
-        set =
-            options
-                |> List.indexedMap (toBuilder callByIndex)
-    in
-        Choice
-            Nothing
-            ( panelShape
-            , cellShape
-            )
-            <| Control
-                ( set |> Array.fromList )
-                { form = Collapsed
-                , page = 0
-                , selected =
-                    indexedOptions
-                        -- FIXME: searching for the item every time seems wrong
-                        |> findMap
-                            (\(index, option) ->
-                                if compare option current
-                                    then Just index
-                                    else Nothing
-                            )
-                        |> Maybe.withDefault 0
-                }
-                (Just <| .selected >> callByIndex)
-
-
-{-| -}
 icon : Url -> Icon
 icon = Button.icon
 
@@ -347,6 +320,16 @@ icon = Button.icon
 {-| -}
 themedIcon : (Theme -> Url) -> Icon
 themedIcon = Button.themedIcon
+
+
+{-| -}
+iconAt : List String -> Icon
+iconAt = Button.iconAt
+
+
+{-| -}
+themedIconAt : (Theme -> List String) -> Icon
+themedIconAt = Button.themedIconAt
 
 
 {-| -}

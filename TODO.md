@@ -2,6 +2,7 @@
 * Breaking: make all the `Builder.choice*` function accept only comparable values;
 * Breaking: `Backed` program should operate `(List String, String)` and only concatenate path when it is required to be sent;
 * _Active_ condition for a button, some effect for when it is pressed;
+* For Docker, add ability to run any example using environment variable;
 * Detachable: Add clientId to the URL when it was generated (so that detaching won't lose changes);
 * New design;
 * Multiple-choice control;

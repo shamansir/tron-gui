@@ -3,8 +3,9 @@ module Tron.Builder.Unit exposing
     , root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
-    , nest, choice, choiceAuto, choiceIcons, strings, labels, labelsAuto, palette
-    , icon, themedIcon, makeUrl
+    , nest, choice, choiceWithIcons, strings, labels, palette
+    , choiceByCompare, choiceWithIconsByCompare
+    , icon, iconAt, themedIcon, themedIconAt, makeUrl
     , map, mapSet
     , expand, collapse
     , addPath, addLabeledPath
@@ -183,17 +184,41 @@ nest = B.nest
 choice
      : PanelShape
     -> CellShape
+    -> ( comparable -> Label )
+    -> List comparable
+    -> comparable
+    -> Builder
+choice shape cellShape toLabel options current =
+    B.choice shape cellShape toLabel options current <| always ()
+
+
+{-| -}
+choiceWithIcons
+     : PanelShape
+    -> CellShape
+    -> ( comparable -> ( Label, Icon ) )
+    -> List comparable
+    -> comparable
+    -> Builder
+choiceWithIcons shape cellShape toLabelAndIcon options current =
+    B.choiceWithIcons shape cellShape toLabelAndIcon options current <| always ()
+
+
+{-| -}
+choiceByCompare
+     : PanelShape
+    -> CellShape
     -> ( a -> Label )
     -> List a
     -> a
     -> ( a -> a -> Bool )
     -> Builder
-choice pShape cShape toLabel items current compare =
-    B.choice pShape cShape toLabel items current compare <| always ()
+choiceByCompare shape cellShape toLabel options current compare =
+    B.choiceByCompare shape cellShape toLabel options current compare <| always ()
 
 
 {-| -}
-choiceIcons
+choiceWithIconsByCompare
      : PanelShape
     -> CellShape
     -> ( a -> ( Label, Icon ) )
@@ -201,20 +226,8 @@ choiceIcons
     -> a
     -> ( a -> a -> Bool )
     -> Builder
-choiceIcons pShape cShape toLabel items current compare =
-    B.choiceIcons pShape cShape toLabel items current compare <| always ()
-
-
-{-| -}
-choiceAuto
-     : PanelShape
-    -> CellShape
-    -> ( comparable -> Label )
-    -> List comparable
-    -> comparable
-    -> Builder
-choiceAuto pShape cShape toLabel items current =
-    B.choiceAuto pShape cShape toLabel items current <| always ()
+choiceWithIconsByCompare shape cellShape toLabelAndIcon options current compare =
+    B.choiceWithIconsByCompare shape cellShape toLabelAndIcon options current compare <| always ()
 
 
 {-| -}
@@ -231,20 +244,9 @@ labels
      : ( a -> Label )
     -> List a
     -> a
-    -> ( a -> a -> Bool )
     -> Builder
-labels toLabel items current compare =
-    B.labels toLabel items current compare <| always ()
-
-
-{-| -}
-labelsAuto
-     : ( comparable -> Label )
-    -> List comparable
-    -> comparable
-    -> Builder
-labelsAuto toLabel items current =
-    B.labelsAuto toLabel items current <| always ()
+labels toLabel options current =
+    B.labels toLabel options current () <| always ()
 
 
 {-| -}
@@ -265,6 +267,16 @@ icon = Button.icon
 {-| -}
 themedIcon : (Theme -> Url) -> Icon
 themedIcon = Button.themedIcon
+
+
+{-| -}
+iconAt : List String -> Icon
+iconAt = Button.iconAt
+
+
+{-| -}
+themedIconAt : (Theme -> List String) -> Icon
+themedIconAt = Button.themedIconAt
 
 
 {-| -}

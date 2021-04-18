@@ -18,9 +18,9 @@ For the moment, the provided controls are:
 * choice control — a panel with options;
 * group control — a panel with any other controls;
 
-Group and choice controls support pagination if the items doesn't fit;
+Group and choice controls support _pagination_ if the items doesn't fit;
 
-The whole interface or its parts can be "detached" to another browser window or even device. This feature requires a simple WebSocket server though, so it's optional, but we provide a full example of such feature; see it buy running `./example/start-example.sh Detachable` with `elm-live`, the sources for this example are in `example/Detachable` folder.
+The whole interface or its parts can be _"detached"_ to another browser window or even device. This feature requires a simple WebSocket server though, so it's optional, but we provide a full example of such feature; see it buy running `./example/start-example.sh Detachable` with `elm-live`, the sources for this example are in `example/Detachable` folder.
 
 The encoders and decoders for JSON are included, so all the structure can be transferred to JavaScript, all the values updates are easily encoded back and forth as well, this gives you the ability to easily replace the rendered GUI with some JS implementation, [`dat.gui`](https://github.com/dataarts/dat.gui), for example — while keeping the structure define in typed Elm and your messages connected.
 
@@ -40,12 +40,12 @@ Next major features planned are:
 
 ## Adding to your Elm application
 
-_Tron_ provides the `WithTron` helper which wraps the core `Browser....` functions and request you to define the same
+_Tron_ provides the `WithTron` helper which wraps the core `Browser....` functions and requests you to define the same
 `init`, `view`, `update`, etc., as you usually define, with only few additions:
 
-- your GUI description as `for` function, see the examples below;
+- your GUI description as `for :: Model -> Builder Msg` function, see the examples below;
 - the option to select _theme_ (dark/light) and _docking_ (in any corner or in the center);
-- the way Tron communicates with JS, if it needs to, usually the communication is off;
+- the way Tron communicates with JS, if it needs to, usually the communication is off — but, if you want _detachable_ functionality, you'll need to start WebSocket server, all the required code is provided for that and requires minimum actions;
 
 * [`WithTron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Gui-Build) documentation;
 * [`Tron.Builder`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Builder) documentation;
@@ -76,7 +76,8 @@ There is the `start-example.sh` script that helps to run every one of them, just
 
 * `docker build . -t tron-example`
 * `docker run -p 8080:8080 tron-example`
-* TODO: instructions to run WebSocket-server
+
+Soon, there will be the ability to run specific example in Docker using environment variable.
 
 ## `WithTron` Examples
 
@@ -317,7 +318,7 @@ for model =
             ,
                 Gui.choice
                     ( Shape.auto )
-                    Cell.single -- Cell.halfByOne
+                    Cell.single
                     (\v ->
                         case v of
                             Left -> "left"

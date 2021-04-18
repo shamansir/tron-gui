@@ -37,7 +37,7 @@ for model =
         ,
             ( "look at"
             ,
-                Gui.choice
+                Gui.choiceByCompare
                     ( Shape.auto )
                     Cell.single -- Cell.halfByOne
                     (\v ->
@@ -46,7 +46,7 @@ for model =
                             Right -> "right")
                     [ Left, Right ]
                     model.lookAt
-                    (==)
+                    compareDirections
                     LookAt
             )
         ,
@@ -155,3 +155,11 @@ colorsGui isPunk colors =
                 else Gui.none
             )
         ]
+
+
+compareDirections : LookDirection -> LookDirection -> Bool
+compareDirections dirA dirB =
+    case ( dirA, dirB ) of
+        ( Left, Left ) -> True
+        ( Right, Right ) -> True
+        _ -> False

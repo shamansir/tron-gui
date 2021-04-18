@@ -1,10 +1,11 @@
 module Tron.Builder exposing
-    ( Builder, Set
+    ( Builder, Set, Icon
     , root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
-    , nest, choice, choiceAuto, choiceIcons, strings, labels, labelsAuto, palette
-    , icon, themedIcon, makeUrl
+    , nest, choice, choiceWithIcons, strings, labels, palette
+    , choiceByCompare, choiceWithIconsByCompare
+    , icon, iconAt, themedIcon, themedIconAt, makeUrl
     , map, mapSet
     , expand, collapse
     , addPath, addLabeledPath
@@ -54,7 +55,7 @@ However, it is ok to use any name you like, for sure. Be it `Tron.` or `Def.` or
 @docs nest, choice, choiceIcons, choiceAuto, strings, labels, labelsAuto, palette
 
 # Icons
-@docs icon, themedIcon, makeUrl
+@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
 # Common Helpers
 @docs map, mapSet
@@ -71,6 +72,8 @@ import Array
 import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
+import Url.Builder as Url
+import Dict
 
 import Tron.Path as Path
 import Tron.Control exposing (..)
@@ -90,6 +93,8 @@ import Tron.Control.Text exposing (TextState(..))
 import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Nest exposing (Form(..), ItemId)
+
+import Tron.Builder.Choice as Choice
 
 
 {-| To define the structure of your interface, you need to have the function with this type:
@@ -369,6 +374,10 @@ button =
     buttonByFace Default
 
 
+{-| -}
+type alias Icon = Button.Icon
+
+
 {-| Create an `Icon` from its URL or filename.
 
     import Url.Builder as Url
@@ -380,7 +389,17 @@ icon : Url -> Icon
 icon = Button.icon
 
 
-{-| Create an `Icon` from its URL or filename.
+{-| Create an `Icon` using its relative local path.
+
+    import Url.Builder as Url
+
+    Builder.iconAt [ "assets", "myicon.svg" ]
+-}
+iconAt : List String -> Icon
+iconAt = Button.iconAt
+
+
+{-| Create a themed `Icon` from its URL or filename.
 
     import Url.Builder as Url
 
@@ -390,6 +409,17 @@ icon = Button.icon
 -}
 themedIcon : (Theme -> Url) -> Icon
 themedIcon = Button.themedIcon
+
+
+{-| Create a themed `Icon` using its relative local path.
+
+    import Url.Builder as Url
+
+    Builder.themedIconAt
+        <| \theme -> [ "assets", "myicon_" ++ Theme.toString theme ++ ".svg" ]
+-}
+themedIconAt : (Theme -> List String) -> Icon
+themedIconAt = Button.themedIconAt
 
 
 {-| Make URL from String
@@ -493,9 +523,84 @@ nest panelShape cellShape items =
             Nothing -- (Tuple.first >> handler)
 
 
-{-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Thanks to Elm rich type system, you are not limited to strings, the option can have any type. But since we also translate these values to HTML and JSON, you need to specify the converter to `String` and from it. Also, since we don't ask for `comparable` type here, you are asked to provide a comparison function.
+{-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Notice that we ask for `comparable` type here.
 
     Builder.choice
+        ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
+        CellShape.single -- usual 1x1 shape of a cell
+        String.fromInteger
+        [ 128, 256, 512 ]
+        model.bitrate
+        ChangeBitrate
+
+    Builder.choice
+        ( cols 1 ) -- we want the plate to have one column
+        CellShape.single -- usual 1x1 shape of a cell
+        identity
+        ([ Sine, Square, Triangle, Saw ] |> List.map waveToString)
+        (waveToString model.waveShape)
+        (waveFromString >> Maybe.map ChangeWaveShape >> Maybe.withDefault NoOp)
+
+*NB*: If you don't want to use `comparable` types, but rather want to specify you own compare function, use `choiceByCompare`.
+
+See also: `Builder.choiceByCompare`, `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
+-}
+choice
+     : PanelShape
+    -> CellShape
+    -> ( comparable -> Label )
+    -> List comparable
+    -> comparable
+    -> ( comparable -> msg )
+    -> Builder msg
+choice shape cellShape toLabel items current toMsg =
+    Choice.helper
+        ( shape, cellShape )
+        (Choice.withButtons toLabel <| always Default)
+        items
+        current
+        (==)
+        toMsg
+
+
+{-| `choiceWithIcons` is the same as `choice`, but allows user to define icons for buttons.
+
+    Builder.choiceWithIcons
+        (\waveShape ->
+            case waveShape of
+                Sine -> ( "sine", icon "sine.svg" )
+                Square -> ( "square", icon "square.svg" )
+                Triangle -> ( "triangle", icon "triangle.svg" )
+                Saw -> ( "saw", icon "saw.svg" )
+        )
+        [ Sine, Square, Triangle, Saw ]
+        model.waveShape
+        ChangeWaveShape
+-}
+choiceWithIcons
+     : PanelShape
+    -> CellShape
+    -> ( comparable -> ( Label, Icon ) )
+    -> List comparable
+    -> comparable
+    -> ( comparable -> msg )
+    -> Builder msg
+choiceWithIcons shape cellShape toLabelAndIcon items current toMsg =
+    Choice.helper
+        ( shape, cellShape )
+        (Choice.withButtons
+            (toLabelAndIcon >> Tuple.first)
+            (toLabelAndIcon >> Tuple.second >> WithIcon)
+        )
+        items
+        current
+        (==)
+        toMsg
+
+
+{-| `choiceByCompare` is identical to `choice`, but asks user for a custom comparison function instead of requiring `comparable` values.
+
+    Builder.choiceByCompare
         ( cols 1 ) -- we want the plate to have one column
         CellShape.single -- usual 1x1 shape of a cell
         (\waveShape ->
@@ -507,12 +612,21 @@ nest panelShape cellShape items =
         )
         [ Sine, Square, Triangle, Saw ]
         model.waveShape
-        (==) -- equality operator usually works for sum types, but be accurate
+        compareWaves -- sometimes just (==) works, but it's better not to rely on it
         ChangeWaveShape
+
+    Builder.choiceByCompare
+        ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
+        CellShape.single -- usual 1x1 shape of a cell
+        String.fromInteger
+        [ 128, 256, 512 ]
+        model.bitrate
+        (==)
+        ChangeBitrate
 
 See also: `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
-choice -- TODO: remove, make choicesAuto default, chance to List ( a, Label )
+choiceByCompare
      : PanelShape
     -> CellShape
     -> ( a -> Label )
@@ -521,19 +635,15 @@ choice -- TODO: remove, make choicesAuto default, chance to List ( a, Label )
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Builder msg
-choice shape cellShape toLabel =
-    choiceHelper
+choiceByCompare shape cellShape toLabel =
+    Choice.helper
         ( shape, cellShape )
-        (\callByIndex index val ->
-            ( toLabel val
-            , button <| always <| callByIndex index
-            )
-        )
+        (Choice.withButtons toLabel <| always Default)
 
 
-{-| `choiceIcons` is the same as `choice`, but allows user to define icons for buttons.
+{-| `choiceWithIconsByCompare` is the same as `choiceWithIcons`, but allows user to define icons for buttons.
 
-    Builder.choice2
+    Builder.choiceWithIcons
         (\waveShape ->
             case waveShape of
                 Sine -> ( "sine", icon "sine.svg" )
@@ -543,10 +653,10 @@ choice shape cellShape toLabel =
         )
         [ Sine, Square, Triangle, Saw ]
         model.waveShape
-        (==) -- equality operator usually works for sum types, but be accurate
+        compareWaves -- sometimes just (==) works, but it's better not to rely on it
         ChangeWaveShape
 -}
-choiceIcons -- TODO: remove, make choicesAuto default, chance to List ( a, Label, Icon )
+choiceWithIconsByCompare
      : PanelShape
     -> CellShape
     -> ( a -> ( Label, Icon ) )
@@ -555,86 +665,13 @@ choiceIcons -- TODO: remove, make choicesAuto default, chance to List ( a, Label
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Builder msg
-choiceIcons shape cellShape toLabelAndIcon =
-    choiceHelper
+choiceWithIconsByCompare shape cellShape toLabelAndIcon =
+    Choice.helper
         ( shape, cellShape )
-        (\callByIndex index val ->
-            let ( label, theIcon ) = toLabelAndIcon val
-            in
-                ( label
-                , buttonWith theIcon <| always <| callByIndex index
-                )
+        (Choice.withButtons
+            (toLabelAndIcon >> Tuple.first)
+            (toLabelAndIcon >> Tuple.second >> WithIcon)
         )
-
-
-{-| `choiceAuto` is the same as `choice`, but works with `comparable` values.
-
-    Builder.choiceAuto
-        ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
-        String.fromInteger
-        [ 128, 256, 512 ]
-        model.bitrate
-        (String.toInteger >> Maybe.withDefault 128 >> ChangeBitrate)
--}
-choiceAuto
-     : PanelShape
-    -> CellShape
-    -> ( comparable -> Label )
-    -> List comparable
-    -> comparable
-    -> ( comparable -> msg )
-    -> Builder msg
-choiceAuto shape cellShape f items v =
-    choice shape cellShape f items v (==)
-
-
-choiceHelper
-     : ( PanelShape, CellShape )
-    -> ( (ItemId -> msg) -> Int -> a -> ( Label, Builder msg ) )
-    -> List a
-    -> a
-    -> ( a -> a -> Bool )
-    -> ( a -> msg )
-    -> Builder msg
-choiceHelper ( panelShape, cellShape ) toBuilder options current compare toMsg =
-    let
-        indexedOptions = options |> List.indexedMap Tuple.pair
-        callByIndex indexToCall =
-            -- FIXME: searching for the item every time seems wrong
-            indexedOptions
-                |> findMap
-                    (\(index, option) ->
-                        if indexToCall == index
-                            then Just option
-                            else Nothing
-                    )
-                |> Maybe.map toMsg
-                |> Maybe.withDefault (toMsg current)
-    in
-        Choice
-            Nothing
-            ( panelShape
-            , cellShape
-            )
-            <| Control
-                ( options
-                    |> List.indexedMap (toBuilder callByIndex)
-                    |> Array.fromList
-                )
-                { form = Collapsed
-                , selected =
-                    indexedOptions
-                    -- FIXME: searching for the item every time seems wrong
-                        |> findMap
-                            (\(index, option) ->
-                                if compare option current
-                                    then Just index
-                                    else Nothing
-                            )
-                        |> Maybe.withDefault 0
-                , page = 0
-                }
-                (Just <| .selected >> callByIndex)
 
 
 {-| `strings` is a helper to create `choice` over string values.
@@ -656,40 +693,39 @@ strings options current toMsg =
         identity
         options
         current
-        ((==))
         toMsg
 
 
-{-| `labels` is a helper to create `choice` over the values that could be converted to string/labels and compared.
+{-| `labels` is a helper to create `choice` over the values that could be converted to string/labels and compared using those.
+
+Requires a message that is a fallback for a case when comparison failed.
 -}
-labels -- TODO: remove, make labelsAuto default
+labels
      : ( a -> Label )
     -> List a
     -> a
-    -> ( a -> a -> Bool )
+    -> msg
     -> ( a -> msg )
     -> Builder msg
-labels toLabel options current compare toMsg =
-    choice
+labels toLabel options current fallback toMsg =
+    let
+        labelToValue =
+            options
+                |> List.map (\v -> ( toLabel v, v ) )
+                |> Dict.fromList
+
+    in choice
         (cols 1)
         CS.twiceByHalf
-        toLabel
-        options
-        current
-        compare
-        toMsg
-
-
-{-| `labels` is a helper to create `choice` over the _comparable_ values that could be converted to strings/labels.
--}
-labelsAuto
-     : ( comparable -> Label )
-    -> List comparable
-    -> comparable
-    -> ( comparable -> msg )
-    -> Builder msg
-labelsAuto toLabel options current toMsg =
-    labels toLabel options current (==) toMsg
+        identity
+        (options |> List.map toLabel)
+        (toLabel current)
+        (\label ->
+            labelToValue
+                |> Dict.get label
+                |> Maybe.map toMsg
+                |> Maybe.withDefault fallback
+        )
 
 
 {-| `palette` is a helper to create `choice` over color values.
@@ -706,12 +742,11 @@ palette
     -> (Color -> msg)
     -> Builder msg
 palette shape options current =
-    choiceHelper
+    Choice.helper
         ( shape, CS.half )
-        (\callByIndex index val ->
-            ( Color.colorToHexWithAlpha val
-            , buttonByFace (WithColor val) <| always <| callByIndex index
-            )
+        (Choice.withButtons
+            Color.colorToHexWithAlpha
+            WithColor
         )
         options
         current

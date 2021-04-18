@@ -3,6 +3,7 @@ module Tron.Control.Button exposing (..)
 
 import Color exposing (Color)
 import Tron.Style.Theme exposing (Theme)
+import Url.Builder as Url
 
 import Tron.Control as Core exposing (Control)
 
@@ -28,6 +29,14 @@ icon = Icon << always
 
 themedIcon : (Theme -> Url) -> Icon
 themedIcon = Icon
+
+
+iconAt : List String -> Icon
+iconAt path = icon <| makeUrl <| Url.relative path []
+
+
+themedIconAt : (Theme -> List String) -> Icon
+themedIconAt f = themedIcon <| \theme -> makeUrl <| Url.relative (f theme) []
 
 
 makeUrl : String -> Url

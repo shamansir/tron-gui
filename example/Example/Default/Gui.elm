@@ -2,13 +2,15 @@ module Example.Default.Gui exposing (..)
 
 
 import Color exposing (Color)
+import Url.Builder as Url
 
 import Tron exposing (Tron)
 import Tron.Builder as Gui
 import Tron.Property  exposing (Property)
-import Tron.Property as Property exposing (Label)
+import Tron.Property as Property
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
+import Tron.Style.Theme as Theme
 
 
 import Example.Default.Model exposing (..)
@@ -45,7 +47,7 @@ for model =
                     model.color
                     ChangeColor )
         , ( "choice",
-                Gui.choice
+                Gui.choiceByCompare
                     ( cols 1 )
                     single
                     choiceToLabel
@@ -58,7 +60,9 @@ for model =
                 -- allControlsNest model
           )
         , ( "button",
-                Gui.buttonWith (Gui.icon "export") (always NoOp)
+                Gui.buttonWith
+                    exportIcon
+                    (always NoOp)
           )
         , ( "toggle",
                 Gui.toggle
@@ -138,7 +142,7 @@ allControlsNest model =
                         model.color
                         ChangeColor )
             , ( "choice",
-                    Gui.choice
+                    Gui.choiceByCompare
                         ( cols 1 )
                         single
                         choiceToLabel
@@ -150,7 +154,7 @@ allControlsNest model =
                     nestedButtons model.buttonPressed
             )
             , ( "button",
-                    Gui.buttonWith (Gui.icon "export") (always NoOp)
+                    Gui.buttonWith exportIcon (always NoOp)
             )
             , ( "toggle",
                     Gui.toggle
@@ -170,3 +174,11 @@ choiceToLabel c =
         B -> "The B"
         C -> "The C"
         D -> "The D"
+
+
+exportIcon : Gui.Icon
+exportIcon =
+    Gui.themedIconAt
+        (\theme ->
+            [ "assets", "export_" ++ Theme.toString theme ++ ".svg" ]
+        )
