@@ -318,7 +318,7 @@ tryTransmitting ports rawUpdate =
             transmit rawUpdate
         SendStrings { transmit } ->
             transmit
-                ( rawUpdate.labelPath |> String.join "/"
+                ( rawUpdate.labelPath
                 , rawUpdate.stringValue
                 )
         _ -> Cmd.none
@@ -561,7 +561,7 @@ See `example/ReportToJsBacked` for more details.
  -}
 backed
     :  RenderTarget
-    -> (( String, String ) -> Cmd msg)
+    -> (( List String, String ) -> Cmd msg)
     -> Builder ()
     -> BackedWithTron
 backed renderTarget transmit tree =

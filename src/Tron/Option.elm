@@ -1,6 +1,6 @@
 module Tron.Option exposing
     ( RenderTarget(..), PortCommunication(..) --FIXME: don't expose values
-    , noCommunication, sendJson, detachable, withDatGui
+    , noCommunication, sendJson, sendStrings, detachable, withDatGui
     , hidden, toHtml, toVr
     )
 
@@ -13,7 +13,7 @@ module Tron.Option exposing
 
 # Port communication
 
-@docs PortCommunication, noCommunication, sendJson, detachable, withDatGui
+@docs PortCommunication, noCommunication, sendJson, sendStrings, detachable, withDatGui
 -}
 
 
@@ -57,7 +57,7 @@ type PortCommunication msg
         , transmit : Exp.RawOutUpdate -> Cmd msg
         }
     | SendStrings
-        { transmit : ( String, String ) -> Cmd msg
+        { transmit : ( List String, String ) -> Cmd msg
         }
     | Detachable
         { ack : Exp.Ack -> Cmd msg
@@ -124,11 +124,11 @@ sendJson = SendJson
 
 {-| Send values as strings using given ports:
 
-- `transmit` sends the value and path to it, both stringified, when value was changed;
+- `transmit` sends the value and path to it, when value was changed;
  -}
 sendStrings
     :
-        { transmit : ( String, String ) -> Cmd msg
+        { transmit : ( List String, String ) -> Cmd msg
         }
     -> PortCommunication msg
 sendStrings = SendStrings

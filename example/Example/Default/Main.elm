@@ -9,8 +9,8 @@ import Html
 import Html exposing (Html)
 import Html.Attributes as Html
 
-import Gui exposing (Gui)
-import Gui.Build as Gui
+import Tron exposing (Tron)
+import Tron.Builder as Gui
 
 import Example.Default.Gui
 import Example.Default.Model exposing (..)

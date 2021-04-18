@@ -1,5 +1,5 @@
 module Tron.Builder.Proxy exposing
-    ( Builder, Set
+    ( Builder, Set, Icon
     , root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
@@ -37,10 +37,10 @@ so that is easier and shorter to use `Proxy`-based `Builder` if you don't need a
 @docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, colorButton, toggle, bool
 
 # Groups
-@docs nest, choice, choiceIcons, choiceAuto, strings, labels, labelsAuto, palette
+@docs nest, choice, choiceWithIcons, choiceByCompare, choiceWithIconsByCompare, strings, labels, palette
 
 # Icons
-@docs icon, themedIcon, makeUrl
+@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
 # Common Helpers
 @docs map, mapSet
@@ -89,6 +89,10 @@ type alias Builder = B.Builder ProxyValue
 
 {-| -}
 type alias Set = B.Set ProxyValue
+
+
+{-| -}
+type alias Icon = B.Icon
 
 
 {-| -}

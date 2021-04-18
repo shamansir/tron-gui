@@ -27,7 +27,7 @@ import Example.Default.Gui as ExampleGui
 
 
 
-port sendUpdate : ( String, String ) -> Cmd msg
+port sendUpdate : ( List String, String ) -> Cmd msg
 
 
 main : ProgramWithTron () Example.Model Example.Msg

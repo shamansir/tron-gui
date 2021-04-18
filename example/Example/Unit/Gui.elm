@@ -58,7 +58,7 @@ gui =
             )
         ,
             ( "choice",
-                Gui.choice
+                Gui.choiceByCompare
                     ( cols 3 )
                     single
                     choiceToLabel

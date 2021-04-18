@@ -1,5 +1,4 @@
 * Fix knobs to use current value when user starts dragging;
-* Breaking: make all the `Builder.choice*` function accept only comparable values;
 * Breaking: `Backed` program should operate `(List String, String)` and only concatenate path when it is required to be sent;
 * _Active_ condition for a button, some effect for when it is pressed;
 * For Docker, add ability to run any example using environment variable;
@@ -10,6 +9,7 @@
 * Include links to the examples in the docs;
 * Share examples somewhere, i.e. deploy to github;
 * Breaking?: When in the detached state, give user the choice if to view the original model or not;
+* Breaking `Builder` itself may be named `Tron` or `Component` or `Cell` something like that. And what we name `Tron` now, could be named `TronLogic`?
 * Include minimal `OneControl` example into the docs, as well as `Basic` one and `ReportToJs*` ones;
 * Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
 * Fix distribution over pages (use `Pages.distributeOver pageCount` instead of `Pages.distribute 9`);

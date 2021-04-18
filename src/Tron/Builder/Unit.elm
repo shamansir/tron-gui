@@ -1,5 +1,5 @@
 module Tron.Builder.Unit exposing
-    ( Builder, Set
+    ( Builder, Set, Icon
     , root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
@@ -37,10 +37,10 @@ so that is easier and shorter to use `Unit`-based `Builder` if you don't need an
 @docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, colorButton, toggle, bool
 
 # Groups
-@docs nest, choice, choiceIcons, choiceAuto, strings, labels, labelsAuto, palette
+@docs nest, choice, choiceWithIcons, choiceByCompare, choiceWithIconsByCompare, strings, labels, palette
 
 # Icons
-@docs icon, themedIcon, makeUrl
+@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
 # Common Helpers
 @docs map, mapSet
@@ -87,6 +87,10 @@ type alias Builder = B.Builder ()
 
 {-| -}
 type alias Set = B.Set ()
+
+
+{-| -}
+type alias Icon = B.Icon
 
 
 {-| -}

@@ -52,7 +52,7 @@ However, it is ok to use any name you like, for sure. Be it `Tron.` or `Def.` or
 @docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, colorButton, toggle, bool
 
 # Groups
-@docs nest, choice, choiceIcons, choiceAuto, strings, labels, labelsAuto, palette
+@docs nest, choice, choiceWithIcons, choiceByCompare, choiceWithIconsByCompare, strings, labels, palette
 
 # Icons
 @docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl

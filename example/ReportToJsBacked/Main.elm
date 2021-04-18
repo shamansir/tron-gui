@@ -10,7 +10,7 @@ import WithTron exposing (BackedWithTron)
 import Example.Unit.Gui as ExampleGui
 
 
-port sendUpdate : ( String, String ) -> Cmd msg
+port sendUpdate : ( List String, String ) -> Cmd msg
 
 
 main : BackedWithTron
