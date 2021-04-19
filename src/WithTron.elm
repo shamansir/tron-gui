@@ -108,7 +108,6 @@ See `ReportToJsStringBacked` example.
 import Browser exposing (UrlRequest(..))
 import Url exposing (Url)
 import Html exposing (Html)
---import Either exposing (Either(..))
 import Random
 import Dict exposing (Dict)
 import Task

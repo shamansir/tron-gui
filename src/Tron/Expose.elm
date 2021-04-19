@@ -156,13 +156,21 @@ loadValues dict prop =
 
 loadJsonValues : Dict (List Int) RawOutUpdate -> Property msg -> Property msg
 loadJsonValues dict prop =
-    Tron.Property.replace
-        (\path innerProp ->
+    dict
+        |> Dict.toList
+        |> List.foldl
+            (\ ( path, outUpdate ) root ->
+                apply (outUpdate |> swap |> fromPort) root
+            )
+            prop
+    {- Tron.Property.fold
+        (\path _ root ->
             Dict.get (Path.toList path) dict
-                |> Maybe.map (\outUpdate -> apply (outUpdate |> swap |> fromPort) innerProp)
-                |> Maybe.withDefault innerProp
+                |> Maybe.map (\outUpdate -> apply (outUpdate |> swap |> fromPort) root)
+                |> Maybe.withDefault root
         )
         prop
+        prop -}
 
 
 applyStringValue : String -> Property msg -> Maybe (Property msg)

@@ -1,5 +1,4 @@
 * Remove unneeded dependencies;
-* Improve `WithTron` documentation;
 * Choice-by-click control — the button that changes state while it's clicked;
     * Maybe reuse `Nest.Form` for that
 * Use `Size Cells`, like integer size, in `Layout`;
