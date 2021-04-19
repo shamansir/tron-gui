@@ -1,18 +1,12 @@
 module Example.Default.Main exposing (init, view, update, subscriptions)
 
 
-import Browser
 import Color
-import Json.Decode as Decode
-import Json.Encode as Encode
 import Html
 import Html exposing (Html)
 import Html.Attributes as Html
 
-import Tron exposing (Tron)
-import Tron.Builder as Gui
-
-import Example.Default.Gui
+--import Example.Default.Gui
 import Example.Default.Model exposing (..)
 import Example.Default.Model as Model
 import Example.Default.Msg exposing (..)

@@ -3,9 +3,10 @@ module OneKnob.Main exposing (main)
 
 import Html exposing (Html)
 
+import Tron exposing (Tron)
 import WithTron exposing (ProgramWithTron)
 import Tron.Option as Option
-import Tron.Builder as Builder exposing (Builder)
+import Tron.Builder as Builder
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
 
@@ -20,7 +21,7 @@ type Msg
 type alias Model = Amount
 
 
-for : Model -> Builder Msg
+for : Model -> Tron Msg
 for amount =
     Builder.root
         [

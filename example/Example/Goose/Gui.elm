@@ -11,7 +11,7 @@ import Example.Goose.Model exposing (..)
 import Example.Goose.Msg exposing (..)
 
 
-for : Model -> Gui.Builder Msg
+for : Model -> Tron Msg
 for model =
     Gui.root
         [
@@ -74,7 +74,7 @@ for model =
         ]
 
 
-honkGui : HonkConfig -> Gui.Builder Msg
+honkGui : HonkConfig -> Tron Msg
 honkGui config =
     Gui.nest
         ( cols 2 )
@@ -114,7 +114,7 @@ honkGui config =
         ]
 
 
-eyeGui : EyeConfig -> Gui.Builder Msg
+eyeGui : EyeConfig -> Tron Msg
 eyeGui config =
     Gui.nest
         ( cols 1 )
@@ -139,7 +139,7 @@ eyeGui config =
         ]
 
 
-colorsGui : Bool -> Colors -> Gui.Builder Msg
+colorsGui : Bool -> Colors -> Tron Msg
 colorsGui isPunk colors =
     Gui.nest
         ( cols 2 )

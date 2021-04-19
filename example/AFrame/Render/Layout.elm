@@ -54,7 +54,7 @@ xOffset =
     -5
 
 
-view : Theme -> Tron msg -> Html Msg_
+view : Theme -> Model msg -> Html Msg_
 view theme gui =
     let
         layout =

@@ -1,12 +1,6 @@
 module Basic.Main exposing (main)
 
 
-import Browser exposing (element)
-import Html exposing (Html, div)
-import Html.Attributes as Attr exposing (class)
-
-import Tron exposing (Tron, Msg, init, view, update, subscriptions)
-import Tron.Builder as Builder exposing (map)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock as Dock
 import Tron.Option as Option

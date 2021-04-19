@@ -1,10 +1,15 @@
+### 6.0.0
+
+* Expose `Tron.Option`;
+* Move and rename `Builder msg` to `Tron msg` so that it will have more similarities to `Html msg`, `Svg msg` & s.o;
+
 ### 5.0.0
 
-* New layouting system instead of `BinPack` used previously;
-* Much cleaner API;
-* Color button control;
-* Add pagination support for groups where number of controls inside exceeds some amount;
 * `WithTron` helper that wraps `Browser.*` helpers and allows to add GUI to the existing Elm application easily;
+* Much cleaner API of the `Builder` and others;
+* New layouting system instead of `BinPack` used previously;
+* Add pagination support for groups where number of controls inside exceeds some amount;
+* Color button control;
 * Examples for sending GUI updates to JS, in JSON or in Strings;
 * Helpers, optional to use, based on the examples, like `detachable`, `communicateJS`...
 * Rename `Gui` module to `Tron`;
@@ -15,6 +20,7 @@
 * Separate `Dock` and its logic, `Expose` and its datatypes and logic, and hide such logic from user API;
 * Fix `cols` vs `rows` to be bound to docking orientation (or just don't change direction of panels when docking);
 * One-Control example;
+* Make examples run easy with one script, through arguments;
 
 ### 4.0.0
 

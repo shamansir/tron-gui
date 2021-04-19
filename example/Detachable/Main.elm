@@ -1,20 +1,10 @@
 port module Detachable.Main exposing (main)
 
 
-import Url exposing (Url)
-
-import Browser exposing (element)
-import Browser.Navigation as Navigation exposing (Key)
-import Html exposing (Html, div)
-import Html.Attributes as Attr exposing (class)
-
 import WithTron exposing (ProgramWithTron)
-import Tron exposing (Tron, init, view, update, subscriptions)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock as Dock
-import Tron.Detach as Detach exposing (fromUrl)
-import Tron.Expose.Data as Exp exposing (RawProperty, RawInUpdate, RawOutUpdate)
-import Tron.Builder as Builder exposing (map)
+import Tron.Expose.Data as Exp
 import Tron.Option as Option
 
 

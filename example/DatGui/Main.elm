@@ -1,11 +1,7 @@
 port module DatGui.Main exposing (main)
 
 
-import Browser exposing (element)
-import Html exposing (Html, div)
-
-import Tron  exposing (Tron)
-import Tron.Expose.Data as Exp exposing (RawProperty, RawInUpdate)
+import Tron.Expose.Data as Exp
 import WithTron exposing (ProgramWithTron)
 import Tron.Option as Option
 

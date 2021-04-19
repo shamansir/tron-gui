@@ -1,12 +1,10 @@
 module Tron.Builder.Unit exposing
-    ( Builder, Set, Icon
-    , root
+    ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
     , nest, choice, choiceWithIcons, strings, labels, palette
     , choiceByCompare, choiceWithIconsByCompare
-    , icon, iconAt, themedIcon, themedIconAt, makeUrl
-    , map, mapSet
+    , Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
     , expand, collapse
     , addPath, addLabeledPath
     )
@@ -14,21 +12,18 @@ module Tron.Builder.Unit exposing
 
 {-|
 
-`Builder ()` helps to define the interface that works without providing any user message in response to changes.
+`Tron ()` helps to define the interface that works without providing any user message in response to changes.
 
 See also: `Tron.Expose.Convert.toUnit`, `Tron.Expose.Convert.toProxied`, `Tron.Expose.Convert.toExposed`, `Tron.Expose.Convert.toStrExposed`, `addPath`, `addLabeledPath`.
 
 Using the `Tron.Expose.Convert.toExposed` function you may easily convert such `Builder` to the one that stores all the value update information in JSON-friendly format. Or, using the `toStrExposed` from the same module, you may get only the label-path and the stringified value.
 
-Using `Builder.toProxied`, and `Builder.addPath` or `Builder.addLabeledPath` after that, you may automatically add proxied value (see `Tron.Expose.ProxyValue` for details) and the path to the control in the GUI tree so that you may easily know from where the value came.
+Using `Tron.Expose.Convert.toProxied`, and `Builder.addPath` or `Builder.addLabeledPath` after that, you may automatically add proxied value (see `Tron.Expose.ProxyValue` for details) and the path to the control in the GUI tree so that you may easily know from where the value came.
 
 Please see `Tron.Builder` for the detailed information on Builders and how to use them. Also, there is some information on these Builders in `README`.
 
 All the documentation for the functions below is in the `Tron.Builder` module, those are just aliases to them without the last argument: the handler that converts the value to a user message,
 so that is easier and shorter to use `Unit`-based `Builder` if you don't need any message anyway.
-
-# Builder
-@docs Builder, Set
 
 # Root
 @docs root
@@ -42,9 +37,6 @@ so that is easier and shorter to use `Unit`-based `Builder` if you don't need an
 # Icons
 @docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
-# Common Helpers
-@docs map, mapSet
-
 # Force expand / collapse for nesting
 @docs expand, collapse
 
@@ -53,7 +45,7 @@ so that is easier and shorter to use `Unit`-based `Builder` if you don't need an
 -}
 
 
-
+import Tron as B
 import Tron.Builder as B
 
 import Array
@@ -82,7 +74,7 @@ import Tron.Control.Nest exposing (Form(..))
 
 
 {-| -}
-type alias Builder = B.Builder ()
+type alias Tron = B.Tron ()
 
 
 {-| -}
@@ -93,94 +85,84 @@ type alias Set = B.Set ()
 type alias Icon = B.Icon
 
 
-{-| -}
-map : (() -> a) -> Builder -> B.Builder a
-map = B.map
-
 
 {-| -}
-mapSet : (() -> a) -> Set -> B.Set a
-mapSet = B.mapSet
-
-
-
-{-| -}
-none : Builder
+none : Tron
 none = B.none
 
 
 {-| -}
-root : Set -> Builder
+root : Set -> Tron
 root = B.root
 
 
 {-| -}
-float : Axis -> Float -> Builder
+float : Axis -> Float -> Tron
 float axis current = B.float axis current <| always ()
 
 
 {-| -}
-int : { min: Int, max : Int, step : Int } -> Int -> Builder
+int : { min: Int, max : Int, step : Int } -> Int -> Tron
 int axis current = B.int axis current <| always ()
 
 
 {-| -}
-number : Axis -> Float -> Builder
+number : Axis -> Float -> Tron
 number = float
 
 
 {-| -}
-xy : ( Axis, Axis ) -> ( Float, Float ) -> Builder
+xy : ( Axis, Axis ) -> ( Float, Float ) -> Tron
 xy xAxis yAxis = B.xy xAxis yAxis <| always ()
 
 
 {-| -}
-coord : ( Axis, Axis ) -> ( Float, Float ) -> Builder
+coord : ( Axis, Axis ) -> ( Float, Float ) -> Tron
 coord = xy
 
 
 {-| -}
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Builder
+input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Tron
 input toString fromString current = B.input toString fromString current <| always ()
 
 
 {-| -}
-text : String -> Builder
+text : String -> Tron
 text default = B.text default <| always ()
 
 
 {-| -}
-color : Color -> Builder
+color : Color -> Tron
 color current = B.color current <| always ()
 
 
 {-| -}
-button : Builder
+button : Tron
 button = B.button <| always ()
 
 
 {-| -}
-buttonWith : Icon -> Builder
+buttonWith : Icon -> Tron
 buttonWith icon_ = B.buttonWith icon_ <| always ()
 
 
 {-| -}
-colorButton : Color -> Builder
+colorButton : Color -> Tron
 colorButton color_ = B.colorButton color_ <| always ()
 
 
 {-| -}
-toggle : Bool -> Builder
+toggle : Bool -> Tron
 toggle current = B.toggle current <| always ()
 
 
 {-| -}
-bool : Bool -> Builder
+bool : Bool -> Tron
 bool = toggle
 
 
 {-| -}
-nest : PanelShape -> CellShape -> Set -> Builder
+nest : PanelShape -> CellShape -> Set -> Tron
 nest = B.nest
 
 
@@ -191,7 +173,7 @@ choice
     -> ( comparable -> Label )
     -> List comparable
     -> comparable
-    -> Builder
+    -> Tron
 choice shape cellShape toLabel options current =
     B.choice shape cellShape toLabel options current <| always ()
 
@@ -203,7 +185,7 @@ choiceWithIcons
     -> ( comparable -> ( Label, Icon ) )
     -> List comparable
     -> comparable
-    -> Builder
+    -> Tron
 choiceWithIcons shape cellShape toLabelAndIcon options current =
     B.choiceWithIcons shape cellShape toLabelAndIcon options current <| always ()
 
@@ -216,7 +198,7 @@ choiceByCompare
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> Builder
+    -> Tron
 choiceByCompare shape cellShape toLabel options current compare =
     B.choiceByCompare shape cellShape toLabel options current compare <| always ()
 
@@ -229,7 +211,7 @@ choiceWithIconsByCompare
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> Builder
+    -> Tron
 choiceWithIconsByCompare shape cellShape toLabelAndIcon options current compare =
     B.choiceWithIconsByCompare shape cellShape toLabelAndIcon options current compare <| always ()
 
@@ -238,7 +220,7 @@ choiceWithIconsByCompare shape cellShape toLabelAndIcon options current compare 
 strings
      : List String
     -> String
-    -> Builder
+    -> Tron
 strings options current =
     B.strings options current <| always ()
 
@@ -248,7 +230,7 @@ labels
      : ( a -> Label )
     -> List a
     -> a
-    -> Builder
+    -> Tron
 labels toLabel options current =
     B.labels toLabel options current () <| always ()
 
@@ -258,7 +240,7 @@ palette
      : PanelShape
     -> List Color
     -> Color
-    -> Builder
+    -> Tron
 palette shape options current =
     B.palette shape options current <| always ()
 
@@ -289,20 +271,20 @@ makeUrl = Button.makeUrl
 
 
 {-| -}
-expand : Builder -> Builder
+expand : Tron -> Tron
 expand = B.expand
 
 
 {-| -}
-collapse : Builder -> Builder
+collapse : Tron -> Tron
 collapse = B.collapse
 
 
 {-| -}
-addPath : Builder -> B.Builder ( List Int, () )
+addPath : Tron -> B.Tron ( List Int, () )
 addPath = Property.addPath >> B.map (Tuple.mapFirst Path.toList)
 
 
 {-| -}
-addLabeledPath : Builder -> B.Builder ( List String, () )
+addLabeledPath : Tron -> B.Tron ( List String, () )
 addLabeledPath = Property.addLabeledPath

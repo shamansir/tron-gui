@@ -21,7 +21,7 @@ The only things that is different from usual `Elm` application is `for` function
 
     type alias Model = Amount
 
-    for : Model -> Builder Msg
+    for : Model -> Tron Msg
     for amount =
         Builder.root
             [
@@ -72,11 +72,13 @@ See also: `Tron.Option`, `Tron.Builder`, `Tron.Builder.*`.
 
 There are some special types of GUI Builders that can come in handy if you don't want to use messages, but get them as the type-value pairs or add paths to them or just skip them. All of them doesn't require you to specify handling message so, every function from such `Builder` has one argument less:
 
-- `Builder ()` (`Tron.Builder.Unit`) — do not expose values (keeps them inside);
-- `Builder ProxyValue` (`Tron.Builder.Proxy`) — store values as a type-value data, see `Tron.Expose.ProxyValue` for more info;
-- `Builder String` (`Tron.Builder.String`) — store value stringified;
+- `Tron ()` (`Tron.Builder.Unit`) — do not expose values (keeps them inside);
+- `Tron ProxyValue` (`Tron.Builder.Proxy`) — store values as a type-value data, see `Tron.Expose.ProxyValue` for more info;
+- `Tron String` (`Tron.Builder.String`) — store value stringified;
 
-Any `Builder a` can be converted to `Builder ( Path, Value )` using `Builder.addPath`, `Builder.addLabeledPath` and/or `Tron.Expose.Convert` helpers.
+Any `Tron a` can be converted to `Tron ( Path, Value )` using `Builder.addPath`, `Builder.addLabeledPath` and/or `Tron.Expose.Convert` helpers.
+
+There is a special `Backed` program, that just stores the stringified values in the `Dict` and is able to send them to the JS, see [Backed](#Backed) section below.
 
 # Program
 
@@ -103,8 +105,9 @@ import Random
 import Dict exposing (Dict)
 import Task
 
+import Tron.Core as Core exposing (Model)
 import Tron exposing (Tron)
-import Tron.Builder as Builder exposing (Builder)
+--import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Expose as Exp
@@ -116,14 +119,14 @@ import Tron.Property as Property exposing (LabelPath)
 import Tron.Expose.Data as Exp
 
 
-{-| Adds `Tron msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
+{-| Adds `Model msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
 type alias ProgramWithTron flags model msg =
-    Program flags ( model, Tron msg ) (WithTronMsg msg)
+    Program flags ( model, Model msg ) (WithTronMsg msg)
 
 
 type WithTronMsg msg
     = ToUser msg
-    | ToTron Tron.Msg
+    | ToTron Core.Msg
     --| Ack Exp.Ack
     | SendUpdate Exp.RawOutUpdate
     | ReceiveRaw Exp.RawInUpdate
@@ -132,19 +135,19 @@ type WithTronMsg msg
 
 
 init
-    :  ( flags -> ( model, Cmd msg ), model -> Builder msg )
+    :  ( flags -> ( model, Cmd msg ), model -> Tron msg )
     -> Maybe Url
     -> RenderTarget
     -> PortCommunication msg
     -> flags
-    -> ( ( model, Tron msg ), Cmd (WithTronMsg msg) )
+    -> ( ( model, Model msg ), Cmd (WithTronMsg msg) )
 init ( userInit, userFor ) maybeUrl renderTarget ports flags =
     let
         ( initialModel, userEffect ) =
             userInit flags
         ( gui, guiEffect ) =
             userFor initialModel
-                |> Tron.init
+                |> Core.init
     in
         (
             ( initialModel
@@ -167,7 +170,7 @@ init ( userInit, userFor ) maybeUrl renderTarget ports flags =
 view
     :  (model -> Html msg)
     -> RenderTarget
-    -> (model, Tron msg)
+    -> (model, Model msg)
     -> Html (WithTronMsg msg)
 view userView renderTarget ( model, gui ) =
     Html.div
@@ -183,22 +186,22 @@ view userView renderTarget ( model, gui ) =
 subscriptions
     :  ( model -> Sub msg )
     -> PortCommunication msg
-    -> ( model, Tron msg )
+    -> ( model, Model msg )
     -> Sub (WithTronMsg msg)
 subscriptions userSubscriptions ports ( model, gui ) =
     Sub.batch
         [ userSubscriptions model |> Sub.map ToUser
-        , Tron.subscriptions gui |> Sub.map ToTron
+        , Core.subscriptions gui |> Sub.map ToTron
         , addSubscriptionsOptions ports |> Sub.map ReceiveRaw
         ]
 
 
 update
-    :  ( msg -> model -> (model, Cmd msg), model -> Builder msg )
+    :  ( msg -> model -> (model, Cmd msg), model -> Tron msg )
     -> PortCommunication msg
     -> WithTronMsg msg
-    -> ( model, Tron msg )
-    -> ( ( model, Tron msg ), Cmd (WithTronMsg msg) )
+    -> ( model, Model msg )
+    -> ( ( model, Model msg ), Cmd (WithTronMsg msg) )
 update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
     case withTronMsg of
 
@@ -211,17 +214,17 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
             (
                 ( newUserModel
                 , gui
-                    |> Tron.over (userFor newUserModel)
+                    |> Core.over (userFor newUserModel)
                 )
             , userEffect |> Cmd.map ToUser
             )
 
         ToTron guiMsg ->
-            case gui |> Tron.toExposed |> Tron.update guiMsg of
+            case gui |> Core.toExposed |> Core.update guiMsg of
                 ( nextGui, guiEffect ) ->
                     (
                         ( model
-                        , nextGui |> Tron.map Tuple.second
+                        , nextGui |> Core.map Tuple.second
                         )
                     , Cmd.batch
                         [ guiEffect
@@ -299,13 +302,13 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
                 )
 
 
-performInitEffects : PortCommunication msg -> Tron msg -> Cmd msg
+performInitEffects : PortCommunication msg -> Model msg -> Cmd msg
 performInitEffects ports gui =
         case ports of
             SendJson { ack } ->
-                gui |> Tron.encode |> ack
+                gui |> Core.encode |> ack
             DatGui { ack } ->
-                gui |> Tron.encode |> ack
+                gui |> Core.encode |> ack
             _ -> Cmd.none
 
 
@@ -324,10 +327,10 @@ tryTransmitting ports rawUpdate =
         _ -> Cmd.none
 
 
-addInitOptions : RenderTarget -> Tron msg -> Tron msg
+addInitOptions : RenderTarget -> Model msg -> Model msg
 addInitOptions target gui =
     case target of
-        Html dock _ -> gui |> Tron.dock dock
+        Html dock _ -> gui |> Core.dock dock
         Nowhere -> gui
         Aframe _ -> gui
 
@@ -342,15 +345,15 @@ addSubscriptionsOptions ports =
         _ -> Sub.none
 
 
-useRenderTarget : RenderTarget -> Tron msg -> Html Tron.Msg
+useRenderTarget : RenderTarget -> Model msg -> Html Core.Msg
 useRenderTarget target gui =
     case target of
-        Html dock theme -> gui |> Tron.dock dock |> Tron.view theme
+        Html dock theme -> gui |> Core.dock dock |> Core.view theme
         Nowhere -> Html.div [] []
         Aframe _ -> Html.div [] [] -- FIXME
 
 
-setDetachState : ( Maybe Detach.ClientId, Detach.State ) -> Tron msg -> Tron msg
+setDetachState : ( Maybe Detach.ClientId, Detach.State ) -> Model msg -> Model msg
 setDetachState st gui =
     { gui
     | detach = st
@@ -387,7 +390,7 @@ sandbox
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Builder.Builder msg
+        { for : model -> Tron msg
         , init : model
         , view : model -> Html msg
         , update : msg -> model -> model
@@ -410,7 +413,7 @@ element
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Builder.Builder msg
+        { for : model -> Tron msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Html msg
@@ -435,7 +438,7 @@ document
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Builder.Builder msg
+        { for : model -> Tron msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Browser.Document msg
@@ -472,7 +475,7 @@ application
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Builder.Builder msg
+        { for : model -> Tron msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Browser.Document msg
@@ -535,7 +538,7 @@ See `Tron.Builder.Unit` for the functions that will help you define the interfac
     import WithTron exposing (BackedWithTron)
     import Tron.Builder.Unit exposing (..)
 
-    gui : Float -> Builder
+    gui : Float -> Tron
     gui amount =
         Builder.root
             [
@@ -562,15 +565,15 @@ See `example/ReportToJsBacked` for more details.
 backed
     :  RenderTarget
     -> (( List String, String ) -> Cmd msg)
-    -> Builder ()
+    -> Tron ()
     -> BackedWithTron
 backed renderTarget transmit tree =
     let
 
-        tree_ : Builder BackedMsg
+        tree_ : Tron BackedMsg
         tree_ = tree |> Exp.toStrExposed |> Property.map Tuple.first
 
-        for_ : BackedStorage -> Builder BackedMsg
+        for_ : BackedStorage -> Tron BackedMsg
         for_ dict = tree_ |> Exp.loadValues dict
 
         init_ : () -> ( BackedStorage, Cmd BackedMsg )

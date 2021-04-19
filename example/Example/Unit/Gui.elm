@@ -1,13 +1,12 @@
 module Example.Unit.Gui exposing (..)
 
 
-import Color exposing (Color)
+import Color
 import Url.Builder as Url
 
 import Tron exposing (Tron)
 import Tron.Builder.Unit as Gui
-import Tron.Property  exposing (Property)
-import Tron.Property as Property exposing (Label)
+import Tron.Property as Property
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
 import Tron.Style.Theme as Theme
@@ -23,7 +22,7 @@ choices : List Choice
 choices = [ A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z ]
 
 
-gui : Gui.Builder
+gui : Tron ()
 gui =
     Gui.root
         [ ( "ghost", Gui.none )
@@ -86,7 +85,7 @@ gui =
         ]
 
 
-nestedButtons : Choice -> Gui.Builder
+nestedButtons : Choice -> Tron ()
 nestedButtons curChoice =
     Gui.nest
         ( cols 2 )
@@ -99,7 +98,7 @@ nestedButtons curChoice =
         ]
 
 
-colorNest : Gui.Builder
+colorNest : Tron ()
 colorNest =
     let
         colorCompKnob =

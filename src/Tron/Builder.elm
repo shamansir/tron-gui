@@ -1,12 +1,10 @@
 module Tron.Builder exposing
-    ( Builder, Set, Icon
-    , root
+    ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
     , nest, choice, choiceWithIcons, strings, labels, palette
     , choiceByCompare, choiceWithIconsByCompare
-    , icon, iconAt, themedIcon, themedIconAt, makeUrl
-    , map, mapSet
+    , Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
     , expand, collapse
     , addPath, addLabeledPath
     )
@@ -38,12 +36,80 @@ Cell shapes are usually just 1x1 (`CellShape.single`), but in some specific case
 
 In the examples below, we use `Builder.` as a prefix in the places where we reference functions from this module. This assumes that you did something like this in your code:
 
+    import Tron exposing (Tron)
     import Tron.Builder as Builder exposing (..)
 
 However, it is ok to use any name you like, for sure. Be it `Tron.` or `Def.` or whatever...
 
-# Builder
-@docs Builder, Set
+# Defining your interface
+
+To define the structure of your interface, you need to have the function with this type:
+
+    for : Model -> Tron Msg
+
+Where `Msg` is the message of your application.
+
+This module contains all the helpers you need to build your own interface. Here is the excerpt from `OneKnob` example:
+
+    type alias Amount = Float
+
+
+    type Msg
+        = AmountChanged Amount
+
+
+    type alias Model = Amount
+
+
+    for : Model -> Tron Msg
+    for amount =
+        Builder.root
+            [
+                ( "amount"
+                , Builder.float
+                    { min = 0, max = 1, step = 0.01 }
+                    amount
+                    AmountChanged
+                )
+            ]
+
+`Tron msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instances of `Tron msg`.
+
+Use the methods in the module as the helpers in building your own grid structure:
+
+    Builder.root
+        [ ( "int", Builder.int ... )
+        , ( "float", Builder.float ... )
+        ,
+            ( "nest"
+            , Builder.nest
+                [ ( "button", Builder.button ... )
+                , ...
+                ]
+            )
+        ]
+
+Using `Tron msg` together with `Builder.map` you may build your GUI from several modules with different messages.
+
+    Builder.root
+        [ ( "one", ModuleOne.gui model.moduleOne |> Builder.map ModuleOne )
+        , ( "two", ModuleTwo.gui model.moduleTwo |> Builder.map ModuleTwo )
+        , ( "three", ModuleThree.gui model.moduleThree |> Builder.map ModuleThree )
+        ]
+
+For more information, see the `examples` folder in the source code.
+
+# Sets
+
+`Set msg` is just the list of components' definitions together with their labels. It is what
+`Builder.root` and `Builder.nest` get as an argument. `Set msg` is exposed as a separate type to help you in the cases where you build your GUI from several modules, but want to join them in a single panel rather than nesting every module separately.
+
+    Builder.nest
+        Shape.auto -- we want the plate size to be calculate autimatically
+        CellShape.single -- usual 1x1 shape of a cell
+        <| (ModuleOne.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleOne))
+            ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleTwo))
+            ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleThree))
 
 # Root
 @docs root
@@ -75,6 +141,7 @@ import Axis exposing (Axis)
 import Url.Builder as Url
 import Dict
 
+import Tron exposing (Tron)
 import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
@@ -97,65 +164,10 @@ import Tron.Control.Nest exposing (Form(..), ItemId)
 import Tron.Builder.Choice as Choice
 
 
-{-| To define the structure of your interface, you need to have the function with this type:
-
-    for :: Model -> Builder Msg
-
-Where `Msg` is the message of your application.
-
-This module contains all the helpers you need to build your own interface. Here is the excerpt from `OneKnob` example:
-
-    type alias Amount = Float
-
-
-    type Msg
-        = AmountChanged Amount
-
-
-    type alias Model = Amount
-
-
-    for : Model -> Builder Msg
-    for amount =
-        Builder.root
-            [
-                ( "amount"
-                , Builder.float
-                    { min = 0, max = 1, step = 0.01 }
-                    amount
-                    AmountChanged
-                )
-            ]
-
-`Builder msg` is the type that represents any cell in your GUI. If it's a nesting, it also contains recursively other instances of `Builder msg`.
-
-Use the methods in the module as the helpers in building your own grid structure:
-
-    Builder.root
-        [ ( "int", Builder.int ... )
-        , ( "float", Builder.float ... )
-        ,
-            ( "nest"
-            , Builder.nest
-                [ ( "button", Builder.button ... )
-                , ...
-                ]
-            )
-        ]
-
-Using `Builder msg` together with `Builder.map` you may build your GUI from several modules with different messages.
-
-    Builder.root
-        [ ( "one", ModuleOne.gui model.moduleOne |> Builder.map ModuleOne )
-        , ( "two", ModuleTwo.gui model.moduleTwo |> Builder.map ModuleTwo )
-        , ( "three", ModuleThree.gui model.moduleThree |> Builder.map ModuleThree )
-        ]
-
-See `Tron` module documentation and examples in the source code.
-
+{-|
 See also: `Builder.Set`.
 -}
-type alias Builder msg = Property msg
+type alias Tron msg = Property msg
 
 
 {-| `Set msg` is just the list of components' definitions together with their labels. It is what
@@ -170,20 +182,7 @@ type alias Builder msg = Property msg
 
 See also: `Builder.map`.
 -}
-type alias Set msg = List ( Label, Builder msg )
-
-
-{-| The usual `map` function which allows you to substitute the messages sent through the components.
--}
-map : (msgA -> msgB) -> Builder msgA -> Builder msgB
-map = Tron.Property.map
-
-
-
-{-| The usual `map` function which allows you to substitute the messages sent through the components in a `Set`.
--}
-mapSet : (msgA -> msgB) -> Set msgA -> Set msgB
-mapSet = List.map << Tuple.mapSecond << map
+type alias Set msg = List ( Label, Tron msg )
 
 
 {-| Similar to `Cmd.none`, `Sub.none` etc., makes it easier to use expressions in the definition.
@@ -196,7 +195,7 @@ For example:
         Builder.none
 
 -}
-none : Builder msg
+none : Tron msg
 none = Nil
 
 
@@ -244,7 +243,7 @@ Actually it is just an alias for the nested row of controls, always expanded.
             ]
 
 -}
-root : Set msg -> Builder msg
+root : Set msg -> Tron msg
 root props =
     nest
         (Shape.rows 1)
@@ -258,7 +257,7 @@ root props =
     Builder.float { min = 0, max = 44000, step = 1 } myModel.frequency ChangeFrequency
 
 -}
-float : Axis -> Float -> ( Float -> msg ) -> Builder msg
+float : Axis -> Float -> ( Float -> msg ) -> Tron msg
 float axis default =
     Number
         << Control axis default -- RoundBy 2
@@ -270,7 +269,7 @@ float axis default =
     Builder.int { min = 1, max = 8, step = 1 } myModel.octave ChangeOctave
 
 -}
-int : { min: Int, max : Int, step : Int } -> Int -> ( Int -> msg ) -> Builder msg
+int : { min: Int, max : Int, step : Int } -> Int -> ( Int -> msg ) -> Tron msg
 int { min, max, step } default toMsg =
     float
         { min = toFloat min, max = toFloat max, step = toFloat step } -- RoundBy 0
@@ -282,7 +281,7 @@ int { min, max, step } default toMsg =
 
     Builder.number { min = 0, max = 44000, step = 1 } myModel.frequency ChangeFrequency
 -}
-number : Axis -> Float -> ( Float -> msg ) -> Builder msg
+number : Axis -> Float -> ( Float -> msg ) -> Tron msg
 number = float
 
 
@@ -296,7 +295,7 @@ number = float
         PointLightTo
 
 -}
-xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Builder msg
+xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Tron msg
 xy axes default =
     Coordinate
         << Control axes default
@@ -305,7 +304,7 @@ xy axes default =
 
 {-| `coord` is the alias for `Builder.xy`
 -}
-coord : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Builder msg
+coord : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Tron msg
 coord = xy
 
 
@@ -328,7 +327,7 @@ coord = xy
         model.selectedColor
         ChangeColor
 -}
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Builder msg
+input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Tron msg
 input toString fromString default toMsg =
     Text
         <| Control
@@ -341,7 +340,7 @@ input toString fromString default toMsg =
 
     Builder.text model.elfName RenameElf
 -}
-text : String -> (String -> msg) -> Builder msg
+text : String -> (String -> msg) -> Tron msg
 text default handler =
     Text
         <| Control
@@ -356,7 +355,7 @@ The `Color` type here is from `avh4/elm-color` module.
 
     Builder.color model.lightColor AdjustColor
 -}
-color : Color -> (Color -> msg) -> Builder msg
+color : Color -> (Color -> msg) -> Tron msg
 color default =
     Color
         << Control
@@ -369,7 +368,7 @@ color default =
 
     Builder.button <| always DoABang
 -}
-button : (() -> msg) -> Builder msg
+button : (() -> msg) -> Tron msg
 button =
     buttonByFace Default
 
@@ -440,7 +439,7 @@ Or:
         )
         <| always DoABang
 -}
-buttonWith : Icon -> (() -> msg) -> Builder msg
+buttonWith : Icon -> (() -> msg) -> Tron msg
 buttonWith icon_ =
     buttonByFace <| WithIcon icon_
 
@@ -450,13 +449,13 @@ buttonWith icon_ =
 
     Builder.button (Builder.icon "red-button.svg") <| always DoABang
 -}
-colorButton : Color -> (() -> msg) -> Builder msg
+colorButton : Color -> (() -> msg) -> Tron msg
 colorButton color_ =
     buttonByFace <| WithColor color_
 
 
 -- not exposed
-buttonByFace : Face -> (() -> msg) -> Builder msg
+buttonByFace : Face -> (() -> msg) -> Tron msg
 buttonByFace face =
     Action
         << Control
@@ -469,7 +468,7 @@ buttonByFace face =
 
     Builder.toggle model.lightOn SwitchLight
 -}
-toggle : Bool -> (Bool -> msg) -> Builder msg
+toggle : Bool -> (Bool -> msg) -> Tron msg
 toggle default toMsg =
     Toggle
         <| Control
@@ -480,7 +479,7 @@ toggle default toMsg =
 
 {-| `bool` is the alias for `Builder.toggle`
 -}
-bool : Bool -> (Bool -> msg) -> Builder msg
+bool : Bool -> (Bool -> msg) -> Tron msg
 bool = toggle
 
 
@@ -507,7 +506,7 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
 
 See also: `Style.Shape`, `Style.CellShape`
 -}
-nest : PanelShape -> CellShape -> Set msg -> Builder msg
+nest : PanelShape -> CellShape -> Set msg -> Tron msg
 nest panelShape cellShape items =
     Group
         Nothing
@@ -552,7 +551,7 @@ choice
     -> List comparable
     -> comparable
     -> ( comparable -> msg )
-    -> Builder msg
+    -> Tron msg
 choice shape cellShape toLabel items current toMsg =
     Choice.helper
         ( shape, cellShape )
@@ -584,7 +583,7 @@ choiceWithIcons
     -> List comparable
     -> comparable
     -> ( comparable -> msg )
-    -> Builder msg
+    -> Tron msg
 choiceWithIcons shape cellShape toLabelAndIcon items current toMsg =
     Choice.helper
         ( shape, cellShape )
@@ -634,7 +633,7 @@ choiceByCompare
     -> a
     -> ( a -> a -> Bool )
     -> ( a -> msg )
-    -> Builder msg
+    -> Tron msg
 choiceByCompare shape cellShape toLabel =
     Choice.helper
         ( shape, cellShape )
@@ -664,7 +663,7 @@ choiceWithIconsByCompare
     -> a
     -> ( a -> a -> Bool )
     -> ( a -> msg )
-    -> Builder msg
+    -> Tron msg
 choiceWithIconsByCompare shape cellShape toLabelAndIcon =
     Choice.helper
         ( shape, cellShape )
@@ -685,7 +684,7 @@ strings
      : List String
     -> String
     -> ( String -> msg )
-    -> Builder msg
+    -> Tron msg
 strings options current toMsg =
     choice
         (cols 1)
@@ -706,7 +705,7 @@ labels
     -> a
     -> msg
     -> ( a -> msg )
-    -> Builder msg
+    -> Tron msg
 labels toLabel options current fallback toMsg =
     let
         labelToValue =
@@ -740,7 +739,7 @@ palette
     -> List Color
     -> Color
     -> (Color -> msg)
-    -> Builder msg
+    -> Tron msg
 palette shape options current =
     Choice.helper
         ( shape, CS.half )
@@ -765,7 +764,7 @@ palette shape options current =
     Builder.nest ... |> Builder.expand
     Builder.choice ... |> Builder.expand
 -}
-expand : Builder msg -> Builder msg
+expand : Tron msg -> Tron msg
 expand = Property.expand
 
 
@@ -774,19 +773,19 @@ expand = Property.expand
     Builder.nest ... |> Builder.collapse
     Builder.choice ... |> Builder.collapse
 -}
-collapse : Builder msg -> Builder msg
+collapse : Tron msg -> Tron msg
 collapse = Property.collapse
 
 
 {-| Add the path representing the label-based way to reach the
 particular control in the GUI tree.
 -}
-addPath : Builder msg -> Builder ( List Int, msg )
-addPath = Property.addPath >> map (Tuple.mapFirst Path.toList)
+addPath : Tron msg -> Tron ( List Int, msg )
+addPath = Property.addPath >> Tron.map (Tuple.mapFirst Path.toList)
 
 
 {-| Add the path representing the label-based way to reach the
 particular control in the GUI tree.
 -}
-addLabeledPath : Builder msg -> Builder ( List String, msg )
+addLabeledPath : Tron msg -> Tron ( List String, msg )
 addLabeledPath = Property.addLabeledPath

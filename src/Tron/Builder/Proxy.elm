@@ -1,12 +1,10 @@
 module Tron.Builder.Proxy exposing
-    ( Builder, Set, Icon
-    , root
+    ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
     , nest, choice, choiceWithIcons, strings, labels, palette
     , choiceByCompare, choiceWithIconsByCompare
-    , icon, iconAt, themedIcon, themedIconAt, makeUrl
-    , map, mapSet
+    , Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
     , expand, collapse
     , addPath, addLabeledPath
     )
@@ -14,11 +12,11 @@ module Tron.Builder.Proxy exposing
 
 {-|
 
-`Builder ProxyValue` helps to define the interface that works without providing any user message in response to changes, but rather fires the universal `ProxyValue` that helps to understand what is the type of the value and redirect it somewhere, for example to ports, without any special message-driven flow.
+`Tron ProxyValue` helps to define the interface that works without providing any user message in response to changes, but rather fires the universal `ProxyValue` that helps to understand what is the type of the value and redirect it somewhere, for example to ports, without any special message-driven flow.
 
 See also: `Tron.Builder.map`, `Tron.Expose.Convert.toProxied`, `Tron.Expose.ProxyValue`, `Tron.Expose.Convert.toExposed`, `Tron.Expose.Data.RawOutUpdate`, `addPath`, `addLabeledPath`.
 
-Using `Builder.map`, you may convert the proxy value to anything that fits your case better.
+Using `Tron.map`, you may convert the proxy value to anything that fits your case better.
 
 Using `Builder.addPath` or `Builder.addLabeledPath`, you may automatically add the path to the control in the GUI tree so that you may easily know from where the value came.
 
@@ -26,9 +24,6 @@ Please see `Tron.Builder` for the detailed information on Builders and how to us
 
 All the documentation for the functions below is in the `Tron.Builder` module, those are just aliases to them without the last argument: the handler that converts the value to a user message,
 so that is easier and shorter to use `Proxy`-based `Builder` if you don't need any message anyway.
-
-# Builder
-@docs Builder, Set
 
 # Root
 @docs root
@@ -42,9 +37,6 @@ so that is easier and shorter to use `Proxy`-based `Builder` if you don't need a
 # Icons
 @docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
-# Common Helpers
-@docs map, mapSet
-
 # Force expand / collapse for nesting
 @docs expand, collapse
 
@@ -53,6 +45,7 @@ so that is easier and shorter to use `Proxy`-based `Builder` if you don't need a
 -}
 
 
+import Tron as B
 import Tron.Builder as B
 
 import Array
@@ -84,7 +77,7 @@ import Tron.Builder.Choice as Choice
 
 
 {-| -}
-type alias Builder = B.Builder ProxyValue
+type alias Tron = B.Tron ProxyValue
 
 
 {-| -}
@@ -96,92 +89,82 @@ type alias Icon = B.Icon
 
 
 {-| -}
-map : (ProxyValue -> a) -> Builder -> B.Builder a
-map = B.map
-
-
-{-| -}
-mapSet : (ProxyValue -> a) -> Set -> B.Set a
-mapSet = B.mapSet
-
-
-{-| -}
-none : Builder
+none : Tron
 none = B.none
 
 
 {-| -}
-root : Set -> Builder
+root : Set -> Tron
 root = B.root
 
 
 {-| -}
-float : Axis -> Float -> Builder
+float : Axis -> Float -> Tron
 float axis default = B.float axis default FromSlider
 
 
 {-| -}
-int : { min: Int, max : Int, step : Int } -> Int -> Builder
+int : { min: Int, max : Int, step : Int } -> Int -> Tron
 int axis default = B.int axis default (toFloat >> FromSlider)
 
 
 {-| -}
-number : Axis -> Float -> Builder
+number : Axis -> Float -> Tron
 number = float
 
 
 {-| -}
-xy : ( Axis, Axis ) -> ( Float, Float ) -> Builder
+xy : ( Axis, Axis ) -> ( Float, Float ) -> Tron
 xy xAxis yAxis = B.xy xAxis yAxis FromXY
 
 
 {-| -}
-coord : ( Axis, Axis ) -> ( Float, Float ) -> Builder
+coord : ( Axis, Axis ) -> ( Float, Float ) -> Tron
 coord = xy
 
 
 {-| -}
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Builder
+input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Tron
 input toString fromString current = B.input toString fromString current (toString >> FromInput)
 
 
 {-| -}
-text : String -> Builder
+text : String -> Tron
 text default = B.text default FromInput
 
 
 {-| -}
-color : Color -> Builder
+color : Color -> Tron
 color current = B.color current FromColor
 
 
 {-| -}
-button : Builder
+button : Tron
 button = B.button <| always FromButton
 
 
 {-| -}
-buttonWith : Icon -> Builder
+buttonWith : Icon -> Tron
 buttonWith icon_ = B.buttonWith icon_ <| always FromButton
 
 
 {-| -}
-colorButton : Color -> Builder
+colorButton : Color -> Tron
 colorButton color_ = B.colorButton color_ <| always FromButton
 
 
 {-| -}
-toggle : Bool -> Builder
+toggle : Bool -> Tron
 toggle current = B.toggle current (boolToToggle >> FromToggle)
 
 
 {-| -}
-bool : Bool -> Builder
+bool : Bool -> Tron
 bool = toggle
 
 
 {-| -}
-nest : PanelShape -> CellShape -> Set -> Builder
+nest : PanelShape -> CellShape -> Set -> Tron
 nest = B.nest
 
 
@@ -192,7 +175,7 @@ choice
     -> ( comparable -> Label )
     -> List comparable
     -> comparable
-    -> Builder
+    -> Tron
 choice shape cellShape toLabel items current =
     Choice.proxyHelper
         ( shape, cellShape )
@@ -209,7 +192,7 @@ choiceWithIcons
     -> ( comparable -> ( Label, Icon ) )
     -> List comparable
     -> comparable
-    -> Builder
+    -> Tron
 choiceWithIcons shape cellShape toLabelAndIcon items current =
     Choice.proxyHelper
         ( shape, cellShape )
@@ -230,7 +213,7 @@ choiceByCompare
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> Builder
+    -> Tron
 choiceByCompare shape cellShape toLabel =
     Choice.proxyHelper
         ( shape, cellShape )
@@ -245,7 +228,7 @@ choiceWithIconsByCompare
     -> List a
     -> a
     -> ( a -> a -> Bool )
-    -> Builder
+    -> Tron
 choiceWithIconsByCompare shape cellShape toLabelAndIcon =
     Choice.proxyHelper
         ( shape, cellShape )
@@ -259,7 +242,7 @@ choiceWithIconsByCompare shape cellShape toLabelAndIcon =
 strings
      : List String
     -> String
-    -> Builder
+    -> Tron
 strings options current =
     choice
         (cols 1)
@@ -275,7 +258,7 @@ labels
     -> List a
     -> a
     -> msg
-    -> Builder
+    -> Tron
 labels toLabel options current fallback =
     let
         labelToValue =
@@ -296,7 +279,7 @@ palette
      : PanelShape
     -> List Color
     -> Color
-    -> Builder
+    -> Tron
 palette shape options current =
     Choice.proxyHelper
         ( shape, CS.half )
@@ -342,20 +325,20 @@ makeUrl = Button.makeUrl
 
 
 {-| -}
-expand : Builder -> Builder
+expand : Tron -> Tron
 expand = B.expand
 
 
 {-| -}
-collapse : Builder -> Builder
+collapse : Tron -> Tron
 collapse = B.collapse
 
 
 {-| -}
-addPath : Builder -> B.Builder ( List Int, ProxyValue )
+addPath : Tron -> B.Tron ( List Int, ProxyValue )
 addPath = Property.addPath >> B.map (Tuple.mapFirst Path.toList)
 
 
 {-| -}
-addLabeledPath : Builder -> B.Builder ( List String, ProxyValue )
+addLabeledPath : Tron -> B.Tron ( List String, ProxyValue )
 addLabeledPath = Property.addLabeledPath

@@ -2,7 +2,6 @@ module Example.Default.Gui exposing (..)
 
 
 import Color exposing (Color)
-import Url.Builder as Url
 
 import Tron exposing (Tron)
 import Tron.Builder as Gui
@@ -17,7 +16,7 @@ import Example.Default.Model exposing (..)
 import Example.Default.Msg exposing (..)
 
 
-for : Model -> Gui.Builder Msg
+for : Model -> Tron Msg
 for model =
     Gui.root
         [ ( "ghost", Gui.none )

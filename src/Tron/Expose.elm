@@ -512,7 +512,7 @@ noClientId = Ack <| E.null
            , client = encodeClientId maybeClient
            }
 -}
--- select : Path -> Tron msg -> Tron msg
+-- select : Path -> Model msg -> Model msg
 -- select selector gui = gui
 
 

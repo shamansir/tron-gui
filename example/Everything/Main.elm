@@ -5,24 +5,20 @@ import Browser
 import Browser.Events as Browser
 import Browser.Dom as Browser
 import Browser.Navigation as Navigation
-import Json.Decode as Decode
-import Json.Decode as D
-import Json.Encode as Encode
 import Html exposing (Html)
-import Html as Html exposing (map, div)
-import Html.Attributes as Attr exposing (class)
-import Html.Events as Html exposing (onClick)
-import Dict exposing (size)
-import Task as Task
+-- import Html as Html exposing (map, div)
+import Html.Attributes as Attr
+import Html.Events as Html
+-- import Dict exposing (size)
+-- import Task as Task
 import Random
 import Url exposing (Url)
 
-import Tron exposing (Tron, view, subscriptions)
-import Tron as T
-import Tron.Expose.Data as Exp exposing (Update)
+import Tron exposing (Tron)
+import Tron.Core as Core
+import Tron.Core as T
+import Tron.Expose.Data as Exp
 import Tron.Mouse exposing (Position)
-import Tron.Builder as Tron exposing (Builder)
-import Tron.Builder as Builder exposing (map)
 import Tron.Detach as Detach exposing (fromUrl)
 import Tron.Style.Theme exposing (Theme)
 import Tron.Style.Theme as Theme
@@ -68,9 +64,9 @@ type Msg
     | ChangeMode Mode
     | ChangeDock Dock
     | FromDatGui Exp.RawInUpdate
-    | ToTron Tron.Msg
+    | ToTron Core.Msg
     | ToExample Example.Msg
-    | Randomize (Tron.Builder ())
+    | Randomize (Tron ())
     | SwitchTheme
     | TriggerRandom
     | TriggerDefault
@@ -84,7 +80,7 @@ type Mode
 type alias Model =
     { mode : Mode
     , theme : Theme
-    , gui : Tron Msg
+    , gui : Core.Model Msg
     , example : Example.Model
     , url : Url
     }
@@ -103,8 +99,8 @@ init url _ =
             , example = initialModel
             , theme = Theme.light
             , gui = gui
-                |> Tron.reshape ( 7, 7 )
-                |> Tron.dock Dock.bottomLeft
+                |> Core.reshape ( 7, 7 )
+                |> Core.dock Dock.bottomLeft
             , url = url
             }
         , Cmd.batch
@@ -156,7 +152,7 @@ view { mode, gui, example, theme } =
             DatGui -> Html.div [] []
             TronGui ->
                 gui
-                    |> Tron.view theme
+                    |> Core.view theme
                     |> Html.map ToTron
         , Example.view example
         ]
@@ -172,7 +168,7 @@ update msg model =
                 | mode = DatGui
                 }
             , model.gui
-                |> Tron.encode
+                |> Core.encode
                 |> startDatGui
             )
 
@@ -213,9 +209,9 @@ update msg model =
                         | example = nextExample
                         , gui =
                             model.gui
-                                |> Tron.over
+                                |> Core.over
                                     (ExampleGui.for nextExample
-                                        |> Builder.map ToExample)
+                                        |> Tron.map ToExample)
                         }
                     , updateEffects |> Cmd.map ToExample
                     )
@@ -226,7 +222,7 @@ update msg model =
                 } -}
 
         ( ToTron guiMsg, TronGui ) ->
-            case model.gui |> Tron.update guiMsg of
+            case model.gui |> Core.update guiMsg of
                 ( nextGui, cmds ) ->
                     (
                         { model
@@ -240,7 +236,7 @@ update msg model =
         ( FromDatGui guiUpdate, DatGui ) ->
             ( model
             , model.gui
-                |> Tron.applyRaw guiUpdate
+                |> Core.applyRaw guiUpdate
             )
 
         ( FromDatGui _, TronGui ) -> ( model, Cmd.none )
@@ -257,18 +253,18 @@ update msg model =
         ( Randomize newTree, _ ) ->
             let
                 ( newGui, startGui ) =
-                    newTree |> Tron.init
+                    newTree |> Core.init
             in
                 (
                     { model
                     | gui = newGui
-                        |> T.map (always NoOp)
-                        |> Tron.dock Dock.bottomCenter
+                        |> Core.map (always NoOp)
+                        |> Core.dock Dock.bottomCenter
                     }
                 , case model.mode of
                     DatGui ->
                         newGui
-                            |> Tron.encode
+                            |> Core.encode
                             |> startDatGui
                     TronGui ->
                         startGui
@@ -303,7 +299,7 @@ update msg model =
         ( ChangeDock newDock, _ ) ->
             (
                 { model
-                | gui = model.gui |> Tron.dock newDock
+                | gui = model.gui |> Core.dock newDock
                 }
             , Cmd.none
             )
@@ -317,7 +313,7 @@ subscriptions { mode, gui } =
         DatGui ->
             updateFromDatGui FromDatGui
         TronGui ->
-            Tron.subscriptions gui |> Sub.map ToTron
+            Core.subscriptions gui |> Sub.map ToTron
 
 
 main : Program () Model Msg
@@ -335,12 +331,12 @@ main =
         }
 
 
-exampleGui : Url -> Example.Model -> ( Tron Msg, Cmd Msg )
+exampleGui : Url -> Example.Model -> ( Core.Model Msg, Cmd Msg )
 exampleGui url model =
     let
         ( gui, startGui ) =
             ExampleGui.for model
-                |> Tron.init
+                |> Core.init
         ( nextGui, launchDetachable )
             = ( gui, Cmd.none )
                 -- |> Gui.detachable FIXME
@@ -350,7 +346,7 @@ exampleGui url model =
                 --     receieveUpdateFromWs
     in
         ( nextGui
-            |> T.map ToExample
+            |> Core.map ToExample
         , Cmd.batch
             [ startGui
             , launchDetachable

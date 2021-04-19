@@ -34,20 +34,21 @@ Next major features planned are:
 
 ## Screenshots
 
-![Light Theme](https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-light.png)
+<img src="https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-light.png" width="549" height="497" alt="Light Theme" />
 
-![Dark Theme](https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-dark.png)
+<img src="https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-dark.png" width="549" height="515" alt="Dark Theme" />
 
 ## Adding to your Elm application
 
 _Tron_ provides the `WithTron` helper which wraps the core `Browser....` functions and requests you to define the same
 `init`, `view`, `update`, etc., as you usually define, with only few additions:
 
-- your GUI description as `for :: Model -> Builder Msg` function, see the examples below;
+- your GUI description as `for :: Model -> Tron Msg` function, where `Msg` is your usual message, see the examples below;
 - the option to select _theme_ (dark/light) and _docking_ (in any corner or in the center);
 - the way Tron communicates with JS, if it needs to, usually the communication is off — but, if you want _detachable_ functionality, you'll need to start WebSocket server, all the required code is provided for that and requires minimum actions;
 
-* [`WithTron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Gui-Build) documentation;
+* [`WithTron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron) documentation;
+* [`Tron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron) documentation;
 * [`Tron.Builder`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Builder) documentation;
 * [`Tron.Option`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option) documentation;
 
@@ -97,7 +98,7 @@ main =
     WithTron.element
         (Option.toHtml Dock.center Theme.dark)
         Option.noCommunication
-        { for = for -- `for :: Model -> Builder msg`, see examples below
+        { for = for -- `for :: Model -> Tron msg`, see examples below
         , init = init -- your usual `init` function
         , view = view -- your usual `view` function
         , update = update -- your usual `update` function
@@ -144,10 +145,11 @@ From `example/Example/Detachable/Main.elm`:
 
 ```elm
 import WithTron exposing (ProgramWithTron)
+import Tron exposing (Tron)
 import Tron.Option as Option
-import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
+import Tron.Builder as Builder
 
 main : ProgramWithTron () Example.Model Example.Msg
 main =
@@ -189,10 +191,11 @@ From `example/Example/Default/Gui.elm`:
 ### Default
 
 ```elm
-import Tron.Builder as Gui exposing (Builder)
+import Tron exposing (Tron)
+import Tron.Builder as Gui
 
 
-for : Model -> Builder Msg
+for : Model -> Tron Msg
 for model =
     Gui.root
         [ ( "ghost", Gui.none )
@@ -232,7 +235,9 @@ for model =
                 nestedButtons model.buttonPressed
           )
         , ( "button",
-                Gui.buttonWith (Gui.icon "export") (always NoOp)
+                Gui.buttonWith
+                    (Gui.iconAt [ "assets", "export.svg" ])
+                    (always NoOp)
           )
         , ( "toggle",
                 Gui.toggle
@@ -242,7 +247,7 @@ for model =
         ]
 
 
-nestedButtons : Choice -> Builder Msg
+nestedButtons : Choice -> Tron Msg
 nestedButtons curChoice =
     Gui.nestIn
         ( rows 2 )
@@ -255,7 +260,7 @@ nestedButtons curChoice =
         ]
 
 
-colorNest : Builder Msg
+colorNest : Tron Msg
 colorNest =
     let
         colorCompKnob msg =
@@ -287,10 +292,11 @@ choiceToLabel c =
 From `example/Example/Default/Goose.elm`:
 
 ```elm
-import Tron.Builder as Gui exposing (Builder)
+import Tron exposing (Tron)
+import Tron.Builder as Gui
 
 
-for : Model -> Gui.Builder Msg
+for : Model -> Tron Msg
 for model =
     Gui.root
         [
@@ -353,7 +359,7 @@ for model =
         ]
 
 
-honkGui : HonkConfig -> Gui.Builder Msg
+honkGui : HonkConfig -> Tron Msg
 honkGui config =
     Gui.nest
         ( cols 2 )
@@ -393,7 +399,7 @@ honkGui config =
         ]
 
 
-eyeGui : EyeConfig -> Gui.Builder Msg
+eyeGui : EyeConfig -> Tron Msg
 eyeGui config =
     Gui.nest
         ( cols 1 )
@@ -418,7 +424,7 @@ eyeGui config =
         ]
 
 
-colorsGui : Bool -> Colors -> Gui.Builder Msg
+colorsGui : Bool -> Colors -> Tron Msg
 colorsGui isPunk colors =
     Gui.nest
         ( cols 2 )
@@ -440,36 +446,39 @@ colorsGui isPunk colors =
 
 When you don't have any _messages_ or you want to define GUI only to pass it to JavaScript side, you may use other Builders which don't require specifying messages and convert their values automatically:
 
-- `Tron.Builder.Unit` which provides `Builder ()`;
-- `Tron.Builder.String` which provides `Builder (String, String)` and so converts any value to the pair of the labeled path (such as `"honk/color"`, in the case of the _Goose_ example) and stringified value;
-- `Tron.Builder.Proxy` which provides `Builder ProxyValue` and so converts any value to the special `ProxyValue` which is a data type representing the type of value and its contents, such as `Color (Rgba 0.5 0.5 0.7 1.0)` or `XY -2.5 -2.5` & s.o.;
+- `Tron.Builder.Unit` which provides `Tron ()`;
+- `Tron.Builder.String` which provides `Tron (List String, String)` and so converts any value to the pair of the labeled path (such as `"honk/color"`, in the case of the _Goose_ example) and stringified value;
+- `Tron.Builder.Proxy` which provides `Tron ProxyValue` and so converts any value to the special `ProxyValue` which is a data type representing the type of value and its contents, such as `Color (Rgba 0.5 0.5 0.7 1.0)` or `XY -2.5 -2.5` & s.o.;
 
-Using functions from `Tron.Expose.Convert`, any of these `Builder`s, or your own `Builder`, may be converted to `Builder (RawOutValue, msg)` or simlar, so that it will carry the port-&-JSON-friendly version of the value along with the messages. Use `Builder.map Tuple.first` on such, to ignore the messages at all.
+Using functions from `Tron.Expose.Convert`, any of these `Tron`s, or your own `Tron`, may be converted to `Tron (RawOutValue, msg)` or simlar, so that it will carry the port-&-JSON-friendly version of the value along with the messages. Use `Tron.map Tuple.first` on such, to ignore the messages at all.
 
 The example with `Tron.Builder.Unit` (from `example/Example/Default/Goose.elm`):
 
-*NB*: Notice that defining controls this way doesn't require you to specify any message, plus in this case it is `Gui.Builder` rather than `Gui.Builder Msg`, but still it is easy to replace one with another just by changing import and adding/removing messages at the end of the calls:
+*NB*: Notice that defining controls this way doesn't require you to specify any message, plus in this case it is just `Tron ()` rather than `Tron Msg`, but still it is easy to replace one with another just by changing import and adding/removing messages at the end of the calls:
 
-### `Builder ()` example
+### `Tron ()` example
 
 ```elm
+import Tron exposing (Tron)
 import Tron.Builder.Unit as Gui
 
-gui : Gui.Builder
+gui : Tron ()
 gui =
     Gui.root
         [ ( "ghost", Gui.none )
         ,
             ( "int"
-            , Gui.int
+            ,
+                Gui.int
                     { min = -20, max = 20, step = 5 }
                     0
             )
         ,
             ( "float"
-            , Gui.float
-                { min = -10.5, max = 10.5, step = 0.5 }
-                0.0
+            ,
+                Gui.float
+                    { min = -10.5, max = 10.5, step = 0.5 }
+                    0.0
             )
         ,
             ( "xy",
@@ -503,14 +512,12 @@ gui =
             ( "nest", nestedButtons C )
         ,
             ( "button"
-            , Gui.buttonWith
-                <| Gui.themedIcon
-                    (\theme ->
-                        Gui.makeUrl
-                            <| Url.relative
-                                [ "assets", "export_" ++ Theme.toString theme ++ ".svg" ]
-                                []
-                    )
+            ,
+                Gui.buttonWith
+                    <| Gui.themedIconAt
+                        (\theme ->
+                            [ "assets", "export_" ++ Theme.toString theme ++ ".svg" ]
+                        )
             )
 
         ,
@@ -518,7 +525,7 @@ gui =
         ]
 
 
-nestedButtons : Choice -> Gui.Builder
+nestedButtons : Choice -> Tron ()
 nestedButtons curChoice =
     Gui.nest
         ( cols 2 )
@@ -531,7 +538,7 @@ nestedButtons curChoice =
         ]
 
 
-colorNest : Gui.Builder
+colorNest : Tron ()
 colorNest =
     let
         colorCompKnob =

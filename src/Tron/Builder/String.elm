@@ -1,11 +1,10 @@
 module Tron.Builder.String exposing
-    ( Builder, Set, Icon
-    , root
+    ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
     , nest, choice, choiceWithIcons, strings, labels, palette
     , choiceByCompare, choiceWithIconsByCompare
-    , icon, iconAt, themedIcon, themedIconAt, makeUrl    , map, mapSet
+    , icon, iconAt, themedIcon, themedIconAt, makeUrl
     , expand, collapse
     , addPath, addLabeledPath
     )
@@ -13,7 +12,7 @@ module Tron.Builder.String exposing
 
 {-|
 
-`Builder String` helps to define the interface that works without providing any user message in response to changes, but rather fires the stringified value.
+`Tron String` helps to define the interface that works without providing any user message in response to changes, but rather fires the stringified value.
 
 See also: `Tron.Expose.Convert.toStrExposed`, `addPath`, `addLabeledPath`.
 
@@ -24,8 +23,6 @@ Using `Builder.addPath` or `Builder.addLabeledPath`, you may automatically add t
 All the documentation for the functions below is in the `Tron.Builder` module, those are just aliases to them without the last argument: the handler that converts the value to a user message,
 so that is easier and shorter to use `String`-based `Builder` if you don't need any message anyway.
 
-# Builder
-@docs Builder, Set
 
 # Root
 @docs root
@@ -39,9 +36,6 @@ so that is easier and shorter to use `String`-based `Builder` if you don't need 
 # Icons
 @docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
-# Common Helpers
-@docs map, mapSet
-
 # Force expand / collapse for nesting
 @docs expand, collapse
 
@@ -50,7 +44,7 @@ so that is easier and shorter to use `String`-based `Builder` if you don't need 
 -}
 
 
-
+import Tron as B
 import Tron.Builder as B
 
 import Array
@@ -88,17 +82,6 @@ type alias Set = B.Set String
 
 {-| -}
 type alias Icon = B.Icon
-
-
-{-| -}
-map : (String -> a) -> Builder -> B.Builder a
-map = B.map
-
-
-{-| -}
-mapSet : (String -> a) -> Set -> B.Set a
-mapSet = B.mapSet
-
 
 
 {-| -}
