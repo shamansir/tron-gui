@@ -7,6 +7,7 @@
 /example/*.woff
 /example/*.woff2
 .idea
-index.html
+/index.html
 # /example/dat.gui.min.js
+example/Example/Goose/index.html
 example/Example/Goose/index.js

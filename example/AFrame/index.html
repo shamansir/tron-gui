@@ -1,0 +1,32 @@
+<!--index.html-->
+
+<html>
+<head>
+    <title>Elm Tron GUI Example</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no,user-scalable=no,maximum-scale=1" />
+    <meta charset="utf-8" />
+    <link href="./example.css" rel="stylesheet" type="text/css">
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="./app.js"></script>
+    <style>
+        body {
+            margin: 0;
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+            background-color: lightgray;
+        }
+    </style>
+</head>
+<body>
+    <div id="elm-node"></div>
+    <script type="text/javascript">
+
+        const app = Elm.AFrame.Main.init({
+            node : document.getElementById("elm-node")
+        });
+
+    </script>
+
+</body>
+</html>

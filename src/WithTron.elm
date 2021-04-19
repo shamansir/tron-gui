@@ -393,7 +393,28 @@ nextClientId =
     Random.generate SetClientId Detach.clientIdGenerator
 
 
-{-| Wrapper for `Program.sandbox` with `for` function and `Tron` options. -}
+{-| Wrapper for `Program.sandbox` with `for` function and `Tron` options.
+
+For example:
+
+    import Tron.Style.Theme as Theme exposing (Theme(..))
+    import Tron.Style.Dock as Dock
+    import Tron.Option as Option
+    import WithTron exposing (ProgramWithTron)
+
+    main : ProgramWithTron () Example.Model Example.Msg
+    main =
+        WithTron.sandbox
+            (Option.toHtml Dock.center Theme.dark)
+            Option.noCommunication
+            { for = ExampleGui.for
+            , init = Example.init
+            , view = Example.view
+            , update = Example.update
+            }
+
+
+-}
 sandbox
     :  RenderTarget
     -> PortCommunication msg
@@ -416,7 +437,33 @@ sandbox renderTarget ports impl =
         }
 
 
-{-| Wrapper for `Program.element` with `for` function and `Tron` options. -}
+{-| Wrapper for `Program.element` with `for` function and `Tron` options.
+
+Example from `Basic/Main.elm`
+
+    import Tron.Style.Theme as Theme exposing (Theme(..))
+    import Tron.Style.Dock as Dock
+    import Tron.Option as Option
+    import WithTron exposing (ProgramWithTron)
+
+    import Example.Goose.Main as Example
+    import Example.Goose.Model as Example
+    import Example.Goose.Msg as Example
+    import Example.Goose.Gui as ExampleGui
+
+    main : ProgramWithTron () Example.Model Example.Msg
+    main =
+        WithTron.element
+            (Option.toHtml Dock.center Theme.dark)
+            Option.noCommunication
+            { for = ExampleGui.for
+            , init = always Example.init
+            , view = Example.view
+            , update = Example.update
+            , subscriptions = always Sub.none
+            }
+
+ -}
 element
     :  RenderTarget
     -> PortCommunication msg
@@ -441,7 +488,38 @@ element renderTarget ports def =
         }
 
 
-{-| Wrapper for `Program.document` with `for` function and `Tron` options. -}
+{-| Wrapper for `Program.document` with `for` function and `Tron` options.
+
+For example:
+
+    import WithTron exposing (ProgramWithTron)
+    import Tron.Style.Theme as Theme exposing (Theme(..))
+    import Tron.Style.Dock as Dock
+    import Tron.Expose.Data as Exp
+    import Tron.Option as Option
+
+    main : ProgramWithTron () Example.Model Example.Msg
+    main =
+        WithTron.document
+            (Option.toHtml Dock.center Theme.light)
+            (Option.detachable
+                { ack = ackToWs
+                , transmit = sendUpdateToWs
+                , receive = receieveUpdateFromWs identity
+                }
+            )
+            { for = ExampleGui.for
+            , init = always Example.init
+            , view =
+                \model ->
+                    { title = "Detachable Tron"
+                    , body = [ Example.view model ]
+                    }
+            , update = Example.update
+            , subscriptions = always Sub.none
+            }
+
+ -}
 document
     :  RenderTarget
     -> PortCommunication msg
@@ -478,7 +556,51 @@ document renderTarget ports def =
         }
 
 
-{-| Wrapper for `Program.application` with `for` function and `Tron` options. -}
+{-| Wrapper for `Program.application` with `for` function and `Tron` options.
+
+Example from `Detachable/Main.elm`:
+
+    import WithTron exposing (ProgramWithTron)
+    import Tron.Style.Theme as Theme exposing (Theme(..))
+    import Tron.Style.Dock as Dock
+    import Tron.Expose.Data as Exp
+    import Tron.Option as Option
+
+    import Example.Goose.Main as Example
+    import Example.Goose.Model as Example
+    import Example.Goose.Msg as Example
+    import Example.Goose.Gui as ExampleGui
+
+    main : ProgramWithTron () Example.Model Example.Msg
+    main =
+        WithTron.application
+            (Option.toHtml Dock.center Theme.light)
+            (Option.detachable
+                { ack = ackToWs
+                , transmit = sendUpdateToWs
+                , receive = receieveUpdateFromWs identity
+                }
+            )
+            { for = ExampleGui.for
+            , init = always Example.init
+            , view =
+                \model ->
+                    { title = "Detachable Tron"
+                    , body = [ Example.view model ]
+                    }
+            , update = Example.update
+            , subscriptions = always Sub.none
+            , onUrlChange = always Example.NoOp
+            , onUrlRequest = always Example.NoOp
+            }
+
+    port receieveUpdateFromWs : (Exp.RawInUpdate -> msg) -> Sub msg
+
+    port sendUpdateToWs : Exp.RawOutUpdate -> Cmd msg
+
+    port ackToWs : Exp.Ack -> Cmd msg
+
+ -}
 application
     :  RenderTarget
     -> PortCommunication msg

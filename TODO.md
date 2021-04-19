@@ -8,16 +8,16 @@
 * For Docker, add ability to run any example using environment variable;
 * Detachable: Add clientId to the URL when it was generated (so that reloading the page won't lose changes);
 * Detachable: Hide the user view by default, when interface is detached;
-* Breaking: Use some safe Unique IDs to reference the position of the control in the tree, so that while the tree structure is changing, ID's stay the same;
-    * Or, store such IDs together with property;
 * New design;
 * Multiple-choice control;
 * Locked controls;
 * Include links to the examples in the docs;
 * Share examples somewhere, i.e. deploy to github;
-* Breaking?: When in the detached state, give user the choice if to view the original model or not;
+* Breaking?: When in the detached state, give user the choice if to view the original model or not (or just always hide it, in detached mode);
 * Include minimal `OneControl` example into the docs, as well as `Basic` one and `ReportToJs*` ones;
 * Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
+* Breaking: Use some safe Unique IDs to reference the position of the control in the tree, so that while the tree structure is changing, ID's stay the same;
+    * Or, store such IDs together with property;
 * Fix distribution over pages (use `Pages.distributeOver pageCount` instead of `Pages.distribute 9`);
 * Consider having `Nil (Property msg)` instead of just `Nil`, so that any property could be hidden, but not absent in the tree;
 * Get rid of functions in the `Model`:
