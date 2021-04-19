@@ -154,6 +154,17 @@ loadValues dict prop =
         prop
 
 
+loadJsonValues : Dict (List Int) RawOutUpdate -> Property msg -> Property msg
+loadJsonValues dict prop =
+    Tron.Property.replace
+        (\path innerProp ->
+            Dict.get (Path.toList path) dict
+                |> Maybe.map (\outUpdate -> apply (outUpdate |> swap |> fromPort) innerProp)
+                |> Maybe.withDefault innerProp
+        )
+        prop
+
+
 applyStringValue : String -> Property msg -> Maybe (Property msg)
 applyStringValue str prop =
     let
@@ -468,6 +479,17 @@ noClientId : Ack
 noClientId = Ack <| E.null
 
 
+emptyOutUpdate : RawOutUpdate
+emptyOutUpdate =
+    { path = []
+    , value = E.null
+    , stringValue = ""
+    , labelPath = []
+    , type_ = ""
+    , client = E.null
+    }
+
+
 {-
    encodeUpdate : Maybe HashId -> Path -> Property msg -> RawUpdate
    encodeUpdate maybeClient path prop =
@@ -609,6 +631,14 @@ fromPort portUpdate =
         , type_ = portUpdate.type_
         , value = portUpdate.value
         } -}
+
+
+swap : RawOutUpdate -> RawInUpdate
+swap outUpdate =
+    { path = outUpdate.path
+    , value = outUpdate.value
+    , type_ = outUpdate.type_
+    }
 
 
 fromPort : RawInUpdate -> Update

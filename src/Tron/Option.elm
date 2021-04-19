@@ -38,7 +38,6 @@ import Tron.Msg exposing (Msg_(..))
 type RenderTarget
     = Html Dock Theme
     | Aframe Theme
-    -- TODO: add NoView to hide user's view
     | Nowhere
 
 

@@ -89,7 +89,6 @@ From `example/Example/OneKnob/Main.elm`, similar to `example/Example/Basic/Main.
 ```elm
 import WithTron exposing (ProgramWithTron)
 import Tron.Option as Option
-import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
 
@@ -113,7 +112,6 @@ From `example/Example/ReportToJsJson/Main.elm`:
 ```elm
 import WithTron exposing (ProgramWithTron)
 import Tron.Option as Option
-import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
 
@@ -145,7 +143,6 @@ From `example/Example/Detachable/Main.elm`:
 
 ```elm
 import WithTron exposing (ProgramWithTron)
-import Tron exposing (Tron)
 import Tron.Option as Option
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock

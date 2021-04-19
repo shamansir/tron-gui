@@ -1,9 +1,5 @@
-* Fix image size in `README`;
 * Remove unneeded dependencies;
 * Improve `WithTron` documentation;
-* Add `JsonBacked` to work the same way as `Backed`; expose ``
-* Breaking: Rename `Builder` which is alias to `Property`, to `Builder.Tron`, so every component/control is the `Tron` itself, as so the `Builder`s just construct `Tron`;
-    * Wouldn't that be harder to distinguish private `Tron` API and the public one?
 * Choice-by-click control — the button that changes state while it's clicked;
     * Maybe reuse `Nest.Form` for that
 * Use `Size Cells`, like integer size, in `Layout`;
@@ -12,6 +8,8 @@
 * For Docker, add ability to run any example using environment variable;
 * Detachable: Add clientId to the URL when it was generated (so that reloading the page won't lose changes);
 * Detachable: Hide the user view by default, when interface is detached;
+* Breaking: Use some safe Unique IDs to reference the position of the control in the tree, so that while the tree structure is changing, ID's stay the same;
+    * Or, store such IDs together with property;
 * New design;
 * Multiple-choice control;
 * Locked controls;
