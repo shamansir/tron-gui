@@ -1,7 +1,7 @@
 module Tron.Expose.Convert exposing (toExposed, toProxied, toStrExposed, toUnit)
 
 
-{-| Make your `Builder *` store the additional information along with messages,
+{-| Make your `Tron *` store the additional information along with messages,
 or just get rid of messages at all:
 
 @docs toUnit, toProxied, toExposed, toStrExposed
@@ -10,6 +10,7 @@ or just get rid of messages at all:
 
 import Json.Encode as E
 
+import Tron exposing (Tron)
 import Tron.Control exposing (mapWithValue)
 import Tron.Control.Nest as Nest
 import Tron.Expose.Data exposing (..)
@@ -20,7 +21,7 @@ import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
 
 {-| Instead of messages, store nothing, but values.
 -}
-toUnit : Property msg -> Property ()
+toUnit : Tron msg -> Tron ()
 toUnit =
     map <| always ()
 
@@ -31,7 +32,7 @@ important, such as `dat.gui`, or send it to ports along with sending it to user.
 
 Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
-toProxied : Property msg -> Property ( ProxyValue, msg )
+toProxied : Tron msg -> Tron ( ProxyValue, msg )
 toProxied prop =
     let
         helper : (v -> ProxyValue) -> (v -> msg -> ( ProxyValue, msg ))
@@ -88,7 +89,7 @@ toProxied prop =
 
 
 
--- FIXME: make it: Property msg -> Property RawOutUpdate and use `Property.map2` to join
+-- FIXME: make it: Tron msg -> Tron RawOutUpdate and use `Property.map2` to join
 
 {-| Store a `RawOutUpdate` together with message, which is a package that stores all
 the required information about the value, such as:
@@ -101,7 +102,7 @@ the required information about the value, such as:
 
 Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
-toExposed : Property msg -> Property ( RawOutUpdate, msg )
+toExposed : Tron msg -> Tron ( RawOutUpdate, msg )
 toExposed prop =
     prop
         |> toProxied
@@ -122,14 +123,14 @@ toExposed prop =
 
 
 
--- FIXME: make it: Property msg -> Property ( LabelPath, String ) and use `Property.map2` to join
+-- FIXME: make it: Tron msg -> Tron ( LabelPath, String ) and use `Tron.map2` to join
 
 {-| Store a labeled path (such as `honk/color`) to the property and its stringified value,
 together with message.
 
 Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
-toStrExposed : Property msg -> Property ( ( LabelPath, String ), msg )
+toStrExposed : Tron msg -> Tron ( ( LabelPath, String ), msg )
 toStrExposed prop =
     prop
         |> toProxied
