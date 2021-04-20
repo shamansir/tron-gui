@@ -4,7 +4,7 @@ module Tron.Builder.String exposing
     , button, buttonWith, colorButton
     , nest, choice, choiceWithIcons, strings, labels, palette
     , choiceByCompare, choiceWithIconsByCompare
-    , icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
     , expand, collapse
     , addPath, addLabeledPath
     )
@@ -73,7 +73,7 @@ import Tron.Control.Nest exposing (Form(..), ItemId)
 
 
 {-| -}
-type alias Builder = B.Builder String
+type alias Builder = B.Tron String
 
 
 {-| -}
@@ -296,10 +296,10 @@ collapse = B.collapse
 
 
 {-| -}
-addPath : Builder -> B.Builder ( List Int, String )
+addPath : Builder -> B.Tron ( List Int, String )
 addPath = Property.addPath >> B.map (Tuple.mapFirst Path.toList)
 
 
 {-| -}
-addLabeledPath : Builder -> B.Builder ( List String, String )
+addLabeledPath : Builder -> B.Tron ( List String, String )
 addLabeledPath = Property.addLabeledPath

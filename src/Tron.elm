@@ -9,9 +9,17 @@ To use Tron in your application, you'll need to specify this function:
 
     for : Model -> Tron Msg
 
-See `Tron.Builder` for the helpers to define your interface.
+See `Tron.Builder` for the helpers to define your own interface.
 
 See `WithTron` for the helpers to add `Tron` to your application.
+
+# Tron
+
+@docs Tron, Set
+
+# Common helpers
+
+@docs map
 -}
 
 import Tron.Property as Property exposing (Property)
@@ -19,14 +27,14 @@ import Tron.Property as Property exposing (Property)
 
 {-| `Tron msg` is the tree of your controls or, recursively, any control in such tree.
 
-To build your interface, use the helper from the `Tron.Builder` module or any of its variants like
+To build your interface, use the helpers from the `Tron.Builder` module or any of its variants like
 `Tron.Builder.Proxy`, `Tron.Builder.Unit` or `Tron.Builder.String`
 -}
 type alias Tron msg =
     Property msg
 
 
-{-| `Set msg` is just the list of components' definitions together with their labels.
+{-| `Set msg` is just the list of controls' definitions together with their labels.
 -}
 type alias Set msg =
     List ( Property.Label, Tron msg )

@@ -123,9 +123,6 @@ For more information, see the `examples` folder in the source code.
 # Icons
 @docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
-# Common Helpers
-@docs map, mapSet
-
 # Force expand / collapse for nesting
 @docs expand, collapse
 

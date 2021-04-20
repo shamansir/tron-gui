@@ -2,6 +2,7 @@
 
 * Expose `Tron.Option`;
 * Move and rename `Builder msg` to `Tron msg` so that it will have more similarities to `Html msg`, `Svg msg` & s.o;
+* Make `Backed` as JSON default helper, and the `Backed` as strings — secondary;
 
 ### 5.0.0
 
