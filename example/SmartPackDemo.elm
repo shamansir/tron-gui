@@ -196,12 +196,14 @@ update msg model =
             | smartPack =
                 rects
                     |> List.foldl
-                        (\(pos, { width, height, color }) ->
+                        (\(pos, { width, height, color }) prevPack ->
 
-                            SP.carelessPackAt
+                            SP.packAt
                                 pos
                                 (Size ( width, height))
                                 color
+                                prevPack
+                            |> Maybe.withDefault prevPack
 
                         )
                         model.smartPack
@@ -215,10 +217,12 @@ update msg model =
             | smartPack =
 
                 model.smartPack
-                    |> SP.carelessPack
+                    |> SP.pack
                         model.distribution
                         (Size ( rect.width, rect.height ))
                         rect.color
+                    |> Maybe.map Tuple.second
+                    |> Maybe.withDefault model.smartPack
 
             , gridPreview = Nothing
             , rectPreview = Nothing
@@ -235,7 +239,8 @@ update msg model =
             { model
             | smartPack =
                 model.smartPack
-                    |> SP.carelessPackAt (x, y) (Size ( rect.width, rect.height )) rect.color
+                    |> SP.packAt (x, y) (Size ( rect.width, rect.height )) rect.color
+                    |> Maybe.withDefault model.smartPack
             , gridPreview = Nothing
             , rectPreview = Nothing
             , nextRect =
@@ -251,11 +256,13 @@ update msg model =
             { model
             | smartPack =
                 model.smartPack
-                    |> SP.carelessPackCloseTo
+                    |> SP.packCloseTo
                         model.distribution
                         (x, y)
                         (Size ( rect.width, rect.height ))
                         rect.color
+                    |> Maybe.map Tuple.second
+                    |> Maybe.withDefault model.smartPack
             , gridPreview = Nothing
             , rectPreview = Nothing
             , nextRect =

@@ -15,7 +15,6 @@ import Tron.Control.Text exposing (TextState(..))
 import Tron.Control.Button as Button exposing (Face(..), Icon(..))
 import Tron.Property  exposing (Property(..))
 import Tron.Property as Gui exposing ( Label )
-import Tron.Builder exposing (Builder)
 import Tron.Style.PanelShape exposing (PanelShape, cols)
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS exposing (..)
@@ -33,14 +32,14 @@ type Icon
     | Goose
 
 
-generator : Random.Generator (Builder ())
+generator : Random.Generator (Tron ())
 generator =
     group (DeepLevel 0)
         |> Random.map expand
         |> Random.andThen group_
 
 
-property : DeepLevel -> Random.Generator (Builder ())
+property : DeepLevel -> Random.Generator (Tron ())
 property (DeepLevel deep) =
     Random.int 1 8
         |> Random.andThen
@@ -152,7 +151,7 @@ button =
         |> Random.map (\icon -> Control icon () <| Just <| always ())
 
 
-controls : DeepLevel -> Random.Generator ( Array ( Label, Builder () ) )
+controls : DeepLevel -> Random.Generator ( Array ( Label, Tron () ) )
 controls deep =
     let
         labelFor prop =
@@ -166,7 +165,7 @@ controls deep =
                 Action _ -> "button"
                 Choice _ _ _ -> "choice"
                 Group _ _ _ -> "group"
-        addLabel : Builder () -> Random.Generator ( Label, Builder () )
+        addLabel : Tron () -> Random.Generator ( Label, Tron () )
         addLabel prop =
             Random.int 0 10000
                 |> Random.map String.fromInt
@@ -182,7 +181,7 @@ controls deep =
                 )
 
 
-choice : DeepLevel -> Random.Generator ( ChoiceControl (Label, Builder ()) () )
+choice : DeepLevel -> Random.Generator ( ChoiceControl (Label, Tron ()) () )
 choice deep =
     controls deep
         |> Random.andThen
@@ -209,7 +208,7 @@ choice deep =
             )
 
 
-group : DeepLevel -> Random.Generator ( GroupControl ( Label, Builder () ) () )
+group : DeepLevel -> Random.Generator ( GroupControl ( Label, Tron () ) () )
 group deep =
     controls deep
         |> Random.andThen
@@ -230,7 +229,7 @@ group deep =
 
 
 shapeFor
-     : Control (Array ( Label, Builder () )) val msg
+     : Control (Array ( Label, Tron () )) val msg
     -> Random.Generator ( PanelShape, CS.CellShape )
 shapeFor cs =
     Random.map2
@@ -246,8 +245,8 @@ shape toFit =
 
 
 group_
-     : GroupControl (Label, Builder ()) ()
-    -> Random.Generator (Builder ())
+     : GroupControl (Label, Tron ()) ()
+    -> Random.Generator (Tron ())
 group_ control =
     Random.map
         (\s -> Group Nothing s control)
@@ -255,8 +254,8 @@ group_ control =
 
 
 choice_
-     : ChoiceControl (Label, Builder ()) ()
-    -> Random.Generator (Builder ())
+     : ChoiceControl (Label, Tron ()) ()
+    -> Random.Generator (Tron ())
 choice_ control =
     Random.map
         (\s -> Choice Nothing s control)
