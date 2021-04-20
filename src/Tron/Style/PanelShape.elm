@@ -103,7 +103,7 @@ find panelShape cellShape itemCount =
                 then ( c // maxCols + 1, ( maxCols, r ) )
                 else if r > maxRows
                 then ( r // maxRows + 1, ( c, maxRows ) )
-                else ( 1, (r, c) )
+                else ( 1, (c, r) )
             )
         |> Tuple.mapSecond
             (Tuple.mapBoth

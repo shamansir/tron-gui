@@ -43,9 +43,10 @@ Next major features planned are:
 _Tron_ provides the `WithTron` helper which wraps the core `Browser....` functions and requests you to define the same
 `init`, `view`, `update`, etc., as you usually define, with only few additions:
 
-- your GUI description as `for :: Model -> Tron Msg` function, where `Msg` is your usual message, see the examples below;
-- the option to select _theme_ (dark/light) and _docking_ (in any corner or in the center);
-- the way Tron communicates with JS, if it needs to, usually the communication is off — but, if you want _detachable_ functionality, you'll need to start WebSocket server, all the required code is provided for that and requires minimum actions;
+- your GUI description as `for : Model -> Tron Msg` function, where `Msg` is your usual message, see the examples below;
+- copy and add `src/Tron.css` to your application, or refer to the one from the GitHub;
+- what _theme_ (dark/light) it will have and where it would be _docked_ (in any corner or in the center);
+- specify the way Tron communicates with JS, if it needs to, but usually the communication is off — but, if you want _detachable_ functionality, you'll need to start WebSocket server, all the required code is provided for that and requires minimum actions;
 
 * [`WithTron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron) documentation;
 * [`Tron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron) documentation;

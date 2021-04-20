@@ -63,6 +63,8 @@ The only things that is different from usual `Elm` application is `for` function
             , subscriptions = subscriptions
             }
 
+*NB*: Please don't forget to add a copy of `src/Tron.css` to your application, or refer to one hosted at GitHub.
+
 For help on how to define your interface with `for` function, see the detailed `Tron.Builder` documentation.
 
 Sometimes  you don't even need the `init`/`view`/`update`, for example to connect GUI to the JavaScript or something remote. In this case the `backed` function lets you define the application which just stores the path-to-value map and nothing else.

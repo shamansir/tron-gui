@@ -23,8 +23,8 @@ else
     echo "                   as labeled path and string value"
     echo "ReportToJsBacked — a demonstration of sending any value update to port as JSON"
     echo "                   while having no view, and by automatically storing"
-    echo "                   current values in the path-to-value `Dict`"
+    echo "                   current values in the path-to-value Dict"
     echo "ReportToJsStringBacked — a demonstration of sending any value update to port as string"
     echo "                         while having no view, and by automatically storing"
-    echo "                         current values in the path-to-value `Dict`"
+    echo "                         current values in the path-to-value Dict"
 fi

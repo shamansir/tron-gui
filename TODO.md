@@ -1,6 +1,9 @@
-* Remove unneeded dependencies;
+* Breaking: `rows` & `cols` for PanelShape seem to be messed up, check them and fix them;
 * Choice-by-click control — the button that changes state while it's clicked;
-    * Maybe reuse `Nest.Form` for that
+    * Maybe reuse `Nest.Form` for that;
+* Hide on _Space_ functionality;
+* Nest with icon;
+* Breaking: For `Backed` Tron, give user access to the values in the dictionary and the easy way to parse them;
 * Use `Size Cells`, like integer size, in `Layout`;
 * Fix knobs to use current value when user starts dragging;
 * _Active_ condition for a button, some effect for when it is pressed;

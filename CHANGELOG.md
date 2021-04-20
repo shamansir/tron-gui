@@ -1,3 +1,8 @@
+### 7.0.0
+
+* Make `Expose.Data.Convert` work with `Tron *` instances instead of `Property *`, which was confusing, though it is just the alias anyway.
+* Fix `rows` & `cols` for `PanelShape`;
+
 ### 6.0.0
 
 * Expose `Tron.Option`;
