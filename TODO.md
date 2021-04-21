@@ -1,11 +1,10 @@
-* Breaking: `rows` & `cols` for PanelShape seem to be messed up, check them and fix them;
 * Choice-by-click control — the button that changes state while it's clicked;
     * Maybe reuse `Nest.Form` for that;
 * Hide on _Space_ functionality;
 * Nest with icon;
+* Fix knobs to use current value when user starts dragging;
 * Breaking: For `Backed` Tron, give user access to the values in the dictionary and the easy way to parse them;
 * Use `Size Cells`, like integer size, in `Layout`;
-* Fix knobs to use current value when user starts dragging;
 * _Active_ condition for a button, some effect for when it is pressed;
 * For Docker, add ability to run any example using environment variable;
 * Detachable: Add clientId to the URL when it was generated (so that reloading the page won't lose changes);
@@ -15,6 +14,7 @@
 * Locked controls;
 * Include links to the examples in the docs;
 * Share examples somewhere, i.e. deploy to github;
+* Breaking: Make adding icon a separate function of `Builder`, like `expand` or `collapse`;
 * Breaking?: When in the detached state, give user the choice if to view the original model or not (or just always hide it, in detached mode);
 * Include minimal `OneControl` example into the docs, as well as `Basic` one and `ReportToJs*` ones;
 * Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;

@@ -3,7 +3,7 @@ module Tron.Builder exposing
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
     , nest, choice, choiceWithIcons, strings, labels, palette
-    , choiceByCompare, choiceWithIconsByCompare
+    , nestWithIcon, choiceByCompare, choiceWithIconsByCompare
     , Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
     , expand, collapse
     , addPath, addLabeledPath
@@ -380,6 +380,8 @@ type alias Icon = Button.Icon
 
     Builder.icon
         <| makeUrl <| Url.relative [ "assets", "myicon.svg" ] []
+
+See also: `Builder.iconAt`, `Builder.themedIcon`, `Builder.themedIconAt`
 -}
 icon : Url -> Icon
 icon = Button.icon
@@ -387,9 +389,9 @@ icon = Button.icon
 
 {-| Create an `Icon` using its relative local path.
 
-    import Url.Builder as Url
-
     Builder.iconAt [ "assets", "myicon.svg" ]
+
+See also: `Builder.themedIconAt`
 -}
 iconAt : List String -> Icon
 iconAt = Button.iconAt
@@ -408,8 +410,6 @@ themedIcon = Button.themedIcon
 
 
 {-| Create a themed `Icon` using its relative local path.
-
-    import Url.Builder as Url
 
     Builder.themedIconAt
         <| \theme -> [ "assets", "myicon_" ++ Theme.toString theme ++ ".svg" ]
@@ -504,19 +504,38 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
 See also: `Style.Shape`, `Style.CellShape`
 -}
 nest : PanelShape -> CellShape -> Set msg -> Tron msg
-nest panelShape cellShape items =
+nest panelShape cellShape =
+    nestHelper panelShape cellShape Nothing
+
+
+{-| The same as `Builder.nest`, but you also may specify the icon to show on the button that represents the nesting, instead of "usual" condition;
+
+    Builder.nestWithIcon
+        ( cols 1 ) -- we want the plate to have one column
+        CellShape.single -- usual 1x1 shape of a cell
+        ( Builder.iconAt [ "icons", "shuffle.svg" ] )
+        ...
+-}
+nestWithIcon : PanelShape -> CellShape -> Icon -> Set msg -> Tron msg
+nestWithIcon panelShape cellShape icon_ =
+    nestHelper panelShape cellShape <| Just <| WithIcon icon_
+
+
+nestHelper : PanelShape -> CellShape -> Maybe Face -> Set msg -> Tron msg
+nestHelper panelShape cellShape maybeFace items =
     Group
         Nothing
-        ( panelShape -- findShape cellShape shape (items |> List.map Tuple.second)
+        ( panelShape
         , cellShape
         )
         <| Control
             ( Array.fromList items
             )
             { form = Collapsed
+            , face = maybeFace
             , page = 0
             }
-            Nothing -- (Tuple.first >> handler)
+            Nothing
 
 
 {-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Notice that we ask for `comparable` type here.
@@ -772,6 +791,16 @@ expand = Property.expand
 -}
 collapse : Tron msg -> Tron msg
 collapse = Property.collapse
+
+
+{- Set the icon to the control that can have it:
+
+    Builder.nest ... |> Builder.setIcon (Builder.icon ...)
+    Builder.button ... |> Builder.setIcon (Builder.icon ...)
+-}
+-- TODO
+-- setIcon : Icon -> Tron msg -> Tron msg
+-- setIcon icon = Property.collapse
 
 
 {-| Add the path representing the label-based way to reach the

@@ -43,7 +43,8 @@ for model =
                     (\v ->
                         case v of
                             Left -> "left"
-                            Right -> "right")
+                            Right -> "right"
+                    )
                     [ Left, Right ]
                     model.lookAt
                     compareDirections

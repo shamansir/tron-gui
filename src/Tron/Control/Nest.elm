@@ -4,6 +4,7 @@ module Tron.Control.Nest exposing (..)
 import Array exposing (Array)
 
 import Tron.Control as Core exposing (Control)
+import Tron.Control.Button as Button
 import Tron.Pages exposing (PageNum)
 
 
@@ -11,6 +12,7 @@ type Form
     = Expanded
     | Collapsed
     | Detached
+    -- TODO: | ChoiceToggle
 
 
 type alias ItemId = Int
@@ -20,6 +22,7 @@ type alias GroupControl item msg =
     Core.Control
         ( Array item )
         { form : Form
+        , face : Maybe Button.Face
         , page : PageNum
         }
         msg
@@ -241,3 +244,41 @@ restoreTransientState (Core.Control setup state handler) src =
         , page = src.page
         }
         handler
+
+
+setFace
+     : Button.Face
+    -> Core.Control
+            setup
+            { a | face : Maybe Button.Face }
+            msg
+    -> Core.Control
+            setup
+            { a | face : Maybe Button.Face }
+            msg
+setFace face (Core.Control setup state handler) =
+    Core.Control setup { state | face = Just face } handler
+
+
+clearFace
+     : Core.Control
+            setup
+            { a | face : Maybe Button.Face }
+            msg
+    -> Core.Control
+            setup
+            { a | face : Maybe Button.Face }
+            msg
+clearFace (Core.Control setup state handler) =
+    Core.Control setup { state | face = Nothing } handler
+
+
+toChoice : (ItemId -> msg) -> GroupControl item msg -> ChoiceControl item msg
+toChoice userHandler (Core.Control items { form, page } handler) =
+    Core.Control
+        items
+        { form = form
+        , page = page
+        , selected = 0
+        }
+        (Just <| .selected >> userHandler)
