@@ -2,9 +2,10 @@ module Tron.Builder exposing
     ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
-    , nest, choice, choiceByCompare, strings, labels, palette, toChoice
-    , buttons, buttonsWith, coloredButtons, setColor
+    , nest, choice, choiceByCompare, strings, labels, palette
+    , buttons, buttonsWithIcons, coloredButtons, setColor
     , Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , toChoice, toSet, handleWith
     , expand, collapse
     , addPath, addLabeledPath, addLabels
     )
@@ -118,13 +119,19 @@ For more information, see the `examples` folder in the source code.
 @docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, colorButton, toggle, bool
 
 # Groups
-@docs nest, choice, choiceWithIcons, choiceByCompare, choiceWithIconsByCompare, strings, labels, palette
+@docs nest, choice, choiceByCompare, strings, labels, palette
+
+# Buttons
+@docs buttons, buttonsWithIcons, coloredButtons, setColor
 
 # Icons
-@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+@docs Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
 # Force expand / collapse for nesting
 @docs expand, collapse
+
+# Conversion
+@docs toSet, toChoice, addLabels, handleWith
 
 # Add Path
 @docs addPath, addLabeledPath
@@ -426,15 +433,17 @@ makeUrl = Button.makeUrl
 
 {-| Same as `button`, but with icon instead of a boring square. See `icon` function as a helper to define icon using its URL. SVG files preferred, keep in mind that you'll need to host them somewhere nearby, for example using simple HTTP server.
 
-    Builder.button (Builder.icon "red-button.svg") <| always DoABang
+    Builder.button (Builder.iconAt [ "red-button.svg" ]) <| always DoABang
 
 Or:
 
     Builder.button
-        (Builder.themedIcon
-            <| \theme -> "my-icon-" ++ Theme.toString theme ++ ".svg"
+        (Builder.themedIconAt
+            <| \theme -> [ "my-icon-" ++ Theme.toString theme ++ ".svg" ]
         )
         <| always DoABang
+
+See also: `Builder.icon`,  `Builder.iconAt`, `Builder.themedIcon`,  `Builder.themedIconAt`
 -}
 buttonWith : Icon -> (() -> msg) -> Tron msg
 buttonWith icon_ =
@@ -520,19 +529,15 @@ nest panelShape cellShape items =
             Nothing
 
 
-{-| The same as `Builder.nest`, but you also may specify the icon to show on the button that represents the nesting, instead of "usual" condition;
-
-    Builder.nestWithIcon
-        ( cols 1 ) -- we want the plate to have one column
-        CellShape.single -- usual 1x1 shape of a cell
-        ( Builder.iconAt [ "icons", "shuffle.svg" ] )
-        ...
+{-| Set icon as face to the button _or_ the button of a `nest` control.
 -}
 addIcon : Icon -> Tron msg -> Tron msg
 addIcon icon_ =
     Property.setFace <| WithIcon icon_
 
 
+{-| Set color as face to the button _or_ the button of a `nest` control.
+-}
 setColor : Color -> Tron msg -> Tron msg
 setColor color_ =
     Property.setFace <| WithColor color_
@@ -543,20 +548,16 @@ setColor color_ =
     Builder.choice
         ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
         CellShape.single -- usual 1x1 shape of a cell
-        String.fromInteger
-        [ 128, 256, 512 ]
+        ([ 128, 256, 512 ]
+            |> buttons
+            |> addLabels String.fromInt
+        )
         model.bitrate
         ChangeBitrate
 
-    Builder.choice
-        ( cols 1 ) -- we want the plate to have one column
-        CellShape.single -- usual 1x1 shape of a cell
-        identity
-        ([ Sine, Square, Triangle, Saw ] |> List.map waveToString)
-        (waveToString model.waveShape)
-        (waveFromString >> Maybe.map ChangeWaveShape >> Maybe.withDefault NoOp)
-
 *NB*: If you don't want to use `comparable` types, but rather want to specify you own compare function, use `choiceByCompare`.
+
+*NB*: If you want to add icons to the buttons, use `Builder.buttonsWithIcons`, for colors use `Builder.coloredButtons`.
 
 See also: `Builder.choiceByCompare`, `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
@@ -576,47 +577,18 @@ choice shape cellShape set current toMsg =
         (Tuple.second >> toMsg)
 
 
-{- `choiceWithIcons` is the same as `choice`, but allows user to define icons for buttons.
-
-    Builder.choiceWithIcons
-        (\waveShape ->
-            case waveShape of
-                Sine -> ( "sine", icon "sine.svg" )
-                Square -> ( "square", icon "square.svg" )
-                Triangle -> ( "triangle", icon "triangle.svg" )
-                Saw -> ( "saw", icon "saw.svg" )
-        )
-        [ Sine, Square, Triangle, Saw ]
-        model.waveShape
-        ChangeWaveShape
--}
-
-
 {-| `choiceByCompare` is identical to `choice`, but asks user for a custom comparison function instead of requiring `comparable` values.
 
     Builder.choiceByCompare
         ( cols 1 ) -- we want the plate to have one column
         CellShape.single -- usual 1x1 shape of a cell
-        (\waveShape ->
-            case waveShape of
-                Sine -> "sine"
-                Square -> "square"
-                Triangle -> "triangle"
-                Saw -> "saw"
+        ([ Sine, Square, Triangle, Saw ]
+            |> buttons
+            |> addLabels waveToString
         )
-        [ Sine, Square, Triangle, Saw ]
         model.waveShape
         compareWaves -- sometimes just (==) works, but it's better not to rely on it
         ChangeWaveShape
-
-    Builder.choiceByCompare
-        ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
-        CellShape.single -- usual 1x1 shape of a cell
-        String.fromInteger
-        [ 128, 256, 512 ]
-        model.bitrate
-        (==)
-        ChangeBitrate
 
 See also: `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
@@ -636,22 +608,6 @@ choiceByCompare shape cellShape set current compare toMsg =
         compare
         (Tuple.second >> toMsg)
 
-
-{- `choiceWithIconsByCompare` is the same as `choiceWithIcons`, but allows user to define icons for buttons.
-
-    Builder.choiceWithIcons
-        (\waveShape ->
-            case waveShape of
-                Sine -> ( "sine", icon "sine.svg" )
-                Square -> ( "square", icon "square.svg" )
-                Triangle -> ( "triangle", icon "triangle.svg" )
-                Saw -> ( "saw", icon "saw.svg" )
-        )
-        [ Sine, Square, Triangle, Saw ]
-        model.waveShape
-        compareWaves -- sometimes just (==) works, but it's better not to rely on it
-        ChangeWaveShape
--}
 
 {-| `strings` is a helper to create `choice` over string values.
 
@@ -735,10 +691,7 @@ palette panelShape options current =
         panelShape
         CS.half
         (options
-            |> List.map
-                (\color_ ->
-                    button (always color_) |> setColor color_
-                )
+            |> coloredButtons identity
             |> addLabels Color.colorToHexWithAlpha
         )
         current
@@ -752,23 +705,90 @@ palette panelShape options current =
         )
 
 
+{-| `buttons` is the helper to translate a list of anything to a list of buttons.
+
+It could be useful to pass such list to `choice` or `nest`:
+
+    Builder.choiceByCompare
+        single
+        (cols 2)
+        ([ Sine, Square, Triangle, Saw ]
+            |> buttons
+            |> addLabels waveToString
+        )
+        model.waveShape
+        compareWaves -- sometimes just (==) works, but it's better not to rely on it
+        ChangeWaveShape
+
+Or:
+
+    Builder.nest
+        single
+        (cols 2)
+        ([ Sine, Square, Triangle, Saw ]
+            |> buttons
+            |> toSet waveToString -- `toSet` is just another name for `addLabels`
+            |> handleWith ChangeWaveShape
+        )
+
+-}
 buttons : List a -> List (Tron a)
 buttons =
     List.map (button << always)
 
 
-buttonsWith : (a -> Icon) -> List a -> List (Tron a)
-buttonsWith toIcon =
+{-| `buttonsWith` is the helper to translate a list of anything to a list of buttons with icons:
+
+    Builder.choiceByCompare
+        single
+        (cols 2)
+        ([ Sine, Square, Triangle, Saw ]
+            |> buttonsWith
+                (\wave ->
+                    Builder.themedIconAt
+                        <| \theme -> [ "assets", Theme.toString theme, waveToString wave ++ ".svg" ]
+                )
+            |> addLabels waveToString
+        )
+        model.waveShape
+        compareWaves -- sometimes just (==) works, but it's better not to rely on it
+        ChangeWaveShape
+
+See also: `Builder.buttons`, `Builder.icon`, `Builder.themedIcon`, `Builder.handleWith`
+-}
+buttonsWithIcons : (a -> Icon) -> List a -> List (Tron a)
+buttonsWithIcons toIcon =
     List.map (\v -> buttonWith (toIcon v) <| always v)
 
 
+{-| `coloredButtons` is the helper to translate a list of anything to a list of buttons with colors:
+
+    Builder.choiceByCompare
+        single
+        (cols 2)
+        ([ Color.aqua, Color.rouge, Color.vanilla ]
+            |> buttonsWith
+                (\wave ->
+                    Builder.themedIconAt
+                        <| \theme -> [ "assets", Theme.toString theme, waveToString wave ++ ".svg" ]
+                )
+            |> addLabels waveToString
+        )
+        model.iceCreamColor
+        compareColors -- sometimes just (==) works, but it's better not to rely on it
+        ce
+
+See also: `Builder.palette`, `Builder.buttons`, `Builder.handleWith`
+-}
 coloredButtons : (a -> Color) -> List a -> List (Tron a)
 coloredButtons toColor =
     List.map (\v -> colorButton (toColor v) <| always v)
 
 
-addLabels : (a -> Label) -> List (Tron a) -> Set a
-addLabels toLabel =
+{-| Convert a list of components to a set by adding labels.
+-}
+toSet : (a -> Label) -> List (Tron a) -> Set a
+toSet toLabel =
     List.map
         (\prop ->
             Tron.Property.evaluate__ prop
@@ -780,6 +800,22 @@ addLabels toLabel =
                     )
         )
     >> List.filterMap identity
+
+
+{-| Convert a list of components to a set by adding labels.
+
+Same as `Builder.toSet`
+-}
+addLabels : (a -> Label) -> List (Tron a) -> Set a
+addLabels =
+    toSet
+
+
+{-| convert a `Set` of controls holding any values to
+a `Set` of messages, technically would be the same as `Set.map`
+-}
+handleWith : (a -> msg) -> Set a -> Set msg
+handleWith f = List.map (Tuple.mapSecond <| Tron.map f)
 
 
 {-| Forcefully expand the nesting:
@@ -824,5 +860,18 @@ addLabeledPath : Tron msg -> Tron ( List String, msg )
 addLabeledPath = Property.addLabeledPath
 
 
+{-| Convert a `nest` control to `choice` control. It can be done
+easily by specifying a handler:
+
+    Builder.nest
+        single
+        (cols 2)
+        ([ Sine, Square, Triangle, Saw ]
+            |> buttons
+            |> toSet waveToString -- `toSet` is just another name for `addLabels`
+            |> handleWith ChangeWaveShape
+        )
+    |> toChoice ChangeShapeById
+-}
 toChoice : (ItemId -> msg) -> Tron msg -> Tron msg
 toChoice = Property.toChoice
