@@ -12,6 +12,7 @@ import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Nest exposing (Form(..))
 import Tron.Util exposing (findMap)
 import Tron.Expose.ProxyValue exposing (ProxyValue(..))
+import Json.Decode exposing (index)
 
 
 withButtons
@@ -34,26 +35,52 @@ withButtons toLabel toButtonFace =
 
 helper
      : ( PanelShape, CellShape )
-    -> ( (Int -> msg) -> Int -> a -> ( Label, Property msg ) )
-    -> List a
+    -> List ( Label, Property a )
     -> a
     -> ( a -> a -> Bool )
-    -> ( a -> msg )
+    -> ( ( Int, a ) -> msg )
     -> Property msg
-helper ( panelShape, cellShape ) toBuilder options current compare toMsg =
+helper ( panelShape, cellShape ) options current compare toMsg =
     let
-        indexedOptions = options |> List.indexedMap Tuple.pair
-        callByIndex indexToCall =
-            -- FIXME: searching for the item every time seems wrong, use Array as a backup?
-            indexedOptions
-                |> findMap
+        optionsArray : Array.Array ( Label, Property ( Int, a ))
+        optionsArray =
+            options
+                |> Array.fromList
+                |> Array.indexedMap
+                    (\index (label, prop) ->
+                        ( label
+                        , prop
+                            |> Tron.Property.map (Tuple.pair index)
+                        )
+                    )
+        properties : Array.Array ( Label, Property msg )
+        properties =
+            optionsArray
+                |> Array.map (Tuple.mapSecond <| Tron.Property.map toMsg)
+        values : Array.Array (Maybe a)
+        values =
+            options
+                |> Array.fromList
+                |> Array.map (Tuple.second >> Tron.Property.evaluate__)
+        currentIndex : Int
+        currentIndex =
+            values
+                |> Tron.Util.filterMapArray
+                |> Array.indexedMap Tuple.pair
+                |> Tron.Util.findMapInArray
                     (\(index, option) ->
-                        if indexToCall == index
-                            then Just option
+                        if compare option current
+                            then Just index
                             else Nothing
                     )
-                |> Maybe.map toMsg
-                |> Maybe.withDefault (toMsg current)
+                |> Maybe.withDefault 0
+        callByIndex : Int -> msg
+        callByIndex index =
+            values
+                |> Array.get index
+                |> Maybe.andThen identity
+                |> Maybe.map (\v -> toMsg (index, v))
+                |> Maybe.withDefault (toMsg ( 0, current ))
     in
         Choice
             Nothing
@@ -61,24 +88,12 @@ helper ( panelShape, cellShape ) toBuilder options current compare toMsg =
             , cellShape
             )
             <| Control
-                ( options
-                    |> List.indexedMap (toBuilder callByIndex)
-                    |> Array.fromList
-                )
+                properties
                 { form = Collapsed
                 , page = 0
-                , selected =
-                    indexedOptions
-                    -- FIXME: searching for the item every time seems wrong, use Array as a backup?
-                        |> findMap
-                            (\(index, option) ->
-                                if compare option current
-                                    then Just index
-                                    else Nothing
-                            )
-                        |> Maybe.withDefault 0
+                , selected = currentIndex
                 }
-                (Just <| .selected >> callByIndex)
+            <| Just (.selected >> callByIndex)
 
 
 {-| -}

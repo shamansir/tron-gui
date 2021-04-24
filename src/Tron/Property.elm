@@ -619,6 +619,22 @@ call prop =
         Group _ _ control -> Control.call control
 
 
+-- FIXME: should be removed with changing on storing message, not a function
+-- also calling it w/o `Cmd` is bad
+evaluate__ : Property msg -> Maybe msg
+evaluate__ prop =
+    case prop of
+        Nil -> Nothing
+        Number control -> Control.evaluate__ control
+        Coordinate control -> Control.evaluate__ control
+        Text control -> Control.evaluate__ control
+        Color control -> Control.evaluate__ control
+        Toggle control -> Control.evaluate__ control
+        Action control -> Control.evaluate__ control
+        Choice _ _ control -> Control.evaluate__ control
+        Group _ _ control -> Control.evaluate__ control
+
+
 getCellShape : Property msg -> Maybe CellShape
 getCellShape prop =
     case prop of

@@ -42,6 +42,14 @@ callWith (Control _ _ handler) val =
         |> Maybe.withDefault Cmd.none
 
 
+-- FIXME: should be removed with changing on storing message, not a function
+-- also calling it w/o `Cmd` is bad
+evaluate__ : Control s v msg -> Maybe msg
+evaluate__ (Control _ current handler) =
+    handler
+        |> Maybe.map (\f -> f current)
+
+
 getValue : Control s v msg -> v
 getValue (Control _ v _) = v
 
