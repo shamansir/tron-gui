@@ -676,3 +676,27 @@ findShape panelShape cellShape =
     noGhosts
         >> List.length
         >> Shape.find panelShape cellShape
+
+
+setFace : Button.Face -> Property msg -> Property msg
+setFace face prop =
+    case prop of
+        Action control ->
+            Action
+                <| Button.setFace face
+                <| control
+        Group focus shape control ->
+            Group focus shape
+                <| Nest.setFace face
+                <| control
+        _ -> prop
+
+
+toChoice : (ItemId -> msg) -> Property msg -> Property msg
+toChoice toMsg prop =
+    case prop of
+        Group focus shape control ->
+            Choice focus shape
+                <| Nest.toChoice toMsg
+                <| control
+        _ -> prop

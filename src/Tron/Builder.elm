@@ -2,12 +2,11 @@ module Tron.Builder exposing
     ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
-    , nest, nestFrom, choice, choiceByCompare, strings, labels, palette
-    , buttons, buttonsWith, coloredButtons
+    , nest, choice, choiceByCompare, strings, labels, palette, toChoice
+    , buttons, buttonsWith, coloredButtons, setColor
     , Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
     , expand, collapse
-    , addPath, addLabeledPath
-    , addLabels
+    , addPath, addLabeledPath, addLabels
     )
 
 
@@ -157,7 +156,7 @@ import Tron.Pages exposing (PageNum)
 import Tron.Control.Text exposing (TextState(..))
 import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
-import Tron.Control.Nest exposing (Form(..), ItemId)
+import Tron.Control.Nest as Nest exposing (Form(..), ItemId)
 
 import Tron.Builder.Choice as Choice
 
@@ -505,13 +504,20 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
 See also: `Style.Shape`, `Style.CellShape`
 -}
 nest : PanelShape -> CellShape -> Set msg -> Tron msg
-nest panelShape cellShape =
-    nestHelper panelShape cellShape Nothing
-
-
-nestFrom : PanelShape -> CellShape -> Set a -> Tron msg
-nestFrom panelShape cellShape =
-    nestHelper panelShape cellShape Nothing
+nest panelShape cellShape items =
+    Group
+        Nothing
+        ( panelShape
+        , cellShape
+        )
+        <| Control
+            ( Array.fromList items
+            )
+            { form = Collapsed
+            , face = Nothing
+            , page = 0
+            }
+            Nothing
 
 
 {-| The same as `Builder.nest`, but you also may specify the icon to show on the button that represents the nesting, instead of "usual" condition;
@@ -523,33 +529,13 @@ nestFrom panelShape cellShape =
         ...
 -}
 addIcon : Icon -> Tron msg -> Tron msg
-addIcon icon_ prop =
-    case prop of
-        Action (Control face val handler) ->
-            -- FIXME: move to `Button` and `Property`
-            Action <| Control (Button.WithIcon icon_) val handler
-        Group focus shape (Control items val handler) ->
-            -- FIXME: move to `Nest` and `Property`
-            Group focus shape
-                <| Control items { val | face = Just <| WithIcon icon_ } handler
-        _ -> prop
+addIcon icon_ =
+    Property.setFace <| WithIcon icon_
 
 
-nestHelper : PanelShape -> CellShape -> Maybe Face -> Set msg -> Tron msg
-nestHelper panelShape cellShape maybeFace items =
-    Group
-        Nothing
-        ( panelShape
-        , cellShape
-        )
-        <| Control
-            ( Array.fromList items
-            )
-            { form = Collapsed
-            , face = maybeFace
-            , page = 0
-            }
-            Nothing
+setColor : Color -> Tron msg -> Tron msg
+setColor color_ =
+    Property.setFace <| WithColor color_
 
 
 {-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Notice that we ask for `comparable` type here.
@@ -588,36 +574,6 @@ choice shape cellShape set current toMsg =
         current
         (==)
         (Tuple.second >> toMsg)
-
-
-buttons : List a -> List (Tron a)
-buttons =
-    List.map (button << always)
-
-
-buttonsWith : (a -> Icon) -> List a -> List (Tron a)
-buttonsWith toIcon =
-    List.map (\v -> buttonWith (toIcon v) <| always v)
-
-
-coloredButtons : (a -> Color) -> List a -> List (Tron a)
-coloredButtons toColor =
-    List.map (\v -> colorButton (toColor v) <| always v)
-
-
-addLabels : (a -> Label) -> List (Tron a) -> Set a
-addLabels toLabel =
-    List.map
-        (\prop ->
-            Tron.Property.evaluate__ prop
-                |> Maybe.map
-                    (\v ->
-                        ( toLabel v
-                        , prop
-                        )
-                    )
-        )
-    >> List.filterMap identity
 
 
 {- `choiceWithIcons` is the same as `choice`, but allows user to define icons for buttons.
@@ -667,16 +623,18 @@ See also: `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 choiceByCompare
      : PanelShape
     -> CellShape
-    -> ( a -> Label )
-    -> List a
+    -> Set a
     -> a
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Tron msg
-choiceByCompare shape cellShape toLabel =
+choiceByCompare shape cellShape set current compare toMsg =
     Choice.helper
         ( shape, cellShape )
-        (Choice.withButtons toLabel <| always Default)
+        set
+        current
+        compare
+        (Tuple.second >> toMsg)
 
 
 {- `choiceWithIconsByCompare` is the same as `choiceWithIcons`, but allows user to define icons for buttons.
@@ -711,8 +669,10 @@ strings options current toMsg =
     choice
         (cols 1)
         CS.twiceByHalf
-        identity
-        options
+        (options
+            |> buttons
+            |> addLabels identity
+        )
         current
         toMsg
 
@@ -735,11 +695,19 @@ labels toLabel options current fallback toMsg =
                 |> List.map (\v -> ( toLabel v, v ) )
                 |> Dict.fromList
 
+        optionsAsLabels =
+            options
+            |> buttons
+            |> addLabels toLabel
+
     in choice
         (cols 1)
         CS.twiceByHalf
-        identity
-        (options |> List.map toLabel)
+        (options
+            |> List.map toLabel
+            |> buttons
+            |> addLabels identity
+        )
         (toLabel current)
         (\label ->
             labelToValue
@@ -762,14 +730,17 @@ palette
     -> Color
     -> (Color -> msg)
     -> Tron msg
-palette shape options current =
-    Choice.helper
-        ( shape, CS.half )
-        (Choice.withButtons
-            Color.colorToHexWithAlpha
-            WithColor
+palette panelShape options current =
+    choiceByCompare
+        panelShape
+        CS.half
+        (options
+            |> List.map
+                (\color_ ->
+                    button (always color_) |> setColor color_
+                )
+            |> addLabels Color.colorToHexWithAlpha
         )
-        options
         current
         (\cv1 cv2 ->
             case ( cv1 |> Color.toRgba, cv2 |> Color.toRgba ) of
@@ -779,6 +750,36 @@ palette shape options current =
                     (c1.green == c2.green) &&
                     (c1.alpha == c2.alpha)
         )
+
+
+buttons : List a -> List (Tron a)
+buttons =
+    List.map (button << always)
+
+
+buttonsWith : (a -> Icon) -> List a -> List (Tron a)
+buttonsWith toIcon =
+    List.map (\v -> buttonWith (toIcon v) <| always v)
+
+
+coloredButtons : (a -> Color) -> List a -> List (Tron a)
+coloredButtons toColor =
+    List.map (\v -> colorButton (toColor v) <| always v)
+
+
+addLabels : (a -> Label) -> List (Tron a) -> Set a
+addLabels toLabel =
+    List.map
+        (\prop ->
+            Tron.Property.evaluate__ prop
+                |> Maybe.map
+                    (\v ->
+                        ( toLabel v
+                        , prop
+                        )
+                    )
+        )
+    >> List.filterMap identity
 
 
 {-| Forcefully expand the nesting:
@@ -821,3 +822,7 @@ particular control in the GUI tree.
 -}
 addLabeledPath : Tron msg -> Tron ( List String, msg )
 addLabeledPath = Property.addLabeledPath
+
+
+toChoice : (ItemId -> msg) -> Tron msg -> Tron msg
+toChoice = Property.toChoice
