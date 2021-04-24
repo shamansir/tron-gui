@@ -44,10 +44,20 @@ findMapInArray toValue =
         Nothing
 
 
-filterMapArray : Array (Maybe a) -> Array a
-filterMapArray =
-    Array.toList >> List.filterMap identity >> Array.fromList
+filterMapArray : (a -> Maybe b) -> Array a -> Array b
+filterMapArray f =
+    Array.toList >> List.filterMap f >> Array.fromList
     -- FIXME: faster with `fold`
+
+
+catMaybesArray : Array (Maybe a) -> Array a
+catMaybesArray =
+    filterMapArray identity
+
+
+flipMaybe : (a, Maybe b) -> Maybe (a, b)
+flipMaybe ( a, maybeB ) =
+    maybeB |> Maybe.map (Tuple.pair a)
 
 
 alter : { a | min : Float, max : Float, step : Float } -> Float -> Float -> Float

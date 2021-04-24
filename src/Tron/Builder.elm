@@ -2,11 +2,12 @@ module Tron.Builder exposing
     ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
-    , nest, choice, choiceWithIcons, strings, labels, palette
-    , nestWithIcon, choiceByCompare, choiceWithIconsByCompare
-    , Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , nest, nestFrom, choice, choiceByCompare, strings, labels, palette
+    , buttons, buttonsWith, coloredButtons
+    , Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
     , expand, collapse
     , addPath, addLabeledPath
+    , addLabels
     )
 
 
@@ -508,6 +509,11 @@ nest panelShape cellShape =
     nestHelper panelShape cellShape Nothing
 
 
+nestFrom : PanelShape -> CellShape -> Set a -> Tron msg
+nestFrom panelShape cellShape =
+    nestHelper panelShape cellShape Nothing
+
+
 {-| The same as `Builder.nest`, but you also may specify the icon to show on the button that represents the nesting, instead of "usual" condition;
 
     Builder.nestWithIcon
@@ -516,9 +522,17 @@ nest panelShape cellShape =
         ( Builder.iconAt [ "icons", "shuffle.svg" ] )
         ...
 -}
-nestWithIcon : PanelShape -> CellShape -> Icon -> Set msg -> Tron msg
-nestWithIcon panelShape cellShape icon_ =
-    nestHelper panelShape cellShape <| Just <| WithIcon icon_
+addIcon : Icon -> Tron msg -> Tron msg
+addIcon icon_ prop =
+    case prop of
+        Action (Control face val handler) ->
+            -- FIXME: move to `Button` and `Property`
+            Action <| Control (Button.WithIcon icon_) val handler
+        Group focus shape (Control items val handler) ->
+            -- FIXME: move to `Nest` and `Property`
+            Group focus shape
+                <| Control items { val | face = Just <| WithIcon icon_ } handler
+        _ -> prop
 
 
 nestHelper : PanelShape -> CellShape -> Maybe Face -> Set msg -> Tron msg
@@ -563,22 +577,50 @@ See also: `Builder.choiceByCompare`, `Builder.strings`, `Builder.palette`, `Styl
 choice
      : PanelShape
     -> CellShape
-    -> ( comparable -> Label )
-    -> List comparable
+    -> Set comparable
     -> comparable
     -> ( comparable -> msg )
     -> Tron msg
-choice shape cellShape toLabel items current toMsg =
+choice shape cellShape set current toMsg =
     Choice.helper
         ( shape, cellShape )
-        (Choice.withButtons toLabel <| always Default)
-        items
+        set
         current
         (==)
-        toMsg
+        (Tuple.second >> toMsg)
 
 
-{-| `choiceWithIcons` is the same as `choice`, but allows user to define icons for buttons.
+buttons : List a -> List (Tron a)
+buttons =
+    List.map (button << always)
+
+
+buttonsWith : (a -> Icon) -> List a -> List (Tron a)
+buttonsWith toIcon =
+    List.map (\v -> buttonWith (toIcon v) <| always v)
+
+
+coloredButtons : (a -> Color) -> List a -> List (Tron a)
+coloredButtons toColor =
+    List.map (\v -> colorButton (toColor v) <| always v)
+
+
+addLabels : (a -> Label) -> List (Tron a) -> Set a
+addLabels toLabel =
+    List.map
+        (\prop ->
+            Tron.Property.evaluate__ prop
+                |> Maybe.map
+                    (\v ->
+                        ( toLabel v
+                        , prop
+                        )
+                    )
+        )
+    >> List.filterMap identity
+
+
+{- `choiceWithIcons` is the same as `choice`, but allows user to define icons for buttons.
 
     Builder.choiceWithIcons
         (\waveShape ->
@@ -592,25 +634,6 @@ choice shape cellShape toLabel items current toMsg =
         model.waveShape
         ChangeWaveShape
 -}
-choiceWithIcons
-     : PanelShape
-    -> CellShape
-    -> ( comparable -> ( Label, Icon ) )
-    -> List comparable
-    -> comparable
-    -> ( comparable -> msg )
-    -> Tron msg
-choiceWithIcons shape cellShape toLabelAndIcon items current toMsg =
-    Choice.helper
-        ( shape, cellShape )
-        (Choice.withButtons
-            (toLabelAndIcon >> Tuple.first)
-            (toLabelAndIcon >> Tuple.second >> WithIcon)
-        )
-        items
-        current
-        (==)
-        toMsg
 
 
 {-| `choiceByCompare` is identical to `choice`, but asks user for a custom comparison function instead of requiring `comparable` values.
@@ -656,7 +679,7 @@ choiceByCompare shape cellShape toLabel =
         (Choice.withButtons toLabel <| always Default)
 
 
-{-| `choiceWithIconsByCompare` is the same as `choiceWithIcons`, but allows user to define icons for buttons.
+{- `choiceWithIconsByCompare` is the same as `choiceWithIcons`, but allows user to define icons for buttons.
 
     Builder.choiceWithIcons
         (\waveShape ->
@@ -671,23 +694,6 @@ choiceByCompare shape cellShape toLabel =
         compareWaves -- sometimes just (==) works, but it's better not to rely on it
         ChangeWaveShape
 -}
-choiceWithIconsByCompare
-     : PanelShape
-    -> CellShape
-    -> ( a -> ( Label, Icon ) )
-    -> List a
-    -> a
-    -> ( a -> a -> Bool )
-    -> ( a -> msg )
-    -> Tron msg
-choiceWithIconsByCompare shape cellShape toLabelAndIcon =
-    Choice.helper
-        ( shape, cellShape )
-        (Choice.withButtons
-            (toLabelAndIcon >> Tuple.first)
-            (toLabelAndIcon >> Tuple.second >> WithIcon)
-        )
-
 
 {-| `strings` is a helper to create `choice` over string values.
 
