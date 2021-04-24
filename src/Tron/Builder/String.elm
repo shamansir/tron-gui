@@ -2,12 +2,13 @@ module Tron.Builder.String exposing
     ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool
     , button, buttonWith, colorButton
-    , nest, choice, choiceWithIcons, strings, labels, palette
-    , choiceByCompare, choiceWithIconsByCompare
-    , Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , nest, choice, choiceByCompare, strings, labels, palette
+    , buttons, buttonsWithIcons, coloredButtons, setColor
+    , Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , toChoice, toSet, handleWith
     , expand, collapse
-    , addPath, addLabeledPath
-    )
+    , addPath, addLabeledPath, addLabels
+)
 
 
 {-|
@@ -31,13 +32,19 @@ so that is easier and shorter to use `String`-based `Builder` if you don't need 
 @docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, colorButton, toggle, bool
 
 # Groups
-@docs nest, choice, choiceWithIcons, choiceByCompare, choiceWithIconsByCompare, strings, labels, palette
+@docs nest, choice, choiceByCompare, strings, labels, palette
+
+# Buttons
+@docs buttons, buttonsWithIcons, coloredButtons, setColor
 
 # Icons
-@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+@docs Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
 # Force expand / collapse for nesting
 @docs expand, collapse
+
+# Conversion
+@docs toSet, toChoice, addLabels, handleWith
 
 # Add Path
 @docs addPath, addLabeledPath
