@@ -42,6 +42,7 @@ helper
     -> Property msg
 helper ( panelShape, cellShape ) options current compare toMsg =
     let
+
         optionsArray : Array.Array ( Label, Property ( Int, a ))
         optionsArray =
             options
@@ -53,20 +54,23 @@ helper ( panelShape, cellShape ) options current compare toMsg =
                             |> Tron.Property.map (Tuple.pair index)
                         )
                     )
+
         properties : Array.Array ( Label, Property msg )
         properties =
             optionsArray
                 |> Array.map (Tuple.mapSecond <| Tron.Property.map toMsg)
-        values : Array.Array (Maybe a)
+
+        values : Array.Array ( Maybe a )
         values =
             options
                 |> Array.fromList
                 |> Array.map (Tuple.second >> Tron.Property.evaluate__)
+
         currentIndex : Int
         currentIndex =
             values
-                |> Tron.Util.filterMapArray
                 |> Array.indexedMap Tuple.pair
+                |> Tron.Util.filterMapArray Tron.Util.flipMaybe
                 |> Tron.Util.findMapInArray
                     (\(index, option) ->
                         if compare option current
@@ -74,6 +78,7 @@ helper ( panelShape, cellShape ) options current compare toMsg =
                             else Nothing
                     )
                 |> Maybe.withDefault 0
+
         callByIndex : Int -> msg
         callByIndex index =
             values

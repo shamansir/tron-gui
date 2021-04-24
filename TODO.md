@@ -4,6 +4,7 @@
 * Nest with icon;
 * Fix knobs to use current value when user starts dragging;
 * Breaking: For `Backed` Tron, give user access to the values in the dictionary and the easy way to parse them;
+* Move `Util` stuff to the corresponding modules;
 * Use `Size Cells`, like integer size, in `Layout`;
 * _Active_ condition for a button, some effect for when it is pressed;
 * For Docker, add ability to run any example using environment variable;
