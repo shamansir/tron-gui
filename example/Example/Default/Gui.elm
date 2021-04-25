@@ -49,8 +49,10 @@ for model =
                 Gui.choiceByCompare
                     ( cols 1 )
                     single
-                    choiceToLabel
-                    choices
+                    (choices
+                        |> Gui.buttons
+                        |> Gui.addLabels choiceToLabel
+                    )
                     model.choice
                     compareChoices
                     Choose )
@@ -144,8 +146,10 @@ allControlsNest model =
                     Gui.choiceByCompare
                         ( cols 1 )
                         single
-                        choiceToLabel
-                        choices
+                        (choices
+                            |> Gui.buttons
+                            |> Gui.addLabels choiceToLabel
+                        )
                         model.choice
                         compareChoices
                         Choose )
