@@ -4,7 +4,7 @@ module Tron.Builder exposing
     , button, buttonWith, colorButton
     , nest, choice, choiceByCompare, strings, labels, palette
     , buttons, buttonsWithIcons, coloredButtons, setColor
-    , Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
     , toChoice, toSet, handleWith
     , expand, collapse
     , addPath, addLabeledPath, addLabels
@@ -125,7 +125,7 @@ For more information, see the `examples` folder in the source code.
 @docs buttons, buttonsWithIcons, coloredButtons, setColor
 
 # Icons
-@docs Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+@docs Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
 # Force expand / collapse for nesting
 @docs expand, collapse
@@ -531,8 +531,8 @@ nest panelShape cellShape items =
 
 {-| Set icon as face to the button _or_ the button of a `nest` control.
 -}
-addIcon : Icon -> Tron msg -> Tron msg
-addIcon icon_ =
+setIcon : Icon -> Tron msg -> Tron msg
+setIcon icon_ =
     Property.setFace <| WithIcon icon_
 
 

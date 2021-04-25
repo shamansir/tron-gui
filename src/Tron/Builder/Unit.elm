@@ -223,6 +223,11 @@ choiceWithIconsByCompare shape cellShape toLabelAndIcon options current compare 
     B.choiceWithIconsByCompare shape cellShape toLabelAndIcon options current compare <| always ()
 
 
+{-| The replacement for `handleWith` since we don't handle anything for Proxy -}
+dontHandle : B.Set a -> Set
+dontHandle = B.handleWith <| always ()
+
+
 {-| -}
 strings
      : List String
