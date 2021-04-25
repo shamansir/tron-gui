@@ -4,11 +4,11 @@ module Tron.Builder.String exposing
     , button, buttonWith, colorButton
     , nest, choice, choiceByCompare, strings, labels, palette
     , buttons, buttonsWithIcons, coloredButtons, setColor
-    , Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
-    , toChoice, toSet, handleWith
+    , Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , toChoice, toSet, autoHandle
     , expand, collapse
     , addPath, addLabeledPath, addLabels
-)
+    )
 
 
 {-|
@@ -78,9 +78,11 @@ import Tron.Control.Toggle exposing (boolToToggle, toggleToBool, toggleToString)
 import Tron.Control.XY exposing (xyToString, xyFromString)
 import Tron.Control.Nest exposing (Form(..), ItemId)
 
+import Tron.Expose.Convert as Exp
+
 
 {-| -}
-type alias Builder = B.Tron String
+type alias Tron = B.Tron String
 
 
 {-| -}
@@ -92,82 +94,82 @@ type alias Icon = B.Icon
 
 
 {-| -}
-none : Builder
+none : Tron
 none = B.none
 
 
 {-| -}
-root : Set -> Builder
+root : Set -> Tron
 root = B.root
 
 
 {-| -}
-float : Axis -> Float -> Builder
+float : Axis -> Float -> Tron
 float axis current = B.float axis current <| String.fromFloat
 
 
 {-| -}
-int : { min: Int, max : Int, step : Int } -> Int -> Builder
+int : { min: Int, max : Int, step : Int } -> Int -> Tron
 int axis current = B.int axis current <| String.fromInt
 
 
 {-| -}
-number : Axis -> Float -> Builder
+number : Axis -> Float -> Tron
 number = float
 
 
 {-| -}
-xy : ( Axis, Axis ) -> ( Float, Float ) -> Builder
+xy : ( Axis, Axis ) -> ( Float, Float ) -> Tron
 xy xAxis yAxis = B.xy xAxis yAxis xyToString
 
 
 {-| -}
-coord : ( Axis, Axis ) -> ( Float, Float ) -> Builder
+coord : ( Axis, Axis ) -> ( Float, Float ) -> Tron
 coord = xy
 
 
 {-| -}
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Builder
+input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Tron
 input toString fromString current = B.input toString fromString current toString
 
 
 {-| -}
-text : String -> Builder
+text : String -> Tron
 text default = B.text default identity
 
 
 {-| -}
-color : Color -> Builder
+color : Color -> Tron
 color current = B.color current Color.colorToHexWithAlpha
 
 
 {-| -}
-button : Builder
+button : Tron
 button = B.button <| always ""
 
 
 {-| -}
-buttonWith : Icon -> Builder
+buttonWith : Icon -> Tron
 buttonWith icon_ = B.buttonWith icon_ <| always ""
 
 
 {-| -}
-colorButton : Color -> Builder
+colorButton : Color -> Tron
 colorButton color_ = B.colorButton color_ <| always ""
 
 
 {-| -}
-toggle : Bool -> Builder
+toggle : Bool -> Tron
 toggle current = B.toggle current (boolToToggle >> toggleToString)
 
 
 {-| -}
-bool : Bool -> Builder
+bool : Bool -> Tron
 bool = toggle
 
 
 {-| -}
-nest : PanelShape -> CellShape -> Set -> Builder
+nest : PanelShape -> CellShape -> Set -> Tron
 nest = B.nest
 
 
@@ -176,23 +178,11 @@ choice
      : PanelShape
     -> CellShape
     -> ( comparable -> Label )
-    -> List comparable
+    -> B.Set comparable
     -> comparable
-    -> Builder
-choice shape cellShape toLabel options current =
-    B.choice shape cellShape toLabel options current toLabel
-
-
-{-| -}
-choiceWithIcons
-     : PanelShape
-    -> CellShape
-    -> ( comparable -> ( Label, Icon ) )
-    -> List comparable
-    -> comparable
-    -> Builder
-choiceWithIcons shape cellShape toLabelAndIcon options current =
-    B.choiceWithIcons shape cellShape toLabelAndIcon options current (toLabelAndIcon >> Tuple.first)
+    -> Tron
+choice panelShape cellShape toLabel items current =
+    B.choice panelShape cellShape items current toLabel
 
 
 {-| -}
@@ -200,39 +190,20 @@ choiceByCompare
      : PanelShape
     -> CellShape
     -> ( a -> Label )
-    -> List a
+    -> B.Set a
     -> a
     -> ( a -> a -> Bool )
-    -> Builder
-choiceByCompare shape cellShape toLabel options current compare =
-    B.choiceByCompare shape cellShape toLabel options current compare toLabel
+    -> Tron
+choiceByCompare panelShape cellShape toLabel items current compare =
+    B.choiceByCompare panelShape cellShape items current compare toLabel
 
-
-{-| -}
-choiceWithIconsByCompare
-     : PanelShape
-    -> CellShape
-    -> ( a -> ( Label, Icon ) )
-    -> List a
-    -> a
-    -> ( a -> a -> Bool )
-    -> Builder
-choiceWithIconsByCompare shape cellShape toLabelAndIcon options current compare =
-    B.choiceWithIconsByCompare
-        shape
-        cellShape
-        toLabelAndIcon
-        options
-        current
-        compare
-        (toLabelAndIcon >> Tuple.first)
 
 
 {-| -}
 strings
      : List String
     -> String
-    -> Builder
+    -> Tron
 strings options current =
     B.strings options current identity
 
@@ -242,18 +213,9 @@ labels
      : ( a -> Label )
     -> List a
     -> a
-    -> Builder
-labels toLabel options current  =
-    B.labels
-        toLabel
-        options
-        current
-        (options
-            |> List.head
-            |> Maybe.map toLabel
-            |> Maybe.withDefault ""
-        )
-         toLabel
+    -> Tron
+labels toLabel options current =
+    B.labels toLabel options current "" toLabel
 
 
 {-| -}
@@ -261,10 +223,50 @@ palette
      : PanelShape
     -> List Color
     -> Color
-    -> Builder
-palette shape options current =
-    B.palette shape options current Color.colorToHexWithAlpha
+    -> Tron
+palette panelShape colors currentColor =
+    B.palette panelShape colors currentColor Color.colorToHexWithAlpha
 
+
+{-| -}
+buttons : List a -> List (B.Tron a)
+buttons = B.buttons
+
+
+{-| -}
+buttonsWithIcons : (a -> Icon) -> List a -> List (B.Tron a)
+buttonsWithIcons = B.buttonsWithIcons
+
+
+{-| -}
+coloredButtons : (a -> Color) -> List a -> List (B.Tron a)
+coloredButtons = B.coloredButtons
+
+
+{-| -}
+toSet : (a -> Label) -> List (B.Tron a) -> B.Set a
+toSet = B.toSet
+
+
+{-| -}
+addLabels : (a -> Label) -> List (B.Tron a) -> B.Set a
+addLabels = B.addLabels
+
+
+{-| The replacement for `handleWith` since we convert everything automatically for Proxy -}
+autoHandle : B.Set a -> Set
+autoHandle =
+    List.map <| Tuple.mapSecond <| Exp.toStrExposed >> Property.map (Tuple.first >> Tuple.second)
+
+
+{-| -}
+setColor : Color -> B.Tron a -> B.Tron a
+setColor = B.setColor
+
+
+{-| -}
+setIcon : Icon -> B.Tron a -> B.Tron a
+setIcon = B.setIcon
 
 
 {-| -}
@@ -293,20 +295,25 @@ makeUrl = Button.makeUrl
 
 
 {-| -}
-expand : Builder -> Builder
+expand : Tron -> Tron
 expand = B.expand
 
 
 {-| -}
-collapse : Builder -> Builder
+collapse : Tron -> Tron
 collapse = B.collapse
 
 
 {-| -}
-addPath : Builder -> B.Tron ( List Int, String )
+addPath : Tron -> B.Tron ( List Int, String )
 addPath = Property.addPath >> B.map (Tuple.mapFirst Path.toList)
 
 
 {-| -}
-addLabeledPath : Builder -> B.Tron ( List String, String )
+addLabeledPath : Tron -> B.Tron ( List String, String )
 addLabeledPath = Property.addLabeledPath
+
+
+{-| -}
+toChoice : Tron -> Tron
+toChoice = B.toChoice String.fromInt

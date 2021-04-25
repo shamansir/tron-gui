@@ -4,8 +4,8 @@ module Tron.Builder.Proxy exposing
     , button, buttonWith, colorButton
     , nest, choice, choiceByCompare, strings, labels, palette
     , buttons, buttonsWithIcons, coloredButtons, setColor
-    , Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
-    , toChoice, toSet, handleWith
+    , Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , toChoice, toSet, autoHandle
     , expand, collapse
     , addPath, addLabeledPath, addLabels
     )
@@ -81,6 +81,7 @@ import Tron.Control.Nest exposing (Form(..), ItemId)
 
 import Tron.Expose.ProxyValue exposing (ProxyValue(..))
 import Tron.Builder.Choice as Choice
+import Tron.Expose.Convert exposing (toProxied)
 
 
 {-| -}
@@ -181,30 +182,23 @@ choice
     -> CellShape
     -> B.Set comparable
     -> comparable
-    -> ( comparable -> msg )
     -> Tron
-choice shape cellShape toLabel items current =
-    Choice.proxyHelper
-        ( shape, cellShape )
-        (Choice.withButtons toLabel <| always Default)
-        items
-        current
-        (==)
+choice panelShape cellShape items current =
+    B.choice panelShape cellShape items current (always ())
+        |> toProxied |> Property.map Tuple.first
 
 
 {-| -}
 choiceByCompare
      : PanelShape
     -> CellShape
-    -> ( a -> Label )
-    -> List a
+    -> B.Set a
     -> a
     -> ( a -> a -> Bool )
     -> Tron
-choiceByCompare shape cellShape toLabel =
-    Choice.proxyHelper
-        ( shape, cellShape )
-        (Choice.withButtons toLabel <| always Default)
+choiceByCompare panelShape cellShape items current compare =
+    B.choiceByCompare panelShape cellShape items current compare (always ())
+        |> toProxied |> Property.map Tuple.first
 
 
 
@@ -214,12 +208,8 @@ strings
     -> String
     -> Tron
 strings options current =
-    choice
-        (cols 1)
-        CS.twiceByHalf
-        identity
-        options
-        current
+    B.strings options current (always ())
+        |> toProxied |> Property.map Tuple.first
 
 
 {-| -}
@@ -227,21 +217,10 @@ labels
      : ( a -> Label )
     -> List a
     -> a
-    -> msg
     -> Tron
-labels toLabel options current fallback =
-    let
-        labelToValue =
-            options
-                |> List.map (\v -> ( toLabel v, v ) )
-                |> Dict.fromList
-
-    in choice
-        (cols 1)
-        CS.twiceByHalf
-        identity
-        (options |> List.map toLabel)
-        (toLabel current)
+labels toLabel options current =
+    B.labels toLabel options current () (always ())
+        |> toProxied |> Property.map Tuple.first
 
 
 {-| -}
@@ -250,23 +229,50 @@ palette
     -> List Color
     -> Color
     -> Tron
-palette shape options current =
-    Choice.proxyHelper
-        ( shape, CS.half )
-        (Choice.withButtons
-            Color.colorToHexWithAlpha
-            WithColor
-        )
-        options
-        current
-        (\cv1 cv2 ->
-            case ( cv1 |> Color.toRgba, cv2 |> Color.toRgba ) of
-                ( c1, c2 ) ->
-                    (c1.red == c2.red) &&
-                    (c1.blue == c2.blue) &&
-                    (c1.green == c2.green) &&
-                    (c1.alpha == c2.alpha)
-        )
+palette panelShape colors currentColor =
+    B.palette panelShape colors currentColor (always ())
+        |> toProxied |> Property.map Tuple.first
+
+
+{-| -}
+buttons : List a -> List (B.Tron a)
+buttons = B.buttons
+
+
+{-| -}
+buttonsWithIcons : (a -> Icon) -> List a -> List (B.Tron a)
+buttonsWithIcons = B.buttonsWithIcons
+
+
+{-| -}
+coloredButtons : (a -> Color) -> List a -> List (B.Tron a)
+coloredButtons = B.coloredButtons
+
+
+{-| -}
+toSet : (a -> Label) -> List (B.Tron a) -> B.Set a
+toSet = B.toSet
+
+
+{-| -}
+addLabels : (a -> Label) -> List (B.Tron a) -> B.Set a
+addLabels = B.addLabels
+
+
+{-| The replacement for `handleWith` since we convert everything automatically for Proxy -}
+autoHandle : B.Set a -> Set
+autoHandle =
+    List.map <| Tuple.mapSecond <| toProxied >> Property.map Tuple.first
+
+
+{-| -}
+setColor : Color -> B.Tron a -> B.Tron a
+setColor = B.setColor
+
+
+{-| -}
+setIcon : Icon -> B.Tron a -> B.Tron a
+setIcon = B.setIcon
 
 
 {-| -}
@@ -312,3 +318,8 @@ addPath = Property.addPath >> B.map (Tuple.mapFirst Path.toList)
 {-| -}
 addLabeledPath : Tron -> B.Tron ( List String, ProxyValue )
 addLabeledPath = Property.addLabeledPath
+
+
+{-| -}
+toChoice : Tron -> Tron
+toChoice = B.toChoice FromChoice
