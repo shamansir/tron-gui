@@ -220,6 +220,7 @@ group deep =
                         (\f ->
                             { form = f
                             , page = 0
+                            , face = Nothing
                             }
                         )
                         form
