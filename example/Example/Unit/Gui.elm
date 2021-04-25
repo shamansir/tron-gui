@@ -60,8 +60,10 @@ gui =
                 Gui.choiceByCompare
                     ( cols 3 )
                     single
-                    choiceToLabel
-                    choices
+                    (choices
+                        |> Gui.buttons
+                        |> Gui.addLabels choiceToLabel
+                    )
                     A
                     compareChoices
                     |> Gui.expand

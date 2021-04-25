@@ -40,12 +40,15 @@ for model =
                 Gui.choiceByCompare
                     ( Shape.auto )
                     Cell.single -- Cell.halfByOne
-                    (\v ->
-                        case v of
-                            Left -> "left"
-                            Right -> "right"
+                    ([ Left, Right ]
+                        |> Gui.buttons
+                        |> Gui.addLabels
+                            (\v ->
+                                case v of
+                                    Left -> "left"
+                                    Right -> "right"
+                            )
                     )
-                    [ Left, Right ]
                     model.lookAt
                     compareDirections
                     LookAt
