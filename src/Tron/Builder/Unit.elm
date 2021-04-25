@@ -4,8 +4,8 @@ module Tron.Builder.Unit exposing
     , button, buttonWith, colorButton
     , nest, choice, choiceByCompare, strings, labels, palette
     , buttons, buttonsWithIcons, coloredButtons, setColor
-    , Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
-    , toChoice, toSet, handleWith
+    , Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , toChoice, toSet, dontHandle
     , expand, collapse
     , addPath, addLabeledPath, addLabels
     )
@@ -177,55 +177,24 @@ nest = B.nest
 choice
      : PanelShape
     -> CellShape
-    -> ( comparable -> Label )
-    -> List comparable
+    -> B.Set comparable
     -> comparable
     -> Tron
-choice shape cellShape toLabel options current =
-    B.choice shape cellShape toLabel options current <| always ()
-
-
-{-| -}
-choiceWithIcons
-     : PanelShape
-    -> CellShape
-    -> ( comparable -> ( Label, Icon ) )
-    -> List comparable
-    -> comparable
-    -> Tron
-choiceWithIcons shape cellShape toLabelAndIcon options current =
-    B.choiceWithIcons shape cellShape toLabelAndIcon options current <| always ()
+choice panelShape cellShape items current =
+    B.choice panelShape cellShape items current <| always ()
 
 
 {-| -}
 choiceByCompare
      : PanelShape
     -> CellShape
-    -> ( a -> Label )
-    -> List a
+    -> B.Set a
     -> a
     -> ( a -> a -> Bool )
     -> Tron
-choiceByCompare shape cellShape toLabel options current compare =
-    B.choiceByCompare shape cellShape toLabel options current compare <| always ()
+choiceByCompare panelShape cellShape items current compare =
+    B.choiceByCompare panelShape cellShape items current compare <| always ()
 
-
-{-| -}
-choiceWithIconsByCompare
-     : PanelShape
-    -> CellShape
-    -> ( a -> ( Label, Icon ) )
-    -> List a
-    -> a
-    -> ( a -> a -> Bool )
-    -> Tron
-choiceWithIconsByCompare shape cellShape toLabelAndIcon options current compare =
-    B.choiceWithIconsByCompare shape cellShape toLabelAndIcon options current compare <| always ()
-
-
-{-| The replacement for `handleWith` since we don't handle anything for Proxy -}
-dontHandle : B.Set a -> Set
-dontHandle = B.handleWith <| always ()
 
 
 {-| -}
@@ -253,8 +222,49 @@ palette
     -> List Color
     -> Color
     -> Tron
-palette shape options current =
-    B.palette shape options current <| always ()
+palette panelShape colors currentColor =
+    B.palette panelShape colors currentColor <| always ()
+
+
+{-| -}
+buttons : List a -> List (B.Tron a)
+buttons = B.buttons
+
+
+{-| -}
+buttonsWithIcons : (a -> Icon) -> List a -> List (B.Tron a)
+buttonsWithIcons = B.buttonsWithIcons
+
+
+{-| -}
+coloredButtons : (a -> Color) -> List a -> List (B.Tron a)
+coloredButtons = B.coloredButtons
+
+
+{-| -}
+toSet : (a -> Label) -> List (B.Tron a) -> B.Set a
+toSet = B.toSet
+
+
+{-| -}
+addLabels : (a -> Label) -> List (B.Tron a) -> B.Set a
+addLabels = B.addLabels
+
+
+
+{-| The replacement for `handleWith` since we don't handle anything for Proxy -}
+dontHandle : B.Set a -> Set
+dontHandle = B.handleWith <| always ()
+
+
+{-| -}
+setColor : Color -> B.Tron a -> B.Tron a
+setColor = B.setColor
+
+
+{-| -}
+setIcon : Icon -> B.Tron a -> B.Tron a
+setIcon = B.setIcon
 
 
 {-| -}
@@ -294,9 +304,14 @@ collapse = B.collapse
 
 {-| -}
 addPath : Tron -> B.Tron ( List Int, () )
-addPath = Property.addPath >> B.map (Tuple.mapFirst Path.toList)
+addPath = B.addPath
 
 
 {-| -}
 addLabeledPath : Tron -> B.Tron ( List String, () )
-addLabeledPath = Property.addLabeledPath
+addLabeledPath = B.addLabeledPath
+
+
+{-| -}
+toChoice : Tron -> Tron
+toChoice = B.toChoice <| always ()
