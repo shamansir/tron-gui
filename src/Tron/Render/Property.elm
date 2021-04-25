@@ -166,9 +166,14 @@ viewProperty
                 Nothing ->
                     arrow theme state form bounds
 
-        Group _ _ ( Control _ { form } _) ->
+        Group _ _ ( Control _ { form, face } _) ->
 
-            arrow theme state form bounds
+            case face of
+                Just buttonFace ->
+
+                    button theme state buttonFace cellShape label bounds
+
+                Nothing -> arrow theme state form bounds
 
         _ -> Svg.none
 
