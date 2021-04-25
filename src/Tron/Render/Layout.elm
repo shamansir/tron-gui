@@ -368,7 +368,7 @@ view theme dock bounds detach getDetachAbility root layout =
             [ HA.id rootId
             , HA.class makeClass
             , HA.tabindex 0
-            , keyDownHandler_
+            -- , keyDownHandler_ -- moved to a top level
             ]
 
             [ Svg.svg

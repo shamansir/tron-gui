@@ -13,7 +13,9 @@ import Browser.Events as Browser
 import Task
 import Color
 import Html exposing (Html)
+import Html.Events as HE
 import Json.Encode as E
+import Json.Decode as D
 
 import Size exposing (..)
 
@@ -56,6 +58,7 @@ type alias Model msg =
     , mouse : MouseState
     , tree : Tron msg
     , detach : ( Maybe ClientId, Detach.State )
+    , hidden : Bool
     }
 
 
@@ -82,20 +85,23 @@ map f gui =
     , mouse = gui.mouse
     , tree = gui.tree |> Tron.Property.map f
     , detach = gui.detach
+    , hidden = gui.hidden
     }
 
 
 init : Tron msg -> ( Model msg, Cmd Msg )
 init root =
-    ( initRaw root
+    (
+        { dock = Dock.topLeft
+        , viewport = Size ( 0, 0 )
+        , size = Nothing
+        , mouse = Tron.Mouse.init
+        , tree = root
+        , detach = ( Nothing, Detached )
+        , hidden = False
+        }
     , run
     )
-
-
-initRaw : Tron msg -> Model msg
-initRaw root =
-    Model Dock.topLeft (Size ( 0, 0 )) Nothing Tron.Mouse.init root ( Nothing, Detached )
--- TODO: get rid of initRaw
 
 
 run : Cmd Msg
@@ -262,6 +268,17 @@ applyRaw rawUpdate =
     .tree >> Exp.update (Exp.fromPort rawUpdate)
 
 
+trackResize : Sub Msg
+trackResize = Browser.onResize <| \w h -> ViewportChanged ( w, h )
+
+
+trackSpaceKey : Sub Msg
+trackSpaceKey =
+    -- we do it separately since it can occur outside of GUI, when it's not focused
+    Browser.onKeyDown
+        (D.map KeyDown HE.keyCode)
+
+
 trackMouse : Sub Msg
 trackMouse =
     Sub.batch
@@ -426,7 +443,7 @@ handleKeyDown keyCode path gui =
                 | tree = nextRoot
                 }
 
-        executeByPath _ =
+        executeByPath _ = -- uses only `gui.tree`
             let
                 updates = gui.tree |> executeAt path
                 nextRoot = gui.tree |> updateMany updates
@@ -451,7 +468,14 @@ handleKeyDown keyCode path gui =
         -- down arrow
         40 -> ( shiftFocus Focus.Down, Cmd.none )
         -- space
-        33 -> executeByPath gui.tree
+        32 ->
+            (
+                { gui
+                | hidden = not gui.hidden
+                }
+            , Cmd.none
+            )
+            -- executeByPath ()
         -- enter
         13 ->
             case gui.tree |> Property.find path of
@@ -485,6 +509,7 @@ toExposed gui =
             |> Exp.toExposed
             |> Property.map (Tuple.mapFirst (Detach.addClientId <| Tuple.first <| gui.detach))
     , detach = gui.detach
+    , hidden = gui.hidden
     }
 
 
@@ -579,8 +604,8 @@ subscriptions : Model msg -> Sub Msg
 subscriptions gui =
     Sub.batch
         [ trackMouse
-        -- , Detach.receive gui.detach -- FIXME: use in `WithTron`
-        , Browser.onResize <| \w h -> ViewportChanged ( w, h )
+        , trackResize
+        , trackSpaceKey
         ]
 
 
@@ -600,7 +625,9 @@ view theme gui =
                 Nothing ->
                     always Detach.CannotBeDetached
     in
-    case layout gui of
+    if not gui.hidden
+    then case layout gui of
         ( root, theLayout ) ->
             theLayout
                 |> Layout.view theme gui.dock bounds detachState toDetachAbility root
+    else Html.div [] []

@@ -2,6 +2,9 @@
 
 * Make `Expose.Data.Convert` work with `Tron *` instances instead of `Property *`, which was confusing, though it is just the alias anyway.
 * Fix `rows` & `cols` for `PanelShape`;
+* Make `Builder` API friendlier with `choice` accepting a list of choices as configured controls, instead of just choices: i.e. buttons, with icons, if needeed, or just any control;
+* Add `setIcon` and `setColor` to the `Builder` API so that `.nest` could have an icon instead of showing the arrow;
+* Hide on _Space_ functionality;
 
 ### 6.0.0
 

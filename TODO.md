@@ -1,10 +1,11 @@
 * Choice-by-click control — the button that changes state while it's clicked;
     * Maybe reuse `Nest.Form` for that;
-* Hide on _Space_ functionality;
+* Test keyboard navigation, adapt it to the Dock;
 * Nest with icon;
 * Fix knobs to use current value when user starts dragging;
 * Breaking: For `Backed` Tron, give user access to the values in the dictionary and the easy way to parse them;
 * Move `Util` stuff to the corresponding modules;
+* Debug `RenderMode`;
 * Use `Size Cells`, like integer size, in `Layout`;
 * _Active_ condition for a button, some effect for when it is pressed;
 * For Docker, add ability to run any example using environment variable;
@@ -32,3 +33,4 @@
 * Do not store dock in the `Gui msg`, it should be recalculated every time;
 * Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed;
 * Add some indication of the WS server status to the examples;
+* With choice, also send the value chosen as label;
