@@ -312,12 +312,12 @@ collapse = B.collapse
 
 {-| -}
 addPath : Tron -> B.Tron ( List Int, ProxyValue )
-addPath = Property.addPath >> B.map (Tuple.mapFirst Path.toList)
+addPath = B.addPath
 
 
 {-| -}
 addLabeledPath : Tron -> B.Tron ( List String, ProxyValue )
-addLabeledPath = Property.addLabeledPath
+addLabeledPath = B.addLabeledPath
 
 
 {-| -}
