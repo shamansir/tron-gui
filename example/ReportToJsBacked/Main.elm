@@ -19,7 +19,7 @@ port transmit : Exp.RawOutUpdate -> Cmd msg
 main : BackedWithTron
 main =
     WithTron.backed
-        (Option.toHtml Dock.middleRight Theme.dark)
+        (Option.toHtml Dock.bottomCenter Theme.dark)
         ( ack, transmit )
         ExampleGui.gui
 

@@ -12,8 +12,8 @@ gui =
     Tron.root
         [ ( "Color Scheme", Tron.none )
         , ( "Sizes", sizes |> Tron.setIcon (icon "size") )
-        , ( "Tile", Tron.none )
-        , ( "Randomness", Tron.none )
+        , ( "Tile", tile |> Tron.setIcon (icon "tile") )
+        , ( "Randomness", randomness |> Tron.setIcon (icon "settings") )
         , ( "Title", Tron.none )
         , ( "Action on click", clickAction |> Tron.setIcon (icon "cursor"))
         , ( "Shuffle color", Tron.buttonWith <| icon "shuffle" )
@@ -41,12 +41,41 @@ icon name =
 sizes : Tron ()
 sizes =
      Tron.nest
-        (cols 3)
+        (cols 2)
         CellShape.single
         [ ( "Cell", Tron.int { min = 0, max = 200, step = 1 } 0 )
         , ( "Shape", Tron.float { min = 0.01, max = 5, step = 0.1 } 0 )
         , ( "Board size", Tron.toggle False )
         ]
+
+
+randomness : Tron ()
+randomness =
+     Tron.nest
+        (cols 2)
+        CellShape.single
+        [ ( "Diversity", Tron.int { min = 0, max = 15, step = 1 } 0 )
+        ,  ( "Scale", Tron.float { min = 0.1, max = 2, step = 0.1 } 0.1 )
+        ,  ( "Ind. fill", Tron.toggle False )
+        ,  ( "Colors", Tron.int { min = 1, max = 13, step = 1 } 1 )
+        ]
+
+
+tile : Tron ()
+tile =
+    Tron.nest
+        (cols 2)
+        CellShape.single
+        [ ("Tileset", tileset)
+        , ( "Opacity", Tron.float { min = 0.1, max = 2, step = 0.1 } 0.1 )
+        ]
+
+
+tileset : Tron ()
+tileset =
+        Tron.strings
+        [ "Foo", "Bar", "F44oo"] "Foo"
+
 
 type ActionType
     = ChangeColor
