@@ -93,20 +93,12 @@ distanceY : Float -> MouseState -> Float
 distanceY howFar mstate  =
     case mstate.dragFrom of
         Just dragFrom ->
-            if mstate.pos /= dragFrom then
-                let
-                    originY = dragFrom.y
-                    curY = mstate.pos.y
-                    topY = originY + (howFar / 2)
-                    diffY = (topY - curY) / howFar
-                in
-                    align diffY
-            else 0
+            (mstate.pos.y - dragFrom.y) / howFar * -1
         _ -> 0
 
 
-distanceXY : Float -> MouseState -> ( Float, Float )
-distanceXY howFar mstate  =
+distanceXY : ( Float, Float ) -> MouseState -> ( Float, Float )
+distanceXY ( howFarX, howFarY ) mstate  =
     case mstate.dragFrom of
         Just dragFrom ->
             if mstate.pos /= dragFrom then
@@ -115,14 +107,14 @@ distanceXY howFar mstate  =
                     originY = dragFrom.y
                     curX = mstate.pos.x
                     curY = mstate.pos.y
-                    leftX = originX - (howFar / 2)
+                    leftX = originX - (howFarX / 2)
                     -- Y is going from top to bottom
-                    topY = originY + (howFar / 2)
-                    diffX = (curX - leftX) / howFar
-                    diffY = (topY - curY) / howFar
+                    topY = originY + (howFarY / 2)
+                    diffX = (curX - leftX) / howFarX
+                    diffY = (topY - curY) / howFarY
                 in
-                    ( align diffX
-                    , align (1 - diffY)
+                    ( align diffX - 0.5
+                    , align (1 - diffY) - 0.5
                     )
             else ( 0, 0 )
         _ -> ( 0, 0 )

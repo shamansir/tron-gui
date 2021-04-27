@@ -671,14 +671,14 @@ See `Tron.Builder.Unit` for the functions that will help you define the interfac
     import Tron.Builder.Unit exposing (..)
     import Tron.Expose.Data as Exp
 
-    gui : Float -> Tron ()
-    gui amount =
+    gui : Tron ()
+    gui =
         Builder.root
             [
                 ( "amount"
                 , Builder.float
                     { min = 0, max = 1, step = 0.01 }
-                    amount
+                    0
                 )
             ]
 
@@ -770,14 +770,14 @@ See `Tron.Builder.Unit` for the functions that will help you define the interfac
     import Tron exposing (Tron)
     import Tron.Builder.Unit exposing (..)
 
-    gui : Float -> Tron ()
-    gui amount =
+    gui : Tron ()
+    gui =
         Builder.root
             [
                 ( "amount"
                 , Builder.float
                     { min = 0, max = 1, step = 0.01 }
-                    amount
+                    0
                 )
             ]
 

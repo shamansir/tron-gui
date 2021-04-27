@@ -22,6 +22,12 @@ align v =
         else v
 
 
+alignByRange { min, max } v =
+    if v > max then max
+    else if v < min then min
+        else v
+
+
 findMap : (a -> Maybe x) -> List a -> Maybe x
 findMap toValue =
     List.foldl
@@ -60,9 +66,22 @@ flipMaybe ( a, maybeB ) =
     maybeB |> Maybe.map (Tuple.pair a)
 
 
-alter : { a | min : Float, max : Float, step : Float } -> Float -> Float -> Float
-alter { min, max, step } amount curValue =
+alter : { min : Float, max : Float, step : Float } -> Float -> Float -> Float
+alter axis amount curValue =
     let
-        toAdd = amount * (max - min)
-        alignedByStep = toFloat (floor (toAdd / step)) * step
-    in min + alignedByStep
+        range_ = axis.max - axis.min
+        -- _ =  Debug.log "curValue" curValue
+        -- _ =  Debug.log "amount" amount
+
+        adjusted = curValue + ( amount * range_ / 20 ) --|> Debug.log "adjusted"
+        -- alignedByStep = adjusted
+        alignedByStep =
+            adjusted
+            {-
+            if (adjusted < 0) then
+                (toFloat (floor (adjusted / axis.step)) * axis.step)
+            else
+                (toFloat (ceiling (adjusted / axis.step)) * axis.step)
+            -}
+    in alignByRange axis <| alignedByStep
+

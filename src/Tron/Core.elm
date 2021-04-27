@@ -337,7 +337,7 @@ handleMouse mouseAction gui =
 
                         Just ( path, Number ( Control axis curValue handler ) ) ->
                             let
-                                dY = distanceY knobDistance nextMouseState
+                                dY = distanceY Cell.width nextMouseState
                                 nextVal = alter axis dY curValue
                                 nextControl =
                                     Control axis nextVal handler
@@ -349,7 +349,10 @@ handleMouse mouseAction gui =
 
                         Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
                             let
-                                ( dX, dY ) = distanceXY knobDistance nextMouseState
+                                ( dX, dY ) =
+                                    distanceXY
+                                    (Cell.width, Cell.height)
+                                    nextMouseState
                                 ( nextX, nextY ) =
                                     ( alter xAxis dX curX
                                     , alter yAxis dY curY
@@ -367,7 +370,10 @@ handleMouse mouseAction gui =
                                 hueAxis = { min = 0, max = 1, step = 0.01 }
                                 lgtAxis = { min = 0, max = 1, step = 0.01 }
                                 curHsla = Color.toHsla curColor
-                                ( dX, dY ) = distanceXY knobDistance nextMouseState
+                                ( dX, dY ) =
+                                    distanceXY
+                                    (Cell.width, Cell.height)
+                                    nextMouseState
                                 ( nextHue, nextLightness ) =
                                     ( alter hueAxis dX curHsla.hue
                                     , alter lgtAxis dY curHsla.lightness
