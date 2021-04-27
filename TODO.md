@@ -1,9 +1,10 @@
 * Choice-by-click control — the button that changes state while it's clicked;
     * Maybe reuse `Nest.Form` for that;
 * Test keyboard navigation, adapt it to the Dock;
-* Nest with icon;
 * Fix knobs to use current value when user starts dragging;
 * Breaking: For `Backed` Tron, give user access to the values in the dictionary and the easy way to parse them;
+    * It is needed, for the cases when parts of the GUI are hidden when some switch is off, like in the case of Goose example;
+    * On the other hand, the current values could be overwritten from the JSON dict, think it over;
 * Move `Util` stuff to the corresponding modules;
 * Debug `RenderMode`;
 * Use `Size Cells`, like integer size, in `Layout`;
@@ -16,9 +17,7 @@
 * Locked controls;
 * Include links to the examples in the docs;
 * Share examples somewhere, i.e. deploy to github;
-* Breaking: Make adding icon a separate function of `Builder`, like `expand` or `collapse`;
 * Breaking?: When in the detached state, give user the choice if to view the original model or not (or just always hide it, in detached mode);
-* Include minimal `OneControl` example into the docs, as well as `Basic` one and `ReportToJs*` ones;
 * Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
 * Breaking: Use some safe Unique IDs to reference the position of the control in the tree, so that while the tree structure is changing, ID's stay the same;
     * Or, store such IDs together with property;
