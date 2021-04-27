@@ -39,13 +39,13 @@ so that is easier and shorter to use `Unit`-based `Builder` if you don't need an
 @docs buttons, buttonsWithIcons, coloredButtons, setColor
 
 # Icons
-@docs Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+@docs Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
 # Force expand / collapse for nesting
 @docs expand, collapse
 
 # Conversion
-@docs toSet, toChoice, addLabels, handleWith
+@docs toSet, toChoice, addLabels, dontHandle
 
 # Add Path
 @docs addPath, addLabeledPath

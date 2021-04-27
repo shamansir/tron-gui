@@ -39,13 +39,13 @@ so that is easier and shorter to use `Proxy`-based `Builder` if you don't need a
 @docs buttons, buttonsWithIcons, coloredButtons, setColor
 
 # Icons
-@docs Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+@docs Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
 # Force expand / collapse for nesting
 @docs expand, collapse
 
 # Conversion
-@docs toSet, toChoice, addLabels, handleWith
+@docs toSet, toChoice, addLabels, autoHandle
 
 # Add Path
 @docs addPath, addLabeledPath
@@ -259,7 +259,7 @@ addLabels : (a -> Label) -> List (B.Tron a) -> B.Set a
 addLabels = B.addLabels
 
 
-{-| The replacement for `handleWith` since we convert everything automatically for Proxy -}
+{-| The replacement for `handleWith` since we convert everything automatically for Proxy. -}
 autoHandle : B.Set a -> Set
 autoHandle =
     List.map <| Tuple.mapSecond <| toProxied >> Property.map Tuple.first

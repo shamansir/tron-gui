@@ -38,13 +38,13 @@ so that is easier and shorter to use `String`-based `Builder` if you don't need 
 @docs buttons, buttonsWithIcons, coloredButtons, setColor
 
 # Icons
-@docs Icon, addIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+@docs Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
 # Force expand / collapse for nesting
 @docs expand, collapse
 
 # Conversion
-@docs toSet, toChoice, addLabels, handleWith
+@docs toSet, toChoice, addLabels, autoHandle
 
 # Add Path
 @docs addPath, addLabeledPath
