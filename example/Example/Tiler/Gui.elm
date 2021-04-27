@@ -1,8 +1,5 @@
 module Example.Tiler.Gui exposing (gui)
 
-
-import Color
-
 import Tron exposing (Tron)
 import Tron.Builder.Unit as Tron
 import Tron.Style.PanelShape exposing (..)
@@ -50,7 +47,6 @@ sizes =
         , ( "Shape", Tron.float { min = 0.01, max = 5, step = 0.1 } 0 )
         , ( "Board size", Tron.toggle False )
         ]
-
 
 type ActionType
     = ChangeColor
