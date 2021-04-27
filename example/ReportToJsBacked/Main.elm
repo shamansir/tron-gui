@@ -8,7 +8,7 @@ import Tron.Expose.Data as Exp
 import WithTron exposing (BackedWithTron)
 
 
-import Example.Unit.Gui as ExampleGui
+import Example.Tiler.Gui as ExampleGui
 
 
 port ack : Exp.RawProperty -> Cmd msg
