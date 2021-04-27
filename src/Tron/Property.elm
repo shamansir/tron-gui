@@ -54,9 +54,6 @@ type Property msg
     | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property msg ) msg)
 
 
-knobDistance = 90 * 4
-
-
 
 -- Recursively try to find the control in the tree, following the given path.
 -- When found and the path is valid, respond with the inner control.
