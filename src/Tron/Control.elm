@@ -16,6 +16,26 @@ map f (Control setup val handler) =
         (handler |> Maybe.map ((<<) f))
 
 
+andThen : (a -> Control b c d) -> Control b c a -> Control b c d
+andThen k s = case s of
+  Control b c (Just f) -> k (f c)
+  Control b c  Nothing -> Control b c Nothing
+
+
+with : (Control b c a -> a -> Control b c d) -> Control b c a -> Control b c d
+with f control =
+    control |> andThen (\v -> f control v)
+
+
+fold : (msg -> a) -> a -> Control setup value msg -> a
+fold f def control=
+    case control |> evaluate__ of
+        Just msg ->
+            f msg
+        Nothing ->
+            def
+
+
 update : (v -> v) -> Control s v msg -> Control s v msg
 update f (Control state current handler) =
     Control state (f current) handler

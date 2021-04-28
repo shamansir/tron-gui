@@ -1,6 +1,6 @@
 module Tron exposing
     ( Tron, Set
-    , map
+    , map, with
     )
 
 {-| This is the `Tron msg`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application. In this case, it represents your components.
@@ -44,6 +44,18 @@ type alias Set msg =
 -}
 map : (msgA -> msgB) -> Tron msgA -> Tron msgB
 map = Property.map
+
+
+{-| `andThen` without changing a message type
+-}
+andThen : (msg -> Tron msg) -> Tron msg -> Tron msg
+andThen = Property.andThen
+
+
+{-| the helper for chaining lists and Tron
+-}
+with : (msg -> Tron msg -> Tron msg) -> Tron msg -> Tron msg
+with = Property.with
 
 
 {- The usual `map` function which allows you to substitute the messages sent through the components in a `Set`.

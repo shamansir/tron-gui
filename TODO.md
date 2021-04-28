@@ -28,9 +28,12 @@
     * do not store tree in the `Gui msg`, build it every time;
     * store the actual messages for the current value in the controls, not the handlers (i.e. just `msg` instead of `v -> msg`);
     * for `.over`, traverse two trees with the same structure (don't forget about ghosts) and move transient states between them;
+    * Breaking?: `Control`/`Tron`.`andThen` — due to handler and `Maybe`, now it is impossible to implement, so I did `Tron.with`;
+    * Remove `evaluate__` functions;
+    * Consider `Control setup msg value = Control (setup -> (Cmd msg, value))`
 * Check `indexedMap` usages, so that usage of the index is kept to minimum for nested items (mostly done);
 * Do not store cell size in the `Gui msg`, it should be recalculated every time;
 * Do not store dock in the `Gui msg`, it should be recalculated every time;
 * Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed;
 * Add some indication of the WS server status to the examples;
-* With choice, also send the value chosen as label;
+* With choice, also send the value chosen;

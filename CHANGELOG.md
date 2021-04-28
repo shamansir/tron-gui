@@ -1,8 +1,11 @@
 ### 8.0.0
 
+* Remove previously required `PanelShape` and `CellShape` from `Builder.nest` and `Builder.choice` and make them separate functions `Builder.shape` & `Builder.cells` correspondigly;
+* Add `Builder.face` and remove `Builder.buttonWith` so that there will be only one way to change the button/nest/choice face through API;
 * Better icon size;
 * Show labels on the buttons as well;
 * Remove collapse panel button (since click on groups/choices expands anyway);
+*
 
 ### 7.0.0
 

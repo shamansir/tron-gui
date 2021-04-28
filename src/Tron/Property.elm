@@ -23,8 +23,8 @@ import Tron.Control.Nest as Nest exposing (..)
 import Tron.Pages as Pages
 import Size exposing (..)
 
-import Tron.Style.CellShape exposing (CellShape)
-import Tron.Style.PanelShape as Shape exposing (PanelShape)
+import Tron.Style.CellShape as CS exposing (CellShape)
+import Tron.Style.PanelShape as PS exposing (PanelShape)
 
 
 type FocusAt = FocusAt Int
@@ -55,6 +55,10 @@ type Property msg
 
 
 knobDistance = 90 * 4
+
+
+defaultNestShape : NestShape
+defaultNestShape = ( PS.auto, CS.single )
 
 
 
@@ -199,6 +203,37 @@ fold f from root =
 unfold : Property msg -> List (Path, Property msg)
 unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
+
+
+andThen : (msg -> Property msg) -> Property msg -> Property msg
+-- FIXME: should be changed to `andThen` with getting rid of function in Control
+andThen f prop =
+    case prop of
+        Nil -> Nil
+        Number control -> control |> Control.fold f prop
+        Coordinate control -> control |> Control.fold f prop
+        Text control -> control |> Control.fold f prop
+        Color control -> control |> Control.fold f prop
+        Toggle control -> control |> Control.fold f prop
+        Action control -> control |> Control.fold f prop
+        Choice _ _ control -> control |> Control.fold f prop
+        Group _ _ control -> control |> Control.fold f prop
+
+
+with : (msg -> Property msg -> Property msg) -> Property msg -> Property msg
+-- FIXME: should be changed to `andThen` with getting rid of function in Control
+with f prop =
+    let foldF msg = f msg prop
+    in case prop of
+        Nil -> Nil
+        Number control -> control |> Control.fold foldF prop
+        Coordinate control -> control |> Control.fold foldF prop
+        Text control -> control |> Control.fold foldF prop
+        Color control -> control |> Control.fold foldF prop
+        Toggle control -> control |> Control.fold foldF prop
+        Action control -> control |> Control.fold foldF prop
+        Choice _ _ control -> control |> Control.fold foldF prop
+        Group _ _ control -> control |> Control.fold foldF prop
 
 
 -- `replace` -- find better name
@@ -675,7 +710,7 @@ findShape : PanelShape -> CellShape -> List (Property msg) -> ( Pages.Count, Siz
 findShape panelShape cellShape =
     noGhosts
         >> List.length
-        >> Shape.find panelShape cellShape
+        >> PS.find panelShape cellShape
 
 
 setFace : Button.Face -> Property msg -> Property msg
@@ -689,6 +724,10 @@ setFace face prop =
             Group focus shape
                 <| Nest.setFace face
                 <| control
+        {- TODO: Choice focus shape control ->
+            Choice focus shape
+                <| Nest.setFace face
+                <| control -}
         _ -> prop
 
 
@@ -699,4 +738,24 @@ toChoice toMsg prop =
             Choice focus shape
                 <| Nest.toChoice toMsg
                 <| control
+        _ -> prop
+
+
+setPanelShape : PanelShape -> Property msg -> Property msg
+setPanelShape ps prop =
+    case prop of
+        Group focus ( _, cs ) control ->
+            Group focus ( ps, cs ) control
+        Choice focus ( _, cs ) control ->
+            Choice focus ( ps, cs ) control
+        _ -> prop
+
+
+setCellShape : CellShape -> Property msg -> Property msg
+setCellShape cs prop =
+    case prop of
+        Group focus ( ps, _ ) control ->
+            Group focus ( ps, cs ) control
+        Choice focus ( ps, _ ) control ->
+            Choice focus ( ps, cs ) control
         _ -> prop

@@ -4,7 +4,7 @@ module Tron.Builder exposing
     , nest, choice, choiceByCompare, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, singleColor
     , toChoice, toSet, handleWith
-    , expand, collapse
+    , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
     )
 
@@ -104,8 +104,6 @@ For more information, see the `examples` folder in the source code.
 `Builder.root` and `Builder.nest` get as an argument. `Set msg` is exposed as a separate type to help you in the cases where you build your GUI from several modules, but want to join them in a single panel rather than nesting every module separately.
 
     Builder.nest
-        Shape.auto -- we want the plate size to be calculate autimatically
-        CellShape.single -- usual 1x1 shape of a cell
         <| (ModuleOne.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleOne))
             ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleTwo))
             ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleThree))
@@ -176,8 +174,6 @@ type alias Tron msg = Property msg
 `Builder.root` and `Builder.nest` get as an argument. `Set msg` is exposed as a separate type to help you in the cases where you build your GUI from several modules, but want to join them in a single panel rather than nesting every module separately.
 
     Builder.nest
-        Shape.auto -- we want the plate size to be calculate autimatically
-        CellShape.single -- usual 1x1 shape of a cell
         <| (ModuleOne.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleOne))
             ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleTwo))
             ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleThree))
@@ -248,10 +244,9 @@ Actually it is just an alias for the nested row of controls, always expanded.
 root : Set msg -> Tron msg
 root props =
     nest
-        (Shape.rows 1)
-        CS.single
         props
         |> expand
+        |> shape (rows 1)
 
 
 {-| `float` creates a control over a rational number value, with a minimum, maximum and a step.
@@ -482,13 +477,12 @@ toggle default toMsg =
 bool : Bool -> (Bool -> msg) -> Tron msg
 bool = toggle
 
+
 {-| `nest` lets you group other controls (including other `nest`ings) under a button which expands a group. Also, this group can be _detached_ if GUI is confugured so.
 
 Handler receives the state of the group, like if it is exapanded or collapsed or detached, but usually it's fine just to make it `always NoOp`.
 
     Builder.nest
-        ( cols 1 ) -- we want the plate to have one column
-        CellShape.single -- usual 1x1 shape of a cell
         [
             ( "red"
             , Builder.float { min = 0, max = 255, step = 0.1 } model.red <| AdjustColor Red
@@ -505,13 +499,11 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
 
 See also: `Style.Shape`, `Style.CellShape`
 -}
-nest : PanelShape -> CellShape -> Set msg -> Tron msg
-nest panelShape cellShape items =
+nest : Set msg -> Tron msg
+nest items =
     Group
         Nothing
-        ( panelShape
-        , cellShape
-        )
+        Property.defaultNestShape
         <| Control
             ( Array.fromList items
             )
@@ -527,8 +519,8 @@ nest panelShape cellShape items =
     button (always NoOp) |> face (singleColor Color.green)
 
     [ Color.white, Color.red, Color.yellow ]
-    |> buttons
-    |> List.map (Tron.map (face << singleColor))
+        |> buttons
+        |> List.map (Tron.with (face << singleColor))
 -}
 singleColor : Color -> Face
 singleColor = WithColor
@@ -537,8 +529,6 @@ singleColor = WithColor
 {-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Notice that we ask for `comparable` type here.
 
     Builder.choice
-        ( 5, 4 ) -- the wanted shape of the controls, i.e. 5 cells width x 4 cells height
-        CellShape.single -- usual 1x1 shape of a cell
         ([ 128, 256, 512 ]
             |> buttons
             |> addLabels String.fromInt
@@ -553,15 +543,13 @@ singleColor = WithColor
 See also: `Builder.choiceByCompare`, `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
 choice
-     : PanelShape
-    -> CellShape
-    -> Set comparable
+     : Set comparable
     -> comparable
     -> ( comparable -> msg )
     -> Tron msg
-choice shape cellShape set current toMsg =
+choice set current toMsg =
     Choice.helper
-        ( shape, cellShape )
+        Property.defaultNestShape
         set
         current
         (==)
@@ -571,8 +559,6 @@ choice shape cellShape set current toMsg =
 {-| `choiceByCompare` is identical to `choice`, but asks user for a custom comparison function instead of requiring `comparable` values.
 
     Builder.choiceByCompare
-        ( cols 1 ) -- we want the plate to have one column
-        CellShape.single -- usual 1x1 shape of a cell
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> addLabels waveToString
@@ -584,16 +570,14 @@ choice shape cellShape set current toMsg =
 See also: `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
 choiceByCompare
-     : PanelShape
-    -> CellShape
-    -> Set a
+     : Set a
     -> a
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Tron msg
-choiceByCompare shape cellShape set current compare toMsg =
+choiceByCompare set current compare toMsg =
     Choice.helper
-        ( shape, cellShape )
+        Property.defaultNestShape
         set
         current
         compare
@@ -614,14 +598,14 @@ strings
     -> Tron msg
 strings options current toMsg =
     choice
-        (cols 1)
-        CS.twiceByHalf
         (options
             |> buttons
             |> addLabels identity
         )
         current
         toMsg
+    |> shape (cols 1)
+    |> cells CS.twiceByHalf
 
 
 {-| `labels` is a helper to create `choice` over the values that could be converted to string/labels and compared using those.
@@ -641,15 +625,7 @@ labels toLabel options current fallback toMsg =
             options
                 |> List.map (\v -> ( toLabel v, v ) )
                 |> Dict.fromList
-
-        optionsAsLabels =
-            options
-            |> buttons
-            |> addLabels toLabel
-
     in choice
-        (cols 1)
-        CS.twiceByHalf
         (options
             |> List.map toLabel
             |> buttons
@@ -662,6 +638,8 @@ labels toLabel options current fallback toMsg =
                 |> Maybe.map toMsg
                 |> Maybe.withDefault fallback
         )
+        |> shape (cols 1)
+        |> cells CS.twiceByHalf
 
 
 {-| `palette` is a helper to create `choice` over color values.
@@ -672,34 +650,16 @@ labels toLabel options current fallback toMsg =
         RepaintIceCream
 -}
 palette
-     : PanelShape
-    -> List Color
+     : List Color
     -> Color
     -> (Color -> msg)
     -> Tron msg
-palette panelShape options current =
+palette options current toMsg =
     choiceByCompare
-        panelShape
-        CS.half
         (options
             |> buttons
-            {- |> List.map
-                (Tron.map
-                    (\button_ -> button_
-                    |> Tron.map
-                        (\color_ ->
-                            button_ |> face (singleColor color_)
-                    )
-                )) -}
+            |> List.map (Tron.with (face << singleColor))
             |> addLabels Color.colorToHexWithAlpha
-            {- |> List.map (Tuple.mapSecond <|
-                (\button_ ->
-                    button_
-                    |> Tron.map
-                        (\color_ ->
-                            button_ |> face (singleColor color_)
-                        )
-                )) -}
         )
         current
         (\cv1 cv2 ->
@@ -710,6 +670,8 @@ palette panelShape options current =
                     (c1.green == c2.green) &&
                     (c1.alpha == c2.alpha)
         )
+        toMsg
+    |> cells CS.half
 
 
 {-| `buttons` is the helper to translate a list of anything to a list of buttons.
@@ -717,8 +679,6 @@ palette panelShape options current =
 It could be useful to pass such list to `choice` or `nest`:
 
     Builder.choiceByCompare
-        single
-        (cols 2)
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> addLabels waveToString
@@ -730,8 +690,6 @@ It could be useful to pass such list to `choice` or `nest`:
 Or:
 
     Builder.nest
-        single
-        (cols 2)
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> toSet waveToString -- `toSet` is just another name for `addLabels`
@@ -823,8 +781,6 @@ addLabeledPath = Property.addLabeledPath
 easily by specifying a handler:
 
     Builder.nest
-        single
-        (cols 2)
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> toSet waveToString -- `toSet` is just another name for `addLabels`
@@ -834,3 +790,27 @@ easily by specifying a handler:
 -}
 toChoice : (ItemId -> msg) -> Tron msg -> Tron msg
 toChoice = Property.toChoice
+
+
+{-| Changes panel shape for `nest` and `choice` panels:
+
+    Builder.nest ... |> Buidler.shape (cols 2)
+
+    Builder.choice ... |> Buidler.shape (rows 1)
+
+    Builder.choice ... |> Buidler.shape (by 2 3)
+-}
+shape : PanelShape -> Tron msg -> Tron msg
+shape = Property.setPanelShape
+
+
+{-| Changes cell shape for `nest` and `choice` panels:
+
+    Builder.nest ... |> Buidler.cells single
+
+    Builder.choice ... |> Buidler.shape halfByTwo
+
+    Builder.choice ... |> Buidler.shape halfByHalf
+-}
+cells : CellShape -> Tron msg -> Tron msg
+cells = Property.setCellShape
