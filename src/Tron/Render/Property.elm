@@ -71,9 +71,9 @@ view theme state path bounds maybeSelectedInside cellShape ( label, prop ) =
             []
         , viewProperty
             theme state path bounds maybeSelectedInside cellShape ( label, prop )
-        , case prop of
+        , {- case prop of
             Action _ -> Svg.none
-            _ -> viewLabel theme state cellShape bounds label
+            _ -> -} viewLabel theme state cellShape bounds label
         ]
 
 

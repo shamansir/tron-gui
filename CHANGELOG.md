@@ -1,3 +1,7 @@
+### 8.0.0
+
+* Better icon size
+
 ### 7.0.0
 
 * Make `Expose.Data.Convert` work with `Tron *` instances instead of `Property *`, which was confusing, though it is just the alias anyway.
