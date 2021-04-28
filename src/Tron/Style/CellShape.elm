@@ -1,9 +1,9 @@
 module Tron.Style.CellShape exposing
-    ( CellShape
+    ( CellShape, Unit(..)
     , default
     , single, half, halfByOne, oneByHalf, twiceByHalf, halfByTwice, twiceByTwice
     , isHorizontal, isVertical, isSquare, isSmallSquare, isLargeSquare
-    , numify, toString
+    , numify, units, toString
     )
 
 {-| # Cell Shape
@@ -18,7 +18,7 @@ Cell Shape is the place it takes in nested panels. Considering the default shape
 * `halfByTwice` — 0.5x2
 * `twiceByTwice` - 2x2
 
-@docs CellShape
+@docs CellShape, Unit
 
 # Values
 @docs default, single, half, halfByOne, oneByHalf, twiceByHalf, halfByTwice, twiceByTwice
@@ -27,10 +27,12 @@ Cell Shape is the place it takes in nested panels. Considering the default shape
 @docs isHorizontal, isVertical, isSquare, isSmallSquare, isLargeSquare
 
 # Other Helpers
-@docs numify, toString
+@docs numify, units, toString
 -}
 
 
+{-|
+-}
 type Unit
     = Single
     | Half
@@ -171,3 +173,9 @@ isVertical cs =
     case cs of
         CellShape Half Twice -> True
         _ -> False
+
+
+{-| Get shape units as ( <horizontal-unit>, <vertical-unit> )
+-}
+units : CellShape -> ( Unit, Unit )
+units (CellShape horz vert) = ( horz, vert )

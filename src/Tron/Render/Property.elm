@@ -411,7 +411,7 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                 iconUrl =
                     icon theme |> urlToString
                     --"./assets/" ++ icon ++ "_" ++ Theme.toString theme ++ ".svg"
-                ( iconWidth, iconHeight ) = ( bounds.width / 2.25, bounds.height / 2.25 )
+                ( iconWidth, iconHeight ) = iconSize cellShape bounds
                 ( iconX, iconY ) =
                     if CS.isHorizontal cellShape
                         then
@@ -503,3 +503,10 @@ makeClass shape prop =
                 Group _ _ _ -> "group"
             )
         ++ " cell--" ++ shapeToModifier shape
+
+
+iconSize : CellShape -> BoundsF -> ( Float, Float )
+iconSize cs bounds =
+    case CS.units cs of
+        ( CS.Single, CS.Single ) -> ( 32, 32 )
+        _ -> ( bounds.width / 2.25, bounds.height / 2.25 )

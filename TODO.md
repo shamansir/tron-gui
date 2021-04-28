@@ -15,6 +15,7 @@
 * New design;
 * Multiple-choice control;
 * Locked controls;
+* Breaking: Make `setIcon` and `buttonWith` replaceable or just join into one function;
 * Include links to the examples in the docs;
 * Share examples somewhere, i.e. deploy to github;
 * Breaking?: When in the detached state, give user the choice if to view the original model or not (or just always hide it, in detached mode);
