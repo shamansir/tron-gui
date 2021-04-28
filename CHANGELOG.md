@@ -1,6 +1,8 @@
 ### 8.0.0
 
-* Better icon size
+* Better icon size;
+* Show labels on the buttons as well;
+* Remove collapse panel button (since click on groups/choices expands anyway);
 
 ### 7.0.0
 

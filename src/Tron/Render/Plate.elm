@@ -72,10 +72,10 @@ controls detachAbility theme path bounds ( label, prop ) =
             , SA.fill <| Color.toCssString <| Coloring.text theme state
             ]
             [ Svg.text label ]
-        , collapseButton
+        {- , collapseButton
             theme
             path
-            ( bounds.width - Cell.gap - 10, Cell.gap )
+            ( bounds.width - Cell.gap - 10, Cell.gap ) -}
         ]
 
 
