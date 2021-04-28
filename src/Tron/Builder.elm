@@ -1,10 +1,8 @@
 module Tron.Builder exposing
     ( root
-    , none, int, float, number, xy, coord, color, text, input, toggle, bool
-    , button, buttonWith, colorButton
-    , nest, choice, choiceByCompare, strings, labels, palette
-    , buttons, buttonsWithIcons, coloredButtons, setColor
-    , Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
+    , nest, choice, choiceByCompare, strings, labels, palette, buttons
+    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, singleColor
     , toChoice, toSet, handleWith
     , expand, collapse
     , addPath, addLabeledPath, addLabels
@@ -116,7 +114,7 @@ For more information, see the `examples` folder in the source code.
 @docs root
 
 # Items
-@docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, colorButton, toggle, bool
+@docs none, int, float, number, xy, coord, color, text, input, button, toggle, bool
 
 # Groups
 @docs nest, choice, choiceByCompare, strings, labels, palette
@@ -378,6 +376,30 @@ button =
 
 
 {-| -}
+type alias Face = Button.Face
+
+
+{-| Set face for the `button`, `nest`, or `choice`, it can be icon or color:
+
+    Builder.button (always DoABang)
+        |> face (iconAt [ "assets", "myIcon.svg" ])
+
+    Builder.nest
+        ... |> face (iconAt [ "assets", "myIcon.svg" ])
+
+    Builder.choice
+        ... |> face (iconAt [ "assets", "myIcon.svg" ])
+
+    Builder.buttons ...
+        |> Tron.map (face << icon)
+
+-}
+face : Face -> Tron msg -> Tron msg
+face =
+    Property.setFace
+
+
+{-| -}
 type alias Icon = Button.Icon
 
 
@@ -390,8 +412,8 @@ type alias Icon = Button.Icon
 
 See also: `Builder.iconAt`, `Builder.themedIcon`, `Builder.themedIconAt`
 -}
-icon : Url -> Icon
-icon = Button.icon
+icon : Url -> Face
+icon = Button.icon >> WithIcon
 
 
 {-| Create an `Icon` using its relative local path.
@@ -400,8 +422,8 @@ icon = Button.icon
 
 See also: `Builder.themedIconAt`
 -}
-iconAt : List String -> Icon
-iconAt = Button.iconAt
+iconAt : List String -> Face
+iconAt = Button.iconAt >> WithIcon
 
 
 {-| Create a themed `Icon` from its URL or filename.
@@ -412,8 +434,8 @@ iconAt = Button.iconAt
         <| \theme ->
             makeUrl <| Url.relative [ "assets", "myicon_" ++ Theme.toString theme ++ ".svg" ] []
 -}
-themedIcon : (Theme -> Url) -> Icon
-themedIcon = Button.themedIcon
+themedIcon : (Theme -> Url) -> Face
+themedIcon = Button.themedIcon >> WithIcon
 
 
 {-| Create a themed `Icon` using its relative local path.
@@ -421,8 +443,8 @@ themedIcon = Button.themedIcon
     Builder.themedIconAt
         <| \theme -> [ "assets", "myicon_" ++ Theme.toString theme ++ ".svg" ]
 -}
-themedIconAt : (Theme -> List String) -> Icon
-themedIconAt = Button.themedIconAt
+themedIconAt : (Theme -> List String) -> Face
+themedIconAt = Button.themedIconAt >> WithIcon
 
 
 {-| Make URL from String
@@ -431,41 +453,13 @@ makeUrl : String -> Url
 makeUrl = Button.makeUrl
 
 
-{-| Same as `button`, but with icon instead of a boring square. See `icon` function as a helper to define icon using its URL. SVG files preferred, keep in mind that you'll need to host them somewhere nearby, for example using simple HTTP server.
-
-    Builder.button (Builder.iconAt [ "red-button.svg" ]) <| always DoABang
-
-Or:
-
-    Builder.button
-        (Builder.themedIconAt
-            <| \theme -> [ "my-icon-" ++ Theme.toString theme ++ ".svg" ]
-        )
-        <| always DoABang
-
-See also: `Builder.icon`,  `Builder.iconAt`, `Builder.themedIcon`,  `Builder.themedIconAt`
--}
-buttonWith : Icon -> (() -> msg) -> Tron msg
-buttonWith icon_ =
-    buttonByFace <| WithIcon icon_
-
-
-
-{-| Same as `button`, but having a color as it face.
-
-    Builder.button (Builder.icon "red-button.svg") <| always DoABang
--}
-colorButton : Color -> (() -> msg) -> Tron msg
-colorButton color_ =
-    buttonByFace <| WithColor color_
-
 
 -- not exposed
 buttonByFace : Face -> (() -> msg) -> Tron msg
-buttonByFace face =
+buttonByFace face_ =
     Action
         << Control
-            face
+            face_
             ()
         << Just
 
@@ -487,7 +481,6 @@ toggle default toMsg =
 -}
 bool : Bool -> (Bool -> msg) -> Tron msg
 bool = toggle
-
 
 {-| `nest` lets you group other controls (including other `nest`ings) under a button which expands a group. Also, this group can be _detached_ if GUI is confugured so.
 
@@ -529,18 +522,16 @@ nest panelShape cellShape items =
             Nothing
 
 
-{-| Set icon as face to the button _or_ the button of a `nest` control.
--}
-setIcon : Icon -> Tron msg -> Tron msg
-setIcon icon_ =
-    Property.setFace <| WithIcon icon_
+{-| Create a button face representing a color:
 
+    button (always NoOp) |> face (singleColor Color.green)
 
-{-| Set color as face to the button _or_ the button of a `nest` control.
+    [ Color.white, Color.red, Color.yellow ]
+    |> buttons
+    |> List.map (Tron.map (face << singleColor))
 -}
-setColor : Color -> Tron msg -> Tron msg
-setColor color_ =
-    Property.setFace <| WithColor color_
+singleColor : Color -> Face
+singleColor = WithColor
 
 
 {-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Notice that we ask for `comparable` type here.
@@ -691,8 +682,24 @@ palette panelShape options current =
         panelShape
         CS.half
         (options
-            |> coloredButtons identity
+            |> buttons
+            {- |> List.map
+                (Tron.map
+                    (\button_ -> button_
+                    |> Tron.map
+                        (\color_ ->
+                            button_ |> face (singleColor color_)
+                    )
+                )) -}
             |> addLabels Color.colorToHexWithAlpha
+            {- |> List.map (Tuple.mapSecond <|
+                (\button_ ->
+                    button_
+                    |> Tron.map
+                        (\color_ ->
+                            button_ |> face (singleColor color_)
+                        )
+                )) -}
         )
         current
         (\cv1 cv2 ->
@@ -735,54 +742,6 @@ Or:
 buttons : List a -> List (Tron a)
 buttons =
     List.map (button << always)
-
-
-{-| `buttonsWith` is the helper to translate a list of anything to a list of buttons with icons:
-
-    Builder.choiceByCompare
-        single
-        (cols 2)
-        ([ Sine, Square, Triangle, Saw ]
-            |> buttonsWith
-                (\wave ->
-                    Builder.themedIconAt
-                        <| \theme -> [ "assets", Theme.toString theme, waveToString wave ++ ".svg" ]
-                )
-            |> addLabels waveToString
-        )
-        model.waveShape
-        compareWaves -- sometimes just (==) works, but it's better not to rely on it
-        ChangeWaveShape
-
-See also: `Builder.buttons`, `Builder.icon`, `Builder.themedIcon`, `Builder.handleWith`
--}
-buttonsWithIcons : (a -> Icon) -> List a -> List (Tron a)
-buttonsWithIcons toIcon =
-    List.map (\v -> buttonWith (toIcon v) <| always v)
-
-
-{-| `coloredButtons` is the helper to translate a list of anything to a list of buttons with colors:
-
-    Builder.choiceByCompare
-        single
-        (cols 2)
-        ([ Color.aqua, Color.rouge, Color.vanilla ]
-            |> buttonsWith
-                (\wave ->
-                    Builder.themedIconAt
-                        <| \theme -> [ "assets", Theme.toString theme, waveToString wave ++ ".svg" ]
-                )
-            |> addLabels waveToString
-        )
-        model.iceCreamColor
-        compareColors -- sometimes just (==) works, but it's better not to rely on it
-        ce
-
-See also: `Builder.palette`, `Builder.buttons`, `Builder.handleWith`
--}
-coloredButtons : (a -> Color) -> List a -> List (Tron a)
-coloredButtons toColor =
-    List.map (\v -> colorButton (toColor v) <| always v)
 
 
 {-| Convert a list of components to a set by adding labels.
