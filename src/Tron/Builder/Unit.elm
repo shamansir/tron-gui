@@ -244,23 +244,23 @@ dontHandle = B.handleWith <| always ()
 
 
 {-| -}
-icon : Url -> Icon
-icon = Button.icon
+icon : Url -> Face
+icon = B.icon
 
 
 {-| -}
-themedIcon : (Theme -> Url) -> Icon
-themedIcon = Button.themedIcon
+themedIcon : (Theme -> Url) -> Face
+themedIcon = B.themedIcon
 
 
 {-| -}
-iconAt : List String -> Icon
-iconAt = Button.iconAt
+iconAt : List String -> Face
+iconAt = B.iconAt
 
 
 {-| -}
-themedIconAt : (Theme -> List String) -> Icon
-themedIconAt = Button.themedIconAt
+themedIconAt : (Theme -> List String) -> Face
+themedIconAt = B.themedIconAt
 
 
 {-| -}

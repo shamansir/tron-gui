@@ -217,21 +217,26 @@ Actually it is just an alias for the nested row of controls, always expanded.
 
                     [
                         ( "sine"
-                        , Builder.buttonWith
-                            (Builder.icon <| Url.Builder.relative [ "sawwave.svg" ] [])
+                        , Builder.button
                             (always <| ChangeShape Sine)
+                            |> Builder.face
+                                (Builder.icon <| Url.Builder.relative [ "sawwave.svg" ] [])
+
                         )
                     ,
                         ( "square"
-                        , Builder.buttonWith
-                            (Builder.icon <| Url.Builder.relative [ "squarewave.svg" ] [])
+                        , Builder.button
                             (always <| ChangeShape Square)
+                            |> Builder.face
+                                (Builder.icon <| Url.Builder.relative [ "sawwave.svg" ] [])
                         )
                     ,
                         ( "saw"
-                        , Builder.buttonWith
-                            (Builder.icon <| Url.Builder.relative [ "sawwave.svg" ] [])
+                        , Builder.button
                             (always <| ChangeShape Saw)
+                            |> Builder.face
+                                (Builder.icon <| Url.Builder.relative [ "sawwave.svg" ] [])
+
                         )
                     ]
 
