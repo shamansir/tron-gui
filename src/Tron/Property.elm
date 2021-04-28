@@ -724,10 +724,10 @@ setFace face prop =
             Group focus shape
                 <| Nest.setFace face
                 <| control
-        {- TODO: Choice focus shape control ->
+        Choice focus shape control ->
             Choice focus shape
                 <| Nest.setFace face
-                <| control -}
+                <| control
         _ -> prop
 
 

@@ -1,12 +1,10 @@
 module Tron.Builder.String exposing
     ( root
-    , none, int, float, number, xy, coord, color, text, input, toggle, bool
-    , button, buttonWith, colorButton
-    , nest, choice, choiceByCompare, strings, labels, palette
-    , buttons, buttonsWithIcons, coloredButtons, setColor
-    , Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
+    , nest, choice, choiceByCompare, strings, labels, palette, buttons
+    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
     , toChoice, toSet, autoHandle
-    , expand, collapse
+    , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
     )
 
@@ -94,6 +92,10 @@ type alias Icon = B.Icon
 
 
 {-| -}
+type alias Face = B.Face
+
+
+{-| -}
 none : Tron
 none = B.none
 
@@ -149,16 +151,6 @@ button = B.button <| always ""
 
 
 {-| -}
-buttonWith : Icon -> Tron
-buttonWith icon_ = B.buttonWith icon_ <| always ""
-
-
-{-| -}
-colorButton : Color -> Tron
-colorButton color_ = B.colorButton color_ <| always ""
-
-
-{-| -}
 toggle : Bool -> Tron
 toggle current = B.toggle current (boolToToggle >> toggleToString)
 
@@ -169,33 +161,29 @@ bool = toggle
 
 
 {-| -}
-nest : PanelShape -> CellShape -> Set -> Tron
+nest : Set -> Tron
 nest = B.nest
 
 
 {-| -}
 choice
-     : PanelShape
-    -> CellShape
-    -> ( comparable -> Label )
+     : ( comparable -> Label )
     -> B.Set comparable
     -> comparable
     -> Tron
-choice panelShape cellShape toLabel items current =
-    B.choice panelShape cellShape items current toLabel
+choice toLabel items current =
+    B.choice items current toLabel
 
 
 {-| -}
 choiceByCompare
-     : PanelShape
-    -> CellShape
-    -> ( a -> Label )
+     : ( a -> Label )
     -> B.Set a
     -> a
     -> ( a -> a -> Bool )
     -> Tron
-choiceByCompare panelShape cellShape toLabel items current compare =
-    B.choiceByCompare panelShape cellShape items current compare toLabel
+choiceByCompare toLabel items current compare =
+    B.choiceByCompare items current compare toLabel
 
 
 
@@ -220,27 +208,26 @@ labels toLabel options current =
 
 {-| -}
 palette
-     : PanelShape
-    -> List Color
+     : List Color
     -> Color
     -> Tron
-palette panelShape colors currentColor =
-    B.palette panelShape colors currentColor Color.colorToHexWithAlpha
+palette colors currentColor =
+    B.palette colors currentColor Color.colorToHexWithAlpha
+
+
+{-| -}
+useColor : Color -> Face
+useColor = B.useColor
+
+
+{-| -}
+face : Face -> Tron -> Tron
+face = B.face
 
 
 {-| -}
 buttons : List a -> List (B.Tron a)
 buttons = B.buttons
-
-
-{-| -}
-buttonsWithIcons : (a -> Icon) -> List a -> List (B.Tron a)
-buttonsWithIcons = B.buttonsWithIcons
-
-
-{-| -}
-coloredButtons : (a -> Color) -> List a -> List (B.Tron a)
-coloredButtons = B.coloredButtons
 
 
 {-| -}
@@ -257,16 +244,6 @@ addLabels = B.addLabels
 autoHandle : B.Set a -> Set
 autoHandle =
     List.map <| Tuple.mapSecond <| Exp.toStrExposed >> Property.map (Tuple.first >> Tuple.second)
-
-
-{-| -}
-setColor : Color -> B.Tron a -> B.Tron a
-setColor = B.setColor
-
-
-{-| -}
-setIcon : Icon -> B.Tron a -> B.Tron a
-setIcon = B.setIcon
 
 
 {-| -}
@@ -317,3 +294,13 @@ addLabeledPath = B.addLabeledPath
 {-| -}
 toChoice : Tron -> Tron
 toChoice = B.toChoice String.fromInt
+
+
+{-| -}
+shape : PanelShape -> Tron -> Tron
+shape = B.shape
+
+
+{-| -}
+cells : CellShape -> Tron -> Tron
+cells = B.cells

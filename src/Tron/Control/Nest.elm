@@ -32,6 +32,7 @@ type alias ChoiceControl item msg =
     Core.Control
         ( Array item )
         { form : Form
+        , face : Maybe Button.Face
         , selected : ItemId
         , page : PageNum
         }
@@ -274,11 +275,12 @@ clearFace (Core.Control setup state handler) =
 
 
 toChoice : (ItemId -> msg) -> GroupControl item msg -> ChoiceControl item msg
-toChoice userHandler (Core.Control items { form, page } handler) =
+toChoice userHandler (Core.Control items { form, page, face } _) =
     Core.Control
         items
         { form = form
         , page = page
+        , face = face
         , selected = 0
         }
         (Just <| .selected >> userHandler)

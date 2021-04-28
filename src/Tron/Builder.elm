@@ -2,7 +2,7 @@ module Tron.Builder exposing
     ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
     , nest, choice, choiceByCompare, strings, labels, palette, buttons
-    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, singleColor
+    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
     , toChoice, toSet, handleWith
     , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
@@ -516,14 +516,14 @@ nest items =
 
 {-| Create a button face representing a color:
 
-    button (always NoOp) |> face (singleColor Color.green)
+    button (always NoOp) |> face (useColor Color.green)
 
     [ Color.white, Color.red, Color.yellow ]
         |> buttons
-        |> List.map (Tron.with (face << singleColor))
+        |> List.map (Tron.with (face << useColor))
 -}
-singleColor : Color -> Face
-singleColor = WithColor
+useColor : Color -> Face
+useColor = WithColor
 
 
 {-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Notice that we ask for `comparable` type here.
@@ -658,7 +658,7 @@ palette options current toMsg =
     choiceByCompare
         (options
             |> buttons
-            |> List.map (Tron.with (face << singleColor))
+            |> List.map (Tron.with (face << useColor))
             |> addLabels Color.colorToHexWithAlpha
         )
         current

@@ -96,6 +96,7 @@ helper ( panelShape, cellShape ) options current compare toMsg =
                 properties
                 { form = Collapsed
                 , page = 0
+                , face = Nothing
                 , selected = currentIndex
                 }
             <| Just (.selected >> callByIndex)

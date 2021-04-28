@@ -1,12 +1,10 @@
 module Tron.Builder.Unit exposing
     ( root
-    , none, int, float, number, xy, coord, color, text, input, toggle, bool
-    , button, buttonWith, colorButton
-    , nest, choice, choiceByCompare, strings, labels, palette
-    , buttons, buttonsWithIcons, coloredButtons, setColor
-    , Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+    , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
+    , nest, choice, choiceByCompare, strings, labels, palette, buttons
+    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
     , toChoice, toSet, dontHandle
-    , expand, collapse
+    , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
     )
 
@@ -92,6 +90,9 @@ type alias Set = B.Set ()
 type alias Icon = B.Icon
 
 
+{-| -}
+type alias Face = B.Face
+
 
 {-| -}
 none : Tron
@@ -149,16 +150,6 @@ button = B.button <| always ()
 
 
 {-| -}
-buttonWith : Icon -> Tron
-buttonWith icon_ = B.buttonWith icon_ <| always ()
-
-
-{-| -}
-colorButton : Color -> Tron
-colorButton color_ = B.colorButton color_ <| always ()
-
-
-{-| -}
 toggle : Bool -> Tron
 toggle current = B.toggle current <| always ()
 
@@ -169,31 +160,27 @@ bool = toggle
 
 
 {-| -}
-nest : PanelShape -> CellShape -> Set -> Tron
+nest : Set -> Tron
 nest = B.nest
 
 
 {-| -}
 choice
-     : PanelShape
-    -> CellShape
-    -> B.Set comparable
+     : B.Set comparable
     -> comparable
     -> Tron
-choice panelShape cellShape items current =
-    B.choice panelShape cellShape items current <| always ()
+choice items current =
+    B.choice items current <| always ()
 
 
 {-| -}
 choiceByCompare
-     : PanelShape
-    -> CellShape
-    -> B.Set a
+     : B.Set a
     -> a
     -> ( a -> a -> Bool )
     -> Tron
-choiceByCompare panelShape cellShape items current compare =
-    B.choiceByCompare panelShape cellShape items current compare <| always ()
+choiceByCompare items current compare =
+    B.choiceByCompare items current compare <| always ()
 
 
 
@@ -218,27 +205,26 @@ labels toLabel options current =
 
 {-| -}
 palette
-     : PanelShape
-    -> List Color
+     : List Color
     -> Color
     -> Tron
-palette panelShape colors currentColor =
-    B.palette panelShape colors currentColor <| always ()
+palette colors currentColor =
+    B.palette colors currentColor <| always ()
+
+
+{-| -}
+useColor : Color -> Face
+useColor = B.useColor
+
+
+{-| -}
+face : Face -> Tron -> Tron
+face = B.face
 
 
 {-| -}
 buttons : List a -> List (B.Tron a)
 buttons = B.buttons
-
-
-{-| -}
-buttonsWithIcons : (a -> Icon) -> List a -> List (B.Tron a)
-buttonsWithIcons = B.buttonsWithIcons
-
-
-{-| -}
-coloredButtons : (a -> Color) -> List a -> List (B.Tron a)
-coloredButtons = B.coloredButtons
 
 
 {-| -}
@@ -255,16 +241,6 @@ addLabels = B.addLabels
 {-| The replacement for `handleWith` since we don't handle anything for Proxy -}
 dontHandle : B.Set a -> Set
 dontHandle = B.handleWith <| always ()
-
-
-{-| -}
-setColor : Color -> B.Tron a -> B.Tron a
-setColor = B.setColor
-
-
-{-| -}
-setIcon : Icon -> B.Tron a -> B.Tron a
-setIcon = B.setIcon
 
 
 {-| -}
@@ -315,3 +291,13 @@ addLabeledPath = B.addLabeledPath
 {-| -}
 toChoice : Tron -> Tron
 toChoice = B.toChoice <| always ()
+
+
+{-| -}
+shape : PanelShape -> Tron -> Tron
+shape = B.shape
+
+
+{-| -}
+cells : CellShape -> Tron -> Tron
+cells = B.cells
