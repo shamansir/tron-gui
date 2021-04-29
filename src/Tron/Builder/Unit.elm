@@ -1,7 +1,7 @@
 module Tron.Builder.Unit exposing
     ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
-    , nest, choice, choiceByCompare, strings, labels, palette, buttons
+    , nest, choice, choiceBy, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
     , toChoice, toSet, dontHandle
     , expand, collapse, shape, cells
@@ -31,7 +31,7 @@ so that is easier and shorter to use `Unit`-based `Builder` if you don't need an
 @docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, colorButton, toggle, bool
 
 # Groups
-@docs nest, choice, choiceByCompare, strings, labels, palette
+@docs nest, choice, choiceBy, strings, labels, palette
 
 # Buttons
 @docs buttons, buttonsWithIcons, coloredButtons, setColor
@@ -174,13 +174,13 @@ choice items current =
 
 
 {-| -}
-choiceByCompare
+choiceBy
      : B.Set a
     -> a
     -> ( a -> a -> Bool )
     -> Tron
-choiceByCompare items current compare =
-    B.choiceByCompare items current compare <| always ()
+choiceBy items current compare =
+    B.choiceBy items current compare <| always ()
 
 
 

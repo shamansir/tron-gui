@@ -1,7 +1,7 @@
 module Tron.Builder exposing
     ( root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
-    , nest, choice, choiceByCompare, strings, labels, palette, buttons
+    , nest, choice, choiceBy, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
     , toChoice, toSet, handleWith
     , expand, collapse, shape, cells
@@ -115,7 +115,7 @@ For more information, see the `examples` folder in the source code.
 @docs none, int, float, number, xy, coord, color, text, input, button, toggle, bool
 
 # Groups
-@docs nest, choice, choiceByCompare, strings, labels, palette
+@docs nest, choice, choiceBy, strings, labels, palette
 
 # Buttons
 @docs buttons, buttonsWithIcons, coloredButtons, setColor
@@ -541,11 +541,11 @@ useColor = WithColor
         model.bitrate
         ChangeBitrate
 
-*NB*: If you don't want to use `comparable` types, but rather want to specify you own compare function, use `choiceByCompare`.
+*NB*: If you don't want to use `comparable` types, but rather want to specify you own compare function, use `choiceBy`.
 
 *NB*: If you want to add icons to the buttons, use `Builder.buttonsWithIcons`, for colors use `Builder.coloredButtons`.
 
-See also: `Builder.choiceByCompare`, `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
+See also: `Builder.choiceBy`, `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
 choice
      : Set comparable
@@ -561,9 +561,9 @@ choice set current toMsg =
         (Tuple.second >> toMsg)
 
 
-{-| `choiceByCompare` is identical to `choice`, but asks user for a custom comparison function instead of requiring `comparable` values.
+{-| `choiceBy` is identical to `choice`, but asks user for a custom comparison function instead of requiring `comparable` values.
 
-    Builder.choiceByCompare
+    Builder.choiceBy
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> addLabels waveToString
@@ -574,13 +574,13 @@ choice set current toMsg =
 
 See also: `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
-choiceByCompare
+choiceBy
      : Set a
     -> a
     -> ( a -> a -> Bool )
     -> ( a -> msg )
     -> Tron msg
-choiceByCompare set current compare toMsg =
+choiceBy set current compare toMsg =
     Choice.helper
         Property.defaultNestShape
         set
@@ -660,7 +660,7 @@ palette
     -> (Color -> msg)
     -> Tron msg
 palette options current toMsg =
-    choiceByCompare
+    choiceBy
         (options
             |> buttons
             |> List.map (Tron.with (face << useColor))
@@ -683,7 +683,7 @@ palette options current toMsg =
 
 It could be useful to pass such list to `choice` or `nest`:
 
-    Builder.choiceByCompare
+    Builder.choiceBy
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> addLabels waveToString
