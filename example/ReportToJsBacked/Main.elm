@@ -6,7 +6,7 @@ import Tron.Style.Dock as Dock
 import Tron.Option as Option
 import Tron.Expose.Data as Exp
 
-import WithTron.Backed as WithTron exposing (BackedWithTron)
+import WithTron.Backed exposing (BackedByJson)
 
 
 import Example.Unit.Gui as ExampleGui
@@ -17,9 +17,9 @@ port ack : Exp.RawProperty -> Cmd msg
 port transmit : Exp.RawOutUpdate -> Cmd msg
 
 
-main : BackedWithTron
+main : BackedByJson
 main =
-    WithTron.backed
+    WithTron.Backed.byJson
         (Option.toHtml Dock.middleRight Theme.dark)
         ( ack, transmit )
         ExampleGui.gui

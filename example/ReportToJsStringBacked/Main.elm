@@ -4,7 +4,8 @@ port module ReportToJsStringBacked.Main exposing (..)
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
 import Tron.Option as Option
-import WithTron exposing (StringBackedWithTron)
+
+import WithTron.Backed exposing (BackedByStrings)
 
 
 import Example.Unit.Gui as ExampleGui
@@ -13,9 +14,9 @@ import Example.Unit.Gui as ExampleGui
 port sendUpdate : ( List String, String ) -> Cmd msg
 
 
-main : StringBackedWithTron
+main : BackedByStrings
 main =
-    WithTron.stringBacked
+    WithTron.Backed.byStrings
         (Option.toHtml Dock.middleRight Theme.dark)
         sendUpdate
         ExampleGui.gui

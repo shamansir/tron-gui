@@ -9,9 +9,12 @@ import Tron.Style.Theme as Theme
 
 import Example.Tiler.Product as Product exposing (Product)
 
+import WithTron.Backed exposing (ValueAt)
+import Tron.Expose.ProxyValue as Proxy exposing (ProxyValue)
 
-gui : Tron ()
-gui =
+
+gui : ValueAt -> Tron ()
+gui _ =
     Tron.root
         [ ( "Color Scheme", colorScheme |> Tron.face (icon "chromatic") )
         , ( "Sizes", sizes |> Tron.face (icon "size") )
