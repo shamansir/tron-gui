@@ -199,6 +199,7 @@ knob theme state bounds value =
         radiusA = (bounds.width * 0.27) - 1
         radiusB = bounds.height * 0.27
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
+        roundedValue = Basics.toFloat (floor (value * 100)) / 100
     in
         Svg.g
             [ resetTransform ]
@@ -217,6 +218,13 @@ knob theme state bounds value =
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     (toAngle value)
+            , Svg.text_
+                [ SA.x <| String.fromFloat cx
+                , SA.y <| String.fromFloat cy
+                , SA.class "knob__value"
+                , SA.fill <| Color.toCssString <| Coloring.text theme state
+                ]
+                [ Svg.text <| String.fromFloat roundedValue ]
             ]
 
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$1" ]; then
-    cp ../src/Gui.css ./Gui.css
+    cp ../src/Tron.css ./Tron.css
 
     cp ./Example/Goose/JetBrainsMono-Regular.woff ./JetBrainsMono-Regular.woff
     cp ./Example/Goose/JetBrainsMono-Regular.woff2 ./JetBrainsMono-Regular.woff2
