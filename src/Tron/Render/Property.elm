@@ -151,10 +151,14 @@ viewProperty
 
             color theme state value bounds
 
-        Choice _ _ ( Control _ { form } _) ->
+        Choice _ _ ( Control _ { form, face } _) ->
 
-            case maybeSelectedInside of
-                Just theSelectedProp ->
+            case ( face, maybeSelectedInside ) of
+
+                ( Just buttonFace, _ ) ->
+                    button theme state buttonFace cellShape label bounds
+
+                ( Nothing, Just theSelectedProp ) ->
                     viewProperty
                         theme
                         ( placement, focus, Selected )
@@ -163,7 +167,8 @@ viewProperty
                         Nothing
                         cellShape
                         theSelectedProp
-                Nothing ->
+
+                ( Nothing, Nothing ) ->
                     arrow theme state form bounds
 
         Group _ _ ( Control _ { form, face } _) ->
