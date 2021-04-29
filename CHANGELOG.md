@@ -2,6 +2,7 @@
 
 * Remove previously required `PanelShape` and `CellShape` from `Builder.nest` and `Builder.choice` and make them separate functions `Builder.shape` & `Builder.cells` correspondigly;
 * Add `Builder.face` and remove `Builder.buttonWith` so that there will be only one way to change the button/nest/choice face through API;
+* `WithTron.Backed` helpers are now separate and improved and extended with the ones that have access to the value storage;
 * Choice can optionally have a face (`icon` / `color`) which overrides showing selected option;
 * Better icon size;
 * Show labels on the buttons as well;

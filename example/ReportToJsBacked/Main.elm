@@ -5,7 +5,8 @@ import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
 import Tron.Option as Option
 import Tron.Expose.Data as Exp
-import WithTron exposing (BackedWithTron)
+
+import WithTron.Backed as WithTron exposing (BackedWithTron)
 
 
 import Example.Unit.Gui as ExampleGui

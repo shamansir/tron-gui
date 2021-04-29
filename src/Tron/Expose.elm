@@ -154,6 +154,17 @@ loadValues dict prop =
         prop
 
 
+loadProxyValues : Dict (List Int) ProxyValue -> Property msg -> Property msg
+loadProxyValues dict prop =
+    dict
+        |> Dict.toList
+        |> List.foldl
+            (\ ( path, proxyValue ) root ->
+                apply { path = path, value = proxyValue } root
+            )
+            prop
+
+
 loadJsonValues : Dict (List Int) RawOutUpdate -> Property msg -> Property msg
 loadJsonValues dict prop =
     dict
