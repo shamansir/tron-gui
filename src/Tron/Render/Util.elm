@@ -98,8 +98,8 @@ describeMark
 describeMark center { radiusA, radiusB } angleInDegrees =
     let
         angleInRadians = (angleInDegrees - 90) * pi / 180.0
-        m_radiusA = radiusA * 0.4
-        m_radiusB = radiusB * 0.4
+        m_radiusA = radiusA * 0.7
+        m_radiusB = radiusB * 0.7
         start =
             { x = center.x + m_radiusA * cos angleInRadians
             , y = center.y + m_radiusB * sin angleInRadians

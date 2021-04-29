@@ -5,7 +5,9 @@
 * Choice can optionally have a face (`icon` / `color`) which overrides showing selected option;
 * Better icon size;
 * Show labels on the buttons as well;
+* Show values on the knobs;
 * Remove collapse panel button (since click on groups/choices expands anyway);
+* `Gui.css` -> `Tron.css`;
 
 ### 7.0.0
 
