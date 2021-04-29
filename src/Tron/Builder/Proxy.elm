@@ -227,7 +227,7 @@ useColor = B.useColor
 
 
 {-| -}
-face : Face -> Tron -> Tron
+face : Face -> B.Tron a -> B.Tron a
 face = B.face
 
 
@@ -247,9 +247,9 @@ addLabels = B.addLabels
 
 
 {-| The replacement for `handleWith` since we convert everything automatically for Proxy. -}
-autoHandle : B.Set a -> Set
+autoHandle : B.Tron a -> Tron
 autoHandle =
-    List.map <| Tuple.mapSecond <| toProxied >> Property.map Tuple.first
+    toProxied >> Property.map Tuple.first
 
 
 {-| -}
@@ -278,12 +278,12 @@ makeUrl = Button.makeUrl
 
 
 {-| -}
-expand : Tron -> Tron
+expand : B.Tron a -> B.Tron a
 expand = B.expand
 
 
 {-| -}
-collapse : Tron -> Tron
+collapse : B.Tron a -> B.Tron a
 collapse = B.collapse
 
 
@@ -303,10 +303,10 @@ toChoice = B.toChoice FromChoice
 
 
 {-| -}
-shape : PanelShape -> Tron -> Tron
+shape : PanelShape -> B.Tron a -> B.Tron a
 shape = B.shape
 
 
 {-| -}
-cells : CellShape -> Tron -> Tron
+cells : CellShape -> B.Tron a -> B.Tron a
 cells = B.cells

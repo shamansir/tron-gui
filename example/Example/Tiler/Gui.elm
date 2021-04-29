@@ -1,13 +1,13 @@
 module Example.Tiler.Gui exposing (gui)
 
-import Color
+import Color exposing (Color)
 import Tron exposing (Tron)
 import Tron.Builder.Unit as Tron
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape as CellShape exposing (..)
 import Tron.Style.Theme as Theme
 
-import Example.Tiler.Product as Product
+import Example.Tiler.Product as Product exposing (Product)
 
 
 gui : Tron ()
@@ -38,15 +38,47 @@ colorScheme =
         |> Tron.shape (cols 2)
 
 
-
 products : Tron ()
 products =
     Tron.choiceBy
-        (Tron.buttons Product.all
-            |> Tron.toSet Product.getName)
-        Product.AppCode
+        (Product.all
+            |> List.filter Product.hasIcon
+            |> Tron.buttons
+            |> List.map (Tron.with (Tron.face << productIcon))
+            |> Tron.addLabels Product.getName
+        )
+        Product.default
         Product.compare
+    |> Tron.shape (rows 3)
 
+
+{- products : Tron ()
+products =
+    Tron.choiceBy
+        ([Color.white]
+            |> Tron.buttons
+            |> List.map (Tron.with (Tron.face << Tron.useColor))
+            |> Tron.addLabels colorToString
+        )
+        Color.black
+        ((==))
+        -- Product.default
+        -- Product.compare
+    |> Tron.shape (rows 3) -}
+
+
+colorToString : Color -> String
+colorToString = always "white"
+
+
+productIcon : Product -> Tron.Face
+productIcon product =
+    Tron.iconAt
+        [ "assets"
+        , "tiler"
+        , "product-logos"
+        , (product |> Product.iconName |> Maybe.withDefault "none") ++ ".svg"
+        ]
 
 icon : String -> Tron.Face
 icon name =
@@ -100,7 +132,7 @@ tileset =
         [ "Geometric", "Fancy", "Lines"] "Foo"
 
 
-title : Tron()
+title : Tron ()
 title =
     Tron.nest
         [ ( "Show", Tron.toggle False)

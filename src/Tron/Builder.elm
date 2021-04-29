@@ -3,7 +3,7 @@ module Tron.Builder exposing
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
     , nest, choice, choiceBy, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
-    , toChoice, toSet, handleWith
+    , toChoice, toSet
     , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
     )
@@ -526,6 +526,7 @@ nest items =
     [ Color.white, Color.red, Color.yellow ]
         |> buttons
         |> List.map (Tron.with (face << useColor))
+        |> addLabels Color.colorToHexWithAlpha
 -}
 useColor : Color -> Face
 useColor = WithColor
@@ -543,7 +544,7 @@ useColor = WithColor
 
 *NB*: If you don't want to use `comparable` types, but rather want to specify you own compare function, use `choiceBy`.
 
-*NB*: If you want to add icons to the buttons, use `Builder.buttonsWithIcons`, for colors use `Builder.coloredButtons`.
+*NB*: If you want to add icons to the buttons, use `buttons |> List.map (Tron.map (face << myIcon))`, where `myIcon : a -> Face`, for colors use `[ Color.white, Color.red, Color.yellow, ... ] |> buttons |> List.map (Tron.map (face << useColor))`.
 
 See also: `Builder.choiceBy`, `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
 -}
@@ -731,13 +732,6 @@ Same as `Builder.toSet`
 addLabels : (a -> Label) -> List (Tron a) -> Set a
 addLabels =
     toSet
-
-
-{-| convert a `Set` of controls holding any values to
-a `Set` of messages, technically would be the same as `Set.map`
--}
-handleWith : (a -> msg) -> Set a -> Set msg
-handleWith f = List.map (Tuple.mapSecond <| Tron.map f)
 
 
 {-| Forcefully expand the nesting:

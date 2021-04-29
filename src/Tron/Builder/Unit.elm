@@ -218,7 +218,7 @@ useColor = B.useColor
 
 
 {-| -}
-face : Face -> Tron -> Tron
+face : Face -> B.Tron a -> B.Tron a
 face = B.face
 
 
@@ -238,9 +238,9 @@ addLabels = B.addLabels
 
 
 
-{-| The replacement for `handleWith` since we don't handle anything for Proxy -}
-dontHandle : B.Set a -> Set
-dontHandle = B.handleWith <| always ()
+{-| The replacement for `handleWith` since we don't handle anything for () -}
+dontHandle : B.Tron a -> Tron
+dontHandle = B.map <| always ()
 
 
 {-| -}
@@ -269,12 +269,12 @@ makeUrl = Button.makeUrl
 
 
 {-| -}
-expand : Tron -> Tron
+expand : B.Tron a -> B.Tron a
 expand = B.expand
 
 
 {-| -}
-collapse : Tron -> Tron
+collapse : B.Tron a -> B.Tron a
 collapse = B.collapse
 
 
@@ -294,10 +294,10 @@ toChoice = B.toChoice <| always ()
 
 
 {-| -}
-shape : PanelShape -> Tron -> Tron
+shape : PanelShape -> B.Tron a -> B.Tron a
 shape = B.shape
 
 
 {-| -}
-cells : CellShape -> Tron -> Tron
+cells : CellShape -> B.Tron a -> B.Tron a
 cells = B.cells

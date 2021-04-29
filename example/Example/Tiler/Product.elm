@@ -117,6 +117,51 @@ getName product =
         Draft -> "Draft"
 
 
+
+iconName : Product -> Maybe String
+iconName product =
+    case product of
+        JetBrains -> Nothing
+        Space -> Just "Space"
+        IntelliJ -> Just "IntelliJ-IDEA"
+        PhpStorm -> Just "PhpStorm"
+        PyCharm -> Just "PyCharm"
+        RubyMine -> Just "RubyMine"
+        WebStorm -> Just "WebStorm"
+        CLion -> Just "CLion"
+        DataGrip -> Just "DataGrip"
+        AppCode -> Just "AppCode"
+        GoLand -> Just "GoLand"
+        ReSharper -> Just "ReSharper"
+        ReSharperCpp -> Just "ReSharperCPP"
+        DotCover -> Just "dotCover"
+        DotMemory -> Just "dotMemory"
+        DotPeek -> Just "dotPeek"
+        DotTrace -> Just "dotTrace"
+        Rider -> Just "Rider"
+        TeamCity -> Just "TeamCity"
+        Toolbox -> Just "Toolbox"
+        YouTrack -> Just "YouTrack"
+        Upsource -> Just "Upsource"
+        Hub -> Just "Hub"
+        Kotlin -> Just "Kotlin"
+        MPS -> Just "MPS"
+        IntelliJEdu -> Just "IntelliJ-IDEA-Edu"
+        PyCharmEdu -> Just "PyCharm-Edu"
+        Mono -> Nothing
+        Datalore -> Just "Datalore"
+        DataSpell -> Nothing
+        Qodana -> Nothing
+        Draft -> Nothing
+
+
+hasIcon : Product -> Bool
+hasIcon product =
+    case iconName product of
+        Just _ -> True
+        Nothing -> False
+
+
 decode : String -> Result String Product
 decode id =
     case id of

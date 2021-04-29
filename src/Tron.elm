@@ -1,6 +1,6 @@
 module Tron exposing
     ( Tron, Set
-    , map, with
+    , map, mapSet, with
     )
 
 {-| This is the `Tron msg`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application. In this case, it represents your components.
@@ -11,7 +11,7 @@ To use Tron in your application, you'll need to specify this function:
 
 See `Tron.Builder` for the helpers to define your own interface.
 
-See `WithTron` for the helpers to add `Tron` to your application.
+See `WithTron` for the helpers to add `Tron` to your applcation.
 
 # Tron
 
@@ -60,8 +60,7 @@ with = Property.with
 
 {- The usual `map` function which allows you to substitute the messages sent through the components in a `Set`.
 -}
-{-
 mapSet : (msgA -> msgB) -> Set msgA -> Set msgB
 mapSet =
     List.map << Tuple.mapSecond << map
--}
+

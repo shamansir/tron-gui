@@ -221,7 +221,7 @@ useColor = B.useColor
 
 
 {-| -}
-face : Face -> Tron -> Tron
+face : Face -> B.Tron a -> B.Tron a
 face = B.face
 
 
@@ -272,12 +272,12 @@ makeUrl = Button.makeUrl
 
 
 {-| -}
-expand : Tron -> Tron
+expand : B.Tron a -> B.Tron a
 expand = B.expand
 
 
 {-| -}
-collapse : Tron -> Tron
+collapse : B.Tron a -> B.Tron a
 collapse = B.collapse
 
 
@@ -297,10 +297,10 @@ toChoice = B.toChoice String.fromInt
 
 
 {-| -}
-shape : PanelShape -> Tron -> Tron
+shape : PanelShape -> B.Tron a -> B.Tron a
 shape = B.shape
 
 
 {-| -}
-cells : CellShape -> Tron -> Tron
+cells : CellShape -> B.Tron a -> B.Tron a
 cells = B.cells
