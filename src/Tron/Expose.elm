@@ -658,6 +658,13 @@ fromPort portUpdate =
     }
 
 
+toProxy : RawOutUpdate -> ProxyValue
+toProxy outUpdate =
+    fromPort
+        (swap outUpdate)
+        |> .value
+
+
 -- TODO:move all below to corresponding controls
 
 

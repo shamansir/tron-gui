@@ -112,6 +112,7 @@ import Url exposing (Url)
 import Html exposing (Html)
 import Random
 import Dict exposing (Dict)
+import Dict.Extra as Dict
 import Task
 
 import Tron.Core as Core exposing (Model)
@@ -126,6 +127,7 @@ import Tron.Msg exposing (Msg_(..))
 import Tron.Detach as Detach
 import Tron.Property as Property exposing (LabelPath)
 import Tron.Expose.Data as Exp
+import Tron.Expose.ProxyValue exposing (ProxyValue)
 
 
 {-| Adds `Model msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
@@ -837,3 +839,113 @@ stringBacked renderTarget transmit tree =
         , view = view_
         , subscriptions = subscriptions_
         }
+
+
+type alias ProxyBackedStorage = Dict ( Exp.RawPath, LabelPath ) Exp.RawOutUpdate
+
+
+type alias ProxyBackedMsg = Exp.RawOutUpdate
+
+
+{-| Program, backed with the proxy value storage. -}
+type alias ProxyBackedWithTron flags model msg =
+    ProgramWithTron flags ( ProxyBackedStorage, model ) ( ProxyBackedMsg, msg )
+
+
+
+type alias ValueAt = LabelPath -> Maybe ProxyValue
+
+
+proxyBacked
+    :  RenderTarget
+    ->
+        ( Exp.RawProperty -> Cmd msg
+        , Exp.RawOutUpdate -> Cmd msg
+        )
+    ->  { for : ValueAt -> model -> Tron msg
+        , init : flags -> ValueAt -> ( model, Cmd msg )
+        , subscriptions : ValueAt -> model -> Sub msg
+        , view : ValueAt -> model -> Html msg
+        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
+        }
+    -> ProxyBackedWithTron flags model msg
+proxyBacked renderTarget ( ack, transmit ) def =
+    let
+
+        valueAt dict =
+            \path -> Dict.get path dict
+
+        toValueAt : ProxyBackedStorage -> ValueAt
+        toValueAt storage =
+            storage
+                |> Dict.map (always Exp.toProxy)
+                |> Dict.mapKeys Tuple.second
+                |> valueAt
+
+        dictByPath : ProxyBackedStorage -> Dict Exp.RawPath Exp.RawOutUpdate
+        dictByPath =
+            Dict.mapKeys Tuple.first
+
+        for_ : ( ProxyBackedStorage, model ) -> Tron ( ProxyBackedMsg, msg )
+        for_ ( dict, model ) =
+            def.for (toValueAt dict) model
+                |> Exp.toExposed
+                |> Exp.loadJsonValues ( dictByPath dict )
+
+        init_ : flags -> ( ( ProxyBackedStorage, model ), Cmd ( ProxyBackedMsg, msg ) )
+        init_ flags =
+            let
+                storage = Dict.empty
+                ( userModel, userEff ) =
+                    def.init flags (toValueAt storage)
+            in
+                ( ( storage, userModel )
+                , userEff
+                    |> Cmd.map (Tuple.pair Exp.emptyOutUpdate)
+                )
+
+        update_
+            :  ( ProxyBackedMsg, msg )
+            -> ( ProxyBackedStorage, model )
+            -> ( ( ProxyBackedStorage, model ), Cmd ( ProxyBackedMsg, msg ) )
+        update_ ( rawUpdate, userMsg ) ( storage, userModel ) =
+            let
+                nextStorage =
+                    storage
+                        |> Dict.insert
+                             ( rawUpdate.path, rawUpdate.labelPath )
+                             rawUpdate
+                ( nextUserModel, nextUserEffects )
+                    = def.update userMsg (toValueAt nextStorage) userModel
+            in
+                ( ( nextStorage, nextUserModel )
+                , nextUserEffects
+                    |> Cmd.map (Tuple.pair Exp.emptyOutUpdate)
+                )
+
+        view_ : ( ProxyBackedStorage, model ) -> Html ( ProxyBackedMsg, msg )
+        view_ ( storage, model ) =
+            def.view (toValueAt storage) model
+                |> Html.map (Tuple.pair Exp.emptyOutUpdate)
+
+
+        subscriptions_ : ( ProxyBackedStorage, model ) -> Sub ( ProxyBackedMsg, msg )
+        subscriptions_ ( storage, model ) =
+            def.subscriptions (toValueAt storage) model
+                |> Sub.map (Tuple.pair Exp.emptyOutUpdate)
+
+    in
+    element
+        renderTarget
+        (SendJson
+            { ack = ack >> Cmd.map (Tuple.pair Exp.emptyOutUpdate)
+            , transmit = transmit >> Cmd.map (Tuple.pair Exp.emptyOutUpdate)
+            }
+        )
+        { for = for_
+        , init = init_
+        , update = update_
+        , view = view_
+        , subscriptions = subscriptions_
+        }
+
