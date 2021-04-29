@@ -7,12 +7,13 @@ import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape as CellShape exposing (..)
 import Tron.Style.Theme as Theme
 
+import Example.Tiler.Product as Product
 
 
 gui : Tron ()
 gui =
     Tron.root
-        [ ( "Color Scheme", Tron.none )
+        [ ( "Color Scheme", colorScheme |> Tron.face (icon "chromatic") )
         , ( "Sizes", sizes |> Tron.face (icon "size") )
         , ( "Tile", tile |> Tron.face (icon "tile") )
         , ( "Randomness", randomness |> Tron.face (icon "settings") )
@@ -24,6 +25,27 @@ gui =
         , ( "Export", Tron.button |> Tron.face (icon "export"))
         , ( "Save Scene", Tron.button |> Tron.face (icon "save" ))
         ]
+
+
+colorScheme : Tron ()
+colorScheme =
+    Tron.nest
+        [ ( "Product", products )
+        , ( "Base color", Tron.color <| Color.rgb255 7 195 242 )
+        , ( "BG color", Tron.color <| Color.rgb255 8 124 50 )
+        , ( "Opacity", Tron.int { min = 0, max = 255, step = 1 } 255 )
+        ]
+        |> Tron.shape (cols 2)
+
+
+
+products : Tron ()
+products =
+    Tron.choiceBy
+        (Tron.buttons Product.all
+            |> Tron.toSet Product.getName)
+        Product.AppCode
+        Product.compare
 
 
 icon : String -> Tron.Face
@@ -44,7 +66,7 @@ sizes : Tron ()
 sizes =
      Tron.nest
         [ ( "Cell", Tron.int { min = 0, max = 200, step = 1 } 0 )
-        , ( "Shape", Tron.float { min = 0.01, max = 5, step = 0.1 } 0 )
+        , ( "Shape", Tron.float { min = 0.01, max = 5, step = 0.1 } 0.01 )
         , ( "Board size", Tron.toggle False )
         ]
         |> Tron.shape (cols 3)

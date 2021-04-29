@@ -57,7 +57,7 @@ gui =
             )
         ,
             ( "choice",
-                Gui.choiceByCompare
+                Gui.choiceBy
                     ( cols 3 )
                     single
                     (choices

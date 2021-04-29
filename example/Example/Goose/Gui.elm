@@ -37,7 +37,7 @@ for model =
         ,
             ( "look at"
             ,
-                Gui.choiceByCompare
+                Gui.choiceBy
                     ( Shape.auto )
                     Cell.single -- Cell.halfByOne
                     ([ Left, Right ]

@@ -46,7 +46,7 @@ for model =
                     model.color
                     ChangeColor )
         , ( "choice",
-                Gui.choiceByCompare
+                Gui.choiceBy
                     ( cols 1 )
                     single
                     (choices
@@ -143,7 +143,7 @@ allControlsNest model =
                         model.color
                         ChangeColor )
             , ( "choice",
-                    Gui.choiceByCompare
+                    Gui.choiceBy
                         ( cols 1 )
                         single
                         (choices
