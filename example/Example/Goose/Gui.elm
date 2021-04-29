@@ -38,8 +38,6 @@ for model =
             ( "look at"
             ,
                 Gui.choiceBy
-                    ( Shape.auto )
-                    Cell.single -- Cell.halfByOne
                     ([ Left, Right ]
                         |> Gui.buttons
                         |> Gui.addLabels
@@ -81,8 +79,6 @@ for model =
 honkGui : HonkConfig -> Tron Msg
 honkGui config =
     Gui.nest
-        ( cols 2 )
-        Cell.single
         [
             ( "position"
             ,
@@ -115,14 +111,12 @@ honkGui config =
                     config.color
                     ChangeHonkTextColor
             )
-        ]
+        ] |> Gui.shape (cols 2)
 
 
 eyeGui : EyeConfig -> Tron Msg
 eyeGui config =
     Gui.nest
-        ( cols 1 )
-        Cell.single
         [
             ( "position"
             ,
@@ -141,13 +135,12 @@ eyeGui config =
                     ChangeEyeSize
             )
         ]
+        |> Gui.shape (cols 1)
 
 
 colorsGui : Bool -> Colors -> Tron Msg
 colorsGui isPunk colors =
     Gui.nest
-        ( cols 2 )
-        Cell.single
         [ ( "eye", Gui.color colors.eye ChangeEyeColor )
         , ( "feathers", Gui.color colors.feathers ChangeFeathersColor )
         , ( "skin", Gui.color colors.skin ChangeSkinColor )
@@ -159,6 +152,7 @@ colorsGui isPunk colors =
                 else Gui.none
             )
         ]
+        |> Gui.shape (cols 2)
 
 
 compareDirections : LookDirection -> LookDirection -> Bool

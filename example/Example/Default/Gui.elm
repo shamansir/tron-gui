@@ -47,23 +47,23 @@ for model =
                     ChangeColor )
         , ( "choice",
                 Gui.choiceBy
-                    ( cols 1 )
-                    single
                     (choices
                         |> Gui.buttons
                         |> Gui.addLabels choiceToLabel
                     )
                     model.choice
                     compareChoices
-                    Choose )
+                    Choose
+                |> Gui.shape (cols 1))
         , ( "nest",
                 nestedButtons model.buttonPressed
                 -- allControlsNest model
           )
         , ( "button",
-                Gui.buttonWith
-                    exportIcon
+                Gui.button
                     (always NoOp)
+                |> Gui.face exportIcon
+
           )
         , ( "toggle",
                 Gui.toggle
@@ -76,14 +76,12 @@ for model =
 nestedButtons : Choice -> Property Msg
 nestedButtons curChoice =
     Gui.nest
-        ( cols 2 )
-        single
         [ ( "a", Gui.button <| always <| Pressed A )
         , ( "b", Gui.button <| always <| Pressed B )
         , ( "c", Gui.button <| always <| Pressed C )
         , ( "d", Gui.button <| always <| Pressed D )
         , ( "color", colorNest )
-        ]
+        ] |> Gui.shape (cols 2)
 
 
 colorNest : Property Msg
@@ -96,12 +94,10 @@ colorNest =
                 msg
     in
         Gui.nest
-            ( cols 1 )
-            single
             [ ( "red", colorCompKnob ChangeRed )
             , ( "green", colorCompKnob ChangeGreen )
             , ( "blue", colorCompKnob ChangeBlue )
-            ]
+            ] |> Gui.shape (cols 1)
 
 
 allControlsNest : Model -> Property Msg
@@ -114,8 +110,6 @@ allControlsNest model =
                 msg
     in
         Gui.nest
-            ( rows 4 )
-            single
             [ ( "ghost", Gui.none )
             , ( "int",
                     Gui.int
@@ -144,20 +138,21 @@ allControlsNest model =
                         ChangeColor )
             , ( "choice",
                     Gui.choiceBy
-                        ( cols 1 )
-                        single
                         (choices
                             |> Gui.buttons
                             |> Gui.addLabels choiceToLabel
                         )
                         model.choice
                         compareChoices
-                        Choose )
+                        Choose
+                        |> Gui.shape (cols 1))
             , ( "nest",
                     nestedButtons model.buttonPressed
             )
             , ( "button",
-                    Gui.buttonWith exportIcon (always NoOp)
+                    Gui.button
+                        (always NoOp)
+                    |> Gui.face exportIcon
             )
             , ( "toggle",
                     Gui.toggle
@@ -167,7 +162,7 @@ allControlsNest model =
             , ( "sqbutton",
                     Gui.button (always NoOp)
             )
-            ]
+            ] |> Gui.shape (rows 4)
 
 
 choiceToLabel : Choice -> Property.Label
@@ -179,7 +174,7 @@ choiceToLabel c =
         D -> "The D"
 
 
-exportIcon : Gui.Icon
+exportIcon : Gui.Face
 exportIcon =
     Gui.themedIconAt
         (\theme ->

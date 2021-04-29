@@ -58,8 +58,6 @@ gui =
         ,
             ( "choice",
                 Gui.choiceBy
-                    ( cols 3 )
-                    single
                     (choices
                         |> Gui.buttons
                         |> Gui.addLabels choiceToLabel
@@ -67,19 +65,19 @@ gui =
                     A
                     compareChoices
                     |> Gui.expand
+                    |> Gui.shape (cols 3)
             )
         ,
             ( "nest", nestedButtons C )
         ,
             ( "button"
-            , Gui.buttonWith
-                <| Gui.themedIcon
-                    (\theme ->
-                        Gui.makeUrl
-                            <| Url.relative
+            , Gui.button
+                |> Gui.face (
+                        Gui.themedIconAt
+                            (\theme ->
                                 [ "assets", "export_" ++ Theme.toString theme ++ ".svg" ]
-                                []
-                    )
+                            )
+                )
             )
 
         ,
@@ -90,14 +88,13 @@ gui =
 nestedButtons : Choice -> Tron ()
 nestedButtons curChoice =
     Gui.nest
-        ( cols 2 )
-        single
         [ ( "a", Gui.button )
         , ( "b", Gui.button )
         , ( "c", Gui.button )
         , ( "d", Gui.button )
         , ( "color", colorNest )
         ]
+        |> Gui.shape (cols 2)
 
 
 colorNest : Tron ()
@@ -109,12 +106,11 @@ colorNest =
                 0
     in
         Gui.nest
-            ( cols 1 )
-            single
             [ ( "red", colorCompKnob )
             , ( "green", colorCompKnob )
             , ( "blue", colorCompKnob )
             ]
+            |> Gui.shape (cols 1)
 
 
 choiceToLabel : Choice -> Property.Label
