@@ -2,6 +2,7 @@ port module ForTiler.Main exposing (..)
 
 
 import Html exposing (Html)
+import Html.Attributes as HA
 
 import Tron
 import Tron.Style.Theme as Theme
@@ -15,8 +16,25 @@ import WithTron.Backed exposing (ValueAt, AppBackedByProxy)
 import Example.Tiler.Gui as ExampleGui
 
 
-type Msg =
-    NoOp
+main : AppBackedByProxy () Model Msg
+main =
+    WithTron.Backed.byProxyApp
+        (Option.toHtml Dock.bottomCenter Theme.dark)
+        ( ack, transmit )
+        { for =
+            \valueAt model ->
+                ExampleGui.gui valueAt
+                    |> Tron.map ( always NoOp )
+        , init = init
+        , update = update
+        , view = view
+        , subscriptions = subscriptions
+        }
+
+
+type Msg
+    = NoOp
+    | TilesetReady String
 
 
 type alias Model
@@ -28,15 +46,27 @@ init _ _ = ( [], Cmd.none )
 
 
 update : Msg -> ValueAt -> Model -> ( Model, Cmd Msg )
-update _ _ model = ( model, Cmd.none )
+update msg _ model =
+    case msg of
+        TilesetReady tileset ->
+            ( tileset :: model, Cmd.none )
+        NoOp ->
+            ( model, Cmd.none )
 
 
 view : ValueAt -> Model -> Html Msg
-view _ _ = Html.div [] []
+view _ tilesets =
+    Html.div []
+        <| List.map
+            (Html.span [ HA.style "margin" "5px" ]
+                << List.singleton
+                << Html.text)
+        <| tilesets
 
 
 subscriptions : ValueAt -> Model -> Sub Msg
-subscriptions _ _ = Sub.none
+subscriptions _ _ =
+    tilesetReady TilesetReady
 
 
 port ack : Exp.RawProperty -> Cmd msg
@@ -44,16 +74,9 @@ port ack : Exp.RawProperty -> Cmd msg
 port transmit : Exp.RawOutUpdate -> Cmd msg
 
 
-main : AppBackedByProxy () Model Msg
-main =
-    WithTron.Backed.byProxyApp
-        (Option.toHtml Dock.bottomCenter Theme.dark)
-        ( ack, transmit )
-        { for = \valueAt model -> ExampleGui.gui valueAt |> Tron.map (always NoOp )
-        , init = init
-        , update = update
-        , view = view
-        , subscriptions = subscriptions
-        }
+port tilesetReady : (String -> msg) -> Sub msg
+
+
+
 
 
