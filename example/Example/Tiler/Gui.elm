@@ -9,14 +9,15 @@ import Tron.Style.CellShape as CellShape exposing (..)
 import Tron.Style.Theme as Theme
 
 import Example.Tiler.Product as Product exposing (Product)
+import Example.Tiler.Logic exposing (Model)
 
 import WithTron.ValueAt as V exposing (ValueAt)
 
 import Tron.Expose.ProxyValue as Proxy exposing (ProxyValue)
 
 
-gui : ValueAt -> Tron ()
-gui valueAt =
+gui : ValueAt -> Model -> Tron ()
+gui valueAt _ =
     Tron.root
         [ ( "Color Scheme",
                 colorScheme
