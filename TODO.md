@@ -1,5 +1,7 @@
 * Choice-by-click control — the button that changes state while it's clicked;
     * Maybe reuse `Nest.Form` for that;
+* Breaking: Close `ProxyValue` constructors from public;
+    * Rename it to just `Value`, and put the definition into `Control` may be?
 * Test keyboard navigation, adapt it to the Dock;
 * Fix knobs to use current value when user starts dragging;
 * Breaking: For `Backed` Tron, give user access to the values in the dictionary and the easy way to parse them;
@@ -37,3 +39,4 @@
 * Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed;
 * Add some indication of the WS server status to the examples;
 * With choice, also send the value chosen;
+* Breaking: Change choice and nest to work with `Array`s since we usually need to get item by index? But Array syntax is not very friendly for API

@@ -1,6 +1,5 @@
 module WithTron.Backed exposing
-    ( ValueAt
-    , byJson, BackedByJson
+    ( byJson, BackedByJson
     , byStrings, BackedByStrings
     , byProxy, BackedByProxy
     , byProxyApp, AppBackedByProxy
@@ -26,6 +25,7 @@ import Html exposing (Html)
 
 import Tron exposing (Tron)
 import WithTron exposing (..)
+import WithTron.ValueAt exposing (ValueAt)
 
 import Tron.Path as Path exposing (Path)
 import Tron.Option exposing (..)
@@ -33,7 +33,7 @@ import Tron.Expose as Exp
 import Tron.Expose.Convert as Exp
 import Tron.Expose.Data as Exp
 import Tron.Property as Property exposing (LabelPath)
-import Tron.Expose.ProxyValue exposing (ProxyValue(..))
+import Tron.Expose.ProxyValue exposing (ProxyValue)
 
 
 {-| Path-to-value storage, to transmit them to the JS side. -}
@@ -238,9 +238,6 @@ type alias AppBackedByProxy flags model msg =
 type alias BackedByProxy =
     AppBackedByProxy () () ()
 
-
-
-type alias ValueAt = LabelPath -> Maybe ProxyValue
 
 
 byProxy

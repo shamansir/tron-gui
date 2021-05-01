@@ -1,5 +1,6 @@
 module Example.Tiler.Gui exposing (gui)
 
+
 import Color exposing (Color)
 import Tron exposing (Tron)
 import Tron.Builder.Unit as Tron
@@ -9,14 +10,19 @@ import Tron.Style.Theme as Theme
 
 import Example.Tiler.Product as Product exposing (Product)
 
-import WithTron.Backed exposing (ValueAt)
+import WithTron.ValueAt as V exposing (ValueAt)
+
 import Tron.Expose.ProxyValue as Proxy exposing (ProxyValue)
 
 
 gui : ValueAt -> Tron ()
-gui _ =
+gui valueAt =
     Tron.root
-        [ ( "Color Scheme", colorScheme |> Tron.face (icon "chromatic") )
+        [ ( "Color Scheme",
+                colorScheme
+                    (loadProduct valueAt)
+                    |> Tron.face (icon "chromatic")
+          )
         , ( "Sizes", sizes |> Tron.face (icon "size") )
         , ( "Tile", tile |> Tron.face (icon "tile") )
         , ( "Randomness", randomness |> Tron.face (icon "settings") )
@@ -30,8 +36,18 @@ gui _ =
         ]
 
 
-colorScheme : Tron ()
-colorScheme =
+loadProduct : ValueAt -> Product
+loadProduct =
+    V.ask
+        (V.choiceOf
+            (Product.all |> List.filter Product.hasIcon)
+            [ "Color Scheme", "Product" ]
+        )
+        >> Maybe.withDefault Product.default
+
+
+colorScheme : Product -> Tron ()
+colorScheme curProduct =
     Tron.nest
         [ ( "Product", products )
         , ( "Base color", Tron.color <| Color.rgb255 7 195 242 )

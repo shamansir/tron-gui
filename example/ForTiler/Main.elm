@@ -10,7 +10,8 @@ import Tron.Style.Dock as Dock
 import Tron.Option as Option
 import Tron.Expose.Data as Exp
 
-import WithTron.Backed exposing (ValueAt, AppBackedByProxy)
+import WithTron.Backed exposing (AppBackedByProxy)
+import WithTron.ValueAt exposing (ValueAt)
 
 
 import Example.Tiler.Gui as ExampleGui

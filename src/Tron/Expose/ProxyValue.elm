@@ -3,7 +3,7 @@ module Tron.Expose.ProxyValue exposing
     , encode
     , toString, getTypeString
     , toggleToBool, toggleToString
-    , toNumber, toXY, toText, toChoiceId, toColor, toToggle, toAction
+    , fromNumber, fromXY, fromText, fromChoice, fromChoiceOf, fromColor, fromToggle, fromAction
     )
 
 
@@ -25,6 +25,7 @@ Used for converting values from controls to JSON;
 @docs toggleToBool, toggleToString
 -}
 
+import Array
 import Color
 import Color exposing (Color)
 import Color.Convert as Color
@@ -141,50 +142,60 @@ toggleToString : ToggleState -> String
 toggleToString = Toggle.toggleToString
 
 
-toNumber : ProxyValue -> Maybe Float
-toNumber proxy =
+fromNumber : ProxyValue -> Maybe Float
+fromNumber proxy =
     case proxy of
         FromSlider n -> Just n
         _ -> Nothing
 
 
-toXY : ProxyValue -> Maybe ( Float, Float )
-toXY proxy =
+fromXY : ProxyValue -> Maybe ( Float, Float )
+fromXY proxy =
     case proxy of
         FromXY xy -> Just xy
         _ -> Nothing
 
 
-toText : ProxyValue -> Maybe String
-toText proxy =
+fromText : ProxyValue -> Maybe String
+fromText proxy =
     case proxy of
         FromInput text -> Just text
         _ -> Nothing
 
 
-toChoiceId : ProxyValue -> Maybe ItemId
-toChoiceId proxy =
+fromChoice : ProxyValue -> Maybe ItemId
+fromChoice proxy =
     case proxy of
         FromChoice i -> Just i
         _ -> Nothing
 
 
-toToggle : ProxyValue -> Maybe ToggleState
-toToggle proxy =
+fromChoiceOf : List a -> ProxyValue -> Maybe a
+fromChoiceOf values =
+    let
+        itemsArray = Array.fromList values
+    in
+        fromChoice
+            >> Maybe.andThen
+                (\id -> Array.get id itemsArray)
+
+
+fromToggle : ProxyValue -> Maybe ToggleState
+fromToggle proxy =
     case proxy of
         FromToggle state -> Just state
         _ -> Nothing
 
 
-toAction : ProxyValue -> Maybe ()
-toAction proxy =
+fromAction : ProxyValue -> Maybe ()
+fromAction proxy =
     case proxy of
         FromButton -> Just ()
         _ -> Nothing
 
 
-toColor : ProxyValue -> Maybe Color
-toColor proxy =
+fromColor : ProxyValue -> Maybe Color
+fromColor proxy =
     case proxy of
         FromColor color -> Just color
         _ -> Nothing

@@ -8,6 +8,7 @@
         "Tron",
         "WithTron",
         "WithTron.Backed",
+        "WithTron.ValueAt",
         "Tron.Option",
         "Tron.Style.Theme",
         "Tron.Style.Dock",
