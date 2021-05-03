@@ -151,22 +151,14 @@ tile tilesets =
 tileset : List ( Tileset, TilesetStatus ) -> Tron ()
 tileset tilesets =
     Tron.strings
-        [ "Foo", "Bar", "Test", "AAAA1", "AAABB2", "FooFoo", "BarBar", "Lalalal", "Cooockoo"
-             , "Foo1", "Bar1", "Test1", "AAAA2", "AAABB2", "FooBar", "BarFooooo", "LalalalKek", "Cuuuckuu" ]
-        "Foo"
-    {-
-    Tron.strings
         (tilesets
-            |> List.take 5
             |> List.map Tuple.first
-            --|> Debug.log "tilesets"
         )
         (tilesets
             |> List.head
             |> Maybe.map Tuple.first
-            --|> Debug.log "head"
-            |> Maybe.withDefault "None")
-    -}
+            |> Maybe.withDefault "None"
+        )
 
 
 title : Tron ()

@@ -7,6 +7,8 @@
 * Breaking: For `Backed` Tron, give user access to the values in the dictionary and the easy way to parse them;
     * It is needed, for the cases when parts of the GUI are hidden when some switch is off, like in the case of Goose example;
     * On the other hand, the current values could be overwritten from the JSON dict, think it over;
+* FIXME: the size of the choice/nest can not be changed dynamically — it takes the size which was set at first;
+    * See `ForTiler` example, we are required to know the whole list of the tiles before;
 * Move `Util` stuff to the corresponding modules;
 * Debug `RenderMode`;
 * Use `Size Cells`, like integer size, in `Layout`;

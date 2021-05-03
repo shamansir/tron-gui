@@ -33,10 +33,20 @@ type alias Model =
     }
 
 
+tilesets =
+    [ "Foo", "Bar", "Test", "AAAA1", "AAABB2", "FooFoo", "BarBar", "Lalalal", "Cooockoo"
+    , "Foo1", "Bar1", "Test1", "AAAA2", "AAABB2", "FooBar", "BarFooooo", "LalalalKek", "Cuuuckuu"
+    ]
+        -- FIXME: we're required to know the size of the list beforehand or else
+        -- the `Choice` control won't be properly created
+
+
 init : flags -> ValueAt -> ( Model, Cmd Msg )
 init _ _ =
     (
-        { tilesets = Dict.empty
+        { tilesets =
+            -- FIXME: chould be `Dict.empty` at start
+            Dict.fromList <| List.map (\name -> (name, Waiting)) tilesets
         , lastProduct = Product.default
         }
     , Cmd.none
