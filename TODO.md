@@ -2,6 +2,7 @@
     * Maybe reuse `Nest.Form` for that;
 * Breaking: Close `ProxyValue` constructors from public;
     * Rename it to just `Value`, and put the definition into `Control` may be?
+* Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;
 * Ability to disable pagination;
 * Test keyboard navigation, adapt it to the Dock;
 * Fix knobs to use current value when user starts dragging;
@@ -9,12 +10,13 @@
     * It is needed, for the cases when parts of the GUI are hidden when some switch is off, like in the case of Goose example;
     * On the other hand, the current values could be overwritten from the JSON dict, think it over;
 * Move `Util` stuff to the corresponding modules;
-* Debug `RenderMode`;
+* Debug `RenderMode` (i.e. ensure `Debug` view still works);
 * Use `Size Cells`, like integer size, in `Layout`;
 * _Active_ condition for a button, some effect for when it is pressed;
 * For Docker, add ability to run any example using environment variable;
 * Detachable: Add clientId to the URL when it was generated (so that reloading the page won't lose changes);
 * Detachable: Hide the user view by default, when interface is detached;
+* A-Frame;
 * New design;
 * Multiple-choice control;
 * Locked controls;
@@ -22,6 +24,7 @@
 * Include links to the examples in the docs;
 * Share examples somewhere, i.e. deploy to github;
 * Breaking?: When in the detached state, give user the choice if to view the original model or not (or just always hide it, in detached mode);
+* Ensure that when we have 2x0.5 (for example) list of buttons, their icons, if we have them specified, are still visible;
 * Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
 * Breaking: Use some safe Unique IDs to reference the position of the control in the tree, so that while the tree structure is changing, ID's stay the same;
     * Or, store such IDs together with property;

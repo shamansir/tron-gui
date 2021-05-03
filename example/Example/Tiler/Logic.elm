@@ -76,12 +76,7 @@ view _ model =
     let
         viewTileset ( tileset, status ) =
             Html.span []
-                [ (case status of
-                    Waiting -> "⌛"
-                    Ready -> "✓"
-                    FailedToLoad -> "✘")
-                    ++ " " ++ tileset
-                |> Html.text
+                [ Html.text <| statusMark status ++ " " ++ tileset
                 ]
     in
     Html.div []
@@ -92,6 +87,14 @@ view _ model =
             )
         <| Dict.toList
         <| model.tilesets
+
+
+statusMark : TilesetStatus -> String
+statusMark status =
+    case status of
+        Waiting -> "⌛"
+        Ready -> "✓"
+        FailedToLoad -> "✘"
 
 
 subscriptions : ValueAt -> Model -> Sub Msg

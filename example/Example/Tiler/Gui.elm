@@ -11,7 +11,7 @@ import Tron.Style.Theme as Theme
 
 
 import Example.Tiler.Product as Product exposing (Product)
-import Example.Tiler.Logic exposing (Model, Tileset, TilesetStatus)
+import Example.Tiler.Logic exposing (Model, Tileset, TilesetStatus, statusMark)
 
 import WithTron.ValueAt as V exposing (ValueAt)
 
@@ -72,21 +72,6 @@ products =
         Product.default
         Product.compare
     |> Tron.shape (rows 3)
-
-
-{- products : Tron ()
-products =
-    Tron.choiceBy
-        ([Color.white]
-            |> Tron.buttons
-            |> List.map (Tron.with (Tron.face << Tron.useColor))
-            |> Tron.addLabels colorToString
-        )
-        Color.black
-        ((==))
-        -- Product.default
-        -- Product.compare
-    |> Tron.shape (rows 3) -}
 
 
 colorToString : Color -> String
@@ -150,16 +135,24 @@ tile tilesets =
 
 tileset : List ( Tileset, TilesetStatus ) -> Tron ()
 tileset tilesets =
-    Tron.strings
+    Tron.choice
         (tilesets
-            |> List.map Tuple.first
+            |> Tron.buttons
+            |> Tron.addLabels
+                (\(tileset_, status) ->
+                    statusMark status ++ " " ++ tileset_
+                )
+            |> Tron.mapSet Tuple.first
         )
         (tilesets
             |> List.head
             |> Maybe.map Tuple.first
             |> Maybe.withDefault "None"
         )
+    |> Tron.cells CellShape.twiceByHalf
     |> Tron.shape (rows 5)
+    -- |> Tron.shape (by 1 5)
+
 
 
 title : Tron ()
