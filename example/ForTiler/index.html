@@ -47,17 +47,27 @@
             document.getElementById('information').innerHTML = JSON.stringify(json, null, 2);
         });
 
-        let tilesets = [ 'Foo', 'Bar', 'Test', 'AAAA1', 'AAABB2' ];
+        const tilesets =
+            [ 'Foo', 'Bar', 'Test', 'AAAA1', 'AAABB2', 'FooFoo', 'BarBar', 'Lalalal', 'Cooockoo'
+            , 'Foo1', 'Bar1', 'Test1', 'AAAA2', 'AAABB2', 'FooBar', 'BarFooooo', 'LalalalKek', 'Cuuuckuu' ];
+
+        tilesets.forEach((tileset) => {
+            app.ports.waitingForTileset.send(tileset);
+        })
 
         function requestNext() {
             const nextTileset = tilesets.pop();
             if (nextTileset) {
-                setTimeout((function(tileset) {
-                    return function() {
-                        app.ports.tilesetReady.send(tileset);
+                setTimeout((tileset =>
+                    () => {
+                        if (Math.random() > 0.2) {
+                            app.ports.tilesetReady.send(tileset);
+                        } else {
+                            app.ports.tilesetFailedToLoad.send(tileset);
+                        }
                         requestNext();
                     }
-                })(nextTileset), 500 + (Math.random() * 100));
+                )(nextTileset), 500 + (Math.random() * 100));
             }
         }
 
