@@ -60,13 +60,12 @@ import Axis exposing (Axis)
 import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
-import Tron.Property as Property exposing (expand, collapse)
 import Tron.Control exposing (Control(..))
 import Tron.Util exposing (findMap)
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
-import Tron.Style.PanelShape as Shape exposing (find, rows, cols)
+import Tron.Style.PanelShape as Shape exposing (rows, cols)
 import Tron.Style.Theme exposing (Theme)
 
 

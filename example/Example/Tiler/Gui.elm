@@ -159,6 +159,7 @@ tileset tilesets =
             |> Maybe.map Tuple.first
             |> Maybe.withDefault "None"
         )
+    |> Tron.shape (rows 5)
 
 
 title : Tron ()

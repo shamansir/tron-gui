@@ -5,6 +5,8 @@
 * `WithTron.Backed` helpers are now separate and improved and extended with the ones that have access to the value storage;
 * `WithTron.ValueAt` as a public API module with helpers;
 * Choice can optionally have a face (`icon` / `color`) which overrides showing selected option;
+* Fixed: the size of the choice/nest can not be changed dynamically;
+* Fixed: distribution over pages;
 * Better icon size;
 * Show labels on the buttons as well;
 * Show values on the knobs;

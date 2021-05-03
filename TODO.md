@@ -2,13 +2,12 @@
     * Maybe reuse `Nest.Form` for that;
 * Breaking: Close `ProxyValue` constructors from public;
     * Rename it to just `Value`, and put the definition into `Control` may be?
+* Ability to disable pagination;
 * Test keyboard navigation, adapt it to the Dock;
 * Fix knobs to use current value when user starts dragging;
 * Breaking: For `Backed` Tron, give user access to the values in the dictionary and the easy way to parse them;
     * It is needed, for the cases when parts of the GUI are hidden when some switch is off, like in the case of Goose example;
     * On the other hand, the current values could be overwritten from the JSON dict, think it over;
-* FIXME: the size of the choice/nest can not be changed dynamically — it takes the size which was set at first;
-    * See `ForTiler` example, we are required to know the whole list of the tiles before;
 * Move `Util` stuff to the corresponding modules;
 * Debug `RenderMode`;
 * Use `Size Cells`, like integer size, in `Layout`;
@@ -26,7 +25,6 @@
 * Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
 * Breaking: Use some safe Unique IDs to reference the position of the control in the tree, so that while the tree structure is changing, ID's stay the same;
     * Or, store such IDs together with property;
-* Fix distribution over pages (use `Pages.distributeOver pageCount` instead of `Pages.distribute 9`);
 * Consider having `Nil (Property msg)` instead of just `Nil`, so that any property could be hidden, but not absent in the tree;
 * Get rid of functions in the `Model`:
     * do not store tree in the `Gui msg`, build it every time;

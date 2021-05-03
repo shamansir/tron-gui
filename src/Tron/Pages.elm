@@ -72,26 +72,26 @@ fromList list =
 
 distributeBy : (List a -> a -> Bool) -> List a -> Pages (List a)
 distributeBy fits =
-        List.foldl
-            (\item pages ->
-                case pages of
-                    lastPage::prevPages ->
-                        if item |> fits lastPage  then
-                            (item::lastPage)::prevPages
-                        else
-                            [item]::lastPage::prevPages
-                    [] ->
-                        [[item]]
-            )
-            [[]]
-        >> List.map List.reverse
-        >> List.reverse
-        >> fromList
-        >> Maybe.withDefault (create [] [[]])
+    List.foldl
+        (\item pages ->
+            case pages of
+                lastPage::prevPages ->
+                    if item |> fits lastPage then
+                        (item::lastPage)::prevPages
+                    else
+                        [item]::lastPage::prevPages
+                [] ->
+                    [[item]]
+        )
+        [[]]
+    >> List.map List.reverse
+    >> List.reverse
+    >> fromList
+    >> Maybe.withDefault (create [] [[]])
 
 
 distribute : Int -> List a -> Pages (List a)
-distribute maxItems = distributeBy (\list _ -> (List.length list + 1) <= maxItems)
+distribute maxItems = distributeBy (\list _ -> List.length list <= maxItems)
 
 
 distributeOver : Count -> List a -> Pages (List a)
@@ -101,8 +101,14 @@ distributeOver pagesCount all =
             if List.length all // pagesCount * pagesCount == List.length all - 1
             then List.length all // pagesCount
             else (List.length all // pagesCount) + 1
-    in all |> distributeBy (\list _ -> (List.length list + 1) <= maxItems)
+    in all |> distributeBy (\list _ -> List.length list <= maxItems)
 
 
 count : Pages a -> Count
 count (Pages _ _ list) = List.length list + 1
+
+
+-- put all the items on the first page
+disable : Pages (List a) -> Pages (List a)
+disable (Pages _ first other) =
+    Pages 0 (List.concat <| first::other) []

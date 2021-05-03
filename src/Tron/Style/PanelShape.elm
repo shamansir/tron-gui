@@ -2,7 +2,7 @@ module Tron.Style.PanelShape exposing
     ( PanelShape
     , auto, rows, cols
     , by
-    , find
+    , distribute
     )
 
 
@@ -21,12 +21,12 @@ You are not required to specify both sides, just use `rows` or `cols` helpers to
 @docs by
 
 # Helpers
-@docs find
+@docs distribute
 -}
 
 
 import Tron.Style.CellShape exposing (CellShape(..), numify)
-import Tron.Pages as Pages
+import Tron.Pages as Pages exposing (Pages)
 import Size exposing (..)
 
 
@@ -66,16 +66,24 @@ maxRows : Int
 maxRows = 3
 
 
-{-| Get numeric size of a panel in cells, and a number of pages required, if there are overflows. Floats, since there could be half-cells. -}
-find : PanelShape -> CellShape -> Int -> ( Pages.Count, SizeF Cells )
-find panelShape cellShape itemCount =
+{-| Get numeric size of a panel in cells, and a set of pages required, if there are overflows. Floats, since there could be half-cells. -}
+distribute : PanelShape -> CellShape -> List a -> ( Pages (List a), SizeF Cells )
+distribute panelShape cellShape items =
     let
+        itemCount = List.length items
         ( cellXMultiplier, cellYMultiplier ) =
             numify cellShape
         otherSide n =
             if (modBy n itemCount) == 0
                 then itemCount // n
                 else itemCount // n + 1
+        onAPage ( c, r )=
+            ceiling
+                (toFloat c * cellXMultiplier
+                * toFloat r * cellYMultiplier)
+        pagesFor =
+            Pages.distribute << onAPage
+
     in
         ( case panelShape of
             Auto ->
@@ -100,10 +108,19 @@ find panelShape cellShape itemCount =
         |>
             (\(c, r) ->
                 if c > maxCols
-                then ( c // maxCols + 1, ( maxCols, r ) )
+                then
+                    ( pagesFor ( maxCols, r ) items
+                    , ( maxCols, r )
+                    )
                 else if r > maxRows
-                then ( r // maxRows + 1, ( c, maxRows ) )
-                else ( 1, (c, r) )
+                then
+                    ( pagesFor ( c, maxRows ) items
+                    , ( c, maxRows )
+                    )
+                else
+                    ( Pages.single <| items
+                    , (c, r)
+                    )
             )
         |> Tuple.mapSecond
             (Tuple.mapBoth
@@ -111,3 +128,4 @@ find panelShape cellShape itemCount =
                 (\r -> toFloat r * cellYMultiplier)
                 >> SizeF
             )
+            --|> Debug.log "result"

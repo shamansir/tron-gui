@@ -147,13 +147,11 @@ import Tron.Control exposing (..)
 import Tron.Property exposing (..)
 import Tron.Property as Property exposing (expand, collapse)
 import Tron.Control exposing (Control(..))
-import Tron.Util exposing (findMap)
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
-import Tron.Style.PanelShape as Shape exposing (find, rows, cols)
+import Tron.Style.PanelShape exposing (rows, cols)
 import Tron.Style.Theme exposing (Theme)
-import Tron.Pages exposing (PageNum)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Text exposing (TextState(..))

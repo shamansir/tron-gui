@@ -20,7 +20,7 @@ import Tron.Control.Color as Color exposing (..)
 import Tron.Control.Toggle as Toggle exposing (..)
 import Tron.Control.Nest as Nest exposing (..)
 
-import Tron.Pages as Pages
+import Tron.Pages as Pages exposing (Pages)
 import Size exposing (..)
 
 import Tron.Style.CellShape as CS exposing (CellShape)
@@ -726,13 +726,6 @@ isSelected prop index =
         Choice _ _ control ->
             Nest.isSelected control index
         _ -> False
-
-
-findShape : PanelShape -> CellShape -> List (Property msg) -> ( Pages.Count, SizeF Cells )
-findShape panelShape cellShape =
-    noGhosts
-        >> List.length
-        >> PS.find panelShape cellShape
 
 
 setFace : Button.Face -> Property msg -> Property msg

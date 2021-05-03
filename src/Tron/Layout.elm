@@ -20,7 +20,7 @@ import Tron.Style.Dock as Dock
 import Tron.Style.Logic as Dock exposing (rootPosition)
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
-import Tron.Style.PanelShape exposing (PanelShape)
+import Tron.Style.PanelShape as PS exposing (PanelShape)
 import Tron.Pages as Pages exposing (Pages, PageNum)
 
 import Tron.Control.Nest exposing (Form(..))
@@ -200,24 +200,21 @@ packItemsAtRoot dock size_ rp shape items =
                         |> List.reverse
                         |> List.head
                         |> Maybe.withDefault -1
-                ( pageCount, SizeF ( pageWidthF, pageHeightF ) ) =
-                    Property.findShape panelShape cellShape <| Array.toList plateItems
+                ( itemsOverPages, SizeF ( pageWidthF, pageHeightF ) ) =
+                    PS.distribute panelShape cellShape
+                        <| Array.toList
+                        <| Array.filter (Tuple.second >> Property.isGhost >> not)
+                        <| Array.indexedMap Tuple.pair
+                        <| plateItems
                 pageSize =
                     Size
                         ( ceiling <| pageWidthF * 2
                         , ceiling <| pageHeightF * 2
                         )
-                itemsOverPages =
-                    plateItems
-                        |> Array.indexedMap Tuple.pair
-                        |> Array.toList
-                        -- |> Pages.distributeOver pageCount
-                        |> Pages.distribute 9 -- FIXME
-                        |> Pages.switchTo pageNum
-
                 packedPages =
-                    itemsOverPages |>
-                        Pages.map
+                    itemsOverPages
+                        |> Pages.switchTo pageNum
+                        |> Pages.map
                             (List.foldl
                                 (\(index, innerProp) ( plateLayout, positions ) ->
                                     if not <| isGhost innerProp
