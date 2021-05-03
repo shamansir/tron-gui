@@ -16,13 +16,14 @@
 * For Docker, add ability to run any example using environment variable;
 * Detachable: Add clientId to the URL when it was generated (so that reloading the page won't lose changes);
 * Detachable: Hide the user view by default, when interface is detached;
-* A-Frame;
+* Finish A-Frame demo;
 * New design;
 * Multiple-choice control;
 * Locked controls;
 * Breaking: Make `setIcon` and `buttonWith` replaceable or just join into one function;
 * Include links to the examples in the docs;
 * Share examples somewhere, i.e. deploy to github;
+* Additional toggle with fixed values, even labeled as strings;
 * Breaking?: When in the detached state, give user the choice if to view the original model or not (or just always hide it, in detached mode);
 * Ensure that when we have 2x0.5 (for example) list of buttons, their icons, if we have them specified, are still visible;
 * Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;

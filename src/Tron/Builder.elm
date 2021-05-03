@@ -654,7 +654,7 @@ labels toLabel options current fallback toMsg =
         RepaintIceCream
 -}
 palette
-     : List Color
+     : List ( Label, Color )
     -> Color
     -> (Color -> msg)
     -> Tron msg
@@ -662,8 +662,9 @@ palette options current toMsg =
     choiceBy
         (options
             |> buttons
-            |> List.map (Tron.with (face << useColor))
-            |> addLabels Color.colorToHexWithAlpha
+            |> List.map (Tron.with (face << useColor << Tuple.second))
+            |> addLabels Tuple.first
+            |> Tron.mapSet Tuple.second
         )
         current
         (\cv1 cv2 ->

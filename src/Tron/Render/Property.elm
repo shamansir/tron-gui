@@ -390,7 +390,11 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
         ( labelX, labelY ) =
             if CS.isHorizontal cellShape
-                then ( 30, cy + 2 )
+                then
+                    case face of
+                        Default -> ( 30, cy + 2 )
+                        WithIcon _ -> ( 40, cy )
+                        WithColor _ -> ( 40, cy )
                 else ( cx, cy )
         textLabel _ =
             Svg.text_
@@ -428,7 +432,7 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                 ( iconX, iconY ) =
                     if CS.isHorizontal cellShape
                         then
-                            ( -23, cy - iconHeight / 2 + 1 )
+                            ( -20, cy - iconHeight / 2 + 1 )
                         else
                             ( cx - iconWidth / 2, cy - iconHeight / 2 + 1 )
             in
@@ -449,21 +453,34 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                         else Svg.none
                     ]
         WithColor theColor ->
-            let
-                ( rectWidth, rectHeight ) = ( bounds.width, bounds.height )
-                ( rectX, rectY ) = ( cx - rectWidth / 2, cy - rectHeight / 2 )
-            in
-                Svg.rect
-                    [ SA.x <| String.fromFloat rectX
-                    , SA.y <| String.fromFloat rectY
-                    , SA.width <| String.fromFloat rectWidth
-                    , SA.height <| String.fromFloat rectHeight
-                    , SA.fill <| Color.toCssString theColor
-                    , SA.rx "3"
-                    , SA.ry "3"
-                    ]
-                    [
-                    ]
+            case CS.units cellShape of
+                ( CS.Single, CS.Single ) ->
+                    color theme state theColor bounds
+                ( CS.Twice, _ ) ->
+                    Svg.g
+                        []
+                        [ color theme state theColor
+                            <| { bounds
+                               | width = bounds.height
+                               }
+                        , textLabel ()
+                        ]
+                _ ->
+                    let
+                        ( rectWidth, rectHeight ) = ( bounds.width, bounds.height )
+                        ( rectX, rectY ) = ( cx - rectWidth / 2, cy - rectHeight / 2 )
+                    in
+                        Svg.rect
+                            [ SA.x <| String.fromFloat rectX
+                            , SA.y <| String.fromFloat rectY
+                            , SA.width <| String.fromFloat rectWidth
+                            , SA.height <| String.fromFloat rectHeight
+                            , SA.fill <| Color.toCssString theColor
+                            , SA.rx "3"
+                            , SA.ry "3"
+                            ]
+                            [
+                            ]
 
 
 color : Theme -> State -> Color -> BoundsF -> Svg msg

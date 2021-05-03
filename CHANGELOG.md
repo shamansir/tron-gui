@@ -10,6 +10,7 @@
 * Better icon size;
 * Show labels on the buttons as well;
 * Show values on the knobs;
+* `Tron.palette` now asks for labels along with colors;
 * Remove collapse panel button (since click on groups/choices expands anyway);
 * `Gui.css` -> `Tron.css`;
 

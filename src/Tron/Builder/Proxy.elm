@@ -53,22 +53,15 @@ so that is easier and shorter to use `Proxy`-based `Builder` if you don't need a
 import Tron as B
 import Tron.Builder as B
 
-import Array
 import Color exposing (Color)
-import Color.Convert as Color
 import Axis exposing (Axis)
-import Dict
 
-import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
-import Tron.Property as Property exposing (expand, collapse)
+import Tron.Property as Property
 import Tron.Control exposing (Control(..))
-import Tron.Util exposing (findMap)
 import Tron.Style.CellShape exposing (CellShape)
-import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
-import Tron.Style.PanelShape as Shape exposing (find, rows, cols)
 import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
@@ -213,7 +206,7 @@ labels toLabel options current =
 
 {-| -}
 palette
-     : List Color
+     : List ( Label, Color )
     -> Color
     -> Tron
 palette colors currentColor =

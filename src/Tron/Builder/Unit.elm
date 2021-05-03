@@ -53,11 +53,9 @@ so that is easier and shorter to use `Unit`-based `Builder` if you don't need an
 import Tron as B
 import Tron.Builder as B
 
-import Array
 import Color exposing (Color)
 import Axis exposing (Axis)
 
-import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
 import Tron.Control exposing (Control(..))
@@ -204,7 +202,7 @@ labels toLabel options current =
 
 {-| -}
 palette
-     : List Color
+     : List ( Label, Color )
     -> Color
     -> Tron
 palette colors currentColor =

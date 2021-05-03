@@ -28,51 +28,37 @@ type alias Tileset = String
 
 
 type alias Model =
-    { tilesets : Dict Tileset TilesetStatus
-    , lastProduct : Product
-    }
+    Dict Tileset TilesetStatus
 
 
 init : flags -> ValueAt -> ( Model, Cmd Msg )
 init _ _ =
-    (
-        { tilesets = Dict.empty
-        , lastProduct = Product.default
-        }
+    ( Dict.empty
     , Cmd.none
     )
 
 
 update : Msg -> ValueAt -> Model -> ( Model, Cmd Msg )
-update msg _ model =
+update msg _ tilesets =
     ( case msg of
         WaitingForTileset tileset ->
-            { model
-            | tilesets =
-                (model.tilesets
-                    |> Dict.insert tileset Waiting )
-            }
+            tilesets
+                |> Dict.insert tileset Waiting
 
         TilesetReady tileset ->
-            { model
-            | tilesets =
-                (model.tilesets
-                    |> Dict.insert tileset Ready )
-            }
+            tilesets
+                |> Dict.insert tileset Ready
 
         TilesetFailedToLoad tileset ->
-            { model
-            | tilesets =
-                (model.tilesets
-                    |> Dict.insert tileset FailedToLoad )
-            }
-        NoOp -> model
+            tilesets
+                |> Dict.insert tileset FailedToLoad
+        NoOp -> tilesets
     , Cmd.none
     )
 
 
 view : ValueAt -> Model -> Html Msg
-view _ model =
+view _ tilesets =
     let
         viewTileset ( tileset, status ) =
             Html.span []
@@ -86,7 +72,7 @@ view _ model =
                 << viewTileset
             )
         <| Dict.toList
-        <| model.tilesets
+        <| tilesets
 
 
 statusMark : TilesetStatus -> String

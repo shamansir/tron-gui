@@ -19,7 +19,7 @@ import Tron.Expose.ProxyValue as Proxy exposing (ProxyValue)
 
 
 gui : ValueAt -> Model -> Tron ()
-gui valueAt model =
+gui valueAt tilesets =
     Tron.root
         [ ( "Color Scheme",
                 colorScheme
@@ -27,7 +27,7 @@ gui valueAt model =
                     |> Tron.face (icon "chromatic")
           )
         , ( "Sizes", sizes |> Tron.face (icon "size") )
-        , ( "Tile", tile (Dict.toList model.tilesets) |> Tron.face (icon "tile") )
+        , ( "Tile", tile (Dict.toList tilesets) |> Tron.face (icon "tile") )
         , ( "Randomness", randomness |> Tron.face (icon "settings") )
         , ( "Title", title |> Tron.face (icon "text") )
         , ( "Action on click", clickAction |> Tron.face (icon "cursor"))
@@ -53,8 +53,8 @@ colorScheme : Product -> Tron ()
 colorScheme curProduct =
     Tron.nest
         [ ( "Product", products )
-        , ( "Base color", Tron.color <| Color.rgb255 7 195 242 )
-        , ( "BG color", Tron.color <| Color.rgb255 8 124 50 )
+        , ( "Base color", baseColor <| Product.getPalette curProduct )
+        , ( "BG color", bgColor )
         , ( "Opacity", Tron.int { min = 0, max = 255, step = 1 } 255 )
         ]
         |> Tron.shape (cols 2)
@@ -72,6 +72,7 @@ products =
         Product.default
         Product.compare
     |> Tron.shape (rows 3)
+--    |> Tron.cells (CellShape.twiceByHalf)
 
 
 colorToString : Color -> String
@@ -153,6 +154,29 @@ tileset tilesets =
     |> Tron.shape (rows 5)
     -- |> Tron.shape (by 1 5)
 
+
+baseColor : Product.Palette -> Tron ()
+baseColor palette =
+    Tron.palette
+        [ ( "front", palette |> Product.getPaletteColor Product.ColorI )
+        , ( "middle", palette |> Product.getPaletteColor Product.ColorII )
+        , ( "rear", palette |>  Product.getPaletteColor Product.ColorIII )
+        ]
+        Color.white
+    |> Tron.cells CellShape.single
+    -- |> Tron.cells CellShape.twiceByHalf
+
+
+bgColor : Tron ()
+bgColor =
+    Tron.palette
+        [ ( "default", Color.gray )
+        , ( "black", Color.black )
+        , ( "white", Color.white )
+        ]
+        Color.white
+    |> Tron.cells CellShape.single
+    -- |> Tron.cells CellShape.twiceByHalf
 
 
 title : Tron ()
