@@ -470,13 +470,35 @@ transferTransientState propA propB =
             let
                 itemsA = Nest.getItems controlA
                 itemsB = Nest.getItems controlB
+                lengthA = Array.length itemsA
+                lengthB = Array.length itemsB
             in
                 List.map2
-                    (\(labelA, propA_) (labelB, propB_) ->
-                        (labelB, transferTransientState propA_ propB_)
+                    (\maybeA maybeB ->
+                        case ( maybeA, maybeB ) of
+                            ( Just (labelA, propA_), Just (labelB, propB_) ) ->
+                                Just (labelB, transferTransientState propA_ propB_)
+                            ( Nothing, Just (labelB, propB_) ) ->
+                                Just (labelB, propB_)
+                            ( _, Nothing ) ->
+                                Nothing
+
                     )
-                    (itemsA |> Array.toList)
-                    (itemsB |> Array.toList)
+                    (if lengthB <= lengthA
+                        then itemsA |> Array.map Just |> Array.toList
+                        else
+                            -- if new items were added in stateB, we should
+                            -- ensure to keep the new ones from B,
+                            -- so we fill up itemsA with items
+                            -- until it has the same length as itemsB,
+                            -- or else `map2` will skip them
+                            Array.append
+                                (itemsA |> Array.map Just)
+                                (Array.repeat (lengthB - lengthA) Nothing)
+                            |> Array.toList
+                    )
+                    (itemsB |> Array.map Just |> Array.toList)
+                    |> List.filterMap identity
                     |> Array.fromList
     in
     case ( propA, propB ) of
