@@ -1,6 +1,7 @@
 module Example.Tiler.Gui exposing (gui)
 
 
+import Dict
 import Color exposing (Color)
 import Tron exposing (Tron)
 import Tron.Builder.Unit as Tron
@@ -8,8 +9,9 @@ import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape as CellShape exposing (..)
 import Tron.Style.Theme as Theme
 
+
 import Example.Tiler.Product as Product exposing (Product)
-import Example.Tiler.Logic exposing (Model)
+import Example.Tiler.Logic exposing (Model, Tileset, TilesetStatus)
 
 import WithTron.ValueAt as V exposing (ValueAt)
 
@@ -17,7 +19,7 @@ import Tron.Expose.ProxyValue as Proxy exposing (ProxyValue)
 
 
 gui : ValueAt -> Model -> Tron ()
-gui valueAt _ =
+gui valueAt model =
     Tron.root
         [ ( "Color Scheme",
                 colorScheme
@@ -25,7 +27,7 @@ gui valueAt _ =
                     |> Tron.face (icon "chromatic")
           )
         , ( "Sizes", sizes |> Tron.face (icon "size") )
-        , ( "Tile", tile |> Tron.face (icon "tile") )
+        , ( "Tile", tile (Dict.toList model.tilesets) |> Tron.face (icon "tile") )
         , ( "Randomness", randomness |> Tron.face (icon "settings") )
         , ( "Title", title |> Tron.face (icon "text") )
         , ( "Action on click", clickAction |> Tron.face (icon "cursor"))
@@ -135,10 +137,10 @@ randomness =
         |> Tron.shape (cols 3)
 
 
-tile : Tron ()
-tile =
+tile : List ( Tileset, TilesetStatus ) -> Tron ()
+tile tilesets =
     Tron.nest
-        [ ("Tileset", tileset)
+        [ ( "Tileset", tileset tilesets )
         , ( "Fill", Tron.int { min = 0, max = 255, step = 1 } 178 )
         , ( "Opacity", Tron.int { min = 0, max = 255, step = 1 } 255 )
         , ( "Stroke", Tron.int { min = 0, max = 10, step = 1 } 1 )
@@ -146,10 +148,25 @@ tile =
         |> Tron.shape (cols 2)
 
 
-tileset : Tron ()
-tileset =
+tileset : List ( Tileset, TilesetStatus ) -> Tron ()
+tileset tilesets =
     Tron.strings
-        [ "Geometric", "Fancy", "Lines"] "Foo"
+        [ "Foo", "Bar", "Test", "AAAA1", "AAABB2", "FooFoo", "BarBar", "Lalalal", "Cooockoo"
+             , "Foo1", "Bar1", "Test1", "AAAA2", "AAABB2", "FooBar", "BarFooooo", "LalalalKek", "Cuuuckuu" ]
+        "Foo"
+    {-
+    Tron.strings
+        (tilesets
+            |> List.take 5
+            |> List.map Tuple.first
+            --|> Debug.log "tilesets"
+        )
+        (tilesets
+            |> List.head
+            |> Maybe.map Tuple.first
+            --|> Debug.log "head"
+            |> Maybe.withDefault "None")
+    -}
 
 
 title : Tron ()
