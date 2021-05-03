@@ -7,6 +7,7 @@
 * Choice can optionally have a face (`icon` / `color`) which overrides showing selected option;
 * Fixed: the size of the choice/nest can not be changed dynamically;
 * Fixed: distribution over pages;
+* Improve `Tron.palette` control rendering & handling (which is just choice over colors);
 * Better icon size;
 * Show labels on the buttons as well;
 * Show values on the knobs;

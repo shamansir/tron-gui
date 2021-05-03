@@ -1,35 +1,39 @@
-* Choice-by-click control — the button that changes state while it's clicked;
-    * Maybe reuse `Nest.Form` for that;
+## Public API
+
 * Breaking: Close `ProxyValue` constructors from public;
     * Rename it to just `Value`, and put the definition into `Control` may be?
 * Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;
-* Ability to disable pagination;
+* Ability to disable / enable pagination;
+* Detachable: Add clientId to the URL when it was generated (so that reloading the page won't lose changes);
+* Detachable: Hide the user view by default, when interface is detached;
+    * Or give user the choice if to view the original model or not;
+* Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed;
+* With choice, also send the value chosen;
+
+## UX / Design
+
 * Test keyboard navigation, adapt it to the Dock;
 * Fix knobs to use current value when user starts dragging;
-* Breaking: For `Backed` Tron, give user access to the values in the dictionary and the easy way to parse them;
-    * It is needed, for the cases when parts of the GUI are hidden when some switch is off, like in the case of Goose example;
-    * On the other hand, the current values could be overwritten from the JSON dict, think it over;
+* _Active_ condition for a button, some effect for when it is pressed;
+* Fix/improve knobs to support on-the-fly change of the value;
+
+## New controls
+
+* Choice-by-click control — the button that changes state while it's clicked;
+    * Maybe reuse `Nest.Form` for that;
+* Multiple-choice control;
+* Locked controls;
+* Knob with fixed values, they could even labeled as strings (i.e. 3, 5, 7, 9, 15, _smooth_);
+
+## Inner API / Logic
+
 * Move `Util` stuff to the corresponding modules;
 * Debug `RenderMode` (i.e. ensure `Debug` view still works);
 * Use `Size Cells`, like integer size, in `Layout`;
-* _Active_ condition for a button, some effect for when it is pressed;
-* For Docker, add ability to run any example using environment variable;
-* Detachable: Add clientId to the URL when it was generated (so that reloading the page won't lose changes);
-* Detachable: Hide the user view by default, when interface is detached;
-* Finish A-Frame demo;
-* New design;
-* Multiple-choice control;
-* Locked controls;
-* Breaking: Make `setIcon` and `buttonWith` replaceable or just join into one function;
-* Include links to the examples in the docs;
-* Share examples somewhere, i.e. deploy to github;
-* Additional toggle with fixed values, even labeled as strings;
-* Breaking?: When in the detached state, give user the choice if to view the original model or not (or just always hide it, in detached mode);
-* Ensure that when we have 2x0.5 (for example) list of buttons, their icons, if we have them specified, are still visible;
-* Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
-* Breaking: Use some safe Unique IDs to reference the position of the control in the tree, so that while the tree structure is changing, ID's stay the same;
+* Breaking?: Use some safe Unique IDs to reference the position of the control in the tree, so that while the tree structure is changing, ID's stay the same;
     * Or, store such IDs together with property;
-* Consider having `Nil (Property msg)` instead of just `Nil`, so that any property could be hidden, but not absent in the tree;
+    * Consider having `Nil (Property msg)` instead of just `Nil`, so that any property could be hidden, but not absent in the tree;
+    * Check `indexedMap` usages, so that usage of the index is kept to minimum for nested items (mostly done);
 * Get rid of functions in the `Model`:
     * do not store tree in the `Gui msg`, build it every time;
     * store the actual messages for the current value in the controls, not the handlers (i.e. just `msg` instead of `v -> msg`);
@@ -37,10 +41,18 @@
     * Breaking?: `Control`/`Tron`.`andThen` — due to handler and `Maybe`, now it is impossible to implement, so I did `Tron.with`;
     * Remove `evaluate__` functions;
     * Consider `Control setup msg value = Control (setup -> (Cmd msg, value))`
-* Check `indexedMap` usages, so that usage of the index is kept to minimum for nested items (mostly done);
 * Do not store cell size in the `Gui msg`, it should be recalculated every time;
 * Do not store dock in the `Gui msg`, it should be recalculated every time;
-* Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed;
-* Add some indication of the WS server status to the examples;
-* With choice, also send the value chosen;
 * Breaking: Change choice and nest to work with `Array`s since we usually need to get item by index? But Array syntax is not very friendly for API
+
+## Deployment
+
+* For Docker, add ability to run any example using environment variable;
+
+## Examples
+
+* Add some indication of the WS server status to the examples;
+* Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
+* Include links to the examples in the docs;
+* Share examples somewhere, i.e. deploy to github;
+* A-Frame renderer & Demo to some senseful state;
