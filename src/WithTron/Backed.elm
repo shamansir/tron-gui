@@ -12,10 +12,28 @@ This is mostly useful for the programs that heavily interact with JS side, or ev
 
 That way, we only ask for `Tron ()` interface definition, with no specific messages required as handler, and `Tron.Builder.Unit` module has all the useful helpers for this, whose functions require no handlers, since no messages are sent.
 
-See different `Backed...` examples in the `example` folder.
+See different `Backed...` examples in the `example` folder, and also `ForTiler`.
 
 Some helpers below have the access to such storage using `ValueAt` function being passed to the
 lifecycle of the app. This is for the cases when you need, for example, to show/hide some parts of your interface still, w/o specifying any model.
+
+# JSON
+
+@docs byJson, BackedByJson
+
+# Strings
+
+@docs byStrings, BackedByStrings
+
+# Proxy
+
+@docs byProxy, BackedByProxy
+
+# as the Application
+
+@docs byProxyApp, AppBackedByProxy
+
+See also `WithTron.ValueAt`.
 -}
 
 
@@ -235,11 +253,16 @@ type alias AppBackedByProxy flags model msg =
     ProgramWithTron flags ( ProxyBackedStorage, model ) ( ProxyBackedMsg, msg )
 
 
+{-| -}
 type alias BackedByProxy =
     AppBackedByProxy () () ()
 
 
 
+{-| Currently, the only way (okay, including `byProxyApp`, which is actually the same) to get access to the values in the UI, while using `Backed` way of communication.
+
+See `WithTron.ValueAt` for more information and `example/ForTiler` as the example.
+-}
 byProxy
     :  RenderTarget
     ->
@@ -261,6 +284,14 @@ byProxy renderTarget ( ack, transmit ) for =
         , update = \_ _ _ -> ( (), Cmd.none )
         }
 
+
+{-| Get access to the current values in UI, using `Backed` to send values to JS and still having
+your own model and application flow, separated from those values.
+
+This is for the case when, indeed, you have some simple `Model`, don't want to bother with storing UI values and/or accessing them using `LabelPath` is enough for you.
+
+See `WithTron.ValueAt` for more information and `example/ForTiler` as the example.
+-}
 
 byProxyApp
     :  RenderTarget

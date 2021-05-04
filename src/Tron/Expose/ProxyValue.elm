@@ -18,7 +18,8 @@ Used for converting values from controls to JSON;
 @docs encode, toString, getTypeString
 
 # Extract value
-@docs toNumber. toXY, toText, toChoice, toColor, toToggle, toAction
+
+@docs fromNumber, fromXY, fromText, fromChoice, fromChoiceOf, fromColor, fromToggle, fromAction
 
 # Extract Toggle value
 
@@ -142,6 +143,7 @@ toggleToString : ToggleState -> String
 toggleToString = Toggle.toggleToString
 
 
+{-| -}
 fromNumber : ProxyValue -> Maybe Float
 fromNumber proxy =
     case proxy of
@@ -149,6 +151,7 @@ fromNumber proxy =
         _ -> Nothing
 
 
+{-| -}
 fromXY : ProxyValue -> Maybe ( Float, Float )
 fromXY proxy =
     case proxy of
@@ -156,6 +159,7 @@ fromXY proxy =
         _ -> Nothing
 
 
+{-| -}
 fromText : ProxyValue -> Maybe String
 fromText proxy =
     case proxy of
@@ -163,6 +167,7 @@ fromText proxy =
         _ -> Nothing
 
 
+{-| -}
 fromChoice : ProxyValue -> Maybe ItemId
 fromChoice proxy =
     case proxy of
@@ -170,6 +175,7 @@ fromChoice proxy =
         _ -> Nothing
 
 
+{-| -}
 fromChoiceOf : List a -> ProxyValue -> Maybe a
 fromChoiceOf values =
     let
@@ -180,6 +186,7 @@ fromChoiceOf values =
                 (\id -> Array.get id itemsArray)
 
 
+{-| -}
 fromToggle : ProxyValue -> Maybe ToggleState
 fromToggle proxy =
     case proxy of
@@ -187,6 +194,7 @@ fromToggle proxy =
         _ -> Nothing
 
 
+{-| -}
 fromAction : ProxyValue -> Maybe ()
 fromAction proxy =
     case proxy of
@@ -194,6 +202,7 @@ fromAction proxy =
         _ -> Nothing
 
 
+{-| -}
 fromColor : ProxyValue -> Maybe Color
 fromColor proxy =
     case proxy of

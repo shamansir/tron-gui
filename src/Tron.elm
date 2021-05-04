@@ -1,6 +1,6 @@
 module Tron exposing
     ( Tron, Set
-    , map, mapSet, with
+    , map, mapSet, andThen, with
     )
 
 {-| This is the `Tron msg`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application. In this case, it represents your components.
@@ -19,7 +19,7 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 
 # Common helpers
 
-@docs map
+@docs map, mapSet, andThen, with
 -}
 
 import Tron.Property as Property exposing (Property)
@@ -52,13 +52,43 @@ andThen : (msg -> Tron msg) -> Tron msg -> Tron msg
 andThen = Property.andThen
 
 
-{-| the helper for chaining lists and Tron
+{-| Same as `andThen`, but also gets current component as argument, it gets useful in mapping `Sets` or lists of controls:
+
+    Tron.choiceBy
+        (Product.all
+            |> List.filter Product.hasIcon
+            |> Tron.buttons
+            |> List.map (Tron.with (Tron.face << productIcon))
+            |> Tron.addLabels Product.getName
+        )
+        Product.default
+        Product.compare
+    |> Tron.shape (rows 3)
 -}
 with : (msg -> Tron msg -> Tron msg) -> Tron msg -> Tron msg
 with = Property.with
 
 
-{- The usual `map` function which allows you to substitute the messages sent through the components in a `Set`.
+{-| The usual `map` function which allows you to substitute the messages sent through the components in a `Set`. For example, implementation of `Tron.Builder.palette`:
+
+    Builder.choiceBy
+        (options
+            |> Builder.buttons
+            |> List.map (Tron.with (Builder.face << Builder.useColor << Tuple.second))
+            |> addLabels Tuple.first
+            |> Tron.mapSet Tuple.second
+        )
+        current
+        (\cv1 cv2 ->
+            case ( cv1 |> Color.toRgba, cv2 |> Color.toRgba ) of
+                ( c1, c2 ) ->
+                    (c1.red == c2.red) &&
+                    (c1.blue == c2.blue) &&
+                    (c1.green == c2.green) &&
+                    (c1.alpha == c2.alpha)
+        )
+        toMsg
+    |> cells CS.half
 -}
 mapSet : (msgA -> msgB) -> Set msgA -> Set msgB
 mapSet =

@@ -88,20 +88,7 @@ There is a special `Backed` program, that just stores the stringified values in 
 # Program Wrappers
 @docs sandbox, element, document, application
 
-# Backed
-
-_Backed_ is the special type of `Program` that only stores the mapping of path in the interface to the corresponding current value. This is useful when you want to use Tron GUI for some JS application and just send the updates using the ports.
-
-For such cases, see `ReportToJsBacked` example. Another examples that use JS connection and ports, but don't use `Backed` helper, are: `ReportToJsJson`, `ReportToJsString`, `DatGui`.
-
-@docs backed, BackedStorage, BackedWithTron
-
-## String-Backed
-
-See `ReportToJsStringBacked` example.
-
-@docs stringBacked, StringBackedStorage, StringBackedWithTron
-
+See also: `WithTron.Backed`.
 -}
 
 

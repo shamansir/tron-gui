@@ -2,6 +2,7 @@
 
 * Breaking: Close `ProxyValue` constructors from public;
     * Rename it to just `Value`, and put the definition into `Control` may be?
+* Breaking: Stick to just one `WithTron.Backed`, since anyway it is possible to convert one to another using `Tron` methods;
 * Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;
 * Ability to disable / enable pagination;
 * Detachable: Add clientId to the URL when it was generated (so that reloading the page won't lose changes);

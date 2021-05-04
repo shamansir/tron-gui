@@ -28,19 +28,22 @@ so that is easier and shorter to use `Proxy`-based `Builder` if you don't need a
 @docs root
 
 # Items
-@docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, colorButton, toggle, bool
+@docs none, int, float, number, xy, coord, color, text, input, button, toggle, bool
 
 # Groups
 @docs nest, choice, choiceBy, strings, labels, palette
 
 # Buttons
-@docs buttons, buttonsWithIcons, coloredButtons, setColor
+@docs buttons, useColor, face, Face
 
 # Icons
-@docs Icon, setIcon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
 
 # Force expand / collapse for nesting
 @docs expand, collapse
+
+# Shape
+@docs shape, cells
 
 # Conversion
 @docs toSet, toChoice, addLabels, autoHandle
