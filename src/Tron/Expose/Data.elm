@@ -52,6 +52,7 @@ type alias RawOutUpdate =
     , labelPath : List String
     , type_ : String
     , client : RawClientId
+    , chosen : Maybe String
     }
 
 

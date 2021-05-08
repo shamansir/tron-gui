@@ -18,7 +18,7 @@ map f (Control setup val handler) =
 
 andThen : (a -> Control b c d) -> Control b c a -> Control b c d
 andThen k s = case s of
-  Control b c (Just f) -> k (f c)
+  Control _ c (Just f) -> k (f c) -- FIXME: `b` not used
   Control b c  Nothing -> Control b c Nothing
 
 

@@ -24,6 +24,10 @@ Used for converting values from controls to JSON;
 # Extract Toggle value
 
 @docs toggleToBool, toggleToString
+
+# Extract choice label
+
+@docs labelOf
 -}
 
 import Array
@@ -45,7 +49,7 @@ type ProxyValue
     = FromSlider Float
     | FromXY ( Float, Float )
     | FromInput String
-    | FromChoice ItemId
+    | FromChoice ItemId String
     | FromColor Color
     | FromToggle ToggleState
     | FromButton
@@ -64,7 +68,7 @@ encode v =
                 , ( "y", E.float y )
                 ]
         FromInput t -> E.string t
-        FromChoice i -> E.int i
+        FromChoice i _ -> E.int i
         FromColor c ->
             case Color.toRgba c of
                 { red, green, blue, alpha } ->
@@ -90,7 +94,7 @@ toString v =
             String.fromFloat x ++ XY.separator ++ String.fromFloat y
         FromInput t ->
             t
-        FromChoice i ->
+        FromChoice i _ ->
             String.fromInt i
         FromColor c ->
             Color.colorToHexWithAlpha c
@@ -123,7 +127,7 @@ getTypeString value =
         FromColor _ ->
             "color"
 
-        FromChoice _ ->
+        FromChoice _ _ ->
             "choice"
 
         FromToggle _ ->
@@ -171,7 +175,7 @@ fromText proxy =
 fromChoice : ProxyValue -> Maybe ItemId
 fromChoice proxy =
     case proxy of
-        FromChoice i -> Just i
+        FromChoice i _ -> Just i
         _ -> Nothing
 
 
@@ -184,6 +188,14 @@ fromChoiceOf values =
         fromChoice
             >> Maybe.andThen
                 (\id -> Array.get id itemsArray)
+
+
+{-| -}
+labelOf : ProxyValue -> Maybe String
+labelOf proxy =
+    case proxy of
+        FromChoice _ s -> Just s
+        _ -> Nothing
 
 
 {-| -}

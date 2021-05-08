@@ -506,6 +506,7 @@ emptyOutUpdate =
     , labelPath = []
     , type_ = ""
     , client = E.null
+    , chosen = Nothing
     }
 
 
