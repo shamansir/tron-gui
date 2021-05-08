@@ -10,6 +10,7 @@
     * Or give user the choice if to view the original model or not;
 * Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed;
 * With choice, also send the value chosen;
+* Breaking: send some special value with `RawOutUpdate` for `Choice` controls or else it is hard to
 
 ## UX / Design
 
@@ -38,6 +39,7 @@
 * Get rid of functions in the `Model`:
     * do not store tree in the `Gui msg`, build it every time;
     * store the actual messages for the current value in the controls, not the handlers (i.e. just `msg` instead of `v -> msg`);
+        * or don't even store the messages, but only values, and only transform them to messages on the `view` stage;
     * for `.over`, traverse two trees with the same structure (don't forget about ghosts) and move transient states between them;
     * Breaking?: `Control`/`Tron`.`andThen` — due to handler and `Maybe`, now it is impossible to implement, so I did `Tron.with`;
     * Remove `evaluate__` functions;
