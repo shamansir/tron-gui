@@ -12,10 +12,12 @@
 * Breaking?: send some special value with `RawOutUpdate` for `Choice` controls or else it is hard to get what was actually chosen;
 * Breaking?: for choice, give user option either to show icon on the button, or the label, even if the items in the choice have icons;
 * Bug: selecting item on the second page of the choice control could make other panels content disappear; (Tiler: selecting _Tile/Tileset_ breaks _Color Scheme/BG Color_)
+    * It seems `[0, 2]` and `[2, 0]` are conflicting in this case;
 
 ## UX / Design
 
 * Show the value on XY controllers as well;
+* Find a way to show long labels in two lines or scale the font or smth.;
 * Test keyboard navigation, adapt it to the Dock;
 * Fix knobs to use current value when user starts dragging;
 * _Active_ condition for a button, some effect for when it is pressed;
