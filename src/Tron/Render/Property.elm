@@ -393,7 +393,7 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
             if CS.isHorizontal cellShape
                 then
                     case face of
-                        Default -> ( 30, cy + 2 )
+                        Default -> ( 30, cy + 4 )
                         WithIcon _ -> ( 40, cy )
                         WithColor _ -> ( 40, cy )
                 else ( cx, cy )
