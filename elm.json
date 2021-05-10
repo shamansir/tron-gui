@@ -3,7 +3,7 @@
     "name": "shamansir/tron-gui",
     "summary": "Tron: Minimal Universal GUI",
     "license": "BSD-3-Clause",
-    "version": "8.0.0",
+    "version": "8.0.1",
     "exposed-modules": [
         "Tron",
         "WithTron",
