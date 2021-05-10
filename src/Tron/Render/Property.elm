@@ -122,6 +122,7 @@ viewProperty
                 theme
                 state
                 bounds
+                value
                 <| (value - min) / (max - min)
 
         Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
@@ -183,8 +184,8 @@ viewProperty
         _ -> Svg.none
 
 
-knob : Theme -> State -> BoundsF -> Float -> Svg msg
-knob theme state bounds value =
+knob : Theme -> State -> BoundsF -> Float -> Float -> Svg msg
+knob theme state bounds value relValue =
     let
         toAngle v = (-120) + (v * 120 * 2)
         path stroke d =
@@ -207,17 +208,17 @@ knob theme state bounds value =
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
-                    { from = toAngle 0, to = toAngle value }
+                    { from = toAngle 0, to = toAngle relValue }
             , path (Coloring.secondaryLines theme state |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
-                    { from = toAngle value, to = toAngle 1 }
+                    { from = toAngle relValue, to = toAngle 1 }
             , path (Coloring.lines theme state |> Color.toCssString)
                 <| describeMark
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
-                    (toAngle value)
+                    (toAngle relValue)
             , Svg.text_
                 [ SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat cy

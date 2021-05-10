@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@200;400&display=swap');
+
 .gui {
     position: absolute;
     top: 0;
@@ -6,6 +8,8 @@
     height: 100%;
     /* margin: 0 auto; */
     pointer-events: none;
+    font-family: Oxanium;
+    font-weight: 400;
 }
 
 .grid {
@@ -17,10 +21,6 @@
     /* align-items: center; */
     /* height: 100vh; */
     /* width: 60%; */
-}
-
-.grid text {
-    font-family: \"IBM Plex Sans\", sans-serif;
 }
 
 .detach-panel, .collapse-panel {

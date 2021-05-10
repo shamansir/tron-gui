@@ -1,3 +1,8 @@
+### 8.0.1
+
+* New base font: `Oxanium`;
+* Fix `.int` controls and knob controls in general to show the value b/w `min` and `max` instead of just `0..1` value;
+
 ### 8.0.0
 
 * Remove previously required `PanelShape` and `CellShape` from `Builder.nest` and `Builder.choice` and make them separate functions `Builder.shape` & `Builder.cells` correspondigly;

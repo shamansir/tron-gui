@@ -1,22 +1,24 @@
 ## Public API
 
-* Bug: `Int` controls stopped to render properly!
+* Bug: `Int` controls are not showing the actual int value (b/w min and max)!
 * Breaking: Close `ProxyValue` constructors from public;
     * Rename it to just `Value`, and put the definition into `Control` may be?
 * Breaking: Stick to just one `WithTron.Backed`, since anyway it is possible to convert one to another using `Tron` methods;
 * Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;
 * Ability to disable / enable pagination;
-* Detachable: Add clientId to the URL when it was generated (so that reloading the page won't lose changes);
+* Detachable: Add `clientId` to the URL when it was generated (so that reloading the page won't lose changes);
 * Detachable: Hide the user view by default, when interface is detached;
     * Or give user the choice if to view the original model or not;
 * Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed;
 * With choice, also send the value chosen;
-* Breaking: send some special value with `RawOutUpdate` for `Choice` controls or else it is hard to;
+* Breaking: send some special value with `RawOutUpdate` for `Choice` controls or else it is hard to get what was actually chosen;
 * Breaking: for choice, give user option either to show icon on the button, or the label, even if the items in the choice have icons;
 * Bug: selecting item on the second page of the choice control could make other panels content disappear; (Tiler: selecting _Tile/Tileset_ breaks _Color Scheme/BG Color_)
 
 ## UX / Design
 
+* Use Oxanium from Google Fonts as the base font;
+* Show the value on XY controllers as well;
 * Test keyboard navigation, adapt it to the Dock;
 * Fix knobs to use current value when user starts dragging;
 * _Active_ condition for a button, some effect for when it is pressed;
