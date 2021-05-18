@@ -10,5 +10,5 @@ import Svg.Attributes as SA exposing (..)
 import Tron.Control as Core exposing (Control)
 
 
-type alias Control msg = Core.Control Axis Float msg
+type alias Control a = Core.Control Axis Float a
 

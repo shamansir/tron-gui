@@ -18,17 +18,17 @@ type Form
 type alias ItemId = Int
 
 
-type alias GroupControl item msg =
+type alias GroupControl item a =
     Core.Control
         ( Array item )
         { form : Form
         , face : Maybe Button.Face
         , page : PageNum
         }
-        msg
+        a
 
 
-type alias ChoiceControl item msg =
+type alias ChoiceControl item a =
     Core.Control
         ( Array item )
         { form : Form
@@ -36,7 +36,7 @@ type alias ChoiceControl item msg =
         , selected : ItemId
         , page : PageNum
         }
-        msg
+        a
 
 
 type alias Transient =
@@ -45,37 +45,37 @@ type alias Transient =
     }
 
 
-get : ItemId -> Core.Control ( Array item ) value msg -> Maybe item
+get : ItemId -> Core.Control ( Array item ) value a -> Maybe item
 get n = getItems >> Array.get n
 
 
-select : ItemId -> ChoiceControl item msg -> ChoiceControl item msg
+select : ItemId -> ChoiceControl item a -> ChoiceControl item a
 select index (Core.Control setup state handler) =
     Core.Control setup { state | selected = index } handler
 
 
-getSelected : ChoiceControl item msg -> Maybe item
+getSelected : ChoiceControl item a -> Maybe item
 getSelected control =
     get (whichSelected control) control
 
 
-isSelected : ChoiceControl item msg -> ItemId -> Bool
+isSelected : ChoiceControl item a -> ItemId -> Bool
 isSelected control n = whichSelected control == n
 
 
-whichSelected : ChoiceControl item msg -> ItemId
+whichSelected : ChoiceControl item a -> ItemId
 whichSelected (Core.Control _ { selected } handler) = selected
 
 
 expand
      : Core.Control
             setup
-            { a | form : Form }
-            msg
+            { r | form : Form }
+            a
     -> Core.Control
             setup
-            { a | form : Form }
-            msg
+            { r | form : Form }
+            a
 expand (Core.Control setup state handler) =
     Core.Control setup { state | form = Expanded } handler
 
@@ -83,12 +83,12 @@ expand (Core.Control setup state handler) =
 collapse
      : Core.Control
             setup
-            { a | form : Form }
-            msg
+            { r | form : Form }
+            a
     -> Core.Control
             setup
-            { a | form : Form }
-            msg
+            { r | form : Form }
+            a
 collapse (Core.Control setup state handler) =
     Core.Control setup { state | form = Collapsed } handler
 
@@ -96,12 +96,12 @@ collapse (Core.Control setup state handler) =
 detach
      : Core.Control
             setup
-            { a | form : Form }
-            msg
+            { r | form : Form }
+            a
     -> Core.Control
             setup
-            { a | form : Form }
-            msg
+            { r | form : Form }
+            a
 detach (Core.Control setup state handler) =
     Core.Control setup { state | form = Detached } handler
 
@@ -109,12 +109,12 @@ detach (Core.Control setup state handler) =
 toggle
      : Core.Control
             setup
-            { a | form : Form }
-            msg
+            { r | form : Form }
+            a
     -> Core.Control
             setup
-            { a | form : Form }
-            msg
+            { r | form : Form }
+            a
 toggle (Core.Control setup state handler) =
     Core.Control
         setup
@@ -128,22 +128,22 @@ toggle (Core.Control setup state handler) =
         handler
 
 
-getForm : Core.Control setup { a | form : Form } msg -> Form
+getForm : Core.Control setup { r | form : Form } a -> Form
 getForm (Core.Control _ { form } _) = form
 
 
-is : Form -> Core.Control setup { a | form : Form } msg -> Bool
+is : Form -> Core.Control setup { r | form : Form } a -> Bool
 is checkedForm (Core.Control _ { form } _) = checkedForm == form
 
 
-getItems : Core.Control ( Array item ) value msg -> Array item
+getItems : Core.Control ( Array item ) value a -> Array item
 getItems (Core.Control items _ _) = items
 
 
 setItems
      : Array item
-    -> Core.Control ( Array item ) value msg
-    -> Core.Control ( Array item ) value msg
+    -> Core.Control ( Array item ) value a
+    -> Core.Control ( Array item ) value a
 setItems newItems (Core.Control _ value handler) =
     Core.Control newItems value handler
 
@@ -153,11 +153,11 @@ mapItems
     -> Core.Control
             ( Array itemA )
             value
-            msg
+            a
     -> Core.Control
             ( Array itemB )
             value
-            msg
+            a
 mapItems f (Core.Control items value handler) =
     Core.Control ( items |> Array.map f ) value handler
 
@@ -167,11 +167,11 @@ indexedMapItems
     -> Core.Control
             ( Array itemA )
             value
-            msg
+            a
     -> Core.Control
             ( Array itemB )
             value
-            msg
+            a
 indexedMapItems f (Core.Control items value handler) =
     Core.Control ( items |> Array.indexedMap f ) value handler
 
@@ -179,8 +179,8 @@ indexedMapItems f (Core.Control items value handler) =
 withItem
      : Int
     -> (item -> item)
-    -> Core.Control (Array item) value msg
-    -> Core.Control (Array item) value msg
+    -> Core.Control (Array item) value a
+    -> Core.Control (Array item) value a
 withItem id f ( Core.Control items state handler ) =
     Core.Control
         ( case Array.get id items of
@@ -192,14 +192,14 @@ withItem id f ( Core.Control items state handler ) =
         state
         handler
 
-getPage : Core.Control setup { a | page : PageNum } msg -> PageNum
+getPage : Core.Control setup { r | page : PageNum } a -> PageNum
 getPage (Core.Control _ { page } _) = page
 
 
 switchTo
     :  PageNum
-    -> Core.Control setup { a | page : PageNum } msg
-    -> Core.Control setup { a | page : PageNum } msg
+    -> Core.Control setup { r | page : PageNum } a
+    -> Core.Control setup { r | page : PageNum } a
 switchTo pageNum (Core.Control setup state hanlder) =
     Core.Control
         setup
@@ -210,10 +210,10 @@ switchTo pageNum (Core.Control setup state hanlder) =
 getTransientState
     : Core.Control
         setup
-        { a | form : Form
+        { r | form : Form
         , page : PageNum
         }
-        msg
+        a
     -> Transient
 getTransientState (Core.Control _ state _) =
     { form = state.form
@@ -224,19 +224,19 @@ getTransientState (Core.Control _ state _) =
 restoreTransientState
     :  Core.Control
         setup
-        { a
+        { r
         | form : Form
         , page : PageNum
         }
-        msg
+        a
     -> Transient
     -> Core.Control
         setup
-        { a
+        { r
         | form : Form
         , page : PageNum
         }
-        msg
+        a
 restoreTransientState (Core.Control setup state handler) src =
     Core.Control
         setup
@@ -251,12 +251,12 @@ setFace
      : Button.Face
     -> Core.Control
             setup
-            { a | face : Maybe Button.Face }
-            msg
+            { r | face : Maybe Button.Face }
+            a
     -> Core.Control
             setup
-            { a | face : Maybe Button.Face }
-            msg
+            { r | face : Maybe Button.Face }
+            a
 setFace face (Core.Control setup state handler) =
     Core.Control setup { state | face = Just face } handler
 
@@ -264,18 +264,18 @@ setFace face (Core.Control setup state handler) =
 clearFace
      : Core.Control
             setup
-            { a | face : Maybe Button.Face }
-            msg
+            { r | face : Maybe Button.Face }
+            a
     -> Core.Control
             setup
-            { a | face : Maybe Button.Face }
-            msg
+            { r | face : Maybe Button.Face }
+            a
 clearFace (Core.Control setup state handler) =
     Core.Control setup { state | face = Nothing } handler
 
 
-toChoice : (ItemId -> msg) -> GroupControl item msg -> ChoiceControl item msg
-toChoice userHandler (Core.Control items { form, page, face } _) =
+toChoice : GroupControl item a -> ChoiceControl item a
+toChoice (Core.Control items { form, page, face } a) =
     Core.Control
         items
         { form = form
@@ -283,4 +283,4 @@ toChoice userHandler (Core.Control items { form, page, face } _) =
         , face = face
         , selected = 0
         }
-        (Just <| .selected >> userHandler)
+        a
