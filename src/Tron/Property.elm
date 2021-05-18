@@ -42,16 +42,16 @@ type alias Label = String
 type alias LabelPath = List String
 
 
-type Property msg
+type Property a
     = Nil
-    | Number (Number.Control msg)
-    | Coordinate (XY.Control msg)
-    | Text (Text.Control msg)
-    | Color (Color.Control msg)
-    | Toggle (Toggle.Control msg)
-    | Action (Button.Control msg)
-    | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Label, Property msg ) msg)
-    | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property msg ) msg)
+    | Number (Number.Control a)
+    | Coordinate (XY.Control a)
+    | Text (Text.Control a)
+    | Color (Color.Control a)
+    | Toggle (Toggle.Control a)
+    | Action (Button.Control a)
+    | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Label, Property a ) a)
+    | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property a ) a)
 
 
 knobDistance = 90 * 4
@@ -65,13 +65,13 @@ defaultNestShape = ( PS.auto, CS.single )
 -- Recursively try to find the control in the tree, following the given path.
 -- When found and the path is valid, respond with the inner control.
 -- When the path is invalid (no controls located following these indices), return `Nothing`.
-find : Path -> Property msg -> Maybe (Property msg)
+find : Path -> Property a -> Maybe (Property a)
 find path =
     find1 path
         >> Maybe.map Tuple.second
 
 
-find1 : Path -> Property msg -> Maybe (Label, Property msg)
+find1 : Path -> Property a -> Maybe (Label, Property a)
 find1 path root = -- TODO: reuse `fildAll` + `tail`?
     let
         helper ipath ( label, prop ) =
@@ -92,12 +92,12 @@ find1 path root = -- TODO: reuse `fildAll` + `tail`?
         helper (Path.toList path) ( "", root )
 
 
-findWithParent : Path -> Property msg -> Maybe ( Property msg, Property msg )
+findWithParent : Path -> Property a -> Maybe ( Property a, Property a )
 findWithParent path =
     findWithParent1 path >> Maybe.map (Tuple.mapBoth Tuple.second Tuple.second)
 
 
-findWithParent1 : Path -> Property msg -> Maybe ( (Label, Property msg), (Label, Property msg) )
+findWithParent1 : Path -> Property a -> Maybe ( (Label, Property a), (Label, Property a) )
 findWithParent1 path root =
     let
         allArray = findAll path root |> Array.fromList
@@ -108,7 +108,7 @@ findWithParent1 path root =
             (allArray |> Array.get (Array.length allArray - 1))
 
 
-findAll : Path -> Property msg -> List (Label, Property msg)
+findAll : Path -> Property a -> List (Label, Property a)
 findAll path root =
     let
         helper ipath ( label, prop ) =
@@ -131,7 +131,7 @@ findAll path root =
         helper (Path.toList path) ( "", root )
 
 
-map : (msgA -> msgB) -> Property msgA -> Property msgB
+map : (aA -> aB) -> Property aA -> Property aB
 map f prop =
     case prop of
         Nil -> Nil
@@ -158,10 +158,10 @@ map f prop =
 
 
 {- zip
-    : (Property msgA -> Property msgB -> Property msgC)
-    -> Property msgA
-    -> Property msgB
-    -> Property msgC
+    : (Property aA -> Property aB -> Property aC)
+    -> Property aA
+    -> Property aB
+    -> Property aC
 zip f propA propB =
     case ( propA, propB ) of
         ( Choice _ _ controlA, Choice _ _ controlB ) ->
@@ -170,11 +170,11 @@ zip f propA propB =
         _ -> f propA propB -}
 
 
-fold : (Path -> Property msg -> a -> a) -> a -> Property msg -> a
+fold : (Path -> Property a -> b -> b) -> b -> Property a -> b
 fold f from root =
     let
 
-        foldItems : Path -> Array ( Label, Property msg ) -> a -> a
+        foldItems : Path -> Array ( Label, Property a ) -> b -> b
         foldItems curPath items val =
             items
                 |> Array.map Tuple.second
@@ -185,7 +185,7 @@ fold f from root =
                     )
                     val
 
-        helper : Path -> Property msg -> a -> a
+        helper : Path -> Property a -> b -> b
         helper curPath item val =
             case item of
                 Choice _ _ control ->
@@ -200,78 +200,70 @@ fold f from root =
         helper Path.start root from
 
 
-unfold : Property msg -> List (Path, Property msg)
+unfold : Property a -> List (Path, Property a)
 unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
-andThen : (msg -> Property msg) -> Property msg -> Property msg
+andThen : (a -> Property a) -> Property a -> Property a
 -- FIXME: should be changed to `andThen` with getting rid of function in Control
 andThen f prop =
     case prop of
         Nil -> Nil
-        Number control -> control |> Control.fold f prop
-        Coordinate control -> control |> Control.fold f prop
-        Text control -> control |> Control.fold f prop
-        Color control -> control |> Control.fold f prop
-        Toggle control -> control |> Control.fold f prop
-        Action control -> control |> Control.fold f prop
-        Choice _ _ control -> control |> Control.fold f prop
-        Group _ _ control -> control |> Control.fold f prop
+        Number control -> control |> Control.fold f
+        Coordinate control -> control |> Control.fold f
+        Text control -> control |> Control.fold f
+        Color control -> control |> Control.fold f
+        Toggle control -> control |> Control.fold f
+        Action control -> control |> Control.fold f
+        Choice _ _ control -> control |> Control.fold f
+        Group _ _ control -> control |> Control.fold f
 
 
-with : (msg -> Property msg -> Property msg) -> Property msg -> Property msg
+
+with : (a -> Property a -> Property a) -> Property a -> Property a
 -- FIXME: should be changed to `andThen` with getting rid of function in Control
 with f prop =
-    let foldF msg = f msg prop
-    in case prop of
-        Nil -> Nil
-        Number control -> control |> Control.fold foldF prop
-        Coordinate control -> control |> Control.fold foldF prop
-        Text control -> control |> Control.fold foldF prop
-        Color control -> control |> Control.fold foldF prop
-        Toggle control -> control |> Control.fold foldF prop
-        Action control -> control |> Control.fold foldF prop
-        Choice _ _ control -> control |> Control.fold foldF prop
-        Group _ _ control -> control |> Control.fold foldF prop
+    andThen (\v -> f v prop) prop
+
 
 
 -- `replace` -- find better name
-replace : (Path -> Property msg -> Property msg) -> Property msg -> Property msg
+replace : (Path -> Property a -> Property a) -> Property a -> Property a
 replace = replaceMap <| always identity
 
 
 replaceWithLabeledPath
-    : (LabelPath -> Property msg -> Property msg) -> Property msg -> Property msg
+    : (LabelPath -> Property a -> Property a) -> Property a -> Property a
 replaceWithLabeledPath =
     replaceWithLabeledPathMap <| always identity
 
 
 -- aren't `...Map` functions are compositions like `replace << map`?
 replaceMap
-    :  (Path -> msgA -> msgB)
-    -> (Path -> Property msgB -> Property msgB)
-    -> Property msgA
-    -> Property msgB
-replaceMap msgMap f =
-    replaceWithPathsMap (Tuple.first >> msgMap) (Tuple.first >> f)
+    :  (Path -> aA -> aB)
+    -> (Path -> Property aB -> Property aB)
+    -> Property aA
+    -> Property aB
+replaceMap aMap f =
+    replaceWithPathsMap (Tuple.first >> aMap) (Tuple.first >> f)
 
 
 replaceWithLabeledPathMap
-    :  (LabelPath -> msgA -> msgB)
-    -> (LabelPath -> Property msgB -> Property msgB)
-    -> Property msgA
-    -> Property msgB
-replaceWithLabeledPathMap msgMap f =
-    replaceWithPathsMap (Tuple.second >> msgMap) (Tuple.second >> f)
+    :  (LabelPath -> aA -> aB)
+    -> (LabelPath -> Property aB -> Property aB)
+    -> Property aA
+    -> Property aB
+replaceWithLabeledPathMap aMap f =
+    replaceWithPathsMap (Tuple.second >> aMap) (Tuple.second >> f)
 
 
 replaceWithPathsMap
-    :  (( Path, LabelPath ) -> msgA -> msgB)
-    -> (( Path, LabelPath ) -> Property msgB -> Property msgB)
-    -> Property msgA
-    -> Property msgB
-replaceWithPathsMap msgMap f root =
+    :  (( Path, LabelPath ) -> aA -> aB)
+    -> (( Path, LabelPath ) -> Property aB -> Property aB)
+    -> Property aA
+    -> Property aB
+replaceWithPathsMap aMap f root =
     -- FIXME: should be just another `fold` actually?
 
     let
@@ -279,8 +271,8 @@ replaceWithPathsMap msgMap f root =
         replaceItem
             :  ( Path, LabelPath )
             -> Int
-            -> ( Label, Property msgA )
-            -> ( Label, Property msgB )
+            -> ( Label, Property aA )
+            -> ( Label, Property aB )
         replaceItem ( parentPath, parentLabelPath ) index ( label, innerItem ) =
             ( label
             , helper
@@ -290,7 +282,7 @@ replaceWithPathsMap msgMap f root =
                 innerItem
             )
 
-        helper : ( Path, LabelPath ) -> Property msgA -> Property msgB
+        helper : ( Path, LabelPath ) -> Property aA -> Property aB
         helper curPath item =
             case item of
                 Choice focus shape control ->
@@ -300,7 +292,7 @@ replaceWithPathsMap msgMap f root =
                             shape
                         <| (control
                                 |> Nest.indexedMapItems (replaceItem curPath)
-                                |> Control.map (msgMap curPath))
+                                |> Control.map (aMap curPath))
                 Group focus shape control ->
                     f curPath
                         <| Group
@@ -308,24 +300,24 @@ replaceWithPathsMap msgMap f root =
                             shape
                         <| (control
                                 |> Nest.indexedMapItems (replaceItem curPath)
-                                |> Control.map (msgMap curPath))
-                _ -> f curPath <| map (msgMap curPath) <| item
+                                |> Control.map (aMap curPath))
+                _ -> f curPath <| map (aMap curPath) <| item
 
     in
         helper ( Path.start, [] )  root
 
 
-addPathFrom : Path -> Property msg -> Property ( Path, msg )
+addPathFrom : Path -> Property a -> Property ( Path, a )
 addPathFrom from root =
     -- FIXME: should be just another `fold` actually?
     let
-        replaceItem : Path -> Int -> ( Label, Property msg ) -> ( Label, Property (Path, msg) )
+        replaceItem : Path -> Int -> ( Label, Property a ) -> ( Label, Property (Path, a) )
         replaceItem parentPath index ( label, innerItem ) =
             ( label
             , helper (parentPath |> Path.advance index) innerItem
             )
 
-        helper : Path -> Property msg -> Property ( Path, msg )
+        helper : Path -> Property a -> Property ( Path, a )
         helper curPath item =
             case item of
 
@@ -353,29 +345,29 @@ addPathFrom from root =
         helper from root
 
 
-addPath : Property msg -> Property ( Path, msg )
+addPath : Property a -> Property ( Path, a )
 addPath =
     replaceMap (Tuple.pair) (always identity)
 
 
-addLabeledPath : Property msg -> Property ( LabelPath, msg )
+addLabeledPath : Property a -> Property ( LabelPath, a )
 addLabeledPath =
     replaceWithLabeledPathMap (Tuple.pair) (always identity)
 
 
-addPaths : Property msg -> Property ( ( Path, LabelPath ), msg )
+addPaths : Property a -> Property ( ( Path, LabelPath ), a )
 addPaths =
     replaceWithPathsMap (Tuple.pair) (always identity)
 
 
-updateAt : Path -> (Property msg -> Property msg) -> Property msg -> Property msg
+updateAt : Path -> (Property a -> Property a) -> Property a -> Property a
 updateAt path f =
     replace
         <| \otherPath item ->
             if Path.equal otherPath path then f item else item
 
 
-updateMany : List ( Path, Property msg ) -> Property msg -> Property msg
+updateMany : List ( Path, Property a ) -> Property a -> Property a
 updateMany updates root =
     List.foldl
         (\(path, nextProp) lastRoot ->
@@ -385,7 +377,7 @@ updateMany updates root =
         updates
 
 
-setAt : Path -> Property msg -> Property msg -> Property msg
+setAt : Path -> Property a -> Property a -> Property a
 setAt path newProperty =
     updateAt path <| always newProperty
 
@@ -393,7 +385,7 @@ setAt path newProperty =
 -- for mouse click or enter key handling, does not change the tree
 -- only updates the controls itself
 -- FIXME: should not call controls itself, only return the update
-execute : Property msg -> Maybe (Property msg)
+execute : Property a -> Maybe (Property a)
 execute item =
     case item of
         Toggle toggleControl ->
@@ -414,7 +406,7 @@ execute item =
         _ -> Nothing
 
 
-executeAt : Path -> Property msg -> List ( Path, Property msg )
+executeAt : Path -> Property a -> List ( Path, Property a )
 executeAt path root =
     case root
         |> findWithParent path of
@@ -448,7 +440,7 @@ executeAt path root =
         Nothing -> []
 
 
-transferTransientState : Property msg -> Property msg -> Property msg
+transferTransientState : Property a -> Property a -> Property a
 transferTransientState propA propB =
     let
         f propA_ propB_ =
@@ -518,7 +510,7 @@ transferTransientState propA propB =
 -- TODO: better use the functions below directly from their controls
 
 
-finishEditingAt : Path -> Property msg -> Property msg
+finishEditingAt : Path -> Property a -> Property a
 finishEditingAt path =
     updateAt path <|
         \prop ->
@@ -527,7 +519,7 @@ finishEditingAt path =
                 _ -> prop
 
 
-updateTextAt : Path -> String -> Property msg -> Property msg
+updateTextAt : Path -> String -> Property a -> Property a
 updateTextAt path newValue =
     updateAt path <|
         \prop ->
@@ -537,9 +529,9 @@ updateTextAt path newValue =
 
 
 
--- updateAndExecute : (v -> v) -> Control s v msg -> ( Control s v msg, msg )
+-- updateAndExecute : (v -> v) -> Control s v a -> ( Control s v a, a )
 
-ensureEditing : Property msg -> Property msg
+ensureEditing : Property a -> Property a
 ensureEditing prop =
     case prop of
         Text control ->
@@ -547,7 +539,7 @@ ensureEditing prop =
         _ -> prop
 
 
-expand : Property msg -> Property msg
+expand : Property a -> Property a
 expand prop =
     case prop of
         Group focus shape control ->
@@ -557,7 +549,7 @@ expand prop =
         _ -> prop
 
 
-collapse : Property msg -> Property msg
+collapse : Property a -> Property a
 collapse prop =
     case prop of
         Group focus shape control ->
@@ -567,7 +559,7 @@ collapse prop =
         _ -> prop
 
 
-detach : Property msg -> Property msg
+detach : Property a -> Property a
 detach prop =
     case prop of
         Group focus shape control ->
@@ -577,7 +569,7 @@ detach prop =
         _ -> prop
 
 
-switchPage : Pages.PageNum -> Property msg -> Property msg
+switchPage : Pages.PageNum -> Property a -> Property a
 switchPage pageNum prop =
     case prop of
         Group focus shape control ->
@@ -587,27 +579,27 @@ switchPage pageNum prop =
         _ -> prop
 
 
-expandAt : Path -> Property msg -> Property msg
+expandAt : Path -> Property a -> Property a
 expandAt path =
     updateAt path expand
 
 
-detachAt : Path -> Property msg -> Property msg
+detachAt : Path -> Property a -> Property a
 detachAt path =
     updateAt path detach
 
 
-switchPageAt : Path -> Pages.PageNum -> Property msg -> Property msg
+switchPageAt : Path -> Pages.PageNum -> Property a -> Property a
 switchPageAt path pageNum =
     updateAt path <| switchPage pageNum
 
 
-detachAll : Property msg -> Property msg
+detachAll : Property a -> Property a
 detachAll =
     replace <| always detach
 
 
-toggle : Property msg -> Property msg
+toggle : Property a -> Property a
 toggle prop =
     case prop of
         Toggle control ->
@@ -615,12 +607,12 @@ toggle prop =
         _ -> prop
 
 
-toggleAt : Path -> Property msg -> Property msg
+toggleAt : Path -> Property a -> Property a
 toggleAt path =
     updateAt path toggle
 
 
-toggleOn : Property msg -> Property msg
+toggleOn : Property a -> Property a
 toggleOn prop =
     case prop of
         Toggle control ->
@@ -628,7 +620,7 @@ toggleOn prop =
         _ -> prop
 
 
-toggleOff : Property msg -> Property msg
+toggleOff : Property a -> Property a
 toggleOff prop =
     case prop of
         Toggle control ->
@@ -636,13 +628,13 @@ toggleOff prop =
         _ -> prop
 
 
-ensureEditingAt : Path -> Property msg -> Property msg
+ensureEditingAt : Path -> Property a -> Property a
 ensureEditingAt path =
     updateAt path ensureEditing
 
 
 {-
-reshape : Shape -> Property msg -> Property msg
+reshape : Shape -> Property a -> Property a
 reshape shape prop =
     case prop of
         Group ( Control ( _, items ) ( expanded, focus ) handler ) ->
@@ -651,48 +643,34 @@ reshape shape prop =
 -}
 
 
-isGhost : Property msg -> Bool
+isGhost : Property a -> Bool
 isGhost prop =
     case prop of
         Nil -> True
         _ -> False
 
 
-noGhosts : List (Property msg) -> List (Property msg)
+noGhosts : List (Property a) -> List (Property a)
 noGhosts = List.filter (not << isGhost)
 
 
+{-}
 call : Property msg -> Cmd msg
 call prop =
     case prop of
         Nil -> Cmd.none
-        Number control -> Control.call control
-        Coordinate control -> Control.call control
-        Text control -> Control.call control
-        Color control -> Control.call control
-        Toggle control -> Control.call control
-        Action control -> Control.call control
-        Choice _ _ control -> Control.call control
-        Group _ _ control -> Control.call control
+        Number control -> control |> Control.execute identity
+        Coordinate control -> control |> Control.execute identity
+        Text control -> control |> Control.execute identity
+        Color control -> control |> Control.execute identity
+        Toggle control -> control |> Control.execute identity
+        Action control -> control |> Control.execute identity
+        Choice _ _ control -> control |> Control.execute identity
+        Group _ _ control -> control |> Control.execute identity
+-}
 
 
--- FIXME: should be removed with changing on storing message, not a function
--- also calling it w/o `Cmd` is bad
-evaluate__ : Property msg -> Maybe msg
-evaluate__ prop =
-    case prop of
-        Nil -> Nothing
-        Number control -> Control.evaluate__ control
-        Coordinate control -> Control.evaluate__ control
-        Text control -> Control.evaluate__ control
-        Color control -> Control.evaluate__ control
-        Toggle control -> Control.evaluate__ control
-        Action control -> Control.evaluate__ control
-        Choice _ _ control -> Control.evaluate__ control
-        Group _ _ control -> Control.evaluate__ control
-
-
-getCellShape : Property msg -> Maybe CellShape
+getCellShape : Property a -> Maybe CellShape
 getCellShape prop =
     case prop of
         Choice _ ( _, cellShape ) _ ->
@@ -702,7 +680,7 @@ getCellShape prop =
         _ -> Nothing
 
 
-getPageNum : Property msg -> Maybe Pages.PageNum
+getPageNum : Property a -> Maybe Pages.PageNum
 getPageNum prop =
     case prop of
         Choice _ _ control ->
@@ -712,7 +690,7 @@ getPageNum prop =
         _ -> Nothing
 
 
-getSelected : Property msg -> Maybe ( Label, Property msg )
+getSelected : Property a -> Maybe ( Label, Property a )
 getSelected prop =
     case prop of
         Choice _ _ control ->
@@ -720,7 +698,7 @@ getSelected prop =
         _ -> Nothing
 
 
-isSelected : Property msg -> Int -> Bool
+isSelected : Property a -> Int -> Bool
 isSelected prop index =
     case prop of
         Choice _ _ control ->
@@ -728,7 +706,7 @@ isSelected prop index =
         _ -> False
 
 
-setFace : Button.Face -> Property msg -> Property msg
+setFace : Button.Face -> Property a -> Property a
 setFace face prop =
     case prop of
         Action control ->
@@ -746,17 +724,17 @@ setFace face prop =
         _ -> prop
 
 
-toChoice : (ItemId -> msg) -> Property msg -> Property msg
-toChoice toMsg prop =
+toChoice : Property a -> Property a
+toChoice prop =
     case prop of
         Group focus shape control ->
             Choice focus shape
-                <| Nest.toChoice toMsg
+                <| Nest.toChoice
                 <| control
         _ -> prop
 
 
-setPanelShape : PanelShape -> Property msg -> Property msg
+setPanelShape : PanelShape -> Property a -> Property a
 setPanelShape ps prop =
     case prop of
         Group focus ( _, cs ) control ->
@@ -766,7 +744,7 @@ setPanelShape ps prop =
         _ -> prop
 
 
-setCellShape : CellShape -> Property msg -> Property msg
+setCellShape : CellShape -> Property a -> Property a
 setCellShape cs prop =
     case prop of
         Group focus ( ps, _ ) control ->

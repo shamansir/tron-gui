@@ -1,89 +1,102 @@
 module Tron.Control exposing (..)
 
 
-import Array exposing (Array)
-
 import Task
 
 
-type Control setup value msg =
-    Control setup value (Maybe (value -> msg))
+type Control setup value a =
+    Control setup value a
 
 
-map : (msgA -> msgB) -> Control setup value msgA -> Control setup value msgB
-map f (Control setup val handler) =
-    Control setup val
-        (handler |> Maybe.map ((<<) f))
+map : (a -> b) -> Control setup value a -> Control setup value b
+map f (Control setup val a) =
+    Control setup val <| f a
 
 
-andThen : (a -> Control b c d) -> Control b c a -> Control b c d
-andThen k s = case s of
-  Control b c (Just f) -> k (f c)
-  Control b c  Nothing -> Control b c Nothing
+andThen : (a -> Control setup value b) -> Control setup value a -> Control setup value b
+andThen k (Control _ _ a) = k a
+
+
+apply : Control s v (v -> a) -> Control s v a
+apply (Control s v f) =
+    Control s v <| f v
 
 
 with : (Control b c a -> a -> Control b c d) -> Control b c a -> Control b c d
 with f control =
-    control |> andThen (\v -> f control v)
+    control |> andThen (\a -> f control a)
 
 
+fold : (a -> x) -> Control s v a -> x
+fold handler =
+    get >> handler
+
+
+foldValue : (v -> x) -> Control s v a -> x
+foldValue handler =
+    getValue >> handler
+
+
+{-
 fold : (msg -> a) -> a -> Control setup value msg -> a
 fold f def control=
     case control |> evaluate__ of
         Just msg ->
             f msg
         Nothing ->
-            def
+            def -}
 
 
-update : (v -> v) -> Control s v msg -> Control s v msg
-update f (Control state current handler) =
-    Control state (f current) handler
+reflect : Control s v a -> Control s v (v, a)
+reflect (Control s v a) =
+    Control s v (v, a)
 
 
--- call control handler with its current value
-call : Control s v msg -> Cmd msg
-call (Control _ current handler) =
-    handler
-        |> Maybe.map (callHandler current)
-        |> Maybe.withDefault Cmd.none
+update : (v -> v) -> Control s v a -> Control s v a
+update f (Control state current a) =
+    Control state (f current) a
 
 
-callHandler : value -> (value -> msg) -> Cmd msg
-callHandler value handler =
-    Task.succeed value
+-- call control with its current value
+call : (v -> msg) -> Control s v a -> Cmd msg
+call handler =
+    execute__ (Tuple.first >> handler)
+
+
+-- call control with its current content
+execute : (a -> msg) -> Control s v a -> Cmd msg
+execute handler =
+    execute__ (Tuple.second >> handler)
+
+
+-- call control handler with the associated object
+execute__ : ((v, a) -> msg) -> Control s v a -> Cmd msg
+execute__ handler (Control _ value a)  =
+    Task.succeed (value, a)
         |> Task.perform handler
 
 
-callWith : Control s v msg -> v -> Cmd msg
-callWith (Control _ _ handler) val =
-    handler
-        |> Maybe.map (callHandler val)
-        |> Maybe.withDefault Cmd.none
+get : Control s v a -> a
+get (Control _ _ a) = a
 
 
--- FIXME: should be removed with changing on storing message, not a function
--- also calling it w/o `Cmd` is bad
-evaluate__ : Control s v msg -> Maybe msg
-evaluate__ (Control _ current handler) =
-    handler
-        |> Maybe.map (\f -> f current)
+{-| TODO: ensure it is only used internally -}
+set : a -> Control s v a -> Control s v a
+set a (Control setup value _) = Control setup value a
 
 
-getValue : Control s v msg -> v
+getValue : Control s v a -> v
 getValue (Control _ v _) = v
 
 
+{-| TODO: ensure it is only used internally -}
 setValue : v -> Control s v msg -> Control s v msg
 setValue v = update <| always v
 
 
-setHandler : (v -> msgB) -> Control s v msgA -> Control s v msgB
-setHandler newHandler (Control state current _) =
-    Control state current <| Just newHandler
-
-
+{-
 mapWithValue : (v -> msgA -> msgB) -> Control s v msgA -> Control s v msgB
 mapWithValue newHandler (Control state current maybeHandler) =
     Control state current
         (maybeHandler |> Maybe.map (\handler v -> newHandler v <| handler v))
+-}

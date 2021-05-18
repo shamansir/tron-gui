@@ -6,7 +6,7 @@ import Axis exposing (Axis)
 import Tron.Control as Core exposing (Control)
 
 
-type alias Control msg = Core.Control ( Axis, Axis ) ( Float, Float ) msg
+type alias Control a = Core.Control ( Axis, Axis ) ( Float, Float ) a
 
 
 separator : String

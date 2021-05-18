@@ -6,4 +6,4 @@ import Color exposing (Color)
 import Tron.Control as Core exposing (Control)
 
 
-type alias Control msg = Core.Control () Color msg
+type alias Control a = Core.Control () Color a

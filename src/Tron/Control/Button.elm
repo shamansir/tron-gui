@@ -20,7 +20,7 @@ type Face
     | WithColor Color
 
 
-type alias Control msg = Core.Control Face () msg
+type alias Control a = Core.Control Face () a
 
 
 withIcon : Icon -> Face
@@ -55,6 +55,6 @@ urlToString : Url -> String
 urlToString (Url str) = str
 
 
-setFace : Face -> Control msg -> Control msg
+setFace : Face -> Control a -> Control a
 setFace face (Core.Control _ val handler) =
     Core.Control face val handler
