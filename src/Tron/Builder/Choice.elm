@@ -26,8 +26,6 @@ withButtons toLabel toButtonFace =
             <| Control
                 (toButtonFace val)
                 ()
-            <| Just
-            <| always
             <| callByIndex index
         )
 
@@ -64,7 +62,7 @@ helper ( panelShape, cellShape ) options current compare toMsg =
         values =
             options
                 |> Array.fromList
-                |> Array.map (Tuple.second >> Tron.Property.evaluate__)
+                |> Array.map (Tuple.second >> Tron.Property.get)
 
         currentIndex : Int
         currentIndex =
@@ -99,4 +97,4 @@ helper ( panelShape, cellShape ) options current compare toMsg =
                 , face = Nothing
                 , selected = currentIndex
                 }
-            <| Just (.selected >> callByIndex)
+            <| callByIndex currentIndex

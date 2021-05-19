@@ -30,32 +30,32 @@ updateProperty value property =
             Cmd.none
 
         ( Number control, FromSlider f ) ->
-            f |> callWith control
+            control |> setValue f |> Control.run
 
         ( Coordinate control, FromXY xy ) ->
-            xy |> callWith control
+            control |> setValue xy |> Control.run
 
         ( Text control, FromInput s ) ->
-            ( Ready, s ) |> callWith control
+            control |> setValue ( Ready, s ) |> Control.run
 
         ( Color control, FromColor c ) ->
-            c |> callWith control
+            control |> setValue c |> Control.run
 
         ( Toggle control, FromToggle t ) ->
-            t |> callWith control
+            control |> setValue t |> Control.run
 
         ( Action control, FromButton ) ->
-            () |> callWith control
+            control |> setValue () |> Control.run
 
         ( Choice _ _ control, FromChoice i ) ->
-            let
-                curValue =
-                    Control.getValue control
-            in
-            { curValue
-                | selected = i
-            }
-                |> callWith control
+            control
+                |> Control.update
+                    (\curValue ->
+                        { curValue
+                            | selected = i
+                        }
+                    )
+                |> Control.run
 
         ( Group _ _ _, _ ) ->
             Cmd.none

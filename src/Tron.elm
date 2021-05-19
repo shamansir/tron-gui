@@ -3,7 +3,7 @@ module Tron exposing
     , map, mapSet, andThen, with
     )
 
-{-| This is the `Tron msg`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application. In this case, it represents your components.
+{-| This is the `Tron a`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application. In this case, it represents your components.
 
 To use Tron in your application, you'll need to specify this function:
 
@@ -25,30 +25,30 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 import Tron.Property as Property exposing (Property)
 
 
-{-| `Tron msg` is the tree of your controls or, recursively, any control in such tree.
+{-| `Tron a` is the tree of your controls or, recursively, any control in such tree.
 
 To build your interface, use the helpers from the `Tron.Builder` module or any of its variants like
 `Tron.Builder.Proxy`, `Tron.Builder.Unit` or `Tron.Builder.String`
 -}
-type alias Tron msg =
-    Property msg
+type alias Tron a =
+    Property a
 
 
 {-| `Set msg` is just the list of controls' definitions together with their labels.
 -}
-type alias Set msg =
-    List ( Property.Label, Tron msg )
+type alias Set a =
+    List ( Property.Label, Tron a )
 
 
 {-| The usual `map` function which allows you to substitute the messages sent through the components.
 -}
-map : (msgA -> msgB) -> Tron msgA -> Tron msgB
+map : (a -> b) -> Tron a -> Tron b
 map = Property.map
 
 
 {-| `andThen` without changing a message type
 -}
-andThen : (msg -> Tron msg) -> Tron msg -> Tron msg
+andThen : (a -> Tron a) -> Tron a -> Tron a
 andThen = Property.andThen
 
 
@@ -65,7 +65,7 @@ andThen = Property.andThen
         Product.compare
     |> Tron.shape (rows 3)
 -}
-with : (msg -> Tron msg -> Tron msg) -> Tron msg -> Tron msg
+with : (a -> Tron a -> Tron a) -> Tron a -> Tron a
 with = Property.with
 
 
@@ -90,7 +90,7 @@ with = Property.with
         toMsg
     |> cells CS.half
 -}
-mapSet : (msgA -> msgB) -> Set msgA -> Set msgB
+mapSet : (a -> b) -> Set a -> Set b
 mapSet =
     List.map << Tuple.mapSecond << map
 

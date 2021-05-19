@@ -131,7 +131,7 @@ findAll path root =
         helper (Path.toList path) ( "", root )
 
 
-map : (aA -> aB) -> Property aA -> Property aB
+map : (a -> b) -> Property a -> Property b
 map f prop =
     case prop of
         Nil -> Nil
@@ -158,10 +158,10 @@ map f prop =
 
 
 {- zip
-    : (Property aA -> Property aB -> Property aC)
-    -> Property aA
-    -> Property aB
-    -> Property aC
+    : (Property a -> Property b -> Property c)
+    -> Property a
+    -> Property b
+    -> Property c
 zip f propA propB =
     case ( propA, propB ) of
         ( Choice _ _ controlA, Choice _ _ controlB ) ->
@@ -241,28 +241,28 @@ replaceWithLabeledPath =
 
 -- aren't `...Map` functions are compositions like `replace << map`?
 replaceMap
-    :  (Path -> aA -> aB)
-    -> (Path -> Property aB -> Property aB)
-    -> Property aA
-    -> Property aB
+    :  (Path -> a -> b)
+    -> (Path -> Property b -> Property b)
+    -> Property a
+    -> Property b
 replaceMap aMap f =
     replaceWithPathsMap (Tuple.first >> aMap) (Tuple.first >> f)
 
 
 replaceWithLabeledPathMap
-    :  (LabelPath -> aA -> aB)
-    -> (LabelPath -> Property aB -> Property aB)
-    -> Property aA
-    -> Property aB
+    :  (LabelPath -> a -> b)
+    -> (LabelPath -> Property b -> Property b)
+    -> Property a
+    -> Property b
 replaceWithLabeledPathMap aMap f =
     replaceWithPathsMap (Tuple.second >> aMap) (Tuple.second >> f)
 
 
 replaceWithPathsMap
-    :  (( Path, LabelPath ) -> aA -> aB)
-    -> (( Path, LabelPath ) -> Property aB -> Property aB)
-    -> Property aA
-    -> Property aB
+    :  (( Path, LabelPath ) -> a -> b)
+    -> (( Path, LabelPath ) -> Property b -> Property b)
+    -> Property a
+    -> Property b
 replaceWithPathsMap aMap f root =
     -- FIXME: should be just another `fold` actually?
 
@@ -271,8 +271,8 @@ replaceWithPathsMap aMap f root =
         replaceItem
             :  ( Path, LabelPath )
             -> Int
-            -> ( Label, Property aA )
-            -> ( Label, Property aB )
+            -> ( Label, Property a )
+            -> ( Label, Property b )
         replaceItem ( parentPath, parentLabelPath ) index ( label, innerItem ) =
             ( label
             , helper
@@ -282,7 +282,7 @@ replaceWithPathsMap aMap f root =
                 innerItem
             )
 
-        helper : ( Path, LabelPath ) -> Property aA -> Property aB
+        helper : ( Path, LabelPath ) -> Property a -> Property b
         helper curPath item =
             case item of
                 Choice focus shape control ->
@@ -654,20 +654,32 @@ noGhosts : List (Property a) -> List (Property a)
 noGhosts = List.filter (not << isGhost)
 
 
-{-}
 call : Property msg -> Cmd msg
 call prop =
     case prop of
         Nil -> Cmd.none
-        Number control -> control |> Control.execute identity
-        Coordinate control -> control |> Control.execute identity
-        Text control -> control |> Control.execute identity
-        Color control -> control |> Control.execute identity
-        Toggle control -> control |> Control.execute identity
-        Action control -> control |> Control.execute identity
-        Choice _ _ control -> control |> Control.execute identity
-        Group _ _ control -> control |> Control.execute identity
--}
+        Number control -> control |> Control.run
+        Coordinate control -> control |> Control.run
+        Text control -> control |> Control.run
+        Color control -> control |> Control.run
+        Toggle control -> control |> Control.run
+        Action control -> control |> Control.run
+        Choice _ _ control -> control |> Control.run
+        Group _ _ control -> control |> Control.run
+
+
+get : Property a -> Maybe a
+get prop =
+    case prop of
+        Nil -> Nothing
+        Number control -> control |> Control.get |> Just
+        Coordinate control -> control |> Control.get |> Just
+        Text control -> control |> Control.get |> Just
+        Color control -> control |> Control.get |> Just
+        Toggle control -> control |> Control.get |> Just
+        Action control -> control |> Control.get |> Just
+        Choice _ _ control -> control |> Control.get |> Just
+        Group _ _ control -> control |> Control.get |> Just
 
 
 getCellShape : Property a -> Maybe CellShape
