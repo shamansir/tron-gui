@@ -13,6 +13,11 @@ map f (Control setup val a) =
     Control setup val <| f a
 
 
+-- mapWithValue : ((value, a) -> b) -> Control setup value a -> Control setup value b
+-- mapWithValue f =
+--     reflect >> map f
+
+
 andThen : (a -> Control setup value b) -> Control setup value a -> Control setup value b
 andThen k (Control _ _ a) = k a
 
@@ -74,6 +79,10 @@ execute__ : ((v, a) -> msg) -> Control s v a -> Cmd msg
 execute__ handler (Control _ value a)  =
     Task.succeed (value, a)
         |> Task.perform handler
+
+
+run : Control s v msg -> Cmd msg
+run = execute identity
 
 
 get : Control s v a -> a

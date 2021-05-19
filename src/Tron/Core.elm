@@ -51,12 +51,12 @@ import Tron.Expose.Data as Exp
 import Tron.Expose.Convert as Exp
 
 
-type alias Model msg =
+type alias Model a =
     { dock : Dock
     , viewport : Size Pixels
     , size : Maybe (Size Cells)
     , mouse : MouseState
-    , tree : Tron msg
+    , tree : Tron a
     , detach : ( Maybe ClientId, Detach.State )
     , hidden : Bool
     }

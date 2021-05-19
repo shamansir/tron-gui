@@ -11,7 +11,7 @@ or just get rid of messages at all:
 import Json.Encode as E
 
 import Tron exposing (Tron)
-import Tron.Control exposing (mapWithValue)
+import Tron.Control as Control
 import Tron.Control.Nest as Nest
 import Tron.Expose.Data exposing (..)
 import Tron.Path as Path
@@ -35,10 +35,9 @@ Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 toProxied : Tron msg -> Tron ( ProxyValue, msg )
 toProxied prop =
     let
-        helper : (v -> ProxyValue) -> (v -> msg -> ( ProxyValue, msg ))
-        -- helper : (a -> b) -> ( a -> c -> ( b, c ) )
-        helper toProxy v msg =
-            ( toProxy v, msg )
+        convertWith f =
+            Control.reflect
+                >> Control.map (Tuple.mapFirst f)
     in
     case prop of
         Nil ->
@@ -46,44 +45,44 @@ toProxied prop =
 
         Number control ->
             control
-                |> mapWithValue (helper FromSlider)
+                |> convertWith FromSlider
                 |> Number
 
         Coordinate control ->
             control
-                |> mapWithValue (helper FromXY)
+                |> convertWith FromXY
                 |> Coordinate
 
         Text control ->
             control
-                |> mapWithValue (helper (Tuple.second >> FromInput))
+                |> convertWith (Tuple.second >> FromInput)
                 |> Text
 
         Color control ->
             control
-                |> mapWithValue (helper FromColor)
+                |> convertWith FromColor
                 |> Color
 
         Toggle control ->
             control
-                |> mapWithValue (helper FromToggle)
+                |> convertWith FromToggle
                 |> Toggle
 
         Action control ->
             control
-                |> mapWithValue (helper <| always FromButton)
+                |> convertWith (always FromButton)
                 |> Action
 
         Choice focus shape control ->
             control
                 |> Nest.mapItems (Tuple.mapSecond toProxied)
-                |> mapWithValue (helper (.selected >> FromChoice))
+                |> convertWith (.selected >> FromChoice)
                 |> Choice focus shape
 
         Group focus shape control ->
             control
                 |> Nest.mapItems (Tuple.mapSecond toProxied)
-                |> mapWithValue (helper <| always Other)
+                |> convertWith (always Other)
                 -- TODO: notify expanded/collapsed/detached?
                 |> Group focus shape
 

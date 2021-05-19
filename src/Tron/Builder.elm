@@ -716,7 +716,7 @@ toSet : (a -> Label) -> List (Tron a) -> Set a
 toSet toLabel =
     List.map
         (\prop ->
-            Tron.Property.evaluate__ prop
+            Tron.Property.get prop
                 |> Maybe.map
                     (\v ->
                         ( toLabel v
