@@ -101,7 +101,7 @@ none = B.none
 
 {-| -}
 root : Set -> Tron
-root = B.root
+root set = B.root set ()
 
 
 {-| -}
@@ -161,7 +161,7 @@ bool = toggle
 
 {-| -}
 nest : Set -> Tron
-nest = B.nest
+nest set = B.nest set ()
 
 
 {-| -}
