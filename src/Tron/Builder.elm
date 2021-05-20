@@ -247,10 +247,11 @@ Actually it is just an alias for the nested row of controls, always expanded.
             ]
 
 -}
-root : Set msg -> Tron msg
-root props =
+root : Set msg -> msg -> Tron msg
+root props msg =
     nest
         props
+        msg
         |> expand
         |> shape (rows 1)
 
@@ -261,10 +262,11 @@ root props =
 
 -}
 float : Axis -> Float -> ( Float -> msg ) -> Tron msg
-float axis default =
+float axis value toMsg =
     Number
-        << Control axis default -- RoundBy 2
-        << Just
+        <| Control axis value
+        <| toMsg value -- RoundBy 2
+
 
 
 {-| `int` creates a control over an integer number value, with a minimum, maximum and a step.
@@ -299,10 +301,10 @@ number = float
 
 -}
 xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Tron msg
-xy axes default =
+xy axes value toMsg =
     Coordinate
-        << Control axes default
-        << Just
+        <| Control axes value
+        <| toMsg value
 
 
 {-| `coord` is the alias for `Builder.xy`
@@ -331,12 +333,12 @@ coord = xy
         ChangeColor
 -}
 input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Tron msg
-input toString fromString default toMsg =
+input toString fromString value toMsg = -- FIXME: accept just `String` and `value`
     Text
         <| Control
             ()
-            ( Ready, toString default )
-            (Just <| Tuple.second >> fromString >> Maybe.withDefault default >> toMsg)
+            ( Ready, toString value )
+            ( toMsg value )
 
 
 {-| `text` creates a control over a `String` value.
@@ -344,12 +346,12 @@ input toString fromString default toMsg =
     Builder.text model.elfName RenameElf
 -}
 text : String -> (String -> msg) -> Tron msg
-text default handler =
+text value toMsg =
     Text
         <| Control
             ()
-            ( Ready, default )
-            (Just <| Tuple.second >> handler)
+            ( Ready, value )
+            ( toMsg value )
 
 
 {-| `color` creates a control over a color, for the moment it is Hue/Saturation in 2D space, same as `xy`, but with different representation, but we may improve it later. Or you may change it to `choice` with your own palette.
@@ -359,12 +361,12 @@ The `Color` type here is from `avh4/elm-color` module.
     Builder.color model.lightColor AdjustColor
 -}
 color : Color -> (Color -> msg) -> Tron msg
-color default =
+color value f =
     Color
-        << Control
+        <| Control
             ()
-            default
-        << Just
+            value
+            (f value)
 
 
 {-| `button` creates a control over a _unit_ `()` value. Type science aside, when you receive the unit value `()` in the handler, it just means that this button was pushed.
@@ -457,12 +459,12 @@ makeUrl = Button.makeUrl
 
 -- not exposed
 buttonByFace : Face -> (() -> msg) -> Tron msg
-buttonByFace face_ =
+buttonByFace face_ toMsg =
     Action
-        << Control
+        <| Control
             face_
             ()
-        << Just
+            (toMsg ())
 
 
 {-| `toggle` creates a control over a boolean value.
@@ -470,12 +472,12 @@ buttonByFace face_ =
     Builder.toggle model.lightOn SwitchLight
 -}
 toggle : Bool -> (Bool -> msg) -> Tron msg
-toggle default toMsg =
+toggle value toMsg =
     Toggle
         <| Control
             ()
-            (boolToToggle default)
-            (Just <| toggleToBool >> toMsg)
+            (boolToToggle value)
+            (toMsg value)
 
 
 {-| `bool` is the alias for `Builder.toggle`
@@ -502,11 +504,12 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
             , Builder.float { min = 0, max = 255, step = 0.1 } model.blue <| AdjustColor Blue
             )
         ]
+        NoOp
 
 See also: `Style.Shape`, `Style.CellShape`
 -}
-nest : Set msg -> Tron msg
-nest items =
+nest : Set msg -> msg -> Tron msg
+nest items msg =
     Group
         Nothing
         Property.defaultNestShape
@@ -517,7 +520,7 @@ nest items =
             , face = Nothing
             , page = 0
             }
-            Nothing
+            msg
 
 
 {-| Create a button face representing a color:
@@ -790,7 +793,8 @@ easily by specifying a handler:
     |> toChoice ChangeShapeById
 -}
 toChoice : (ItemId -> msg) -> Tron msg -> Tron msg
-toChoice = Property.toChoice
+toChoice f =
+    Property.toChoice f
 
 
 {-| Changes panel shape for `nest` and `choice` panels:

@@ -25,7 +25,7 @@ import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Control.Text as Text
 import Tron.Property exposing (..)
-import Tron.Property as Property exposing (call, find)
+import Tron.Property as Property exposing (run, find)
 import Tron.Layout exposing (Layout)
 import Tron.Layout as Layout exposing (..)
 import Tron.Msg exposing (..)
@@ -197,7 +197,7 @@ update msg gui =
                     | tree = nextRoot
                     }
                 , updates
-                    |> List.map (Tuple.second >> Property.call)
+                    |> List.map (Tuple.second >> Property.run)
                     |> Cmd.batch
                 )
 
@@ -415,9 +415,9 @@ handleMouse mouseAction gui =
 
                             Just ( _, prop ) ->
                                 case prop of
-                                    Number _ -> Property.call prop
-                                    Coordinate _ -> Property.call prop
-                                    Color _ -> Property.call prop
+                                    Number _ -> Property.run prop
+                                    Coordinate _ -> Property.run prop
+                                    Color _ -> Property.run prop
                                     _ -> Cmd.none
                             Nothing -> Cmd.none
 
@@ -453,7 +453,7 @@ handleKeyDown keyCode path gui =
                     | tree = nextRoot
                     }
                 , updates
-                    |> List.map (Tuple.second >> Property.call)
+                    |> List.map (Tuple.second >> Property.run)
                     |> Cmd.batch
                     |> Cmd.map (Tuple.pair path)
                 )
@@ -490,7 +490,7 @@ handleKeyDown keyCode path gui =
                                     |> setAt path nextProp
                             }
                         -- FIXME: inside, we check if it is a text prop again
-                        , Property.call nextProp
+                        , Property.run nextProp
                             |> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()

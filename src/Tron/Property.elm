@@ -654,8 +654,22 @@ noGhosts : List (Property a) -> List (Property a)
 noGhosts = List.filter (not << isGhost)
 
 
-call : Property msg -> Cmd msg
-call prop =
+reflect : Property a -> Maybe a
+reflect prop =
+    case prop of
+        Nil -> Nothing
+        Number control -> control |> Control.get |> Just
+        Coordinate control -> control |> Control.get |> Just
+        Text control -> control |> Control.get |> Just
+        Color control -> control |> Control.get |> Just
+        Toggle control -> control |> Control.get |> Just
+        Action control -> control |> Control.get |> Just
+        Choice _ _ control -> control |> Control.get |> Just
+        Group _ _ control -> control |> Control.get |> Just
+
+
+run : Property msg -> Cmd msg
+run prop =
     case prop of
         Nil -> Cmd.none
         Number control -> control |> Control.run
@@ -736,11 +750,12 @@ setFace face prop =
         _ -> prop
 
 
-toChoice : Property a -> Property a
-toChoice prop =
+toChoice : (ItemId -> a) -> Property a -> Property a
+toChoice f prop =
     case prop of
         Group focus shape control ->
             Choice focus shape
+                <| Control.mapByValue (.selected >> f)
                 <| Nest.toChoice
                 <| control
         _ -> prop

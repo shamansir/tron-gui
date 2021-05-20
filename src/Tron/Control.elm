@@ -5,7 +5,7 @@ import Task
 
 
 type Control setup value a =
-    Control setup value a
+    Control setup value a -- TODO: `Maybe a`, for `Builder.root`, `Builder.nest` etc.
 
 
 map : (a -> b) -> Control setup value a -> Control setup value b
@@ -13,9 +13,17 @@ map f (Control setup val a) =
     Control setup val <| f a
 
 
--- mapWithValue : ((value, a) -> b) -> Control setup value a -> Control setup value b
--- mapWithValue f =
---     reflect >> map f
+-- TODO: `map2`, `map3` etc.
+
+
+mapByValue : (value -> b) -> Control setup value a -> Control setup value b
+mapByValue f =
+    reflect >> map (Tuple.first >> f)
+
+
+mapWithValue : ((value, a) -> b) -> Control setup value a -> Control setup value b
+mapWithValue f =
+    reflect >> map f
 
 
 andThen : (a -> Control setup value b) -> Control setup value a -> Control setup value b
@@ -55,6 +63,11 @@ fold f def control=
 reflect : Control s v a -> Control s v (v, a)
 reflect (Control s v a) =
     Control s v (v, a)
+
+
+move : Control s v a -> Control s v v
+move (Control s v _) =
+    Control s v v
 
 
 update : (v -> v) -> Control s v a -> Control s v a
