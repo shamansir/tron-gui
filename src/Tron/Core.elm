@@ -1,9 +1,9 @@
 module Tron.Core exposing
-    ( Model, Msg
-    , view, update, init, subscriptions, run -- FIXME: do not expose
-    , map, over, use
+    ( State, Msg
+    , view, update, init, subscriptions, run
+    , over, use
     , dock, reshape
-    , encode, toExposed
+    , encode--, toExposed
     , applyRaw
     )
 
@@ -51,12 +51,11 @@ import Tron.Expose.Data as Exp
 import Tron.Expose.Convert as Exp
 
 
-type alias Model a =
+type alias State =
     { dock : Dock
     , viewport : Size Pixels
     , size : Maybe (Size Cells)
     , mouse : MouseState
-    , tree : Tron a
     , detach : ( Maybe ClientId, Detach.State )
     , hidden : Bool
     }
@@ -73,30 +72,17 @@ downs : Mouse.Position -> MouseAction
 downs = Tron.Mouse.Down
 
 
-extractMouse : Model msg -> MouseState
+extractMouse : State -> MouseState
 extractMouse = .mouse
 
 
-map : (msgA -> msgB) -> Model msgA -> Model msgB
-map f gui =
-    { dock = gui.dock
-    , viewport = gui.viewport
-    , size = gui.size
-    , mouse = gui.mouse
-    , tree = gui.tree |> Tron.Property.map f
-    , detach = gui.detach
-    , hidden = gui.hidden
-    }
-
-
-init : Tron msg -> ( Model msg, Cmd Msg )
-init root =
+init : ( State, Cmd Msg )
+init =
     (
         { dock = Dock.topLeft
         , viewport = Size ( 0, 0 )
         , size = Nothing
         , mouse = Tron.Mouse.init
-        , tree = root
         , detach = ( Nothing, Detached )
         , hidden = False
         }
@@ -111,61 +97,7 @@ run =
         , fromWindow ViewportChanged
         ]
 
-
-{- While keeping other options intact and keeping the expanded panels, rebuild the GUI structure using the new model. If some panels were
-
-It is useful if the model updated externally, you want to re-build UI using this model,
-but you don't need/want to notify anyone about the updated values or perform initial effects.
-
-If you have a function like:
-
-    for : MyModel -> Builder MyMsg
-    for = ...
-
-..as in the `init` example. Then using `over` in `update` is just:
-
-    gui |> Tron.over (for nextModel)
--}
-over : Tron msg -> Model msg -> Model msg
-over prop gui =
-    let
-        lastFocus = Focus.find gui.tree
-    in
-        { gui
-        | tree =
-            transferTransientState gui.tree prop --<| Focus.on prop lastFocus
-            -- loadTransientState gui.tree
-            --     |> applyTransientState (Focus.on prop lastFocus)
-        }
-
-
-{- While keeping other options intact, replace the GUI structure completely.
-
-It is useful both if the model updated externally or you have very different model, and you want to re-build UI using this model, but you don't need/want to notify anyone about the updated values or perform initial effects.
-
-If you have a function like:
-
-    for : MyModel -> Builder MyMsg
-    for = ...
-
-..as in the `init` example. Then using `use` in `update` is just:
-
-    gui |> Tron.use (for nextModel)
--}
-use : Tron msg -> Model msg -> Model msg
-use prop gui =
-    { gui
-    | tree = prop
-    }
-
-
-{- Encode any Tron GUI structure into JSON.
-
-That allows you to re-create one from WebSockets or to build the same GUI
-in `dat.gui` and gives many other possibilities.
--}
-encode : Model msg -> E.Value
-encode = .tree >> Exp.encode
+-- transferTransientState gui.tree tree
 
 
 -- overMap : (msgA -> msgB) -> Property msgA -> Model msgB -> Model msgB
@@ -175,12 +107,13 @@ encode = .tree >> Exp.encode
 
 update
     :  Msg
-    -> Model msg
-    -> ( Model msg, Cmd msg )
-update msg gui =
+    -> State
+    -> Tron msg
+    -> ( State, Tron (), Cmd msg )
+update msg state tree  =
     case msg of
         NoOp ->
-            ( gui, Cmd.none )
+            ( state, tree |> invalidate, Cmd.none )
 
         ApplyMouse mouseAction ->
             handleMouse mouseAction gui
@@ -262,7 +195,7 @@ update msg gui =
 
 applyRaw
      : Exp.RawInUpdate
-    -> Model msg
+    -> Model
     -> Cmd msg
 applyRaw rawUpdate =
     .tree >> Exp.update (Exp.fromPort rawUpdate)
@@ -295,18 +228,18 @@ trackMouse =
     |> Sub.map ApplyMouse
 
 
-handleMouse : MouseAction -> Model msg -> ( Model msg, Cmd msg )
-handleMouse mouseAction gui =
+handleMouse : MouseAction -> State -> Tron msg -> ( State, Tron (), Cmd msg )
+handleMouse mouseAction state tree =
     let
-        rootPath = getRootPath gui
+        rootPath = getRootPath state
         curMouseState =
-            gui.mouse
+            state.mouse
         nextMouseState =
-            gui.mouse
+            state.mouse
                 |> Tron.Mouse.apply mouseAction
-        size = getSizeInCells gui
+        size = getSizeInCells state
         bounds =
-            Dock.boundsFromSize gui.dock gui.viewport size
+            Dock.boundsFromSize state.dock state.viewport size
         theLayout =
             layout gui |> Tuple.second
 
@@ -320,7 +253,7 @@ handleMouse mouseAction gui =
                 |> findPathAt
                 |> Maybe.andThen
                     (\path ->
-                        Tron.Property.find path gui.tree
+                        Tron.Property.find path tree
                             |> Maybe.map (Tuple.pair path)
                     )
 
@@ -427,31 +360,26 @@ handleMouse mouseAction gui =
         )
 
 
+invalidate : Tron msg -> Tron ()
+invalidate = Tron.map <| always ()
+
+
 handleKeyDown
     :  Int
     -> Path
-    -> Model msg
-    -> ( Model msg, Cmd ( Path, msg ) )
-handleKeyDown keyCode path gui =
+    -> State
+    -> Tron msg
+    -> ( State, Tron (), Cmd ( Path, msg ) )
+handleKeyDown keyCode path state tree =
     let
-
-        shiftFocus to =
-            let
-                nextRoot = gui.tree |> Focus.shift to
-            in
-                { gui
-                | tree = nextRoot
-                }
 
         executeByPath _ = -- uses only `gui.tree`
             let
-                updates = gui.tree |> executeAt path
-                nextRoot = gui.tree |> updateMany updates
+                updates = tree |> executeAt path
+                nextRoot = tree |> updateMany updates
             in
-                (
-                    { gui
-                    | tree = nextRoot
-                    }
+                ( state
+                , nextRoot |> invalidate
                 , updates
                     |> List.map (Tuple.second >> Property.run)
                     |> Cmd.batch
@@ -460,45 +388,46 @@ handleKeyDown keyCode path gui =
 
     in case keyCode of
         -- left arrow
-        37 -> ( shiftFocus Focus.Left, Cmd.none )
+        37 -> ( state, tree |> Focus.shift Focus.Left, Cmd.none )
         -- right arrow
-        39 -> ( shiftFocus Focus.Right, Cmd.none )
+        39 -> ( state, tree |> Focus.shift Focus.Right, Cmd.none )
         -- up arrow
-        38 -> ( shiftFocus Focus.Up, Cmd.none )
+        38 -> ( state, tree |> Focus.shift Focus.Up, Cmd.none )
         -- down arrow
-        40 -> ( shiftFocus Focus.Down, Cmd.none )
+        40 -> ( state, tree |> Focus.shift Focus.Down, Cmd.none )
         -- space
         32 ->
             (
-                { gui
-                | hidden = not gui.hidden
+                { state
+                | hidden = not state.hidden
                 }
+            , tree |> invalidate
             , Cmd.none
             )
             -- executeByPath ()
         -- enter
         13 ->
-            case gui.tree |> Property.find path of
+            case tree |> Property.find path of
                 Just (Text control) ->
                     let nextProp = (Text <| Text.finishEditing control)
                     in
-                        (
-                            { gui
-                            | tree =
-                                -- FIXME: second time search for a path
-                                gui.tree
-                                    |> setAt path nextProp
-                            }
+                        ( state
+                        ,
+                            -- FIXME: second time search for a path
+                            tree
+                                |> setAt path nextProp
+                                |> invalidate
                         -- FIXME: inside, we check if it is a text prop again
                         , Property.run nextProp
                             |> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()
         -- else
-        _ -> ( gui, Cmd.none )
+        _ -> ( state, tree |> invalidate, Cmd.none )
 
 
-toExposed : Model msg -> Model ( Exp.RawOutUpdate, msg )
+{-
+toExposed : Model -> Model ( Exp.RawOutUpdate, msg )
 toExposed gui =
     { dock = gui.dock
     , viewport = gui.viewport
@@ -510,7 +439,7 @@ toExposed gui =
             |> Property.map (Tuple.mapFirst (Detach.addClientId <| Tuple.first <| gui.detach))
     , detach = gui.detach
     , hidden = gui.hidden
-    }
+    } -}
 
 
 focus : msg -> Cmd msg
@@ -535,7 +464,7 @@ fromWindow passSize =
 
 See `Style.Dock` for values.
 -}
-dock : Dock -> Model msg -> Model msg
+dock : Dock -> State -> State
 dock to gui =
     { gui
     | dock = to
@@ -544,14 +473,14 @@ dock to gui =
 
 {- Set custom shape for all the GUI, in cells. By default, it is calulated from current viewport size, but you may want to reduce the amount of cells, so here's the method. This way GUI will be perfectly in the middle when docked to central positions.
 -}
-reshape : ( Int, Int ) -> Model msg -> Model msg
+reshape : ( Int, Int ) -> State -> State
 reshape cellSize gui =
     { gui
     | size = Just <| Size cellSize
     }
 
 
-getRootPath : Model msg -> Path
+getRootPath : State -> Path
 getRootPath gui =
     Tuple.second gui.detach
         |> Detach.stateToMaybe
@@ -570,7 +499,7 @@ sizeFromViewport _ (Size ( widthInPixels, heightInPixels )) =
 
 
 
-getSizeInCells : Model msg -> Size Cells
+getSizeInCells : State -> Size Cells
 getSizeInCells gui =
     case gui.size of
         Just userSize -> userSize
@@ -579,7 +508,7 @@ getSizeInCells gui =
                 |> sizeFromViewport gui.tree
 
 
-layout : Model msg -> ( Property msg, Layout )
+layout : Model -> ( Tron (), Layout )
 layout gui =
     let
         ( Size cellsSize ) = getSizeInCells gui
@@ -600,8 +529,8 @@ layout gui =
             ( root, Layout.pack1 gui.dock size attachedPath root )
 
 
-subscriptions : Model msg -> Sub Msg
-subscriptions gui =
+subscriptions : State -> Sub Msg
+subscriptions _ =
     Sub.batch
         [ trackMouse
         , trackResize
@@ -609,7 +538,7 @@ subscriptions gui =
         ]
 
 
-view : Theme -> Model msg -> Html Msg
+view : Theme -> Model -> Html Msg
 view theme gui =
     let
         cellsSize = getSizeInCells gui
