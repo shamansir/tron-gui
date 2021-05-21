@@ -122,74 +122,65 @@ update msg state tree  =
         Click path ->
             let
                 updates =
-                    gui.tree |> executeAt path
+                    tree |> executeAt path
                 nextRoot =
-                    gui.tree |> updateMany updates
+                    tree |> updateMany updates
             in
-                (
-                    { gui
-                    | tree = nextRoot
-                    }
+                ( state
+                , nextRoot |> invalidate
                 , updates
-                    |> List.map (Tuple.second >> Property.run)
+                    |> List.map (Tuple.second >> apply)
                     |> Cmd.batch
                 )
 
         MouseDown path ->
-            (
-                { gui
-                | tree = Focus.on gui.tree path
-                }
+            ( state
+            , Focus.on tree path |> invalidate
             , Cmd.none
             )
 
         KeyDown keyCode ->
            let
-                curFocus = Focus.find gui.tree
+                curFocus = Focus.find tree
             in
-                handleKeyDown keyCode curFocus gui
+                handleKeyDown keyCode curFocus state tree
                     |> Tuple.mapSecond (Cmd.map Tuple.second)
 
         ViewportChanged ( w, h ) ->
             (
-                { gui
+                { state
                 | viewport = Size (w, h)
                 }
+            , tree |> invalidate
             , Cmd.none
             )
 
         TextInput path val ->
             let
                 nextRoot =
-                    gui.tree
+                    tree
                         |> updateTextAt path val
             in
-                (
-                    { gui
-                    | tree = nextRoot
-                    }
+                ( state
+                , nextRoot |> invalidate
                 , Cmd.none
                 )
 
         Detach path ->
             let
-                nextRoot = detachAt path gui.tree
+                nextRoot = detachAt path tree
             in
-                (
-                    { gui
-                    | tree = nextRoot
-                    }
+                ( state
+                , nextRoot |> invalidate
                 , Cmd.none -- FIXME: Detach.sendTree gui.detach nextRoot
                 )
 
         SwitchPage path pageNum ->
             let
-                nextRoot = switchPageAt path pageNum gui.tree
+                nextRoot = switchPageAt path pageNum tree
             in
-                (
-                    { gui
-                    | tree = nextRoot
-                    }
+                ( state
+                , nextRoot |> invalidate
                 , Cmd.none
                 )
 
@@ -377,7 +368,7 @@ handleKeyDown
     :  Int
     -> Path
     -> State
-    -> Tron msg
+    -> Tron (Exp.ProxyValue -> msg)
     -> ( State, Tron (), Cmd ( Path, msg ) )
 handleKeyDown keyCode path state tree =
     let
@@ -397,13 +388,13 @@ handleKeyDown keyCode path state tree =
 
     in case keyCode of
         -- left arrow
-        37 -> ( state, tree |> Focus.shift Focus.Left, Cmd.none )
+        37 -> ( state, tree |> Focus.shift Focus.Left |> invalidate, Cmd.none )
         -- right arrow
-        39 -> ( state, tree |> Focus.shift Focus.Right, Cmd.none )
+        39 -> ( state, tree |> Focus.shift Focus.Right |> invalidate, Cmd.none )
         -- up arrow
-        38 -> ( state, tree |> Focus.shift Focus.Up, Cmd.none )
+        38 -> ( state, tree |> Focus.shift Focus.Up |> invalidate, Cmd.none )
         -- down arrow
-        40 -> ( state, tree |> Focus.shift Focus.Down, Cmd.none )
+        40 -> ( state, tree |> Focus.shift Focus.Down |> invalidate, Cmd.none )
         -- space
         32 ->
             (
@@ -427,7 +418,7 @@ handleKeyDown keyCode path state tree =
                                 |> setAt path nextProp
                                 |> invalidate
                         -- FIXME: inside, we check if it is a text prop again
-                        , Property.run nextProp
+                        , apply nextProp
                             |> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()
