@@ -17,14 +17,14 @@ import Tron.Control.Text as Text exposing (TextState(..))
 import Tron.Control.Toggle exposing (ToggleState(..))
 import Tron.Control.XY as XY
 import Tron.Path as Path exposing (Path)
-import Tron.Property exposing (..)
+import Tron.Property as Property exposing (..)
 import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
 import Tron.Expose.Data exposing (..)
 import Tron.Expose.Convert exposing (..)
 
 
-updateProperty : ProxyValue -> Property msg -> Cmd msg
-updateProperty value property =
+runProperty : ProxyValue -> Property msg -> Cmd msg
+runProperty value property =
     case ( property, value ) of
         ( Nil, _ ) ->
             Cmd.none
@@ -64,11 +64,11 @@ updateProperty value property =
             Cmd.none
 
 
-update : Update -> Property msg -> Cmd msg
-update { path, value } prop =
+run : Update -> Property msg -> Cmd msg
+run { path, value } prop =
     case path of
         [] ->
-            updateProperty value prop
+            runProperty value prop
 
         id :: next ->
             case prop of
@@ -76,7 +76,7 @@ update { path, value } prop =
                     case control |> Nest.get id of
                         Just ( _, innerProp ) ->
                             innerProp
-                                |> update { path = next, value = value }
+                                |> run { path = next, value = value }
 
                         Nothing ->
                             Cmd.none
@@ -85,7 +85,7 @@ update { path, value } prop =
                     Cmd.none
 
 
-applyProperty : ProxyValue -> Property msg -> Property msg
+applyProperty : ProxyValue -> Property a -> Property a
 applyProperty value prop =
     case ( prop, value ) of
         ( Nil, _ ) ->
@@ -119,7 +119,7 @@ applyProperty value prop =
             prop
 
 
-apply : Update -> Property msg -> Property msg
+apply : Update -> Property a -> Property a
 apply { path, value } prop =
     case path of
         [] ->
@@ -143,9 +143,9 @@ apply { path, value } prop =
                     prop
 
 
-loadValues : Dict LabelPath String -> Property msg -> Property msg
+loadValues : Dict LabelPath String -> Property a -> Property a
 loadValues dict prop =
-    Tron.Property.replaceWithLabeledPath
+    Property.replaceWithLabeledPath
         (\labelPath innerProp ->
             Dict.get labelPath dict
                 |> Maybe.andThen (\strValue -> applyStringValue strValue innerProp)
@@ -154,7 +154,7 @@ loadValues dict prop =
         prop
 
 
-loadProxyValues : Dict (List Int) ProxyValue -> Property msg -> Property msg
+loadProxyValues : Dict (List Int) ProxyValue -> Property a -> Property a
 loadProxyValues dict prop =
     dict
         |> Dict.toList
@@ -165,7 +165,7 @@ loadProxyValues dict prop =
             prop
 
 
-loadJsonValues : Dict (List Int) RawOutUpdate -> Property msg -> Property msg
+loadJsonValues : Dict (List Int) RawOutUpdate -> Property a -> Property a
 loadJsonValues dict prop =
     dict
         |> Dict.toList
@@ -184,7 +184,7 @@ loadJsonValues dict prop =
         prop -}
 
 
-applyStringValue : String -> Property msg -> Maybe (Property msg)
+applyStringValue : String -> Property a -> Maybe (Property a)
 applyStringValue str prop =
     let
         helper typeStr maybeFn =
@@ -322,7 +322,7 @@ encodePath =
     Path.toList >> encodeRawPath
 
 
-encodePropertyAt : RawPath -> Property msg -> RawProperty
+encodePropertyAt : RawPath -> Property a -> RawProperty
 encodePropertyAt path property =
     case property of
         Nil ->
@@ -460,7 +460,7 @@ encodePropertyAt path property =
                 ]
 
 
-encodeNested : RawPath -> Array ( Label, Property msg ) -> RawProperty
+encodeNested : RawPath -> Array ( Label, Property a ) -> RawProperty
 encodeNested path items =
     E.list
         (\( id, ( label, property ) ) ->
@@ -752,3 +752,43 @@ decodeToggle =
             )
         ]
 
+
+reflect : Property a -> Property ( ProxyValue, a )
+reflect prop =
+    let
+        reflectWith toProxy_ =
+            Control.reflect
+                >> Control.map (Tuple.mapFirst toProxy_)
+    in case prop of
+        Nil -> Nil
+        Number control ->
+            Number <| reflectWith FromSlider <| control
+        Coordinate control ->
+            Coordinate <| reflectWith FromXY <| control
+        Text control ->
+            Text
+                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromInput)
+                <| Control.reflect
+                <| control
+        Color control ->
+            Color <| reflectWith FromColor <| control
+        Toggle control ->
+            Toggle <| reflectWith FromToggle <| control
+        Action control ->
+            Action <| reflectWith (always FromButton) <| control
+        Choice focus shape control ->
+            Choice focus shape
+                <| Nest.mapItems (Tuple.mapSecond reflect)
+                <| reflectWith (.selected >> FromChoice)
+                <| control
+        Group focus shape control ->
+            Group focus shape
+                <| Nest.mapItems (Tuple.mapSecond reflect)
+                <| reflectWith (always Other) <| control
+
+
+freshRun : Property (ProxyValue -> msg) -> Cmd msg
+freshRun =
+    reflect
+    >> Property.map (\(v, handler) -> handler v)
+    >> Property.run

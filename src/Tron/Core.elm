@@ -1,9 +1,7 @@
 module Tron.Core exposing
     ( State, Msg
     , view, update, init, subscriptions, run
-    , over, use
     , dock, reshape
-    , encode--, toExposed
     , applyRaw
     )
 
@@ -129,7 +127,7 @@ update msg state tree  =
                 ( state
                 , nextRoot |> invalidate
                 , updates
-                    |> List.map (Tuple.second >> apply)
+                    |> List.map (Tuple.second >> Exp.freshRun)
                     |> Cmd.batch
                 )
 
@@ -144,7 +142,6 @@ update msg state tree  =
                 curFocus = Focus.find tree
             in
                 handleKeyDown keyCode curFocus state tree
-                    |> Tuple.mapSecond (Cmd.map Tuple.second)
 
         ViewportChanged ( w, h ) ->
             (
@@ -185,12 +182,14 @@ update msg state tree  =
                 )
 
 
+
 applyRaw
      : Exp.RawInUpdate
-    -> Model
+    -> Tron (Exp.ProxyValue -> msg)
     -> Cmd msg
 applyRaw rawUpdate =
-    .tree >> Exp.update (Exp.fromPort rawUpdate)
+    Exp.apply (Exp.fromPort rawUpdate)
+        >> Exp.freshRun
 
 
 trackResize : Sub Msg
@@ -339,9 +338,9 @@ handleMouse mouseAction state tree =
 
                             Just ( _, prop ) ->
                                 case prop of
-                                    Number _ -> apply prop
-                                    Coordinate _ -> apply prop
-                                    Color _ -> apply prop
+                                    Number _ -> Exp.freshRun prop
+                                    Coordinate _ -> Exp.freshRun prop
+                                    Color _ -> Exp.freshRun prop
                                     _ -> Cmd.none
                             Nothing -> Cmd.none
 
@@ -349,14 +348,6 @@ handleMouse mouseAction state tree =
                 _ -> Cmd.none
 
         )
-
-
-apply : Tron (Exp.ProxyValue -> msg) -> Cmd msg
-apply prop =
-    prop
-        |> Exp.reflect
-        |> Property.map (\(v, handler) -> handler v)
-        |> Property.run
 
 
 
@@ -369,7 +360,7 @@ handleKeyDown
     -> Path
     -> State
     -> Tron (Exp.ProxyValue -> msg)
-    -> ( State, Tron (), Cmd ( Path, msg ) )
+    -> ( State, Tron (), Cmd msg )
 handleKeyDown keyCode path state tree =
     let
 
@@ -381,9 +372,9 @@ handleKeyDown keyCode path state tree =
                 ( state
                 , nextRoot |> invalidate
                 , updates
-                    |> List.map (Tuple.second >> Property.run)
+                    |> List.map (Tuple.second >> Exp.freshRun)
                     |> Cmd.batch
-                    |> Cmd.map (Tuple.pair path)
+                    --|> Cmd.map (Tuple.pair path)
                 )
 
     in case keyCode of
@@ -418,8 +409,8 @@ handleKeyDown keyCode path state tree =
                                 |> setAt path nextProp
                                 |> invalidate
                         -- FIXME: inside, we check if it is a text prop again
-                        , apply nextProp
-                            |> Cmd.map (Tuple.pair path)
+                        , Exp.freshRun nextProp
+                            --|> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()
         -- else
@@ -555,7 +546,7 @@ view theme state tree  =
                     always Detach.CannotBeDetached
     in
     if not state.hidden
-    then case layout tree of
+    then case layout state tree of
         ( root, theLayout ) ->
             theLayout
                 |> Layout.view theme state.dock bounds detachState toDetachAbility root
