@@ -49,6 +49,7 @@ import Tron.Style.Cell as Cell exposing (..)
 
 import Tron.Expose.Data as Exp
 import Tron.Expose.Convert as Exp
+import Tron.Expose.ProxyValue as Exp
 
 
 type alias State =
@@ -108,7 +109,7 @@ run =
 update
     :  Msg
     -> State
-    -> Tron msg
+    -> Tron ( Exp.ProxyValue -> msg )
     -> ( State, Tron (), Cmd msg )
 update msg state tree  =
     case msg of
@@ -116,7 +117,7 @@ update msg state tree  =
             ( state, tree |> invalidate, Cmd.none )
 
         ApplyMouse mouseAction ->
-            handleMouse mouseAction gui
+            handleMouse mouseAction state tree
 
         Click path ->
             let
@@ -228,10 +229,12 @@ trackMouse =
     |> Sub.map ApplyMouse
 
 
-handleMouse : MouseAction -> State -> Tron msg -> ( State, Tron (), Cmd msg )
+-- FIXME: return actual updates with values, then somehow extract messages from `Tron msg` for these values?
+handleMouse : MouseAction -> State -> Tron ( Exp.ProxyValue -> msg ) -> ( State, Tron (), Cmd msg )
 handleMouse mouseAction state tree =
     let
         rootPath = getRootPath state
+        unitTree = tree |> invalidate
         curMouseState =
             state.mouse
         nextMouseState =
@@ -241,7 +244,7 @@ handleMouse mouseAction state tree =
         bounds =
             Dock.boundsFromSize state.dock state.viewport size
         theLayout =
-            layout gui |> Tuple.second
+            layout state unitTree |> Tuple.second
 
         findPathAt pos =
             pos
@@ -260,83 +263,80 @@ handleMouse mouseAction state tree =
     in
 
         (
-            { gui
+            { state
             | mouse = nextMouseState
-            , tree =
-
-                if curMouseState.down then
-
-                    case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
-
-                        Just ( path, Number ( Control axis curValue handler ) ) ->
-                            let
-                                dY = distanceY knobDistance nextMouseState
-                                nextVal = alter axis dY curValue
-                                nextControl =
-                                    Control axis nextVal handler
-                            in
-                                updateAt
-                                    path
-                                    (always <| Number nextControl)
-                                    gui.tree
-
-                        Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
-                            let
-                                ( dX, dY ) = distanceXY knobDistance nextMouseState
-                                ( nextX, nextY ) =
-                                    ( alter xAxis dX curX
-                                    , alter yAxis dY curY
-                                    )
-                                nextControl =
-                                    Control ( xAxis, yAxis ) ( nextX, nextY ) handler
-                            in
-                                updateAt
-                                    path
-                                    (always <| Coordinate nextControl)
-                                    gui.tree
-
-                        Just ( path, Color ( Control state curColor handler ) ) ->
-                            let
-                                hueAxis = { min = 0, max = 1, step = 0.01 }
-                                lgtAxis = { min = 0, max = 1, step = 0.01 }
-                                curHsla = Color.toHsla curColor
-                                ( dX, dY ) = distanceXY knobDistance nextMouseState
-                                ( nextHue, nextLightness ) =
-                                    ( alter hueAxis dX curHsla.hue
-                                    , alter lgtAxis dY curHsla.lightness
-                                    )
-                                nextColor =
-                                    Color.hsla
-                                        nextHue
-                                        (if curHsla.saturation > 0.25 then
-                                            -- && curHsla.saturation < 0.75 then
-                                                curHsla.saturation
-                                        else 0.5)
-                                        nextLightness -- curHsla.lightness
-                                        curHsla.alpha
-                                nextControl =
-                                    Control state nextColor handler
-                            in
-                                updateAt
-                                    path
-                                    (always <| Color nextControl)
-                                    gui.tree
-
-                        _ ->
-                            gui.tree
-
-                else
-
-                    nextMouseState.dragFrom
-                        |> Maybe.andThen findPathAt
-                        |> Maybe.map (Focus.on gui.tree)
-                        |> Maybe.withDefault gui.tree
-
             }
+        , (if curMouseState.down then
 
-        ,
+            case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
 
-            case mouseAction of
+                Just ( path, Number ( Control axis curValue handler ) ) ->
+                    let
+                        dY = distanceY knobDistance nextMouseState
+                        nextVal = alter axis dY curValue
+                        nextControl =
+                            Control axis nextVal handler
+                    in
+                        updateAt
+                            path
+                            (always <| Number nextControl)
+                            tree
+
+                Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
+                    let
+                        ( dX, dY ) = distanceXY knobDistance nextMouseState
+                        ( nextX, nextY ) =
+                            ( alter xAxis dX curX
+                            , alter yAxis dY curY
+                            )
+                        nextControl =
+                            Control ( xAxis, yAxis ) ( nextX, nextY ) handler
+                    in
+                        updateAt
+                            path
+                            (always <| Coordinate nextControl)
+                            tree
+
+                Just ( path, Color ( Control state_ curColor handler ) ) ->
+                    let
+                        hueAxis = { min = 0, max = 1, step = 0.01 }
+                        lgtAxis = { min = 0, max = 1, step = 0.01 }
+                        curHsla = Color.toHsla curColor
+                        ( dX, dY ) = distanceXY knobDistance nextMouseState
+                        ( nextHue, nextLightness ) =
+                            ( alter hueAxis dX curHsla.hue
+                            , alter lgtAxis dY curHsla.lightness
+                            )
+                        nextColor =
+                            Color.hsla
+                                nextHue
+                                (if curHsla.saturation > 0.25 then
+                                    -- && curHsla.saturation < 0.75 then
+                                        curHsla.saturation
+                                else 0.5)
+                                nextLightness -- curHsla.lightness
+                                curHsla.alpha
+                        nextControl =
+                            Control state_ nextColor handler
+                    in
+                        updateAt
+                            path
+                            (always <| Color nextControl)
+                            tree
+
+                _ ->
+                    tree
+
+        else
+
+            nextMouseState.dragFrom
+                |> Maybe.andThen findPathAt
+                |> Maybe.map (Focus.on tree)
+                |> Maybe.withDefault tree)
+
+        |> invalidate
+
+        , case mouseAction of
 
                 Mouse.Up _ ->
                     if curMouseState.down
@@ -348,9 +348,9 @@ handleMouse mouseAction state tree =
 
                             Just ( _, prop ) ->
                                 case prop of
-                                    Number _ -> Property.run prop
-                                    Coordinate _ -> Property.run prop
-                                    Color _ -> Property.run prop
+                                    Number _ -> apply prop
+                                    Coordinate _ -> apply prop
+                                    Color _ -> apply prop
                                     _ -> Cmd.none
                             Nothing -> Cmd.none
 
@@ -360,7 +360,16 @@ handleMouse mouseAction state tree =
         )
 
 
-invalidate : Tron msg -> Tron ()
+apply : Tron (Exp.ProxyValue -> msg) -> Cmd msg
+apply prop =
+    prop
+        |> Exp.reflect
+        |> Property.map (\(v, handler) -> handler v)
+        |> Property.run
+
+
+
+invalidate : Tron a -> Tron ()
 invalidate = Tron.map <| always ()
 
 
@@ -508,25 +517,25 @@ getSizeInCells gui =
                 |> sizeFromViewport gui.tree
 
 
-layout : Model -> ( Tron (), Layout )
-layout gui =
+layout : State -> Tron () -> ( Tron (), Layout )
+layout state tree =
     let
-        ( Size cellsSize ) = getSizeInCells gui
+        ( Size cellsSize ) = getSizeInCells state
         size = cellsSize |> Tuple.mapBoth toFloat toFloat |> SizeF
     in
-    case gui.detach
+    case state.detach
         |> Tuple.second
         |> Detach.stateToMaybe
         |> Maybe.andThen
             (\path ->
-                gui.tree
+                tree
                     |> Property.find path
                     |> Maybe.map (Tuple.pair path)
             ) of
         Nothing ->
-            ( gui.tree, Layout.pack gui.dock size gui.tree )
+            ( tree, Layout.pack state.dock size tree )
         Just ( attachedPath, root ) ->
-            ( root, Layout.pack1 gui.dock size attachedPath root )
+            ( root, Layout.pack1 state.dock size attachedPath root )
 
 
 subscriptions : State -> Sub Msg
@@ -538,15 +547,15 @@ subscriptions _ =
         ]
 
 
-view : Theme -> Model -> Html Msg
-view theme gui =
+view : Theme -> State -> Tron () -> Html Msg
+view theme state tree  =
     let
-        cellsSize = getSizeInCells gui
+        cellsSize = getSizeInCells state
         bounds =
-            Dock.boundsFromSize gui.dock gui.viewport cellsSize
-        detachState = Tuple.second gui.detach
+            Dock.boundsFromSize state.dock state.viewport cellsSize
+        detachState = Tuple.second state.detach
         toDetachAbility =
-            case Tuple.first gui.detach of
+            case Tuple.first state.detach of
                 Just clientId ->
                     Detach.formLocalUrl clientId
                         >> Maybe.map Detach.CanBeDetached
@@ -554,9 +563,9 @@ view theme gui =
                 Nothing ->
                     always Detach.CannotBeDetached
     in
-    if not gui.hidden
-    then case layout gui of
+    if not state.hidden
+    then case layout tree of
         ( root, theLayout ) ->
             theLayout
-                |> Layout.view theme gui.dock bounds detachState toDetachAbility root
+                |> Layout.view theme state.dock bounds detachState toDetachAbility root
     else Html.div [] []
