@@ -654,20 +654,6 @@ noGhosts : List (Property a) -> List (Property a)
 noGhosts = List.filter (not << isGhost)
 
 
-reflect : Property a -> Maybe a
-reflect prop =
-    case prop of
-        Nil -> Nothing
-        Number control -> control |> Control.get |> Just
-        Coordinate control -> control |> Control.get |> Just
-        Text control -> control |> Control.get |> Just
-        Color control -> control |> Control.get |> Just
-        Toggle control -> control |> Control.get |> Just
-        Action control -> control |> Control.get |> Just
-        Choice _ _ control -> control |> Control.get |> Just
-        Group _ _ control -> control |> Control.get |> Just
-
-
 run : Property msg -> Cmd msg
 run prop =
     case prop of

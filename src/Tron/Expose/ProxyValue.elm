@@ -4,6 +4,7 @@ module Tron.Expose.ProxyValue exposing
     , toString, getTypeString
     , toggleToBool, toggleToString
     , fromNumber, fromXY, fromText, fromChoice, fromChoiceOf, fromColor, fromToggle, fromAction
+    , reflect
     )
 
 
@@ -34,7 +35,8 @@ import Color.Convert as Color
 import Json.Decode as D
 import Json.Encode as E
 
-import Tron.Control.Nest exposing (ItemId)
+import Tron.Control as Control
+import Tron.Control.Nest as Nest exposing (ItemId)
 import Tron.Control.Toggle as Toggle exposing (ToggleState, toggleToBool, toggleToString)
 import Tron.Control.XY as XY
 import Tron.Property exposing (Property(..))
@@ -208,3 +210,37 @@ fromColor proxy =
     case proxy of
         FromColor color -> Just color
         _ -> Nothing
+
+
+reflect : Property a -> Property ( ProxyValue, a )
+reflect prop =
+    let
+        reflectWith toProxy =
+            Control.reflect
+                >> Control.map (Tuple.mapFirst toProxy)
+    in case prop of
+        Nil -> Nil
+        Number control ->
+            Number <| reflectWith FromSlider <| control
+        Coordinate control ->
+            Coordinate <| reflectWith FromXY <| control
+        Text control ->
+            Text
+                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromInput)
+                <| Control.reflect
+                <| control
+        Color control ->
+            Color <| reflectWith FromColor <| control
+        Toggle control ->
+            Toggle <| reflectWith FromToggle <| control
+        Action control ->
+            Action <| reflectWith (always FromButton) <| control
+        Choice focus shape control ->
+            Choice focus shape
+                <| Nest.mapItems (Tuple.mapSecond reflect)
+                <| reflectWith (.selected >> FromChoice)
+                <| control
+        Group focus shape control ->
+            Group focus shape
+                <| Nest.mapItems (Tuple.mapSecond reflect)
+                <| reflectWith (always Other) <| control
