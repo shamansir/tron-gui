@@ -21,6 +21,7 @@ import Tron.Property as Property exposing (..)
 import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
 import Tron.Expose.Data exposing (..)
 import Tron.Expose.Convert exposing (..)
+import Tron.Util as Util
 
 
 runProperty : ProxyValue -> Property msg -> Cmd msg
@@ -787,8 +788,11 @@ reflect prop =
                 <| reflectWith (always Other) <| control
 
 
-freshRun : Property (ProxyValue -> msg) -> Cmd msg
+freshRun : Property (ProxyValue -> Maybe msg) -> Cmd msg
 freshRun =
     reflect
     >> Property.map (\(v, handler) -> handler v)
-    >> Property.run
+    -- >> Property.run
+    >> Property.get
+    >> Maybe.andThen identity
+    >> Util.runMaybe

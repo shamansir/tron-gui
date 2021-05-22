@@ -1,6 +1,7 @@
 module Tron.Util exposing (..)
 
 import Array exposing (Array)
+import Task
 
 
 -- import Bounds exposing (Bounds)
@@ -66,3 +67,12 @@ alter { min, max, step } amount curValue =
         toAdd = amount * (max - min)
         alignedByStep = toFloat (floor (toAdd / step)) * step
     in min + alignedByStep
+
+
+runMaybe : Maybe msg -> Cmd msg
+runMaybe maybeMsg =
+    case maybeMsg of
+        Just msg ->
+            Task.succeed msg
+                |> Task.perform identity
+        Nothing -> Cmd.none
