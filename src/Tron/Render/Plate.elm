@@ -52,7 +52,7 @@ controls
     -> Theme
     -> Path
     -> BoundsF
-    -> ( Label, Property msg )
+    -> ( Label, Property a )
     -> Svg Msg_
 controls detachAbility theme path bounds ( label, prop ) =
     Svg.g
