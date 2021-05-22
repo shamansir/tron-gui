@@ -70,9 +70,9 @@ viewProperty
     -> State
     -> Path
     -> BoundsF
-    -> Maybe ( Label, Property msg )
+    -> Maybe ( Label, Property a )
     -> CellShape
-    -> ( Label, Property msg )
+    -> ( Label, Property a )
     -> Svg Msg_
 viewProperty
     theme
@@ -128,7 +128,7 @@ viewPlateControls
     -> Theme
     -> Path
     -> BoundsF
-    -> ( Label, Property msg )
+    -> ( Label, Property a )
     -> Svg Msg_
 viewPlateControls detach theme path pixelBounds ( label, source )  =
     positionAt_ pixelBounds <|
@@ -155,22 +155,22 @@ viewPagingControls path theme pixelBounds paging  =
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
     :  Dock
-    -> ( Path, Property msg )
+    -> ( Path, Property a )
     -> Layout
     ->
         ( List
             { path : Path
             , label : String
             , bounds : BoundsF
-            , source : Property msg
+            , source : Property a
             , pages : Pages.Count
             }
         , List
             { path : Path
             , label : String
             , bounds : BoundsF
-            , parent : Maybe (Property msg)
-            , source : Property msg
+            , parent : Maybe (Property a)
+            , source : Property a
             , index : Maybe Int
             }
         )
@@ -252,7 +252,7 @@ view
     -> BoundsF
     -> Detach.State
     -> Detach.GetAbility
-    -> Property msg
+    -> Property a
     -> Layout
     -> Html Msg_
 view theme dock bounds detach getDetachAbility root layout =

@@ -230,7 +230,7 @@ handleMouse mouseAction state tree =
         nextMouseState =
             state.mouse
                 |> Tron.Mouse.apply mouseAction
-        size = getSizeInCells state
+        size = getSizeInCells state tree
         bounds =
             Dock.boundsFromSize state.dock state.viewport size
         theLayout =
@@ -478,7 +478,7 @@ getRootPath gui =
         |> Maybe.withDefault Path.start
 
 
-sizeFromViewport : Property msg -> Size Pixels -> Size Cells
+sizeFromViewport : Property a -> Size Pixels -> Size Cells
 sizeFromViewport _ (Size ( widthInPixels, heightInPixels )) =
     {- let
         cellsFitHorizontally = floor (toFloat widthInPixels / Cell.width)
@@ -490,19 +490,19 @@ sizeFromViewport _ (Size ( widthInPixels, heightInPixels )) =
 
 
 
-getSizeInCells : State -> Size Cells
-getSizeInCells gui =
-    case gui.size of
+getSizeInCells : State -> Tron a -> Size Cells
+getSizeInCells state tree =
+    case state.size of
         Just userSize -> userSize
         Nothing ->
-            gui.viewport
-                |> sizeFromViewport gui.tree
+            state.viewport
+                |> sizeFromViewport tree
 
 
-layout : State -> Tron () -> ( Tron (), Layout )
+layout : State -> Tron a -> ( Tron a, Layout )
 layout state tree =
     let
-        ( Size cellsSize ) = getSizeInCells state
+        ( Size cellsSize ) = getSizeInCells state tree
         size = cellsSize |> Tuple.mapBoth toFloat toFloat |> SizeF
     in
     case state.detach
@@ -529,10 +529,10 @@ subscriptions _ =
         ]
 
 
-view : Theme -> State -> Tron () -> Html Msg
+view : Theme -> State -> Tron a -> Html Msg
 view theme state tree  =
     let
-        cellsSize = getSizeInCells state
+        cellsSize = getSizeInCells state tree
         bounds =
             Dock.boundsFromSize state.dock state.viewport cellsSize
         detachState = Tuple.second state.detach

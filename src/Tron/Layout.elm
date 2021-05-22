@@ -85,11 +85,11 @@ find ( _, layout ) { x, y } =
             Nothing
 
 
-pack : Dock -> SizeF Cells -> Property msg -> Layout
+pack : Dock -> SizeF Cells -> Property a -> Layout
 pack dock size_ = pack1 dock size_ Path.start
 
 
-pack1 : Dock -> SizeF Cells -> Path -> Property msg -> Layout
+pack1 : Dock -> SizeF Cells -> Path -> Property a -> Layout
 pack1 dock size_ rootPath prop =
     case prop of
         Nil ->
@@ -126,7 +126,7 @@ packItemsAtRoot
     -> SizeF Cells
     -> Path
     -> PanelShape
-    -> Array (Property msg)
+    -> Array (Property a)
     -> SmartPack (Cell_ Path)
 packItemsAtRoot dock size_ rp shape items =
     let
@@ -276,9 +276,9 @@ packItemsAtRoot dock size_ rp shape items =
             -> Position
             -> SmartPack (Cell_ Path)
             -> Control
-                    ( Array ( Label, Property msg ) )
-                    { a | form : Form, page : PageNum }
-                    msg
+                    ( Array ( Label, Property a ) )
+                    { r | form : Form, page : PageNum }
+                    a
             -> SmartPack (Cell_ Path)
         packGroupControl
             path
