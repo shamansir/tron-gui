@@ -89,7 +89,7 @@ execute handler =
 
 -- call control handler with the associated object
 execute__ : ((v, a) -> msg) -> Control s v a -> Cmd msg
-execute__ handler (Control _ value a)  =
+execute__ handler (Control _ value a) =
     Task.succeed (value, a)
         |> Task.perform handler
 

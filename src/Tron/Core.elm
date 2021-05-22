@@ -107,7 +107,7 @@ run =
 update
     :  Msg
     -> State
-    -> Tron ( Exp.ProxyValue -> msg )
+    -> Tron ( Exp.ProxyValue -> Maybe msg )
     -> ( State, Tron (), Cmd msg )
 update msg state tree  =
     case msg of
@@ -185,7 +185,7 @@ update msg state tree  =
 
 applyRaw
      : Exp.RawInUpdate
-    -> Tron (Exp.ProxyValue -> msg)
+    -> Tron (Exp.ProxyValue -> Maybe msg)
     -> Cmd msg
 applyRaw rawUpdate =
     Exp.apply (Exp.fromPort rawUpdate)
@@ -220,7 +220,7 @@ trackMouse =
 
 
 -- FIXME: return actual updates with values, then somehow extract messages from `Tron msg` for these values?
-handleMouse : MouseAction -> State -> Tron ( Exp.ProxyValue -> msg ) -> ( State, Tron (), Cmd msg )
+handleMouse : MouseAction -> State -> Tron ( Exp.ProxyValue -> Maybe msg ) -> ( State, Tron (), Cmd msg )
 handleMouse mouseAction state tree =
     let
         rootPath = getRootPath state
@@ -359,7 +359,7 @@ handleKeyDown
     :  Int
     -> Path
     -> State
-    -> Tron (Exp.ProxyValue -> msg)
+    -> Tron (Exp.ProxyValue -> Maybe msg)
     -> ( State, Tron (), Cmd msg )
 handleKeyDown keyCode path state tree =
     let
