@@ -205,7 +205,22 @@ unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
-andThen : (a -> Property a) -> Property a -> Property a
+fold1 : (a -> x) -> Property a -> Maybe x
+fold1 f prop =
+    case prop of
+        Nil -> Nothing
+        Number control -> control |> Control.fold f |> Just
+        Coordinate control -> control |> Control.fold f |> Just
+        Text control -> control |> Control.fold f |> Just
+        Color control -> control |> Control.fold f |> Just
+        Toggle control -> control |> Control.fold f |> Just
+        Action control -> control |> Control.fold f |> Just
+        Choice _ _ control -> control |> Control.fold f |> Just
+        Group _ _ control -> control |> Control.fold f |> Just
+
+
+
+andThen : (a -> Property b) -> Property a -> Property b
 -- FIXME: should be changed to `andThen` with getting rid of function in Control
 andThen f prop =
     case prop of
@@ -221,7 +236,7 @@ andThen f prop =
 
 
 
-with : (a -> Property a -> Property a) -> Property a -> Property a
+with : (a -> Property a -> Property b) -> Property a -> Property b
 -- FIXME: should be changed to `andThen` with getting rid of function in Control
 with f prop =
     andThen (\v -> f v prop) prop

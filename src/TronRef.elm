@@ -1,4 +1,4 @@
-module Tron exposing
+module TronRef exposing
     ( Tron, Set
     , map, mapSet, andThen, with
     )
@@ -23,7 +23,7 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 -}
 
 import Tron.Property as Property exposing (Property)
-import Tron.Expose.ProxyValue exposing (ProxyValue)
+import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue)
 
 
 {-| `Tron a` is the tree of your controls or, recursively, any control in such tree.
@@ -32,7 +32,7 @@ To build your interface, use the helpers from the `Tron.Builder` module or any o
 `Tron.Builder.Proxy`, `Tron.Builder.Unit` or `Tron.Builder.String`
 -}
 type alias Tron a =
-    Property a
+    Property (ProxyValue -> Maybe a)
 
 
 {-| `Set msg` is just the list of controls' definitions together with their labels.
@@ -41,16 +41,21 @@ type alias Set a =
     List ( Property.Label, Tron a )
 
 
-{-| The usual `map` function which allows you to substitute the messages sent through the components.
--}
 map : (a -> b) -> Tron a -> Tron b
-map = Property.map
+map f = Property.map <| (<<) (Maybe.map f)
 
 
 {-| The usual `andThen` function which allows you to change the message type
 -}
 andThen : (a -> Tron b) -> Tron a -> Tron b
-andThen = Property.andThen
+andThen f prop =
+    Property.andThen
+        (\pF ->
+            case pF <| ProxyValue.get prop of
+                Just v -> f v
+                Nothing -> Property.Nil
+        )
+        prop
 
 
 {-| Same as `andThen`, but also gets current component as argument, it gets useful in mapping `Sets` or lists of controls:
@@ -66,8 +71,8 @@ andThen = Property.andThen
         Product.compare
     |> Tron.shape (rows 3)
 -}
-with : (a -> Tron a -> Tron a) -> Tron a -> Tron a
-with = Property.with
+with : (a -> Tron a -> Tron b) -> Tron a -> Tron b
+with f prop = andThen (\v -> f v prop) prop
 
 
 {-| The usual `map` function which allows you to substitute the messages sent through the components in a `Set`. For example, implementation of `Tron.Builder.palette`:
