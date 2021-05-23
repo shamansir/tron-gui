@@ -1,5 +1,5 @@
 module Tron.Expose.ProxyValue exposing
-    ( ProxyValue(..)
+    ( ProxyValue(..), get
     , encode
     , toString, getTypeString
     , toggleToBool, toggleToString
@@ -209,3 +209,17 @@ fromColor proxy =
     case proxy of
         FromColor color -> Just color
         _ -> Nothing
+
+
+get : Property a -> ProxyValue
+get prop =
+    case prop of
+        Nil -> Other
+        Number control -> control |> Control.getValue |> FromSlider
+        Coordinate control -> control |> Control.getValue |> FromXY
+        Text control -> control |> Control.getValue |> Tuple.second |> FromInput
+        Color control -> control |> Control.getValue |> FromColor
+        Toggle control -> control |> Control.getValue |> FromToggle
+        Action _ -> FromButton
+        Choice _ _ control -> control |> Control.getValue |> .selected |> FromChoice
+        Group _ _ _ -> Other
