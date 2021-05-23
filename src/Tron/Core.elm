@@ -2,7 +2,7 @@ module Tron.Core exposing
     ( State, Msg
     , view, update, init, subscriptions, run
     , dock, reshape
-    , applyRaw
+    , applyRaw, invalidate
     )
 
 

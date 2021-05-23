@@ -100,8 +100,9 @@ import Dict exposing (Dict)
 import Dict.Extra as Dict
 import Task
 
-import Tron.Core as Core exposing (Model)
+import Tron.Core as Core exposing (State)
 import Tron exposing (Tron)
+import TronRef as Ref
 --import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))
@@ -117,7 +118,7 @@ import Tron.Expose.Data as Exp
 
 {-| Adds `Model msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
 type alias ProgramWithTron flags model msg =
-    Program flags ( model, Model msg ) (WithTronMsg msg)
+    Program flags ( model, State, Tron () ) ( WithTronMsg msg )
 
 
 type WithTronMsg msg
@@ -131,29 +132,30 @@ type WithTronMsg msg
 
 
 init
-    :  ( flags -> ( model, Cmd msg ), model -> Tron msg )
+    :  ( flags -> ( model, Cmd msg ), model -> Tron () )
     -> Maybe Url
     -> RenderTarget
     -> PortCommunication msg
     -> flags
-    -> ( ( model, Model msg ), Cmd (WithTronMsg msg) )
+    -> ( ( model, State, Tron () ), Cmd (WithTronMsg msg) )
 init ( userInit, userFor ) maybeUrl renderTarget ports flags =
     let
         ( initialModel, userEffect ) =
             userInit flags
-        ( gui, guiEffect ) =
+        ( state, guiEffect ) =
+            Core.init
+        firstTree =
             userFor initialModel
-                |> Core.init
     in
         (
             ( initialModel
-            , gui
-                |> addInitOptions renderTarget
+            , state |> addInitOptions renderTarget
+            , firstTree |> Core.invalidate
             )
         , Cmd.batch
             [ userEffect |> Cmd.map ToUser
             , guiEffect |> Cmd.map ToTron
-            , performInitEffects ports gui |> Cmd.map ToUser
+            , performInitEffects ports (firstTree |> Core.invalidate) |> Cmd.map ToUser
             , case maybeUrl of
                 Just url ->
                     Task.succeed url
@@ -166,13 +168,13 @@ init ( userInit, userFor ) maybeUrl renderTarget ports flags =
 view
     :  (model -> Html msg)
     -> RenderTarget
-    -> (model, Model msg)
+    -> ( model, State, Tron () )
     -> Html (WithTronMsg msg)
-view userView renderTarget ( model, gui ) =
+view userView renderTarget ( model, state, tree ) =
     Html.div
         [ ]
-        [ gui
-            |> useRenderTarget renderTarget
+        [ tree
+            |> useRenderTarget renderTarget state
             |> Html.map ToTron
         , userView model
             |> Html.map ToUser
@@ -182,23 +184,23 @@ view userView renderTarget ( model, gui ) =
 subscriptions
     :  ( model -> Sub msg )
     -> PortCommunication msg
-    -> ( model, Model msg )
+    -> ( model, State, Tron () )
     -> Sub (WithTronMsg msg)
-subscriptions userSubscriptions ports ( model, gui ) =
+subscriptions userSubscriptions ports ( model, state, _ ) =
     Sub.batch
         [ userSubscriptions model |> Sub.map ToUser
-        , Core.subscriptions gui |> Sub.map ToTron
+        , Core.subscriptions state |> Sub.map ToTron
         , addSubscriptionsOptions ports |> Sub.map ReceiveRaw
         ]
 
 
 update
-    :  ( msg -> model -> (model, Cmd msg), model -> Tron msg )
+    :  ( msg -> model -> (model, Cmd msg), model -> Ref.Tron msg )
     -> PortCommunication msg
     -> WithTronMsg msg
-    -> ( model, Model msg )
-    -> ( ( model, Model msg ), Cmd (WithTronMsg msg) )
-update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
+    -> ( model, State, Tron () )
+    -> ( ( model, State, Tron () ), Cmd (WithTronMsg msg) )
+update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
     case withTronMsg of
 
         ToUser userMsg ->
@@ -209,42 +211,44 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
 
             (
                 ( newUserModel
-                , gui
-                    |> Core.over (userFor newUserModel)
+                , state
+                , Core.invalidate <| userFor newUserModel
                 )
             , userEffect |> Cmd.map ToUser
             )
 
         ToTron guiMsg ->
-            case gui |> Core.toExposed |> Core.update guiMsg of
-                ( nextGui, guiEffect ) ->
+            case userFor model |> Core.update guiMsg state of
+                ( nextState, nextTree, guiEffect ) ->
                     (
                         ( model
-                        , nextGui |> Core.map Tuple.second
+                        , nextState
+                        , nextTree
                         )
                     , Cmd.batch
                         [ guiEffect
-                            |> Cmd.map (Tuple.second >> ToUser)
-                        , guiEffect
-                            |> Cmd.map (Tuple.first >> SendUpdate)
+                            |> Cmd.map ToUser
+                        , nextTree
+                            |> Exp.toExposed
+                            |> Tron.map Tuple.first
+                            |> Exp.runExposed
+                            |> Cmd.map SendUpdate
                         ]
                     )
 
         ReceiveRaw rawUpdate ->
             let
                 nextRoot =
-                    gui.tree
+                    userFor model
                         |> Exp.apply (Exp.fromPort rawUpdate)
             in
                 (
                     ( model
-                    ,
-                        { gui
-                        | tree = nextRoot
-                        }
+                    , state
+                    , nextRoot |> Core.invalidate
                     )
                 , nextRoot
-                    |> Exp.update (Exp.fromPort rawUpdate)
+                    |> Exp.freshRun
                     |> Cmd.map ToUser
                 )
 
@@ -252,12 +256,13 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
             (
                 ( model
                 ,
-                    { gui
+                    { state
                     | detach =
-                        case gui.detach of
-                            ( _, state ) -> ( Just clientId, state )
+                        case state.detach of
+                            ( _, detachState ) -> ( Just clientId, detachState )
 
                     }
+                , prevTree
                 )
             , case ports of
                 Detachable { ack } ->
@@ -268,7 +273,7 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
             )
 
         SendUpdate rawUpdate ->
-            ( ( model, gui )
+            ( ( model, state, prevTree )
             , rawUpdate
                 |> tryTransmitting ports
                 |> Cmd.map ToUser
@@ -282,9 +287,10 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
                 (
                     ( model
                     ,
-                        { gui
+                        { state
                         | detach = detachState
                         }
+                    , prevTree
                     )
                 , Cmd.batch
                     [ urlEffects
@@ -298,13 +304,13 @@ update ( userUpdate, userFor ) ports withTronMsg (model, gui) =
                 )
 
 
-performInitEffects : PortCommunication msg -> Model msg -> Cmd msg
-performInitEffects ports gui =
+performInitEffects : PortCommunication msg -> Tron () -> Cmd msg
+performInitEffects ports tree =
         case ports of
             SendJson { ack } ->
-                gui |> Core.encode |> ack
+                tree |> Exp.encode |> ack
             DatGui { ack } ->
-                gui |> Core.encode |> ack
+                tree |> Exp.encode |> ack
             _ -> Cmd.none
 
 
@@ -323,7 +329,7 @@ tryTransmitting ports rawUpdate =
         _ -> Cmd.none
 
 
-addInitOptions : RenderTarget -> Model msg -> Model msg
+addInitOptions : RenderTarget -> State -> State
 addInitOptions target gui =
     case target of
         Html dock _ -> gui |> Core.dock dock
@@ -341,18 +347,18 @@ addSubscriptionsOptions ports =
         _ -> Sub.none
 
 
-useRenderTarget : RenderTarget -> Model msg -> Html Core.Msg
-useRenderTarget target gui =
+useRenderTarget : RenderTarget -> State -> Tron () -> Html Core.Msg
+useRenderTarget target state tree =
     case target of
-        Html dock theme -> gui |> Core.dock dock |> Core.view theme
+        Html dock theme -> tree |> Core.view theme (state |> Core.dock dock)
         Nowhere -> Html.div [] []
         Aframe _ -> Html.div [] [] -- FIXME
 
 
-setDetachState : ( Maybe Detach.ClientId, Detach.State ) -> Model msg -> Model msg
-setDetachState st gui =
-    { gui
-    | detach = st
+setDetachState : ( Maybe Detach.ClientId, Detach.State ) -> State -> State
+setDetachState detachState state =
+    { state
+    | detach = detachState
     }
 
 
@@ -407,7 +413,7 @@ sandbox
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Tron msg
+        { for : model -> Ref.Tron msg
         , init : model
         , view : model -> Html msg
         , update : msg -> model -> model
@@ -456,7 +462,7 @@ element
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Tron msg
+        { for : model -> Ref.Tron msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Html msg
@@ -512,7 +518,7 @@ document
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Tron msg
+        { for : model -> Ref.Tron msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Browser.Document msg
@@ -593,7 +599,7 @@ application
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Tron msg
+        { for : model -> Ref.Tron msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Browser.Document msg
