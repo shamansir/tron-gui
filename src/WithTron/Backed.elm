@@ -42,6 +42,7 @@ import Dict.Extra as Dict
 import Html exposing (Html)
 
 import Tron exposing (Tron)
+import TronRef as Ref
 import WithTron exposing (..)
 import WithTron.ValueAt exposing (ValueAt)
 
@@ -115,8 +116,8 @@ byJson renderTarget ( ack, transmit ) tree =
         tree_ : Tron BackedMsg
         tree_ = tree |> Exp.toExposed |> Property.map Tuple.first
 
-        for_ : BackedStorage -> Tron BackedMsg
-        for_ dict = tree_ |> Exp.loadJsonValues dict
+        for_ : BackedStorage -> Ref.Tron BackedMsg
+        for_ dict = tree_ |> Exp.loadJsonValues dict |> Exp.lift
 
         init_ : () -> ( BackedStorage, Cmd BackedMsg )
         init_ _ = ( Dict.empty, Cmd.none )
@@ -208,8 +209,8 @@ byStrings renderTarget transmit tree =
         tree_ : Tron StringBackedMsg
         tree_ = tree |> Exp.toStrExposed |> Property.map Tuple.first
 
-        for_ : StringBackedStorage -> Tron StringBackedMsg
-        for_ dict = tree_ |> Exp.loadValues dict
+        for_ : StringBackedStorage -> Ref.Tron StringBackedMsg
+        for_ dict = tree_ |> Exp.loadValues dict |> Exp.lift
 
         init_ : () -> ( StringBackedStorage, Cmd StringBackedMsg )
         init_ _ = ( Dict.empty, Cmd.none )
@@ -326,13 +327,14 @@ byProxyApp renderTarget ( ack, transmit ) def =
         repair ( ( path, labelPath ), ( proxy, userMsg ) ) =
             ( Just ( Path.toList path, labelPath, proxy ), userMsg )
 
-        for_ : ( ProxyBackedStorage, model ) -> Tron ( ProxyBackedMsg, msg )
+        for_ : ( ProxyBackedStorage, model ) -> Ref.Tron ( ProxyBackedMsg, msg )
         for_ ( dict, model ) =
             def.for (toValueAt dict) model
                 |> Exp.toProxied
                 |> Exp.loadProxyValues ( dictByPath dict )
                 |> Property.addPaths
                 |> Tron.map repair
+                |> Exp.lift
 
         init_ : flags -> ( ( ProxyBackedStorage, model ), Cmd ( ProxyBackedMsg, msg ) )
         init_ flags =
