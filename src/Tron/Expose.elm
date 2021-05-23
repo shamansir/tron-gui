@@ -22,6 +22,7 @@ import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
 import Tron.Expose.Data exposing (..)
 import Tron.Expose.Convert exposing (..)
 import Tron.Util as Util
+import Task
 
 
 runProperty : ProxyValue -> Property msg -> Cmd msg
@@ -790,9 +791,28 @@ reflect prop =
 
 freshRun : Property (ProxyValue -> Maybe msg) -> Cmd msg
 freshRun =
+    evaluate
+    -- >> Property.run
+    >> runMaybe
+
+
+evaluate : Property (ProxyValue -> Maybe msg) -> Property (Maybe msg)
+evaluate =
     reflect
     >> Property.map (\(v, handler) -> handler v)
-    -- >> Property.run
-    >> Property.get
+
+
+runMaybe : Property (Maybe msg) -> Cmd msg
+runMaybe =
+    Property.get
     >> Maybe.andThen identity
     >> Util.runMaybe
+
+
+runExposed : Property RawOutUpdate -> Cmd RawOutUpdate
+runExposed prop =
+    case Property.get prop of
+        Just rawUpdate ->
+            Task.succeed rawUpdate
+                |> Task.perform identity
+        Nothing -> Cmd.none
