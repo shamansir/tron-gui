@@ -789,6 +789,11 @@ reflect prop =
                 <| reflectWith (always Other) <| control
 
 
+lift : Property a -> Property (ProxyValue -> Maybe a)
+lift =
+    Property.map (always << Just)
+
+
 freshRun : Property (ProxyValue -> Maybe msg) -> Cmd msg
 freshRun =
     evaluate
