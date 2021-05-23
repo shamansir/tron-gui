@@ -472,7 +472,7 @@ element
 element renderTarget ports def =
     Browser.element
         { init =
-            init ( def.init, def.for ) Nothing renderTarget ports
+            init ( def.init, def.for >> Core.invalidate ) Nothing renderTarget ports
         , update =
             update ( def.update, def.for ) ports
         , view =
@@ -529,11 +529,11 @@ document renderTarget ports def =
     Browser.document
         { init =
             \flags ->
-                init ( def.init, def.for ) Nothing renderTarget ports flags
+                init ( def.init, def.for >> Core.invalidate) Nothing renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =
-            \(userModel, gui) ->
+            \(userModel, state, tree) ->
                 { title = (def.view userModel).title
                 , body =
                     [ view
@@ -542,7 +542,7 @@ document renderTarget ports def =
                             Html.div [] <| (def.view umodel).body
                         )
                         renderTarget
-                        (userModel, gui)
+                        (userModel, state, tree)
                     ]
                 }
         , subscriptions =
@@ -612,11 +612,11 @@ application renderTarget ports def =
     Browser.application
         { init =
             \flags url _ ->
-                init ( def.init, def.for ) (Just url) renderTarget ports flags
+                init ( def.init, def.for >> Core.invalidate ) (Just url) renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =
-            \(userModel, gui) ->
+            \(userModel, state, tree) ->
                 let userView = def.view userModel
                 in
                     { title = userView.title
@@ -627,7 +627,7 @@ application renderTarget ports def =
                                 Html.div [] <| userView.body
                             )
                             renderTarget
-                            (userModel, gui)
+                            (userModel, state, tree)
                         ]
                     }
         , subscriptions =
