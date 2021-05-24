@@ -214,6 +214,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                 , state
                 , userFor newUserModel
                     |> Property.transferTransientState prevTree
+                    --|> Core.loadValues prevTree
                     |> Core.invalidate
                 )
             , userEffect |> Cmd.map ToUser
