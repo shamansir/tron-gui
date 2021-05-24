@@ -1,4 +1,8 @@
-module Tron.Expose.Convert exposing (toExposed, toProxied, toStrExposed, toUnit)
+module Tron.Expose.Convert
+    exposing
+    ( toExposed, toProxied, toStrExposed, toUnit
+    , reflect, lift, evaluate
+    )
 
 
 {-| Make your `Tron *` store the additional information along with messages,
@@ -15,7 +19,7 @@ import Tron.Control as Control
 import Tron.Control.Nest as Nest
 import Tron.Expose.Data exposing (..)
 import Tron.Path as Path
-import Tron.Property exposing (..)
+import Tron.Property as Property exposing (..)
 import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
 
 
@@ -105,9 +109,9 @@ toExposed : Tron msg -> Tron ( RawOutUpdate, msg )
 toExposed prop =
     prop
         |> toProxied
-        |> Tron.Property.addPaths
+        |> Property.addPaths
         -- FIXME: `Expose.encodeUpdate` does the same as above
-        |> Tron.Property.map
+        |> Property.map
             (\( ( path, labelPath ), ( proxyVal, msg ) ) ->
                 ( { path = Path.toList path
                   , labelPath = labelPath
@@ -133,8 +137,8 @@ toStrExposed : Tron msg -> Tron ( ( LabelPath, String ), msg )
 toStrExposed prop =
     prop
         |> toProxied
-        |> Tron.Property.addLabeledPath
-        |> Tron.Property.map
+        |> Property.addLabeledPath
+        |> Property.map
             (\( path, ( proxyVal, msg ) ) ->
                 ( ( path
                   , ProxyValue.toString proxyVal
@@ -142,3 +146,50 @@ toStrExposed prop =
                 , msg
                 )
             )
+
+
+reflect : Property a -> Property ( ProxyValue, a )
+reflect prop =
+    let
+        reflectWith toProxy_ =
+            Control.reflect
+                >> Control.map (Tuple.mapFirst toProxy_)
+    in case prop of
+        Nil -> Nil
+        Number control ->
+            Number <| reflectWith FromSlider <| control
+        Coordinate control ->
+            Coordinate <| reflectWith FromXY <| control
+        Text control ->
+            Text
+                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromInput)
+                <| Control.reflect
+                <| control
+        Color control ->
+            Color <| reflectWith FromColor <| control
+        Toggle control ->
+            Toggle <| reflectWith FromToggle <| control
+        Action control ->
+            Action <| reflectWith (always FromButton) <| control
+        Choice focus shape control ->
+            Choice focus shape
+                <| Nest.mapItems (Tuple.mapSecond reflect)
+                <| reflectWith (.selected >> FromChoice)
+                <| control
+        Group focus shape control ->
+            Group focus shape
+                <| Nest.mapItems (Tuple.mapSecond reflect)
+                <| reflectWith (always Other) <| control
+
+
+lift : Property a -> Property (ProxyValue -> Maybe a)
+lift =
+    Property.map (always << Just)
+
+
+evaluate : Property (ProxyValue -> Maybe msg) -> Property (Maybe msg)
+evaluate =
+    reflect
+    >> Property.map (\(v, handler) -> handler v)
+
+

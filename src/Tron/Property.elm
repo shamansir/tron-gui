@@ -455,7 +455,7 @@ executeAt path root =
         Nothing -> []
 
 
-transferTransientState : Property a -> Property a -> Property a
+transferTransientState : Property a -> Property b -> Property b
 transferTransientState propA propB =
     let
         f propA_ propB_ =

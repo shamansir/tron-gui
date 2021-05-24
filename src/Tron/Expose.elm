@@ -755,56 +755,11 @@ decodeToggle =
         ]
 
 
-reflect : Property a -> Property ( ProxyValue, a )
-reflect prop =
-    let
-        reflectWith toProxy_ =
-            Control.reflect
-                >> Control.map (Tuple.mapFirst toProxy_)
-    in case prop of
-        Nil -> Nil
-        Number control ->
-            Number <| reflectWith FromSlider <| control
-        Coordinate control ->
-            Coordinate <| reflectWith FromXY <| control
-        Text control ->
-            Text
-                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromInput)
-                <| Control.reflect
-                <| control
-        Color control ->
-            Color <| reflectWith FromColor <| control
-        Toggle control ->
-            Toggle <| reflectWith FromToggle <| control
-        Action control ->
-            Action <| reflectWith (always FromButton) <| control
-        Choice focus shape control ->
-            Choice focus shape
-                <| Nest.mapItems (Tuple.mapSecond reflect)
-                <| reflectWith (.selected >> FromChoice)
-                <| control
-        Group focus shape control ->
-            Group focus shape
-                <| Nest.mapItems (Tuple.mapSecond reflect)
-                <| reflectWith (always Other) <| control
-
-
-lift : Property a -> Property (ProxyValue -> Maybe a)
-lift =
-    Property.map (always << Just)
-
-
 freshRun : Property (ProxyValue -> Maybe msg) -> Cmd msg
 freshRun =
     evaluate
     -- >> Property.run
     >> runMaybe
-
-
-evaluate : Property (ProxyValue -> Maybe msg) -> Property (Maybe msg)
-evaluate =
-    reflect
-    >> Property.map (\(v, handler) -> handler v)
 
 
 runMaybe : Property (Maybe msg) -> Cmd msg

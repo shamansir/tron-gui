@@ -212,13 +212,17 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
             (
                 ( newUserModel
                 , state
-                , Core.invalidate <| userFor newUserModel
+                , userFor newUserModel
+                    |> Property.transferTransientState prevTree
+                    |> Core.invalidate
                 )
             , userEffect |> Cmd.map ToUser
             )
 
         ToTron guiMsg ->
-            case userFor model |> Core.update guiMsg state of
+            case prevTree
+                    |> Exp.lift
+                    |> Core.update guiMsg state of
                 ( nextState, nextTree, guiEffect ) ->
                     (
                         ( model
@@ -226,13 +230,8 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                         , nextTree
                         )
                     , Cmd.batch
-                        [ guiEffect
-                            |> Cmd.map ToUser
-                        , nextTree
-                            |> Exp.toExposed
-                            |> Tron.map Tuple.first
-                            |> Exp.runExposed
-                            |> Cmd.map SendUpdate
+                        [ {- guiEffect
+                            |> Cmd.map ToUser -}
                         ]
                     )
 
@@ -240,6 +239,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
             let
                 nextRoot =
                     userFor model
+                        |> Property.transferTransientState prevTree
                         |> Exp.apply (Exp.fromPort rawUpdate)
             in
                 (
