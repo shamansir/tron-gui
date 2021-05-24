@@ -109,6 +109,7 @@ update
     -> State
     -> Tron ( Exp.ProxyValue -> Maybe msg )
     -> ( State, Tron (), Cmd msg )
+    ---> ( State, Tron (), Cmd ( Exp.RawOutUpdate, msg ) )
 update msg state tree  =
     case msg of
         NoOp ->
@@ -120,7 +121,10 @@ update msg state tree  =
         Click path ->
             let
                 updates =
-                    tree |> executeAt path
+                    tree
+                        |> executeAt path
+                        --|> List.map (Tuple.mapSecond Exp.toExposed)
+                        |> Debug.log "executed"
                 nextRoot =
                     tree |> updateMany updates
             in
@@ -256,7 +260,7 @@ handleMouse mouseAction state tree =
             { state
             | mouse = nextMouseState
             }
-        , (if curMouseState.down then
+        , ( if curMouseState.down then
 
             case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
 
@@ -322,9 +326,9 @@ handleMouse mouseAction state tree =
             nextMouseState.dragFrom
                 |> Maybe.andThen findPathAt
                 |> Maybe.map (Focus.on tree)
-                |> Maybe.withDefault tree)
+                |> Maybe.withDefault tree
 
-        |> invalidate
+        ) |> invalidate
 
         , case mouseAction of
 
