@@ -13,9 +13,6 @@ map f (Control setup val a) =
     Control setup val <| f a
 
 
--- TODO: `map2`, `map3` etc.
-
-
 mapByValue : (value -> b) -> Control setup value a -> Control setup value b
 mapByValue f =
     reflect >> map (Tuple.first >> f)

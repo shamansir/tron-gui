@@ -19,6 +19,7 @@ import Tron.Control.Text as Text exposing (..)
 import Tron.Control.Color as Color exposing (..)
 import Tron.Control.Toggle as Toggle exposing (..)
 import Tron.Control.Nest as Nest exposing (..)
+import Tron.Util as Util
 
 import Tron.Pages as Pages exposing (Pages)
 import Size exposing (..)
@@ -473,53 +474,7 @@ transferTransientState propA propB =
                         (Text.getTransientState controlA
                             |> Text.restoreTransientState controlB)
                 _ -> propB_
-        zipItems controlA controlB =
-            let
-                itemsA = Nest.getItems controlA
-                itemsB = Nest.getItems controlB
-                lengthA = Array.length itemsA
-                lengthB = Array.length itemsB
-            in
-                List.map2
-                    (\maybeA maybeB ->
-                        case ( maybeA, maybeB ) of
-                            ( Just (labelA, propA_), Just (labelB, propB_) ) ->
-                                Just (labelB, transferTransientState propA_ propB_)
-                            ( Nothing, Just (labelB, propB_) ) ->
-                                Just (labelB, propB_)
-                            ( _, Nothing ) ->
-                                Nothing
-
-                    )
-                    (if lengthB <= lengthA
-                        then itemsA |> Array.map Just |> Array.toList
-                        else
-                            -- if new items were added in stateB, we should
-                            -- ensure to keep the new ones from B,
-                            -- so we fill up itemsA with items
-                            -- until it has the same length as itemsB,
-                            -- or else `map2` will skip them
-                            Array.append
-                                (itemsA |> Array.map Just)
-                                (Array.repeat (lengthB - lengthA) Nothing)
-                            |> Array.toList
-                    )
-                    (itemsB |> Array.map Just |> Array.toList)
-                    |> List.filterMap identity
-                    |> Array.fromList
-    in
-    case ( propA, propB ) of
-        ( Choice _ _ controlA, Choice _ _ controlB ) ->
-            case f propA propB of
-                Choice focus shape control ->
-                    Choice focus shape <| Nest.setItems (zipItems controlA controlB) <| control
-                otherProp -> otherProp
-        ( Group _ _ controlA, Group _ _ controlB ) ->
-            case f propA propB of
-                Group focus shape control ->
-                    Group focus shape <| Nest.setItems (zipItems controlA controlB) <| control
-                otherProp -> otherProp
-        _ -> f propA propB
+    in move f propA propB
 
 
 -- TODO: better use the functions below directly from their controls
@@ -780,3 +735,120 @@ setCellShape cs prop =
         Choice focus ( ps, _ ) control ->
             Choice focus ( ps, cs ) control
         _ -> prop
+
+
+compareValues : Property a -> Property b -> Bool
+compareValues propA propB =
+    case (propA, propB) of
+        (Nil, Nil) -> True
+        (Number controlA, Number controlB) ->
+            Control.getValue controlA == Control.getValue controlB
+        (Coordinate controlA, Coordinate controlB) ->
+            Control.getValue controlA == Control.getValue controlB
+        (Text controlA, Text controlB) ->
+            Control.getValue controlA == Control.getValue controlB
+        (Color controlA, Color controlB) ->
+            Control.getValue controlA == Control.getValue controlB
+        (Toggle controlA, Toggle controlB) ->
+            Control.getValue controlA == Control.getValue controlB
+        (Action _, Action _) -> True
+        (Choice _ _ _, Choice _ _ _) -> True
+        (Group _ _ _, Group _ _ _) -> True
+        (_, _) -> False
+
+
+fold2_ : ((Maybe (Property a), Maybe (Property b)) -> c -> c) -> Property a -> Property b -> c -> c
+fold2_ f propA propB = fold2Helper f ( Just propA, Just propB )
+
+
+fold2 : ((Maybe a, Maybe b) -> c -> c) -> Property a -> Property b -> c -> c
+fold2 f =
+    fold2_
+        (\(pA, pB) ->
+            f
+                ( (pA |> Maybe.andThen get)
+                , (pB |> Maybe.andThen get)
+                )
+        )
+
+
+fold2Helper : ((Maybe (Property a), Maybe (Property b)) -> c -> c) -> ( Maybe (Property a), Maybe (Property b) ) -> c -> c
+fold2Helper f ( maybePropA, maybePropB ) def =
+    let
+        foldNestItems itemsA itemsB =
+            Util.zipArrays
+                (itemsA |> Array.map Tuple.second)
+                (itemsB |> Array.map Tuple.second)
+                |> Array.foldl (fold2Helper f) def
+                |> f ( maybePropA, maybePropB )
+
+    in case ( maybePropA, maybePropB ) of
+
+        ( Just (Group _ _ groupControlA), Just (Group _ _ groupControlB) ) ->
+            foldNestItems
+                (Nest.getItems groupControlA)
+                (Nest.getItems groupControlB)
+
+        ( Just (Choice _ _ choiceControlA), Just (Choice _ _ choiceControlB) ) ->
+            foldNestItems
+                (Nest.getItems choiceControlA)
+                (Nest.getItems choiceControlB)
+
+        ( Just (Group _ _ groupControlA), _ ) ->
+            foldNestItems
+                (Nest.getItems groupControlA)
+                Array.empty
+
+        ( Just (Choice _ _ choiceControlA), _ ) ->
+            foldNestItems
+                (Nest.getItems choiceControlA)
+                Array.empty
+
+        ( _, Just (Group _ _ groupControlB) ) ->
+            foldNestItems
+                Array.empty
+                (Nest.getItems groupControlB)
+
+        ( _, Just (Choice _ _ choiceControlB) ) ->
+            foldNestItems
+                Array.empty
+                (Nest.getItems choiceControlB)
+
+        ( _, _ ) -> f ( maybePropA, maybePropB ) def
+
+
+move : (Property a -> Property b -> Property c) -> Property a -> Property b -> Property c
+move f propA propB =
+    let
+        merge ( maybeA, maybeB ) =
+            case ( maybeA, maybeB ) of
+                ( Just (labelA, propA_), Just (labelB, propB_) ) ->
+                    (labelB, move f propA_ propB_)
+                    --Just (labelB, move f propA_ propB_)
+                ( Nothing, Just (labelB, propB_) ) ->
+                    (labelB, move f Nil propB_)
+                    --Just (labelB, move f Nil propB_)
+                ( Just (labelA, propA_), Nothing ) ->
+                    --Nothing
+                    (labelA, move f propA Nil)
+                ( Nothing, Nothing ) ->
+                    --Nothing
+                    ("nil", move f Nil Nil)
+        zipItems controlA controlB =
+            Util.zipArrays
+                (Nest.getItems controlA)
+                (Nest.getItems controlB)
+                |> Array.map merge
+    in
+    case ( propA, propB ) of
+        ( Choice _ _ controlA, Choice _ _ controlB ) ->
+            case f propA propB of
+                Choice focus shape control ->
+                    Choice focus shape <| Nest.setItems (zipItems controlA controlB) <| control
+                otherProp -> otherProp
+        ( Group _ _ controlA, Group _ _ controlB ) ->
+            case f propA propB of
+                Group focus shape control ->
+                    Group focus shape <| Nest.setItems (zipItems controlA controlB) <| control
+                otherProp -> otherProp
+        _ -> f propA propB

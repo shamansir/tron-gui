@@ -76,3 +76,41 @@ runMaybe maybeMsg =
             Task.succeed msg
                 |> Task.perform identity
         Nothing -> Cmd.none
+
+
+zipArrays : Array a -> Array b -> Array ( Maybe a, Maybe b )
+zipArrays arrayA arrayB =
+    if Array.length arrayA >= Array.length arrayB then
+        arrayA |>
+            Array.indexedMap
+                (\index valueA ->
+                    ( Just valueA, Array.get index arrayB )
+                )
+    else
+        arrayB |>
+            Array.indexedMap
+                (\index valueB ->
+                    ( Array.get index arrayA, Just valueB )
+                )
+
+
+zip3Arrays : Array a -> Array b -> Array c -> Array ( Maybe a, Maybe b, Maybe c )
+zip3Arrays arrayA arrayB arrayC =
+    if Array.length arrayC < Array.length arrayA || Array.length arrayC < Array.length arrayB then
+        zipArrays arrayA arrayB
+            |> Array.indexedMap
+                (\index ( maybeValueA, maybeValueB ) ->
+                    ( maybeValueA, maybeValueB, Array.get index arrayC )
+                )
+    else if Array.length arrayA >= Array.length arrayB then
+        zipArrays arrayA arrayC
+            |> Array.indexedMap
+                (\index ( maybeValueA, maybeValueC ) ->
+                    ( maybeValueA, Array.get index arrayB, maybeValueC )
+                )
+    else
+        zipArrays arrayB arrayC
+            |> Array.indexedMap
+                (\index ( maybeValueB, maybeValueC ) ->
+                    ( Array.get index arrayA, maybeValueB, maybeValueC )
+                )
