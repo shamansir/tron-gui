@@ -752,7 +752,8 @@ compareValues propA propB =
         (Toggle controlA, Toggle controlB) ->
             Control.getValue controlA == Control.getValue controlB
         (Action _, Action _) -> True
-        (Choice _ _ _, Choice _ _ _) -> True
+        (Choice _ _ controlA, Choice _ _ controlB) ->
+            Nest.whichSelected controlA == Nest.whichSelected controlB
         (Group _ _ _, Group _ _ _) -> True
         (_, _) -> False
 
@@ -852,3 +853,31 @@ move f propA propB =
                     Group focus shape <| Nest.setItems (zipItems controlA controlB) <| control
                 otherProp -> otherProp
         _ -> f propA propB
+
+
+setValueTo : Property a -> Property b -> Property b
+setValueTo from to =
+    case ( from, to ) of
+        (Number controlA, Number controlB) ->
+            Number <| Control.setValue (Control.getValue controlA) <| controlB
+        (Coordinate controlA, Coordinate controlB) ->
+            Coordinate <| Control.setValue (Control.getValue controlA) <| controlB
+        (Text controlA, Text controlB) ->
+            Text <| Control.setValue (Control.getValue controlA) <| controlB
+        (Color controlA, Color controlB) ->
+            Color <| Control.setValue (Control.getValue controlA) <| controlB
+        (Toggle controlA, Toggle controlB) ->
+            Toggle <| Control.setValue (Control.getValue controlA) <| controlB
+        (Choice _ _ controlA, Choice focus shape controlB) ->
+            Choice focus shape <| Control.setValue (Control.getValue controlA) <| controlB
+        (Group _ _ controlA, Group focus shape controlB) ->
+            Group focus shape <| Control.setValue (Control.getValue controlA) <| controlB
+        (_, _) -> to
+
+
+
+-- map2 use `move` for that
+
+
+loadValues : Property a -> Property b -> Property b
+loadValues = move setValueTo

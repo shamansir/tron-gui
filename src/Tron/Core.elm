@@ -124,7 +124,6 @@ update msg state tree  =
                     tree
                         |> executeAt path
                         --|> List.map (Tuple.mapSecond Exp.toExposed)
-                        |> Debug.log "executed"
                 nextRoot =
                     tree |> updateMany updates
             in
