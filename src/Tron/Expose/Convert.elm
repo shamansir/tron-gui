@@ -106,12 +106,11 @@ the required information about the value, such as:
 Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
 toExposed : Tron msg -> Tron ( RawOutUpdate, msg )
-toExposed prop =
-    prop
-        |> toProxied
-        |> Property.addPaths
+toExposed =
+    toProxied
+        >> Property.addPaths
         -- FIXME: `Expose.encodeUpdate` does the same as above
-        |> Property.map
+        >> Property.map
             (\( ( path, labelPath ), ( proxyVal, msg ) ) ->
                 ( { path = Path.toList path
                   , labelPath = labelPath
@@ -134,11 +133,10 @@ together with message.
 Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
 toStrExposed : Tron msg -> Tron ( ( LabelPath, String ), msg )
-toStrExposed prop =
-    prop
-        |> toProxied
-        |> Property.addLabeledPath
-        |> Property.map
+toStrExposed =
+    toProxied
+        >> Property.addLabeledPath
+        >> Property.map
             (\( path, ( proxyVal, msg ) ) ->
                 ( ( path
                   , ProxyValue.toString proxyVal
@@ -187,7 +185,7 @@ lift =
     Property.map (always << Just)
 
 
-evaluate : Property (ProxyValue -> Maybe msg) -> Property (Maybe msg)
+evaluate : Property (ProxyValue -> Maybe a) -> Property (Maybe a)
 evaluate =
     reflect
     >> Property.map (\(v, handler) -> handler v)
