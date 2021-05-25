@@ -46,18 +46,13 @@ equal (Path p1) (Path p2) = p1 == p2
 
 pop : Path -> Maybe ( Path, Int )
 pop (Path l) =
-    let
-        reversed = List.reverse l
-    in
-        List.head reversed
-            |> Maybe.map
-                (\deepest ->
-                    ( List.tail reversed
-                        |> Maybe.withDefault []
-                        |> fromList
-                    , deepest
-                    )
-                )
+    case List.reverse l of
+        [] ->
+            Nothing
+
+        last_ :: rest ->
+            ( Path <| List.reverse rest, last_ )
+                |> Just
 
 
 last : Path -> Maybe Int
