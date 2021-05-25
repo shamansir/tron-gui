@@ -654,6 +654,9 @@ fromPort portUpdate =
         } -}
 
 
+
+-- TODO: move functions below to `Expose.Convert` module?
+
 swap : RawOutUpdate -> RawInUpdate
 swap outUpdate =
     { path = outUpdate.path

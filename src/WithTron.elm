@@ -115,7 +115,6 @@ import Tron.Property as Property exposing (LabelPath)
 import Tron.Expose.Data as Exp
 
 
-
 {-| Adds `Model msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
 type alias ProgramWithTron flags model msg =
     Program flags ( model, State, Tron () ) ( WithTronMsg msg )
@@ -150,12 +149,12 @@ init ( userInit, userFor ) maybeUrl renderTarget ports flags =
         (
             ( initialModel
             , state |> addInitOptions renderTarget
-            , firstTree |> Core.invalidate
+            , firstTree |> Exp.toUnit
             )
         , Cmd.batch
             [ userEffect |> Cmd.map ToUser
             , guiEffect |> Cmd.map ToTron
-            , performInitEffects ports (firstTree |> Core.invalidate) |> Cmd.map ToUser
+            , performInitEffects ports (firstTree |> Exp.toUnit) |> Cmd.map ToUser
             , case maybeUrl of
                 Just url ->
                     Task.succeed url
@@ -215,14 +214,17 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                 , userFor newUserModel
                     |> Property.transferTransientState prevTree
                     |> Property.loadValues prevTree
-                    |> Core.invalidate
+                    |> Exp.toUnit
                 )
             , userEffect |> Cmd.map ToUser
             )
 
         ToTron guiMsg ->
-            case prevTree
-                    |> Exp.lift
+            case {- prevTree
+                    |> Exp.lift -}
+                 userFor model
+                    |> Property.transferTransientState prevTree
+                    |> Property.loadValues prevTree
                     |> Core.update guiMsg state of
                 ( nextState, nextTree, guiEffect ) ->
                     (
@@ -231,10 +233,11 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                         , nextTree
                         )
                     , Cmd.batch
-                        [ {- guiEffect
-                            |> Cmd.map ToUser -}
+                        [ guiEffect
+                            |> Cmd.map (Tuple.second >> ToUser)
+                        , guiEffect
+                            |> Cmd.map (Tuple.first >> SendUpdate)
                         ]
-
                     )
 
         ReceiveRaw rawUpdate ->
@@ -247,7 +250,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                 (
                     ( model
                     , state
-                    , nextRoot |> Core.invalidate
+                    , nextRoot |> Exp.toUnit
                     )
                 , nextRoot
                     |> Exp.freshRun
@@ -474,7 +477,7 @@ element
 element renderTarget ports def =
     Browser.element
         { init =
-            init ( def.init, def.for >> Core.invalidate ) Nothing renderTarget ports
+            init ( def.init, def.for >> Exp.toUnit ) Nothing renderTarget ports
         , update =
             update ( def.update, def.for ) ports
         , view =
@@ -531,7 +534,7 @@ document renderTarget ports def =
     Browser.document
         { init =
             \flags ->
-                init ( def.init, def.for >> Core.invalidate) Nothing renderTarget ports flags
+                init ( def.init, def.for >> Exp.toUnit) Nothing renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =
@@ -614,7 +617,7 @@ application renderTarget ports def =
     Browser.application
         { init =
             \flags url _ ->
-                init ( def.init, def.for >> Core.invalidate ) (Just url) renderTarget ports flags
+                init ( def.init, def.for >> Exp.toUnit ) (Just url) renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =

@@ -2,7 +2,7 @@ module Tron.Core exposing
     ( State, Msg
     , view, update, init, subscriptions, run
     , dock, reshape
-    , applyRaw, invalidate
+    , applyRaw
     )
 
 
@@ -37,6 +37,7 @@ import Tron.Detach as Detach exposing (ClientId)
 import Tron.Detach exposing (State(..))
 import Tron.Expose as Exp exposing (..)
 import Tron.Builder exposing (..)
+import TronRef as Ref
 
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Style.Dock as Dock exposing (..)
@@ -47,7 +48,8 @@ import Tron.Style.Cell as Cell exposing (..)
 
 import Tron.Expose.Data as Exp
 import Tron.Expose.Convert as Exp
-import Tron.Expose.ProxyValue as Exp
+import Tron.Expose.ProxyValue as Exp exposing (ProxyValue)
+import Tron.Expose.ProxyValue as ProxyValue
 
 
 type alias State =
@@ -108,27 +110,30 @@ update
     :  Msg
     -> State
     -> Tron ( Exp.ProxyValue -> Maybe msg )
-    -> ( State, Tron (), Cmd msg )
-    ---> ( State, Tron (), Cmd ( Exp.RawOutUpdate, msg ) )
+    -> ( State, Tron (), Cmd (Exp.RawOutUpdate, msg ) )
 update msg state tree  =
     case msg of
         NoOp ->
-            ( state, tree |> invalidate, Cmd.none )
+            ( state, tree |> Exp.toUnit, Cmd.none )
 
         ApplyMouse mouseAction ->
-            handleMouse mouseAction state tree
+            tree
+                |> toExposed_ state
+                |> handleMouse mouseAction state
 
         Click path ->
             let
+                expTree =
+                    tree |> toExposed_ state
                 updates =
-                    tree
+                    expTree
                         |> executeAt path
                         --|> List.map (Tuple.mapSecond Exp.toExposed)
                 nextRoot =
-                    tree |> updateMany updates
+                    expTree |> updateMany updates
             in
                 ( state
-                , nextRoot |> invalidate
+                , nextRoot |> Exp.toUnit
                 , updates
                     |> List.map (Tuple.second >> Exp.freshRun)
                     |> Cmd.batch
@@ -136,7 +141,7 @@ update msg state tree  =
 
         MouseDown path ->
             ( state
-            , Focus.on tree path |> invalidate
+            , Focus.on tree path |> Exp.toUnit
             , Cmd.none
             )
 
@@ -144,14 +149,16 @@ update msg state tree  =
            let
                 curFocus = Focus.find tree
             in
-                handleKeyDown keyCode curFocus state tree
+                tree
+                    |> toExposed_ state
+                    |> handleKeyDown keyCode curFocus state
 
         ViewportChanged ( w, h ) ->
             (
                 { state
                 | viewport = Size (w, h)
                 }
-            , tree |> invalidate
+            , tree |> Exp.toUnit
             , Cmd.none
             )
 
@@ -162,7 +169,7 @@ update msg state tree  =
                         |> updateTextAt path val
             in
                 ( state
-                , nextRoot |> invalidate
+                , nextRoot |> Exp.toUnit
                 , Cmd.none
                 )
 
@@ -171,7 +178,7 @@ update msg state tree  =
                 nextRoot = detachAt path tree
             in
                 ( state
-                , nextRoot |> invalidate
+                , nextRoot |> Exp.toUnit
                 , Cmd.none -- FIXME: Detach.sendTree gui.detach nextRoot
                 )
 
@@ -180,7 +187,7 @@ update msg state tree  =
                 nextRoot = switchPageAt path pageNum tree
             in
                 ( state
-                , nextRoot |> invalidate
+                , nextRoot |> Exp.toUnit
                 , Cmd.none
                 )
 
@@ -227,7 +234,7 @@ handleMouse : MouseAction -> State -> Tron ( Exp.ProxyValue -> Maybe msg ) -> ( 
 handleMouse mouseAction state tree =
     let
         rootPath = getRootPath state
-        unitTree = tree |> invalidate
+        unitTree = tree |> Exp.toUnit
         curMouseState =
             state.mouse
         nextMouseState =
@@ -327,7 +334,7 @@ handleMouse mouseAction state tree =
                 |> Maybe.map (Focus.on tree)
                 |> Maybe.withDefault tree
 
-        ) |> invalidate
+        ) |> Exp.toUnit
 
         , case mouseAction of
 
@@ -354,10 +361,6 @@ handleMouse mouseAction state tree =
 
 
 
-invalidate : Tron a -> Tron ()
-invalidate = Tron.map <| always ()
-
-
 handleKeyDown
     :  Int
     -> Path
@@ -373,7 +376,7 @@ handleKeyDown keyCode path state tree =
                 nextRoot = tree |> updateMany updates
             in
                 ( state
-                , nextRoot |> invalidate
+                , nextRoot |> Exp.toUnit
                 , updates
                     |> List.map (Tuple.second >> Exp.freshRun)
                     |> Cmd.batch
@@ -382,20 +385,20 @@ handleKeyDown keyCode path state tree =
 
     in case keyCode of
         -- left arrow
-        37 -> ( state, tree |> Focus.shift Focus.Left |> invalidate, Cmd.none )
+        37 -> ( state, tree |> Focus.shift Focus.Left |> Exp.toUnit, Cmd.none )
         -- right arrow
-        39 -> ( state, tree |> Focus.shift Focus.Right |> invalidate, Cmd.none )
+        39 -> ( state, tree |> Focus.shift Focus.Right |> Exp.toUnit, Cmd.none )
         -- up arrow
-        38 -> ( state, tree |> Focus.shift Focus.Up |> invalidate, Cmd.none )
+        38 -> ( state, tree |> Focus.shift Focus.Up |> Exp.toUnit, Cmd.none )
         -- down arrow
-        40 -> ( state, tree |> Focus.shift Focus.Down |> invalidate, Cmd.none )
+        40 -> ( state, tree |> Focus.shift Focus.Down |> Exp.toUnit, Cmd.none )
         -- space
         32 ->
             (
                 { state
                 | hidden = not state.hidden
                 }
-            , tree |> invalidate
+            , tree |> Exp.toUnit
             , Cmd.none
             )
             -- executeByPath ()
@@ -410,30 +413,60 @@ handleKeyDown keyCode path state tree =
                             -- FIXME: second time search for a path
                             tree
                                 |> setAt path nextProp
-                                |> invalidate
+                                |> Exp.toUnit
                         -- FIXME: inside, we check if it is a text prop again
                         , Exp.freshRun nextProp
                             --|> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()
         -- else
-        _ -> ( state, tree |> invalidate, Cmd.none )
+        _ -> ( state, tree |> Exp.toUnit, Cmd.none )
 
 
-{-
-toExposed : Model -> Model ( Exp.RawOutUpdate, msg )
-toExposed gui =
-    { dock = gui.dock
-    , viewport = gui.viewport
-    , size = gui.size
-    , mouse = gui.mouse
-    , tree =
-        gui.tree
-            |> Exp.toExposed
-            |> Property.map (Tuple.mapFirst (Detach.addClientId <| Tuple.first <| gui.detach))
-    , detach = gui.detach
-    , hidden = gui.hidden
-    } -}
+toExposed : State -> Tron a -> Tron ( Exp.RawOutUpdate, a )
+toExposed state =
+    Exp.toExposed
+        >> Property.map
+            (Tuple.mapFirst
+                <| Detach.addClientId <| Tuple.first <| state.detach
+            )
+
+
+toProxied_ : Ref.Tron msg -> Ref.Tron ( Exp.ProxyValue, msg )
+toProxied_ =
+    Property.map
+        (\f ->
+            \proxy ->
+                f proxy |> Maybe.map (Tuple.pair proxy)
+        )
+
+
+toExposed_ : State -> Ref.Tron a -> Ref.Tron ( Exp.RawOutUpdate, a )
+toExposed_ state =
+    toProxied_
+        >> Property.addPaths
+        >> Property.map
+            (\(path, f) ->
+                \proxy ->
+                    f proxy |> Maybe.map (Tuple.pair path)
+            )
+        -- FIXME: `Expose.encodeUpdate` does the same as above
+        >> Ref.map
+            (\( ( path, labelPath ), ( proxyVal, msg ) ) ->
+                ( { path = Path.toList path
+                  , labelPath = labelPath
+                  , type_ = ProxyValue.getTypeString proxyVal
+                  , value = ProxyValue.encode proxyVal
+                  , stringValue = ProxyValue.toString proxyVal
+                  , client = E.null -- FIXME: store clientId separately in `Detach`
+                  }
+                , msg
+                )
+            )
+        >> Ref.map
+            (Tuple.mapFirst
+                <| Detach.addClientId <| Tuple.first <| state.detach
+            )
 
 
 focus : msg -> Cmd msg
