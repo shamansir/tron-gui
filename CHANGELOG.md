@@ -1,3 +1,7 @@
+### 9.0.0
+
+* Fix the major bug with `Path.pop` returning reverse result and, so, working with second-level panels;
+
 ### 8.0.1
 
 * New base font: `Oxanium`;
