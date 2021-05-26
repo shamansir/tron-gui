@@ -65,7 +65,7 @@ alter : { a | min : Float, max : Float, step : Float } -> Float -> Float -> Floa
 alter { min, max, step } amount startedFrom =
     let
         toAdd = (amount - 0.5) * (max - min)
-        adjustedValue = min + toFloat (floor (startedFrom + toAdd - min / step)) * step
+        adjustedValue = min + (toFloat (floor ((startedFrom - min + toAdd) / step)) * step)
     in if adjustedValue <= min then min
         else if adjustedValue >= max then max
         else adjustedValue

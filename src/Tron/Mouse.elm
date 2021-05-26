@@ -102,8 +102,8 @@ distanceY howFar mstate  =
                 in
                     --align diffY
                     diffY
-            else 0
-        _ -> 0
+            else 0.5
+        _ -> 0.5
 
 
 distanceXY : Float -> MouseState -> ( Float, Float )
@@ -128,6 +128,6 @@ distanceXY howFar mstate  =
                     {- ( align diffX
                     , align (1 - diffY)
                     ) -}
-            else ( 0, 0 )
-        _ -> ( 0, 0 )
+            else ( 0.5, 0.5 )
+        _ -> ( 0.5, 0.5 )
 

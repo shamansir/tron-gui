@@ -223,6 +223,7 @@ knob theme state bounds value relValue =
                 [ SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat cy
                 , SA.class "knob__value"
+                , SA.style "pointer-events: none"
                 , SA.fill <| Color.toCssString <| Coloring.text theme state
                 ]
                 [ Svg.text <| String.fromFloat roundedValue ]

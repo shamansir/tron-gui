@@ -55,7 +55,7 @@ type Property a
     | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property a ) a)
 
 
-knobDistance = 90 * 4
+knobDistance = 90
 
 
 defaultNestShape : NestShape
