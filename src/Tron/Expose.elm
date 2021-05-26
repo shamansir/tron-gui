@@ -32,16 +32,16 @@ runProperty value property =
             Cmd.none
 
         ( Number control, FromSlider f ) ->
-            control |> setValue f |> Control.run
+            control |> Control.update ( Tuple.mapSecond <| always f ) |> Control.run
 
         ( Coordinate control, FromXY xy ) ->
-            control |> setValue xy |> Control.run
+            control |> Control.update ( Tuple.mapSecond <| always xy ) |> Control.run
 
         ( Text control, FromInput s ) ->
-            control |> setValue ( Ready, s ) |> Control.run
+            control |> Control.update ( Tuple.mapSecond <| always s ) |> Control.run
 
         ( Color control, FromColor c ) ->
-            control |> setValue c |> Control.run
+            control |> Control.update ( Tuple.mapSecond <| always c )|> Control.run
 
         ( Toggle control, FromToggle t ) ->
             control |> setValue t |> Control.run
@@ -94,16 +94,16 @@ applyProperty value prop =
             prop
 
         ( Number control, FromSlider f ) ->
-            control |> Control.setValue f |> Number
+            control |> Control.update ( Tuple.mapSecond <| always f ) |> Number
 
         ( Coordinate control, FromXY xy ) ->
-            control |> Control.setValue xy |> Coordinate
+            control |> Control.update ( Tuple.mapSecond <| always xy ) |> Coordinate
 
         ( Text control, FromInput s ) ->
-            control |> Control.setValue ( Ready, s ) |> Text
+            control |> Control.update ( Tuple.mapSecond <| always s ) |> Text
 
         ( Color control, FromColor c ) ->
-            control |> Control.setValue c |> Color
+            control |> Control.update ( Tuple.mapSecond <| always c ) |> Color
 
         ( Toggle control, FromToggle t ) ->
             control |> Control.setValue t |> Toggle
@@ -215,7 +215,7 @@ applyStringValue str prop =
                     case v of
                         FromSlider n ->
                             control
-                                |> Control.setValue n
+                                |> Control.update ( Tuple.mapSecond <| always n )
                                 |> Number
                                 |> Just
 
@@ -228,9 +228,9 @@ applyStringValue str prop =
                 "xy"
                 (\v ->
                     case v of
-                        FromXY n ->
+                        FromXY xy ->
                             control
-                                |> Control.setValue n
+                                |> Control.update ( Tuple.mapSecond <| always xy )
                                 |> Coordinate
                                 |> Just
 
@@ -258,9 +258,9 @@ applyStringValue str prop =
                 "color"
                 (\v ->
                     case v of
-                        FromColor n ->
+                        FromColor color ->
                             control
-                                |> Control.setValue n
+                                |> Control.update ( Tuple.mapSecond <| always color )
                                 |> Color
                                 |> Just
 
@@ -333,7 +333,7 @@ encodePropertyAt path property =
                 , ( "path", encodeRawPath path )
                 ]
 
-        Number (Control { min, max, step } val _) ->
+        Number (Control { min, max, step } ( _, val ) _) ->
             E.object
                 [ ( "type", E.string "slider" )
                 , ( "path", encodeRawPath path )
@@ -343,7 +343,7 @@ encodePropertyAt path property =
                 , ( "step", E.float step )
                 ]
 
-        Coordinate (Control ( xSpec, ySpec ) ( x, y ) _) ->
+        Coordinate (Control ( xSpec, ySpec ) ( _, ( x, y ) ) _) ->
             E.object
                 [ ( "type", E.string "xy" )
                 , ( "path", encodeRawPath path )
@@ -368,7 +368,7 @@ encodePropertyAt path property =
                 , ( "current", E.string val )
                 ]
 
-        Color (Control _ val _) ->
+        Color (Control _ ( _, val ) _) ->
             E.object
                 [ ( "type", E.string "color" )
                 , ( "path", encodeRawPath path )

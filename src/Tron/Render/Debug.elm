@@ -27,15 +27,17 @@ propertyDebug ( label, prop )  =
         Nil ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " ghost" ]
-        Number (Control { min, step, max } val _) ->
+        Number (Control { min, step, max } ( maybeFrom, val ) _) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " knob: "
                 , textAt 5 20
                     <| String.fromFloat min ++ "/"
                     ++ String.fromFloat step ++ "/"
                     ++ String.fromFloat max
-                    ++ " " ++ String.fromFloat val ]
-        Coordinate (Control ( xConf, yConf ) ( valX, valY ) _) ->
+                    ++ " " ++ String.fromFloat val
+                    ++ " " ++ (maybeFrom |> Maybe.map String.fromFloat |> Maybe.withDefault "-")
+                ]
+        Coordinate (Control ( xConf, yConf ) ( _, ( valX, valY ) ) _) ->
             Svg.g []
                 [ textAt 5 5 <| "xy: " ++ label
                 , textAt 5 20
@@ -53,7 +55,7 @@ propertyDebug ( label, prop )  =
                 , textAt 5 20
                     <| if val == TurnedOn then "on" else "off"
                 ]
-        Color (Control _ color _) ->
+        Color (Control _ ( _, color ) _) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " color: " ++ Color.toCssString color
                 ]

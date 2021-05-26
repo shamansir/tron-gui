@@ -62,11 +62,13 @@ flipMaybe ( a, maybeB ) =
 
 
 alter : { a | min : Float, max : Float, step : Float } -> Float -> Float -> Float
-alter { min, max, step } amount curValue =
+alter { min, max, step } amount startedFrom =
     let
-        toAdd = amount * (max - min)
-        alignedByStep = toFloat (floor (toAdd / step)) * step
-    in min + alignedByStep
+        toAdd = (amount - 0.5) * (max - min)
+        adjustedValue = min + toFloat (floor (startedFrom + toAdd - min / step)) * step
+    in if adjustedValue <= min then min
+        else if adjustedValue >= max then max
+        else adjustedValue
 
 
 runMaybe : Maybe msg -> Cmd msg

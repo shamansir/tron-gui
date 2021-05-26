@@ -100,7 +100,8 @@ distanceY howFar mstate  =
                     topY = originY + (howFar / 2)
                     diffY = (topY - curY) / howFar
                 in
-                    align diffY
+                    --align diffY
+                    diffY
             else 0
         _ -> 0
 
@@ -121,9 +122,12 @@ distanceXY howFar mstate  =
                     diffX = (curX - leftX) / howFar
                     diffY = (topY - curY) / howFar
                 in
-                    ( align diffX
-                    , align (1 - diffY)
+                    ( diffX
+                    , 1 - diffY
                     )
+                    {- ( align diffX
+                    , align (1 - diffY)
+                    ) -}
             else ( 0, 0 )
         _ -> ( 0, 0 )
 

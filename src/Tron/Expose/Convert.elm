@@ -49,12 +49,12 @@ toProxied prop =
 
         Number control ->
             control
-                |> convertWith FromSlider
+                |> convertWith (Tuple.second >> FromSlider)
                 |> Number
 
         Coordinate control ->
             control
-                |> convertWith FromXY
+                |> convertWith (Tuple.second >> FromXY)
                 |> Coordinate
 
         Text control ->
@@ -64,7 +64,7 @@ toProxied prop =
 
         Color control ->
             control
-                |> convertWith FromColor
+                |> convertWith (Tuple.second >> FromColor)
                 |> Color
 
         Toggle control ->
@@ -148,36 +148,50 @@ toStrExposed =
 
 reflect : Property a -> Property ( ProxyValue, a )
 reflect prop =
-    let
-        reflectWith toProxy_ =
-            Control.reflect
-                >> Control.map (Tuple.mapFirst toProxy_)
-    in case prop of
+    case prop of
         Nil -> Nil
         Number control ->
-            Number <| reflectWith FromSlider <| control
+            Number
+                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromSlider)
+                <| Control.reflect
+                <| control
         Coordinate control ->
-            Coordinate <| reflectWith FromXY <| control
+            Coordinate
+                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromXY)
+                <| Control.reflect
+                <| control
         Text control ->
             Text
                 <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromInput)
                 <| Control.reflect
                 <| control
         Color control ->
-            Color <| reflectWith FromColor <| control
+            Color
+                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromColor)
+                <| Control.reflect
+                <| control
         Toggle control ->
-            Toggle <| reflectWith FromToggle <| control
+            Toggle
+                <| Control.map (Tuple.mapFirst FromToggle)
+                <| Control.reflect
+                <| control
         Action control ->
-            Action <| reflectWith (always FromButton) <| control
+            Action
+                <| Control.map (Tuple.mapFirst <| always FromButton)
+                <| Control.reflect
+                <| control
         Choice focus shape control ->
             Choice focus shape
                 <| Nest.mapItems (Tuple.mapSecond reflect)
-                <| reflectWith (.selected >> FromChoice)
+                <| Control.map (Tuple.mapFirst <| .selected >> FromChoice)
+                <| Control.reflect
                 <| control
         Group focus shape control ->
             Group focus shape
                 <| Nest.mapItems (Tuple.mapSecond reflect)
-                <| reflectWith (always Other) <| control
+                <| Control.map (Tuple.mapFirst <| always Other)
+                <| Control.reflect
+                <| control
 
 
 lift : Property a -> Property (ProxyValue -> Maybe a)

@@ -215,10 +215,10 @@ get : Property a -> ProxyValue
 get prop =
     case prop of
         Nil -> Other
-        Number control -> control |> Control.getValue |> FromSlider
-        Coordinate control -> control |> Control.getValue |> FromXY
+        Number control -> control |> Control.getValue |> Tuple.second |> FromSlider
+        Coordinate control -> control |> Control.getValue |> Tuple.second |> FromXY
         Text control -> control |> Control.getValue |> Tuple.second |> FromInput
-        Color control -> control |> Control.getValue |> FromColor
+        Color control -> control |> Control.getValue |> Tuple.second |> FromColor
         Toggle control -> control |> Control.getValue |> FromToggle
         Action _ -> FromButton
         Choice _ _ control -> control |> Control.getValue |> .selected |> FromChoice

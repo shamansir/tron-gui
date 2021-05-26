@@ -6,7 +6,13 @@ import Axis exposing (Axis)
 import Tron.Control as Core exposing (Control)
 
 
-type alias Control a = Core.Control ( Axis, Axis ) ( Float, Float ) a
+-- if the XY is being dragged now, we need to know its first value it had when user started dragging,
+-- so it is the first `Maybe` in the pair
+type alias Control a =
+    Core.Control
+        ( Axis, Axis )
+        ( Maybe ( Float, Float ), ( Float, Float ) )
+        a
 
 
 separator : String

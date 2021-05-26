@@ -2,6 +2,7 @@
 
 * Breaking: Close `ProxyValue` constructors from public;
     * Rename it to just `Value`, and put the definition into `Control` may be?
+* `TronRef` -> `Tron.Deferred`
 * Breaking: Stick to just one `WithTron.Backed`, since anyway it is possible to convert one to another using `Tron` methods;
 * Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;
 * Breaking, Bug: Adjust default values in knobs/XY to the actual range, or else it is rendered improperly;
@@ -36,6 +37,7 @@
 ## Inner API / Logic
 
 * Move `Util` stuff to the corresponding modules;
+* Move functions related to controls to the controls themselves, hide the `Control` constructor from others;
 * Debug `RenderMode` (i.e. ensure `Debug` view still works);
 * Use `Size Cells`, like integer size, in `Layout`;
 * Breaking?: Use some safe Unique IDs to reference the position of the control in the tree, so that while the tree structure is changing, ID's stay the same;

@@ -116,7 +116,7 @@ viewProperty
     ( label, prop ) =
     case prop of
 
-        Number (Control { min, max } value _) ->
+        Number (Control { min, max } ( _, value ) _) ->
 
             knob
                 theme
@@ -125,7 +125,7 @@ viewProperty
                 value
                 <| (value - min) / (max - min)
 
-        Coordinate (Control ( xAxis, yAxis ) ( xValue, yValue ) _) ->
+        Coordinate (Control ( xAxis, yAxis ) ( _, ( xValue, yValue ) ) _) ->
 
             coord
                 theme
@@ -148,7 +148,7 @@ viewProperty
 
             button theme state face cellShape label bounds
 
-        Color (Control _ value _) ->
+        Color (Control _ (_, value) _) ->
 
             color theme state value bounds
 

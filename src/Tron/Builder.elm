@@ -264,7 +264,7 @@ root props msg =
 float : Axis -> Float -> ( Float -> msg ) -> Tron msg
 float axis value toMsg =
     Number
-        <| Control axis value
+        <| Control axis ( Nothing, value )
         <| toMsg value -- RoundBy 2
 
 
@@ -303,7 +303,7 @@ number = float
 xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Tron msg
 xy axes value toMsg =
     Coordinate
-        <| Control axes value
+        <| Control axes ( Nothing, value )
         <| toMsg value
 
 
@@ -365,7 +365,7 @@ color value f =
     Color
         <| Control
             ()
-            value
+            ( Nothing, value )
             (f value)
 
 

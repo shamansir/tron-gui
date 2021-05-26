@@ -260,29 +260,53 @@ handleMouse mouseAction state tree =
                             |> Maybe.map (Tuple.pair path)
                     )
 
+        keepsDragging = curMouseState.down
+
+        startedDragging =
+            case mouseAction of
+                Mouse.Down _ ->
+                    not curMouseState.down
+                    && nextMouseState.down
+                _ -> False
+
+        finishedDragging =
+            case mouseAction of
+                Mouse.Up _ ->
+                    curMouseState.down
+                    && not nextMouseState.down
+                _ -> False
+
     in
 
         (
             { state
             | mouse = nextMouseState
             }
-        , ( if curMouseState.down then
+        , ( if keepsDragging then
 
             case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
 
-                Just ( path, Number ( Control axis curValue handler ) ) ->
+                Just ( path, Number ( Control axis ( maybeFrom, curValue ) a ) ) ->
                     let
+                        valueToAlter = maybeFrom |> Maybe.withDefault curValue
                         dY = distanceY knobDistance nextMouseState
-                        nextVal = alter axis dY curValue
+                        nextVal = alter axis dY valueToAlter
                         nextControl =
-                            Control axis nextVal handler
+                            Control
+                                axis
+                                ( if finishedDragging
+                                    then Nothing
+                                    else maybeFrom
+                                , nextVal
+                                )
+                                a
                     in
                         updateAt
                             path
                             (always <| Number nextControl)
                             tree
 
-                Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( curX, curY ) handler ) ) ->
+                Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( maybeFrom, ( curX, curY ) ) a ) ) ->
                     let
                         ( dX, dY ) = distanceXY knobDistance nextMouseState
                         ( nextX, nextY ) =
@@ -290,14 +314,14 @@ handleMouse mouseAction state tree =
                             , alter yAxis dY curY
                             )
                         nextControl =
-                            Control ( xAxis, yAxis ) ( nextX, nextY ) handler
+                            Control ( xAxis, yAxis ) ( maybeFrom, ( nextX, nextY ) ) a
                     in
                         updateAt
                             path
                             (always <| Coordinate nextControl)
                             tree
 
-                Just ( path, Color ( Control state_ curColor handler ) ) ->
+                Just ( path, Color ( Control state_ ( maybeFromColor, curColor ) a ) ) ->
                     let
                         hueAxis = { min = 0, max = 1, step = 0.01 }
                         lgtAxis = { min = 0, max = 1, step = 0.01 }
@@ -317,7 +341,7 @@ handleMouse mouseAction state tree =
                                 nextLightness -- curHsla.lightness
                                 curHsla.alpha
                         nextControl =
-                            Control state_ nextColor handler
+                            Control state_ ( maybeFromColor, nextColor ) a
                     in
                         updateAt
                             path
@@ -329,33 +353,54 @@ handleMouse mouseAction state tree =
 
         else
 
-            nextMouseState.dragFrom
-                |> Maybe.andThen findPathAt
-                |> Maybe.map (Focus.on tree)
-                |> Maybe.withDefault tree
+            let
+                refocusedTree
+                    = nextMouseState.dragFrom
+                        |> Maybe.andThen findPathAt
+                        |> Maybe.map (Focus.on tree)
+                        |> Maybe.withDefault tree
+            in
+                if startedDragging then
+
+                    case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
+
+                        Just ( path, Number ( Control axis ( _, curValue ) a ) ) ->
+                            let
+                                nextControl =
+                                    Control
+                                        axis
+                                        ( Just curValue
+                                        , curValue
+                                        )
+                                        a
+                            in
+                                updateAt
+                                    path
+                                    (always <| Number nextControl)
+                                    refocusedTree
+
+                        _ -> refocusedTree
+
+
+                else refocusedTree
 
         ) |> Exp.toUnit
 
-        , case mouseAction of
+        , if finishedDragging
+            then
 
-                Mouse.Up _ ->
-                    if curMouseState.down
-                    && not nextMouseState.down
-                    then
+                case curMouseState.dragFrom |> Maybe.andThen findCellAt of
+                -- TODO: do we need a path returned from `findCellAt`?
 
-                        case curMouseState.dragFrom |> Maybe.andThen findCellAt of
-                        -- TODO: do we need a path returned from `findCellAt`?
+                    Just ( _, prop ) ->
+                        case prop of
+                            Number _ -> Exp.freshRun prop
+                            Coordinate _ -> Exp.freshRun prop
+                            Color _ -> Exp.freshRun prop
+                            _ -> Cmd.none
+                    Nothing -> Cmd.none
 
-                            Just ( _, prop ) ->
-                                case prop of
-                                    Number _ -> Exp.freshRun prop
-                                    Coordinate _ -> Exp.freshRun prop
-                                    Color _ -> Exp.freshRun prop
-                                    _ -> Cmd.none
-                            Nothing -> Cmd.none
-
-                    else Cmd.none
-                _ -> Cmd.none
+            else Cmd.none
 
         )
 
