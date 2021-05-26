@@ -2,8 +2,8 @@ module Example.Tiler.Product exposing (..)
 
 
 import Color exposing (Color)
+import Color.Convert exposing (hexToColor)
 import Array exposing (..)
-import Example.Tiler.Util exposing (hexToColor)
 
 
 type Palette = Palette Color Color Color
@@ -52,6 +52,35 @@ default = JetBrains
 all : List Product
 all =
     [ JetBrains
+    , Space
+    , IntelliJ
+    , PhpStorm
+    , PyCharm
+    , RubyMine
+    , WebStorm
+    , CLion
+    , DataGrip
+    , AppCode
+    , GoLand
+    , ReSharper
+    , ReSharperCpp
+    , DotCover
+    , DotMemory
+    , DotPeek
+    , DotTrace
+    , Rider
+    , TeamCity
+    , YouTrack
+    , Upsource
+    , Hub
+    , Kotlin
+    , MPS
+    , IntelliJEdu
+    , PyCharmEdu
+    , Datalore
+
+
+    {-
     , AppCode
     , CLion
     , DataGrip
@@ -77,7 +106,7 @@ all =
     , TeamCity
     , Upsource
     , WebStorm
-    , YouTrack
+    , YouTrack -}
     ]
 
 
@@ -116,7 +145,7 @@ getName product =
 iconName : Product -> Maybe String
 iconName product =
     case product of
-        JetBrains -> Nothing
+        JetBrains -> Just "logojb"
         Space -> Just "Space"
         IntelliJ -> Just "IntelliJ-IDEA"
         PhpStorm -> Just "PhpStorm"
