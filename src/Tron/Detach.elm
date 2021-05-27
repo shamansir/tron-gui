@@ -90,15 +90,13 @@ localUrlToString fragments =
     "#" ++ (String.join "&" <| List.map encodeFragment <| fragments)
 
 
-addClientId : Maybe ClientId -> Exp.RawOutUpdate -> Exp.RawOutUpdate
-addClientId maybeClientId upd =
+encodeClientId : Maybe ClientId -> E.Value
+encodeClientId maybeClientId =
     case maybeClientId of
         Just id_ ->
-            { upd
-            | client = E.string <| HashId.toString id_
-            }
+            E.string <| HashId.toString id_
         Nothing ->
-            upd
+            E.null
 
 
 {-

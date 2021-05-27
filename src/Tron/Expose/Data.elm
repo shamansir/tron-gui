@@ -1,15 +1,16 @@
 module Tron.Expose.Data exposing
     ( Update
-    , RawPath, RawClientId
+    , RawPath, RawClientId, RawValue
     , Ack, RawInUpdate, RawOutUpdate
     , RawProperty
+    , noValue
     )
 
 {-| The types which are used to communicate b/w Tron and ports (and so JS and WebSockets and `dat.gui`).
 
 # Packages for ports
 
-@docs Ack, RawInUpdate, RawOutUpdate, RawProperty
+@docs Ack, RawValue, RawInUpdate, RawOutUpdate, RawProperty
 
 # Helpers
 
@@ -43,15 +44,21 @@ type alias Update =
     }
 
 
-{-| The JSON-friendly structure of updates which is sent
-to the outgoing ports from Tron. -}
-type alias RawOutUpdate =
+{-| The JSON-friendly representation of any value. -}
+type alias RawValue =
     { path : RawPath
     , value : E.Value
     , stringValue : String
     , labelPath : List String
     , type_ : String
-    , client : RawClientId
+    }
+
+
+{-| The JSON-friendly structure of updates which is sent
+to the outgoing ports from Tron. -}
+type alias RawOutUpdate =
+    { client : RawClientId
+    , update : RawValue
     }
 
 
@@ -67,4 +74,14 @@ type alias RawInUpdate =
 {-| Acknowledge package, which lets the server know the current Client ID. -}
 type alias Ack =
     { client : RawClientId
+    }
+
+
+noValue : RawValue
+noValue =
+    { path = []
+    , value = E.null
+    , stringValue = ""
+    , labelPath = []
+    , type_ = ""
     }

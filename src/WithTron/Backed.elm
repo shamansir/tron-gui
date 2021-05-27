@@ -56,10 +56,10 @@ import Tron.Expose.ProxyValue exposing (ProxyValue)
 
 
 {-| Path-to-value storage, to transmit them to the JS side. -}
-type alias BackedStorage = Dict Exp.RawPath Exp.RawOutUpdate
+type alias BackedStorage = Dict Exp.RawPath Exp.RawValue
 
 
-type alias BackedMsg = Exp.RawOutUpdate
+type alias BackedMsg = Exp.RawValue
 
 
 {-| Program, backed with the path-to-value storage. -}
@@ -142,9 +142,9 @@ byJson renderTarget ( ack, transmit ) tree =
     in
     element
         renderTarget
-        (SendJson
-            { ack = ack >> Cmd.map (always Exp.emptyOutUpdate)
-            , transmit = transmit >> Cmd.map (always Exp.emptyOutUpdate)
+        ( SendJson
+            { ack = ack >> Cmd.map (always Exp.noValue)
+            , transmit = transmit >> Cmd.map (always Exp.noValue)
             }
         )
         { for = for_

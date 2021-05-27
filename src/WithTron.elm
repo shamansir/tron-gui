@@ -328,8 +328,8 @@ tryTransmitting ports rawUpdate =
             transmit rawUpdate
         SendStrings { transmit } ->
             transmit
-                ( rawUpdate.labelPath
-                , rawUpdate.stringValue
+                ( rawUpdate.update.labelPath
+                , rawUpdate.update.stringValue
                 )
         _ -> Cmd.none
 

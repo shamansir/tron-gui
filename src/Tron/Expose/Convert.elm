@@ -25,7 +25,7 @@ import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
 
 {-| Instead of messages, store nothing, but values.
 -}
-toUnit : Tron msg -> Tron ()
+toUnit : Tron a -> Tron ()
 toUnit =
     map <| always ()
 
@@ -36,7 +36,7 @@ important, such as `dat.gui`, or send it to ports along with sending it to user.
 
 Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
-toProxied : Tron msg -> Tron ( ProxyValue, msg )
+toProxied : Tron a -> Tron ( ProxyValue, a )
 toProxied prop =
     let
         convertWith f =
@@ -105,7 +105,7 @@ the required information about the value, such as:
 
 Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
-toExposed : Tron msg -> Tron ( RawOutUpdate, msg )
+toExposed : Tron a -> Tron ( RawValue, a )
 toExposed =
     toProxied
         >> Property.addPaths
@@ -117,7 +117,6 @@ toExposed =
                   , type_ = ProxyValue.getTypeString proxyVal
                   , value = ProxyValue.encode proxyVal
                   , stringValue = ProxyValue.toString proxyVal
-                  , client = E.null -- FIXME: store clientId separately in `Detach`
                   }
                 , msg
                 )

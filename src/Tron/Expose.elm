@@ -167,13 +167,13 @@ loadProxyValues dict prop =
             prop
 
 
-loadJsonValues : Dict (List Int) RawOutUpdate -> Property a -> Property a
+loadJsonValues : Dict (List Int) RawValue -> Property a -> Property a
 loadJsonValues dict prop =
     dict
         |> Dict.toList
         |> List.foldl
             (\ ( path, outUpdate ) root ->
-                apply (outUpdate |> swap |> fromPort) root
+                apply (outUpdate |> loadValue |> fromPort) root
             )
             prop
     {- Tron.Property.fold
@@ -500,17 +500,6 @@ noClientId : Ack
 noClientId = Ack <| E.null
 
 
-emptyOutUpdate : RawOutUpdate
-emptyOutUpdate =
-    { path = []
-    , value = E.null
-    , stringValue = ""
-    , labelPath = []
-    , type_ = ""
-    , client = E.null
-    }
-
-
 {-
    encodeUpdate : Maybe HashId -> Path -> Property msg -> RawUpdate
    encodeUpdate maybeClient path prop =
@@ -658,10 +647,18 @@ fromPort portUpdate =
 -- TODO: move functions below to `Expose.Convert` module?
 
 swap : RawOutUpdate -> RawInUpdate
-swap outUpdate =
-    { path = outUpdate.path
-    , value = outUpdate.value
-    , type_ = outUpdate.type_
+swap { update } =
+    { path = update.path
+    , value = update.value
+    , type_ = update.type_
+    }
+
+
+loadValue : RawValue -> RawInUpdate
+loadValue update =
+    { path = update.path
+    , value = update.value
+    , type_ = update.type_
     }
 
 

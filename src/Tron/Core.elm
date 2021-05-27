@@ -472,9 +472,11 @@ toExposed : State -> Tron a -> Tron ( Exp.RawOutUpdate, a )
 toExposed state =
     Exp.toExposed
         >> Property.map
-            (Tuple.mapFirst
-                <| Detach.addClientId <| Tuple.first <| state.detach
-            )
+            ( Tuple.mapFirst (\val ->
+                { update = val
+                , client =  Detach.encodeClientId <| Tuple.first <| state.detach
+                }
+            ) )
 
 
 toProxied_ : Ref.Tron msg -> Ref.Tron ( Exp.ProxyValue, msg )
@@ -503,15 +505,16 @@ toExposed_ state =
                   , type_ = ProxyValue.getTypeString proxyVal
                   , value = ProxyValue.encode proxyVal
                   , stringValue = ProxyValue.toString proxyVal
-                  , client = E.null -- FIXME: store clientId separately in `Detach`
                   }
                 , msg
                 )
             )
         >> Ref.map
-            (Tuple.mapFirst
-                <| Detach.addClientId <| Tuple.first <| state.detach
-            )
+            ( Tuple.mapFirst (\val ->
+                { update = val
+                , client =  Detach.encodeClientId <| Tuple.first <| state.detach
+                }
+            ) )
 
 
 focus : msg -> Cmd msg

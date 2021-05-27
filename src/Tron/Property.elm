@@ -159,16 +159,13 @@ map f prop =
 
 
 {- zip
-    : (Property a -> Property b -> Property c)
+    : (Maybe a -> Maybe b -> c)
     -> Property a
     -> Property b
     -> Property c
 zip f propA propB =
-    case ( propA, propB ) of
-        ( Choice _ _ controlA, Choice _ _ controlB ) ->
-
-        ( Group _ _ controlA, Group _ _ controlB ) ->
-        _ -> f propA propB -}
+    move ()
+-}
 
 
 fold : (Path -> Property a -> b -> b) -> b -> Property a -> b
