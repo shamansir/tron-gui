@@ -18,7 +18,7 @@ import Json.Decode exposing (index)
 withButtons
     :  (a -> Label)
     -> (a -> Button.Face)
-    -> ( (Int -> msg ) -> Int -> a -> ( Label, Property msg ) )
+    -> ( (Int -> a ) -> Int -> a -> ( Label, Property a ) )
 withButtons toLabel toButtonFace =
     \callByIndex index val ->
         ( toLabel val
@@ -36,9 +36,8 @@ helper
     -> List ( Label, Property a )
     -> a
     -> ( a -> a -> Bool )
-    -> ( ( Int, a ) -> msg )
-    -> Property msg
-helper ( panelShape, cellShape ) options current compare toMsg =
+    -> Property (Int, a)
+helper ( panelShape, cellShape ) options current compare =
     let
 
         optionsArray : Array.Array ( Label, Property ( Int, a ))
@@ -53,10 +52,10 @@ helper ( panelShape, cellShape ) options current compare toMsg =
                         )
                     )
 
-        properties : Array.Array ( Label, Property msg )
-        properties =
-            optionsArray
-                |> Array.map (Tuple.mapSecond <| Tron.Property.map toMsg)
+        -- properties : Array.Array ( Label, Property a )
+        -- properties =
+        --     optionsArray
+        --         |> Array.map (Tuple.mapSecond <| Tron.Property.map toMsg)
 
         values : Array.Array ( Maybe a )
         values =
@@ -77,13 +76,13 @@ helper ( panelShape, cellShape ) options current compare toMsg =
                     )
                 |> Maybe.withDefault 0
 
-        callByIndex : Int -> msg
-        callByIndex index =
-            values
-                |> Array.get index
-                |> Maybe.andThen identity
-                |> Maybe.map (\v -> toMsg (index, v))
-                |> Maybe.withDefault (toMsg ( 0, current ))
+        -- callByIndex : Int -> b
+        -- callByIndex index =
+        --     values
+        --         |> Array.get index
+        --         |> Maybe.andThen identity
+        --         |> Maybe.map (\v -> toMsg (index, v))
+        --         |> Maybe.withDefault (toMsg ( 0, current ))
     in
         Choice
             Nothing
@@ -91,10 +90,10 @@ helper ( panelShape, cellShape ) options current compare toMsg =
             , cellShape
             )
             <| Control
-                properties
+                optionsArray
                 { form = Collapsed
                 , page = 0
                 , face = Nothing
                 , selected = currentIndex
                 }
-            <| callByIndex currentIndex
+                ( currentIndex, current )
