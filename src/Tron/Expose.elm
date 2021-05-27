@@ -18,14 +18,14 @@ import Tron.Control.Toggle exposing (ToggleState(..))
 import Tron.Control.XY as XY
 import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
-import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
+import Tron.Control.Value as Value exposing (Value(..))
 import Tron.Expose.Data exposing (..)
 import Tron.Expose.Convert exposing (..)
 import Tron.Util as Util
 import Task
 
 
-runProperty : ProxyValue -> Property msg -> Cmd msg
+runProperty : Value -> Property msg -> Cmd msg
 runProperty value property =
     case ( property, value ) of
         ( Nil, _ ) ->
@@ -87,7 +87,7 @@ run { path, value } prop =
                     Cmd.none
 
 
-applyProperty : ProxyValue -> Property a -> Property a
+applyProperty : Value -> Property a -> Property a
 applyProperty value prop =
     case ( prop, value ) of
         ( Nil, _ ) ->
@@ -145,8 +145,18 @@ apply { path, value } prop =
                     prop
 
 
-loadValues : Dict LabelPath String -> Property a -> Property a
+loadValues : Dict (List Int) Value -> Property a -> Property a
 loadValues dict prop =
+    dict
+        |> Dict.toList
+        |> List.foldl
+            (\ ( path, value ) root ->
+                apply { path = path, value = value } root
+            )
+            prop
+
+loadStringValues : Dict LabelPath String -> Property a -> Property a
+loadStringValues dict prop =
     Property.replaceWithLabeledPath
         (\labelPath innerProp ->
             Dict.get labelPath dict
@@ -154,17 +164,6 @@ loadValues dict prop =
                 |> Maybe.withDefault innerProp
         )
         prop
-
-
-loadProxyValues : Dict (List Int) ProxyValue -> Property a -> Property a
-loadProxyValues dict prop =
-    dict
-        |> Dict.toList
-        |> List.foldl
-            (\ ( path, proxyValue ) root ->
-                apply { path = path, value = proxyValue } root
-            )
-            prop
 
 
 loadJsonValues : Dict (List Int) RawValue -> Property a -> Property a
@@ -550,7 +549,7 @@ noClientId = Ack <| E.null
 
 valueDecoder :
     String
-    -> D.Decoder ProxyValue -- FIXME: move to ProxyValue
+    -> D.Decoder Value -- FIXME: move to Value
 valueDecoder type_ =
     case type_ of
         "ghost" ->
@@ -584,7 +583,7 @@ valueDecoder type_ =
 fromString
     :  String
     -> String
-    -> Result String ProxyValue -- FIXME: move to ProxyValue
+    -> Result String Value -- FIXME: move to Value
 fromString type_ str =
     case type_ of
         "ghost" ->
@@ -671,7 +670,7 @@ fromPort portUpdate =
     }
 
 
-toProxy : RawOutUpdate -> ProxyValue
+toProxy : RawOutUpdate -> Value
 toProxy outUpdate =
     fromPort
         (swap outUpdate)
@@ -755,7 +754,7 @@ decodeToggle =
         ]
 
 
-freshRun : Property (ProxyValue -> Maybe msg) -> Cmd msg
+freshRun : Property (Value -> Maybe msg) -> Cmd msg
 freshRun =
     evaluate
     -- >> Property.run

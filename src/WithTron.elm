@@ -74,7 +74,7 @@ See also: `Tron.Option`, `Tron.Builder`, `Tron.Builder.*`.
 There are some special types of GUI Builders that can come in handy if you don't want to use messages, but get them as the type-value pairs or add paths to them or just skip them. All of them doesn't require you to specify handling message so, every function from such `Builder` has one argument less:
 
 - `Tron ()` (`Tron.Builder.Unit`) — do not expose values (keeps them inside);
-- `Tron ProxyValue` (`Tron.Builder.Proxy`) — store values as a type-value data, see `Tron.Expose.ProxyValue` for more info;
+- `Tron Value` (`Tron.Builder.Proxy`) — store values as a type-value data, see `Tron.Control.Value` for more info;
 - `Tron String` (`Tron.Builder.String`) — store value stringified;
 
 Any `Tron a` can be converted to `Tron ( Path, Value )` using `Builder.addPath`, `Builder.addLabeledPath` and/or `Tron.Expose.Convert` helpers.
@@ -102,7 +102,7 @@ import Task
 
 import Tron.Core as Core exposing (State)
 import Tron exposing (Tron)
-import TronRef as Ref
+import Tron.Deferred as Def
 --import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))
@@ -194,7 +194,7 @@ subscriptions userSubscriptions ports ( model, state, _ ) =
 
 
 update
-    :  ( msg -> model -> (model, Cmd msg), model -> Ref.Tron msg )
+    :  ( msg -> model -> (model, Cmd msg), model -> Def.Tron msg )
     -> PortCommunication msg
     -> WithTronMsg msg
     -> ( model, State, Tron () )
@@ -418,7 +418,7 @@ sandbox
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Ref.Tron msg
+        { for : model -> Def.Tron msg
         , init : model
         , view : model -> Html msg
         , update : msg -> model -> model
@@ -467,7 +467,7 @@ element
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Ref.Tron msg
+        { for : model -> Def.Tron msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Html msg
@@ -523,7 +523,7 @@ document
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Ref.Tron msg
+        { for : model -> Def.Tron msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Browser.Document msg
@@ -604,7 +604,7 @@ application
     :  RenderTarget
     -> PortCommunication msg
     ->
-        { for : model -> Ref.Tron msg
+        { for : model -> Def.Tron msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : model -> Sub msg
         , view : model -> Browser.Document msg

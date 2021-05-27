@@ -16,13 +16,13 @@ or just get rid of messages at all:
 import Json.Encode as E
 
 import Tron exposing (Tron)
-import TronRef as Ref
+import Tron.Deferred as Def
 import Tron.Control as Control
 import Tron.Control.Nest as Nest
 import Tron.Expose.Data exposing (..)
 import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
-import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
+import Tron.Control.Value as Value exposing (Value(..))
 
 
 {-| Instead of messages, store nothing, but values.
@@ -32,13 +32,13 @@ toUnit =
     map <| always ()
 
 
-{-| Store a `ProxyValue` together with message, which mirrors a value
+{-| Store a `Value` together with message, which mirrors a value
 as a data type to make it easier to connect with other APIs, where message is not
 important, such as `dat.gui`, or send it to ports along with sending it to user.
 
 Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
-toProxied : Tron a -> Tron ( ProxyValue, a )
+toProxied : Tron a -> Tron ( Value, a )
 toProxied prop =
     let
         convertWith f =
@@ -120,13 +120,13 @@ toExposed =
             )
 
 
-proxyToRaw : ( Path, LabelPath ) -> ProxyValue -> RawValue
+proxyToRaw : ( Path, LabelPath ) -> Value -> RawValue
 proxyToRaw (path, labelPath) proxyVal =
     { path = Path.toList path
     , labelPath = labelPath
-    , type_ = ProxyValue.getTypeString proxyVal
-    , value = ProxyValue.encode proxyVal
-    , stringValue = ProxyValue.toString proxyVal
+    , type_ = Value.getTypeString proxyVal
+    , value = Value.encode proxyVal
+    , stringValue = Value.toString proxyVal
     }
 
 
@@ -145,14 +145,14 @@ toStrExposed =
         >> Property.map
             (\( path, ( proxyVal, msg ) ) ->
                 ( ( path
-                  , ProxyValue.toString proxyVal
+                  , Value.toString proxyVal
                   )
                 , msg
                 )
             )
 
 
-reflect : Property a -> Property ( ProxyValue, a )
+reflect : Property a -> Property ( Value, a )
 reflect prop =
     case prop of
         Nil -> Nil
@@ -200,19 +200,19 @@ reflect prop =
                 <| control
 
 
-lift : Property a -> Property (ProxyValue -> Maybe a)
+lift : Property a -> Property (Value -> Maybe a)
 lift =
     Property.map (always << Just)
 
 
 
-evaluate : Property (ProxyValue -> Maybe a) -> Property (Maybe a)
+evaluate : Property (Value -> Maybe a) -> Property (Maybe a)
 evaluate =
     reflect
     >> Property.map (\(v, handler) -> handler v)
 
 
-toDeferredRaw : Property a -> Property (ProxyValue -> Maybe RawValue)
+toDeferredRaw : Property a -> Property (Value -> Maybe RawValue)
 toDeferredRaw =
     Property.addPaths
         >> Property.map

@@ -1,4 +1,4 @@
-module TronRef exposing
+module Tron.Deferred exposing
     ( Tron, Set
     , map, mapSet, andThen, with
     )
@@ -23,7 +23,7 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 -}
 
 import Tron.Property as Property exposing (Property)
-import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue)
+import Tron.Control.Value as Value exposing (Value)
 
 
 {-| `Tron a` is the tree of your controls or, recursively, any control in such tree.
@@ -32,7 +32,7 @@ To build your interface, use the helpers from the `Tron.Builder` module or any o
 `Tron.Builder.Proxy`, `Tron.Builder.Unit` or `Tron.Builder.String`
 -}
 type alias Tron a =
-    Property (ProxyValue -> Maybe a)
+    Property (Value -> Maybe a)
 
 
 {-| `Set msg` is just the list of controls' definitions together with their labels.
@@ -51,7 +51,7 @@ andThen : (a -> Tron b) -> Tron a -> Tron b
 andThen f prop =
     Property.andThen
         (\pF ->
-            case pF <| ProxyValue.get prop of
+            case pF <| Value.get prop of
                 Just v -> f v
                 Nothing -> Property.Nil
         )

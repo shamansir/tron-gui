@@ -1,6 +1,8 @@
 ### 9.0.0
 
 * Fix the major bug with `Path.pop` returning reverse result and, so, working with second-level panels;
+* Significantly improve knobs/drag-driven-controls behaviour;
+* `Tron.Expose.ProxyValue` -> `Tron.Control.Value`;
 * Major changes in the core API, no more functions or messages are stored in the `Model`, `Tron` just assigngs some value to the control now, instead of storing a handler, but there's also `Tron.Deferred` from now on, from which we could probably get rid in the future completely;
 
 ### 8.0.1

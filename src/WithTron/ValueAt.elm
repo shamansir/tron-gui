@@ -28,13 +28,13 @@ Actually, the way to get your value as a common type.
 import Color exposing (Color)
 import Tron.Control.Nest exposing (ItemId)
 import Tron.Control.Toggle exposing (ToggleState)
-import Tron.Expose.ProxyValue as Proxy exposing (ProxyValue)
+import Tron.Control.Value as Proxy exposing (Value)
 import Tron.Property exposing (LabelPath)
 
 
-{-| `ValueAt` is the function of type `LabelPath -> Maybe ProxyValue`.
+{-| `ValueAt` is the function of type `LabelPath -> Maybe Value`.
 
-Using `ask` and any `Decoder` you don't have to worry what `ProxyValue` is, just do:
+Using `ask` and any `Decoder` you don't have to worry what `Value` is, just do:
 
     valueAt |> ask (xy [ "Goose", "Eye" ])
 
@@ -49,7 +49,7 @@ And get `Maybe (Float, Float)` in response. Same works for any of the decoders b
 
 -}
 type alias ValueAt =
-    LabelPath -> Maybe ProxyValue
+    LabelPath -> Maybe Value
 
 
 {-| The decoder which is able to extract the value.
@@ -74,7 +74,7 @@ ask (Decoder decoder) =
     decoder
 
 
-make : (ProxyValue -> Maybe a) -> LabelPath -> Decoder a
+make : (Value -> Maybe a) -> LabelPath -> Decoder a
 make convert path =
     Decoder <|
         \valueAt ->

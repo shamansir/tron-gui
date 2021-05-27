@@ -19,7 +19,7 @@ module Tron.Expose.Data exposing
 
 import Json.Encode as E
 
-import Tron.Expose.ProxyValue exposing (ProxyValue(..))
+import Tron.Control.Value exposing (Value(..))
 
 
 {-| -}
@@ -37,10 +37,10 @@ type alias RawClientId =
     E.Value
 
 
-{-| Value update  with the `ProxyValue`. -}
+{-| Value update  with the `Value`. -}
 type alias Update =
     { path : RawPath
-    , value : ProxyValue
+    , value : Value
     }
 
 

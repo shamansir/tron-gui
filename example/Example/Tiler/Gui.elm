@@ -15,7 +15,7 @@ import Example.Tiler.Logic as Logic exposing (Model, Tileset, Tilesets, TilesetS
 
 import WithTron.ValueAt as V exposing (ValueAt)
 
-import Tron.Expose.ProxyValue as Proxy exposing (ProxyValue)
+import Tron.Control.Value as Proxy exposing (Value)
 
 
 type FullscreenStatus

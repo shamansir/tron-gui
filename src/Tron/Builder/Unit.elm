@@ -17,7 +17,7 @@ See also: `Tron.Expose.Convert.toUnit`, `Tron.Expose.Convert.toProxied`, `Tron.E
 
 Using the `Tron.Expose.Convert.toExposed` function you may easily convert such `Tron` to the one that stores all the value update information in JSON-friendly format. Or, using the `toStrExposed` from the same module, you may get only the label-path and the stringified value.
 
-Using `Tron.Expose.Convert.toProxied`, and `Builder.addPath` or `Builder.addLabeledPath` after that, you may automatically add proxied value (see `Tron.Expose.ProxyValue` for details) and the path to the control in the GUI tree so that you may easily know from where the value came.
+Using `Tron.Expose.Convert.toProxied`, and `Builder.addPath` or `Builder.addLabeledPath` after that, you may automatically add proxied value (see `Tron.Control.Value` for details) and the path to the control in the GUI tree so that you may easily know from where the value came.
 
 Please see `Tron.Builder` for the detailed information on Builders and how to use them. Also, there is some information on these Builders in `README`.
 

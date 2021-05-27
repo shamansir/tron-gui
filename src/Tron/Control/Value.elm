@@ -1,5 +1,5 @@
-module Tron.Expose.ProxyValue exposing
-    ( ProxyValue(..), get
+module Tron.Control.Value exposing
+    ( Value(..), get
     , encode
     , toString, getTypeString
     , toggleToBool, toggleToString
@@ -11,7 +11,7 @@ module Tron.Expose.ProxyValue exposing
 
 Used for converting values from controls to JSON;
 
-@docs ProxyValue
+@docs Value
 
 # Encode and convert
 
@@ -42,7 +42,7 @@ import Tron.Property exposing (Property(..))
 
 
 {-| -}
-type ProxyValue
+type Value
     = FromSlider Float
     | FromXY ( Float, Float )
     | FromInput String
@@ -55,7 +55,7 @@ type ProxyValue
 
 
 {-| Encode value to JSON. -}
-encode : ProxyValue -> E.Value
+encode : Value -> E.Value
 encode v =
     case v of
         FromSlider f -> E.float f
@@ -82,7 +82,7 @@ encode v =
 
 
 {-| Encode value to string (regardless of the type). -}
-toString : ProxyValue -> String
+toString : Value -> String
 toString v =
     case v of
         FromSlider f ->
@@ -105,7 +105,7 @@ toString v =
 
 {-| Get type of the value as string. -}
 getTypeString :
-    ProxyValue
+    Value
     -> String
 getTypeString value =
     case value of
@@ -145,7 +145,7 @@ toggleToString = Toggle.toggleToString
 
 
 {-| -}
-fromNumber : ProxyValue -> Maybe Float
+fromNumber : Value -> Maybe Float
 fromNumber proxy =
     case proxy of
         FromSlider n -> Just n
@@ -153,7 +153,7 @@ fromNumber proxy =
 
 
 {-| -}
-fromXY : ProxyValue -> Maybe ( Float, Float )
+fromXY : Value -> Maybe ( Float, Float )
 fromXY proxy =
     case proxy of
         FromXY xy -> Just xy
@@ -161,7 +161,7 @@ fromXY proxy =
 
 
 {-| -}
-fromText : ProxyValue -> Maybe String
+fromText : Value -> Maybe String
 fromText proxy =
     case proxy of
         FromInput text -> Just text
@@ -169,7 +169,7 @@ fromText proxy =
 
 
 {-| -}
-fromChoice : ProxyValue -> Maybe ItemId
+fromChoice : Value -> Maybe ItemId
 fromChoice proxy =
     case proxy of
         FromChoice i -> Just i
@@ -177,7 +177,7 @@ fromChoice proxy =
 
 
 {-| -}
-fromChoiceOf : List a -> ProxyValue -> Maybe a
+fromChoiceOf : List a -> Value -> Maybe a
 fromChoiceOf values =
     let
         itemsArray = Array.fromList values
@@ -188,7 +188,7 @@ fromChoiceOf values =
 
 
 {-| -}
-fromToggle : ProxyValue -> Maybe ToggleState
+fromToggle : Value -> Maybe ToggleState
 fromToggle proxy =
     case proxy of
         FromToggle state -> Just state
@@ -196,7 +196,7 @@ fromToggle proxy =
 
 
 {-| -}
-fromAction : ProxyValue -> Maybe ()
+fromAction : Value -> Maybe ()
 fromAction proxy =
     case proxy of
         FromButton -> Just ()
@@ -204,14 +204,14 @@ fromAction proxy =
 
 
 {-| -}
-fromColor : ProxyValue -> Maybe Color
+fromColor : Value -> Maybe Color
 fromColor proxy =
     case proxy of
         FromColor color -> Just color
         _ -> Nothing
 
 
-get : Property a -> ProxyValue
+get : Property a -> Value
 get prop =
     case prop of
         Nil -> Other

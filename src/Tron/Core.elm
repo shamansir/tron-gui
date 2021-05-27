@@ -35,9 +35,9 @@ import Tron.FocusLogic as Focus exposing (..)
 import Tron.Focus as Focus exposing (..)
 import Tron.Detach as Detach exposing (ClientId)
 import Tron.Detach exposing (State(..))
-import Tron.Expose as Exp exposing (..)
+import Tron.Control.Value exposing (..)
 import Tron.Builder exposing (..)
-import TronRef as Ref
+import Tron.Deferred as Def
 
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Style.Dock as Dock exposing (..)
@@ -46,10 +46,11 @@ import Tron.Style.Logic as Style exposing (..)
 import Tron.Style.Logic as Dock exposing (boundsFromSize)
 import Tron.Style.Cell as Cell exposing (..)
 
+import Tron.Expose as Exp
 import Tron.Expose.Data as Exp
 import Tron.Expose.Convert as Exp
-import Tron.Expose.ProxyValue as Exp exposing (ProxyValue)
-import Tron.Expose.ProxyValue as ProxyValue
+import Tron.Control.Value as Exp exposing (Value)
+import Tron.Control.Value as Value
 
 
 type alias State =
@@ -109,7 +110,7 @@ run =
 update
     :  Msg
     -> State
-    -> Tron ( Exp.ProxyValue -> Maybe msg )
+    -> Tron ( Exp.Value -> Maybe msg )
     -> ( State, Tron (), Cmd (Exp.RawOutUpdate, msg ) )
 update msg state tree  =
     case msg of
@@ -195,7 +196,7 @@ update msg state tree  =
 
 applyRaw
      : Exp.RawInUpdate
-    -> Tron (Exp.ProxyValue -> Maybe msg)
+    -> Tron (Exp.Value -> Maybe msg)
     -> Cmd msg
 applyRaw rawUpdate =
     Exp.apply (Exp.fromPort rawUpdate)
@@ -230,7 +231,7 @@ trackMouse =
 
 
 -- FIXME: return actual updates with values, then somehow extract messages from `Tron msg` for these values?
-handleMouse : MouseAction -> State -> Tron ( Exp.ProxyValue -> Maybe msg ) -> ( State, Tron (), Cmd msg )
+handleMouse : MouseAction -> State -> Tron ( Exp.Value -> Maybe msg ) -> ( State, Tron (), Cmd msg )
 handleMouse mouseAction state tree =
     let
         rootPath = getRootPath state
@@ -410,7 +411,7 @@ handleKeyDown
     :  Int
     -> Path
     -> State
-    -> Tron (Exp.ProxyValue -> Maybe msg)
+    -> Tron (Exp.Value -> Maybe msg)
     -> ( State, Tron (), Cmd msg )
 handleKeyDown keyCode path state tree =
     let
@@ -479,7 +480,7 @@ toExposed state =
             ) )
 
 
-toProxied_ : Ref.Tron msg -> Ref.Tron ( Exp.ProxyValue, msg )
+toProxied_ : Def.Tron msg -> Def.Tron ( Exp.Value, msg )
 toProxied_ =
     Property.map
         (\f ->
@@ -488,7 +489,7 @@ toProxied_ =
         )
 
 
-toExposed_ : State -> Ref.Tron a -> Ref.Tron ( Exp.RawOutUpdate, a )
+toExposed_ : State -> Def.Tron a -> Def.Tron ( Exp.RawOutUpdate, a )
 toExposed_ state =
     toProxied_
         >> Property.addPaths
@@ -498,18 +499,18 @@ toExposed_ state =
                     f proxy |> Maybe.map (Tuple.pair path)
             )
         -- FIXME: `Expose.encodeUpdate` does the same as above
-        >> Ref.map
+        >> Def.map
             (\( ( path, labelPath ), ( proxyVal, msg ) ) ->
                 ( { path = Path.toList path
                   , labelPath = labelPath
-                  , type_ = ProxyValue.getTypeString proxyVal
-                  , value = ProxyValue.encode proxyVal
-                  , stringValue = ProxyValue.toString proxyVal
+                  , type_ = Value.getTypeString proxyVal
+                  , value = Value.encode proxyVal
+                  , stringValue = Value.toString proxyVal
                   }
                 , msg
                 )
             )
-        >> Ref.map
+        >> Def.map
             ( Tuple.mapFirst (\val ->
                 { update = val
                 , client =  Detach.encodeClientId <| Tuple.first <| state.detach

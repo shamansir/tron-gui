@@ -1,7 +1,6 @@
 ## Public API
 
 * Breaking: Close `ProxyValue` constructors from public;
-    * Rename it to just `Value`, and put the definition into `Control` may be?
 * `TronRef` -> `Tron.Deferred`
 * Breaking: Stick to just one `WithTron.Backed`, since anyway it is possible to convert one to another using `Tron` methods;
 * Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;

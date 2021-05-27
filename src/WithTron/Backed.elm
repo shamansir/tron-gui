@@ -42,7 +42,7 @@ import Dict.Extra as Dict
 import Html exposing (Html)
 
 import Tron exposing (Tron)
-import TronRef as Ref
+import Tron.Deferred as Def
 import WithTron exposing (..)
 import WithTron.ValueAt exposing (ValueAt)
 
@@ -52,7 +52,7 @@ import Tron.Expose as Exp
 import Tron.Expose.Convert as Exp
 import Tron.Expose.Data as Exp
 import Tron.Property as Property exposing (LabelPath)
-import Tron.Expose.ProxyValue exposing (ProxyValue)
+import Tron.Control.Value exposing (Value)
 
 
 {-| Path-to-value storage, to transmit them to the JS side. -}
@@ -116,7 +116,7 @@ byJson renderTarget ( ack, transmit ) tree =
         tree_ : Tron BackedMsg
         tree_ = tree |> Exp.toExposed |> Property.map Tuple.first
 
-        for_ : BackedStorage -> Ref.Tron BackedMsg
+        for_ : BackedStorage -> Def.Tron BackedMsg
         for_ dict = tree_ |> Exp.loadJsonValues dict |> Exp.toDeferredRaw
 
         init_ : () -> ( BackedStorage, Cmd BackedMsg )
@@ -209,11 +209,11 @@ byStrings renderTarget transmit tree =
         tree_ : Tron StringBackedMsg
         tree_ = tree |> Exp.toStrExposed |> Property.map Tuple.first
 
-        for_ : StringBackedStorage -> Ref.Tron StringBackedMsg
+        for_ : StringBackedStorage -> Def.Tron StringBackedMsg
         for_ dict = tree_
-            |> Exp.loadValues dict
+            |> Exp.loadStringValues dict
             |> Exp.toDeferredRaw
-            |> Ref.map (\rawValue -> ( rawValue.labelPath, rawValue.stringValue ))
+            |> Def.map (\rawValue -> ( rawValue.labelPath, rawValue.stringValue ))
 
         init_ : () -> ( StringBackedStorage, Cmd StringBackedMsg )
         init_ _ = ( Dict.empty, Cmd.none )
@@ -246,10 +246,10 @@ byStrings renderTarget transmit tree =
         }
 
 
-type alias ProxyBackedStorage = Dict ( Exp.RawPath, LabelPath ) ProxyValue
+type alias ProxyBackedStorage = Dict ( Exp.RawPath, LabelPath ) Value
 
 
-type alias ProxyBackedMsg = Maybe ( Exp.RawPath, LabelPath, ProxyValue )
+type alias ProxyBackedMsg = Maybe ( Exp.RawPath, LabelPath, Value )
 
 
 {-| Program, backed with the proxy value storage. -}
@@ -322,7 +322,7 @@ byProxyApp renderTarget ( ack, transmit ) def =
                 |> Dict.mapKeys Tuple.second
                 |> valueAt
 
-        dictByPath : ProxyBackedStorage -> Dict Exp.RawPath ProxyValue
+        dictByPath : ProxyBackedStorage -> Dict Exp.RawPath Value
         dictByPath =
             Dict.mapKeys Tuple.first
 
@@ -330,10 +330,10 @@ byProxyApp renderTarget ( ack, transmit ) def =
         repair ( ( path, labelPath ), ( proxy, userMsg ) ) =
             ( Just ( Path.toList path, labelPath, proxy ), userMsg )
 
-        for_ : ( ProxyBackedStorage, model ) -> Ref.Tron ( ProxyBackedMsg, msg )
+        for_ : ( ProxyBackedStorage, model ) -> Def.Tron ( ProxyBackedMsg, msg )
         for_ ( dict, model ) =
             def.for (toValueAt dict) model
-                |> Exp.loadProxyValues ( dictByPath dict )
+                |> Exp.loadValues ( dictByPath dict )
                 |> Property.addPaths
                 |> Tron.map
                     (\((path, labelPath), userMsg) ->

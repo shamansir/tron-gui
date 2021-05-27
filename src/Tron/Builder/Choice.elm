@@ -11,7 +11,7 @@ import Tron.Style.CellShape exposing (..)
 import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Nest exposing (Form(..))
 import Tron.Util exposing (findMap)
-import Tron.Expose.ProxyValue exposing (ProxyValue(..))
+import Tron.Control.Value exposing (Value(..))
 import Json.Decode exposing (index)
 
 

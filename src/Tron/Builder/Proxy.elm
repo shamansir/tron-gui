@@ -11,9 +11,9 @@ module Tron.Builder.Proxy exposing
 
 {-|
 
-`Tron ProxyValue` helps to define the interface that works without providing any user message in response to changes, but rather fires the universal `ProxyValue` that helps to understand what is the type of the value and redirect it somewhere, for example to ports, without any special message-driven flow.
+`Tron Value` helps to define the interface that works without providing any user message in response to changes, but rather fires the universal `Value` that helps to understand what is the type of the value and redirect it somewhere, for example to ports, without any special message-driven flow.
 
-See also: `Tron.Builder.map`, `Tron.Expose.Convert.toProxied`, `Tron.Expose.ProxyValue`, `Tron.Expose.Convert.toExposed`, `Tron.Expose.Data.RawOutUpdate`, `addPath`, `addLabeledPath`.
+See also: `Tron.Builder.map`, `Tron.Expose.Convert.toProxied`, `Tron.Control.Value`, `Tron.Expose.Convert.toExposed`, `Tron.Expose.Data.RawOutUpdate`, `addPath`, `addLabeledPath`.
 
 Using `Tron.map`, you may convert the proxy value to anything that fits your case better.
 
@@ -73,17 +73,17 @@ import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url)
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Nest exposing (Form(..), ItemId)
 
-import Tron.Expose.ProxyValue exposing (ProxyValue(..))
+import Tron.Control.Value exposing (Value(..))
 import Tron.Builder.Choice as Choice
 import Tron.Expose.Convert exposing (toProxied)
 
 
 {-| -}
-type alias Tron = B.Tron ProxyValue
+type alias Tron = B.Tron Value
 
 
 {-| -}
-type alias Set = B.Set ProxyValue
+type alias Set = B.Set Value
 
 
 {-| -}
@@ -284,12 +284,12 @@ collapse = B.collapse
 
 
 {-| -}
-addPath : Tron -> B.Tron ( List Int, ProxyValue )
+addPath : Tron -> B.Tron ( List Int, Value )
 addPath = B.addPath
 
 
 {-| -}
-addLabeledPath : Tron -> B.Tron ( List String, ProxyValue )
+addLabeledPath : Tron -> B.Tron ( List String, Value )
 addLabeledPath = B.addLabeledPath
 
 

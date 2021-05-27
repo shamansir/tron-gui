@@ -23,7 +23,7 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 -}
 
 import Tron.Property as Property exposing (Property)
-import Tron.Expose.ProxyValue exposing (ProxyValue)
+import Tron.Control.Value exposing (Value)
 
 
 {-| `Tron a` is the tree of your controls or, recursively, any control in such tree.
