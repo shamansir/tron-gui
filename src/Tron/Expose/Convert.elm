@@ -2,6 +2,7 @@ module Tron.Expose.Convert
     exposing
     ( toExposed, toProxied, toStrExposed, toUnit
     , reflect, lift, evaluate
+    , toDeferredRaw
     )
 
 
@@ -15,10 +16,11 @@ or just get rid of messages at all:
 import Json.Encode as E
 
 import Tron exposing (Tron)
+import TronRef as Ref
 import Tron.Control as Control
 import Tron.Control.Nest as Nest
 import Tron.Expose.Data exposing (..)
-import Tron.Path as Path
+import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
 import Tron.Expose.ProxyValue as ProxyValue exposing (ProxyValue(..))
 
@@ -111,16 +113,21 @@ toExposed =
         >> Property.addPaths
         -- FIXME: `Expose.encodeUpdate` does the same as above
         >> Property.map
-            (\( ( path, labelPath ), ( proxyVal, msg ) ) ->
-                ( { path = Path.toList path
-                  , labelPath = labelPath
-                  , type_ = ProxyValue.getTypeString proxyVal
-                  , value = ProxyValue.encode proxyVal
-                  , stringValue = ProxyValue.toString proxyVal
-                  }
+            (\( path, ( proxyVal, msg ) ) ->
+                ( proxyVal |> proxyToRaw path
                 , msg
                 )
             )
+
+
+proxyToRaw : ( Path, LabelPath ) -> ProxyValue -> RawValue
+proxyToRaw (path, labelPath) proxyVal =
+    { path = Path.toList path
+    , labelPath = labelPath
+    , type_ = ProxyValue.getTypeString proxyVal
+    , value = ProxyValue.encode proxyVal
+    , stringValue = ProxyValue.toString proxyVal
+    }
 
 
 
@@ -198,9 +205,17 @@ lift =
     Property.map (always << Just)
 
 
+
 evaluate : Property (ProxyValue -> Maybe a) -> Property (Maybe a)
 evaluate =
     reflect
     >> Property.map (\(v, handler) -> handler v)
 
 
+toDeferredRaw : Property a -> Property (ProxyValue -> Maybe RawValue)
+toDeferredRaw =
+    Property.addPaths
+        >> Property.map
+            (\(path, _) ->
+                Just << proxyToRaw path
+            )

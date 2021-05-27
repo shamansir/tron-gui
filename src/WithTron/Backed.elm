@@ -117,7 +117,7 @@ byJson renderTarget ( ack, transmit ) tree =
         tree_ = tree |> Exp.toExposed |> Property.map Tuple.first
 
         for_ : BackedStorage -> Ref.Tron BackedMsg
-        for_ dict = tree_ |> Exp.loadJsonValues dict |> Exp.lift
+        for_ dict = tree_ |> Exp.loadJsonValues dict |> Exp.toDeferredRaw
 
         init_ : () -> ( BackedStorage, Cmd BackedMsg )
         init_ _ = ( Dict.empty, Cmd.none )
@@ -210,7 +210,10 @@ byStrings renderTarget transmit tree =
         tree_ = tree |> Exp.toStrExposed |> Property.map Tuple.first
 
         for_ : StringBackedStorage -> Ref.Tron StringBackedMsg
-        for_ dict = tree_ |> Exp.loadValues dict |> Exp.lift
+        for_ dict = tree_
+            |> Exp.loadValues dict
+            |> Exp.toDeferredRaw
+            |> Ref.map (\rawValue -> ( rawValue.labelPath, rawValue.stringValue ))
 
         init_ : () -> ( StringBackedStorage, Cmd StringBackedMsg )
         init_ _ = ( Dict.empty, Cmd.none )
@@ -330,11 +333,13 @@ byProxyApp renderTarget ( ack, transmit ) def =
         for_ : ( ProxyBackedStorage, model ) -> Ref.Tron ( ProxyBackedMsg, msg )
         for_ ( dict, model ) =
             def.for (toValueAt dict) model
-                |> Exp.toProxied
                 |> Exp.loadProxyValues ( dictByPath dict )
                 |> Property.addPaths
-                |> Tron.map repair
-                |> Exp.lift
+                |> Tron.map
+                    (\((path, labelPath), userMsg) ->
+                        \proxy ->
+                            Just ( Just ( Path.toList path, labelPath, proxy ), userMsg )
+                    )
 
         init_ : flags -> ( ( ProxyBackedStorage, model ), Cmd ( ProxyBackedMsg, msg ) )
         init_ flags =
