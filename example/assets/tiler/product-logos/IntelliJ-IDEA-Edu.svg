@@ -1,14 +1,14 @@
-<svg width="105" height="105" viewBox="0 0 105 105" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M11.25 12H93.75V94.5H11.25V12Z" fill="url(#paint0_linear)"/>
-<path d="M22.5 24H82.5V84H22.5V24Z" fill="black"/>
-<path d="M29.98 71.16H52.48V74.91H29.98V71.16Z" fill="white"/>
-<path d="M41.21 34.15V30.04H38.07H33.14H30V34.15H33.14V48.34H30V52.44H33.14H38.07H41.21V48.34H38.07V34.15H41.21Z" fill="white"/>
-<path d="M47.07 30.1801H64V34.4701H52.17V39.0001H62.64V43.2901H52.17V47.9001H64.25V52.1901H47.34V30.1901L47.07 30.1801Z" fill="white"/>
-<defs>
-<linearGradient id="paint0_linear" x1="103" y1="103.69" x2="-13.54" y2="-12.85" gradientUnits="userSpaceOnUse">
-<stop offset="0.35" stop-color="#087CFA"/>
-<stop offset="0.86" stop-color="#FE2857"/>
-<stop offset="1" stop-color="#FE2857"/>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 25.2.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 105 105" style="enable-background:new 0 0 105 105;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:url(#SVGID_1_);}
+</style>
+<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="102.97" y1="2.28" x2="-13.57" y2="118.82" gradientTransform="matrix(1 0 0 -1 0 106)">
+	<stop  offset="0.35" style="stop-color:#087CFA"/>
+	<stop  offset="0.86" style="stop-color:#FE2857"/>
+	<stop  offset="1" style="stop-color:#FE2857"/>
 </linearGradient>
-</defs>
+<path class="st0" d="M11.2,12h82.5v82.5H11.2V12z"/>
 </svg>

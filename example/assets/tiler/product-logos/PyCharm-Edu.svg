@@ -1,13 +1,13 @@
-<svg width="105" height="105" viewBox="0 0 105 105" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M11.25 11.25H93.75V93.75H11.25V11.25Z" fill="url(#paint0_linear)"/>
-<path d="M22.5 22.6299H82.5V82.6299H22.5V22.6299Z" fill="black"/>
-<path d="M29.98 71.2898H52.48V75.0398H29.98V71.2898Z" fill="white"/>
-<path d="M30 30.1399H39.18C44.54 30.1399 47.78 33.3199 47.78 37.9099V37.9999C47.78 43.1999 43.78 45.8999 38.7 45.8999H34.92V52.6399H30V30.1399ZM38.86 41.4699C41.33 41.4699 42.77 39.9999 42.77 38.0699V37.9999C42.77 35.7799 41.23 34.5899 38.77 34.5899H34.92V41.4599L38.86 41.4699Z" fill="white"/>
-<path d="M68.1 30.1799V34.5599H56.1V39.1999H66.74V43.5699H56.08V48.2199H68.37V52.5899H51.16V30.1799H68.1Z" fill="white"/>
-<defs>
-<linearGradient id="paint0_linear" x1="92.6" y1="92.6" x2="-10.15" y2="-10.15" gradientUnits="userSpaceOnUse">
-<stop offset="0.48" stop-color="#21D789"/>
-<stop offset="0.73" stop-color="#FCF84A"/>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 25.2.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 105 105" style="enable-background:new 0 0 105 105;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:url(#SVGID_1_);}
+</style>
+<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="92.6" y1="13.4" x2="-10.15" y2="116.15" gradientTransform="matrix(1 0 0 -1 0 106)">
+	<stop  offset="0.48" style="stop-color:#21D789"/>
+	<stop  offset="0.73" style="stop-color:#FCF84A"/>
 </linearGradient>
-</defs>
+<path class="st0" d="M11.2,11.2h82.5v82.5H11.2V11.2z"/>
 </svg>

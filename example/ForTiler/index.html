@@ -62,7 +62,7 @@
                 setTimeout((tileset =>
                     () => {
                         if (Math.random() > 0.2) {
-                            app.ports.tilesetReady.send(tileset);
+                            app.ports.tilesetReady.send([ tileset, Math.floor(Math.random() * 50) ]);
                         } else {
                             app.ports.tilesetFailedToLoad.send(tileset);
                         }

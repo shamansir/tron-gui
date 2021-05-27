@@ -52,7 +52,8 @@ gui valueAt model =
                     (isGradientEnabled valueAt)
                     (getTileCount model.tilesets valueAt)
                     |> Tron.face (icon "settings") )
-        , ( "Title & Logo", title model.sizeInTiles |> Tron.face (icon "text") )
+        , ( "Title", title model.textBlockSize model.titlePosition model.screenSize |> Tron.face (icon "text") )
+        , ( "Logo", logo model.sizeInTiles model.logoPosition |> Tron.face (icon "text") )
         , ( "Animation", animation |> Tron.face (icon "animation") )
         , ( "Click action", clickAction |> Tron.face (icon "cursor"))
         , ( "Click opacity", clickOpacity <| loadActionType valueAt )
@@ -174,8 +175,8 @@ colorToString = always "white"
 productIcon : Product -> Tron.Face
 productIcon product =
     Tron.iconAt
-        [ "tron"
-        , "icons"
+        [ "assets"
+        , "tiler"
         , "product-logos"
         , (product |> Product.iconName |> Maybe.withDefault "none") ++ ".svg"
         ]
@@ -243,7 +244,7 @@ tile : List ( Tileset, TilesetStatus ) -> Tileset -> Tron ()
 tile tilesets defaultTileset =
     Tron.nest
         [ ( "Tileset", tileset tilesets defaultTileset )
-        , ( "Stroke weight", Tron.int { min = 0, max = 10, step = 1 } 1 )
+        , ( "Stroke weight", Tron.int { min = 0, max = 10, step = 1 } 0 )
         , ( "Fill α", Tron.int { min = 0, max = 255, step = 1 } 178 )
         , ( "Stroke α", Tron.int { min = 0, max = 255, step = 1 } 255 )
         ]
@@ -289,19 +290,43 @@ baseColor =
     -- |> Tron.cells CellShape.twiceByHalf
 
 
-title : (Int, Int) -> Tron ()
-title ( amountX, amountY )=
+title : Float -> (Int, Int) -> (Int, Int) -> Tron ()
+title textCoef (titleX, titleY) (screenX, screenY) =
+    Tron.nest
+        [ ( "Show", Tron.toggle True)
+        , ( "X",
+                Tron.int
+                    { min = 0, max = screenX, step = 1 }
+                     <| min screenX titleX
+          )
+        , ( "Y",
+                Tron.int
+                    { min = 0, max = screenY, step = 1 }
+                    <| min screenY titleY
+          )
+        ,( "Scale",
+                 Tron.float
+                     { min = 0.1, max = 5, step = 0.1 }
+                     <| textCoef
+         )
+
+        ]
+        |> Tron.shape (cols 3)
+
+
+logo : (Int, Int) -> (Int, Int) -> Tron ()
+logo ( amountX, amountY ) ( logoX, logoY ) =
     Tron.nest
         [ ( "Show", Tron.toggle True)
         , ( "X",
                 Tron.int
                     { min = 0, max = amountX - 1, step = 1 }
-                     <| min (amountX - 1) 11
+                     <| min (amountX - 1) logoX
           )
         , ( "Y",
                 Tron.int
                     { min = 0, max = amountY - 1, step = 1 }
-                    <| min (amountY - 1) 6 )
+                    <| min (amountY - 1) logoY )
         --, ( "Font size", Tron.int { min = 0, max = 72, step = 1 } 16 )
         --, ( "Opacity", Tron.int { min = 0, max = 255, step = 1 } 255 )
         --, ( "Position",
@@ -347,7 +372,7 @@ animation : Tron ()
 animation =
     Tron.nest
         [ ( "Animate", Tron.toggle False )
-        , ( "Action", Tron.float { min = 0, max = 4, step = 0.1 } 3 )
-        , ( "Pause", Tron.float { min = 0, max = 4, step = 0.1 } 3 )
+        , ( "Duration", Tron.float { min = 0, max = 4, step = 0.1 } 3 )
+        , ( "Delay", Tron.float { min = 0, max = 4, step = 0.1 } 3 )
         ]
         |> Tron.shape (cols 2)
