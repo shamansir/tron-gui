@@ -3,7 +3,7 @@ module Tron.Builder exposing
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
     , nest, choice, choiceBy, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
-    , toChoice, toSet
+    , toChoice, toSet, handleWith
     , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
     )
@@ -150,7 +150,7 @@ import Tron.Control exposing (..)
 import Tron.Control.Value as Value exposing (..)
 import Tron.Property exposing (..)
 import Tron.Property as Property exposing (expand, collapse)
-import Tron.Control exposing (Control(..))
+import Tron.Control as Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
@@ -243,17 +243,14 @@ Actually it is just an alias for the nested row of controls, always expanded.
                         )
                     ]
 
-                    <| always NoOp
-
                 )
             ]
 
 -}
-root : Set msg -> msg -> Tron msg
-root props msg =
+root : Set msg -> Tron msg
+root props =
     nest
         props
-        msg
         |> expand
         |> shape (rows 1)
 
@@ -481,12 +478,11 @@ Handler receives the state of the group, like if it is exapanded or collapsed or
             , Builder.float { min = 0, max = 255, step = 0.1 } model.blue <| AdjustColor Blue
             )
         ]
-        NoOp
 
 See also: `Style.Shape`, `Style.CellShape`
 -}
-nest : Set msg -> msg -> Tron msg
-nest items msg =
+nest : Set msg -> Tron msg
+nest items =
     Group
         Nothing
         Property.defaultNestShape
@@ -497,7 +493,7 @@ nest items msg =
             , face = Nothing
             , page = 0
             }
-            msg
+            <| always Nothing
 
 
 {-| Create a button face representing a color:
@@ -535,12 +531,12 @@ choice
     -> ( comparable -> msg )
     -> Tron msg
 choice set current toMsg =
-    Choice.helper
+    Choice.helperDef
         Property.defaultNestShape
         set
         current
         (==)
-        (Tuple.second >> toMsg)
+        <| always toMsg
 
 
 {-| `choiceBy` is identical to `choice`, but asks user for a custom comparison function instead of requiring `comparable` values.
@@ -563,13 +559,12 @@ choiceBy
     -> ( a -> msg )
     -> Tron msg
 choiceBy set current compare toMsg =
-    B.choiceBy set current compare
-    -- Choice.helper
-    --     Property.defaultNestShape
-    --     set
-    --     current
-    --     compare
-    --     (Tuple.second >> toMsg)
+    Choice.helperDef
+        Property.defaultNestShape
+        set
+        current
+        compare
+        <| always toMsg
 
 
 {-| `strings` is a helper to create `choice` over string values.
@@ -698,10 +693,14 @@ toSet : (a -> Label) -> List (Tron a) -> Set a
 toSet toLabel =
     List.map
         (\prop ->
-            Tron.Property.get prop
+            Property.get prop
                 |> Maybe.map
-                    (\v ->
-                        ( toLabel v
+                    (\handler ->
+                        (
+                            Value.get prop
+                                |> handler
+                                |> Maybe.map toLabel
+                                |> Maybe.withDefault "--"
                         , prop
                         )
                     )
@@ -750,14 +749,24 @@ collapse = Property.collapse
 particular control in the GUI tree.
 -}
 addPath : Tron msg -> Tron ( List Int, msg )
-addPath = Property.addPath >> Def.map (Tuple.mapFirst Path.toList)
+addPath =
+    Property.addPath
+        >> Property.map
+            (\(path, handler) ->
+                handler >> Maybe.map (Tuple.pair <| Path.toList path)
+            )
 
 
 {-| Add the path representing the label-based way to reach the
 particular control in the GUI tree.
 -}
 addLabeledPath : Tron msg -> Tron ( List String, msg )
-addLabeledPath = Property.addLabeledPath
+addLabeledPath =
+    Property.addLabeledPath
+        >> Property.map
+            (\(path, handler) ->
+                handler >> Maybe.map (Tuple.pair path)
+            )
 
 
 {-| Convert a `nest` control to `choice` control. It can be done
@@ -767,13 +776,30 @@ easily by specifying a handler:
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> toSet waveToString -- `toSet` is just another name for `addLabels`
-            |> handleWith ChangeWaveShape
+            |> handleWith (always NoOp)
         )
     |> toChoice ChangeShapeById
 -}
 toChoice : (ItemId -> msg) -> Tron msg -> Tron msg
 toChoice f =
-    B.toChoice f
+    B.toChoice
+        >> Property.map
+            (always <| Value.fromChoice >> Maybe.map f)
+
+
+{-| Handle a set of items with a converter of item to a message
+
+    Builder.nest
+        ([ Sine, Square, Triangle, Saw ]
+            |> buttons
+            |> toSet waveToString -- `toSet` is just another name for `addLabels`
+            |> handleWith ChangeWaveShape
+        )
+
+Alias for `Tron.mapSet`
+-}
+handleWith : (a -> msg) -> Set a -> Set msg
+handleWith = Def.mapSet
 
 
 {-| Changes panel shape for `nest` and `choice` panels:

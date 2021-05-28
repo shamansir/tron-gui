@@ -703,12 +703,12 @@ setFace face prop =
         _ -> prop
 
 
-toChoice : (ItemId -> a) -> Property a -> Property a
-toChoice f prop =
+toChoice : Property a -> Property a
+toChoice prop =
     case prop of
         Group focus shape control ->
             Choice focus shape
-                <| Control.mapByValue (.selected >> f)
+                --<| Control.mapByValue (.selected >> f)
                 <| Nest.toChoice
                 <| control
         _ -> prop

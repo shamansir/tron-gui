@@ -300,9 +300,9 @@ addLabeledPath : Tron a -> Tron ( List String, a )
 addLabeledPath = Property.addLabeledPath
 
 
-toChoice : (ItemId -> a) -> Tron a -> Tron a
-toChoice f =
-    Property.toChoice f
+toChoice : Tron a -> Tron a
+toChoice =
+    Property.toChoice
 
 
 {-| Changes panel shape for `nest` and `choice` panels:

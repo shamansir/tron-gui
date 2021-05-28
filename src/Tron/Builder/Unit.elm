@@ -54,13 +54,13 @@ so that is easier and shorter to use `Unit`-based `Builder` if you don't need an
 
 
 import Tron as B
-import Tron.Builder as B
+import Tron.Builder.Any as B
 
 import Color exposing (Color)
 import Axis exposing (Axis)
 
 import Tron.Control exposing (..)
-import Tron.Property exposing (..)
+import Tron.Property as Property exposing (..)
 import Tron.Control exposing (Control(..))
 import Tron.Util exposing (findMap)
 import Tron.Style.CellShape exposing (CellShape)
@@ -87,11 +87,11 @@ type alias Set = B.Set ()
 
 
 {-| -}
-type alias Icon = B.Icon
+type alias Icon = Button.Icon
 
 
 {-| -}
-type alias Face = B.Face
+type alias Face = Button.Face
 
 
 {-| -}
@@ -106,12 +106,12 @@ root set = B.root set ()
 
 {-| -}
 float : Axis -> Float -> Tron
-float axis current = B.float axis current <| always ()
+float axis current = B.float axis current ()
 
 
 {-| -}
 int : { min: Int, max : Int, step : Int } -> Int -> Tron
-int axis current = B.int axis current <| always ()
+int axis current = B.int axis current ()
 
 
 {-| -}
@@ -121,7 +121,7 @@ number = float
 
 {-| -}
 xy : ( Axis, Axis ) -> ( Float, Float ) -> Tron
-xy xAxis yAxis = B.xy xAxis yAxis <| always ()
+xy xAxis yAxis = B.xy xAxis yAxis ()
 
 
 {-| -}
@@ -131,27 +131,27 @@ coord = xy
 
 {-| -}
 input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Tron
-input toString fromString current = B.input toString fromString current <| always ()
+input toString fromString current = B.input toString current ()
 
 
 {-| -}
 text : String -> Tron
-text default = B.text default <| always ()
+text default = B.text default ()
 
 
 {-| -}
 color : Color -> Tron
-color current = B.color current <| always ()
+color current = B.color current ()
 
 
 {-| -}
 button : Tron
-button = B.button <| always ()
+button = B.button ()
 
 
 {-| -}
 toggle : Bool -> Tron
-toggle current = B.toggle current <| always ()
+toggle current = B.toggle current ()
 
 
 {-| -}
@@ -170,7 +170,7 @@ choice
     -> comparable
     -> Tron
 choice items current =
-    B.choice items current <| always ()
+    B.choice items current |> Property.map (always ())
 
 
 {-| -}
@@ -180,7 +180,7 @@ choiceBy
     -> ( a -> a -> Bool )
     -> Tron
 choiceBy items current compare =
-    B.choiceBy items current compare <| always ()
+    B.choiceBy items current compare |> Property.map (always ())
 
 
 
@@ -190,7 +190,7 @@ strings
     -> String
     -> Tron
 strings options current =
-    B.strings options current <| always ()
+    B.strings options current |> Property.map (always ())
 
 
 {-| -}
@@ -200,7 +200,7 @@ labels
     -> a
     -> Tron
 labels toLabel options current =
-    B.labels toLabel options current () <| always ()
+    B.labels toLabel options current |> Property.map (always ())
 
 
 {-| -}
@@ -209,7 +209,7 @@ palette
     -> Color
     -> Tron
 palette colors currentColor =
-    B.palette colors currentColor <| always ()
+    B.palette colors currentColor |> Property.map (always ())
 
 
 {-| -}
@@ -290,7 +290,7 @@ addLabeledPath = B.addLabeledPath
 
 {-| -}
 toChoice : Tron -> Tron
-toChoice = B.toChoice <| always ()
+toChoice = B.toChoice
 
 
 {-| -}
