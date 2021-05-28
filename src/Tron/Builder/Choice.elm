@@ -53,11 +53,6 @@ helper ( panelShape, cellShape ) options current compare =
                         )
                     )
 
-        -- properties : Array.Array ( Label, Property a )
-        -- properties =
-        --     optionsArray
-        --         |> Array.map (Tuple.mapSecond <| Tron.Property.map toMsg)
-
         values : Array.Array ( Maybe a )
         values =
             options
@@ -77,13 +72,6 @@ helper ( panelShape, cellShape ) options current compare =
                     )
                 |> Maybe.withDefault 0
 
-        -- callByIndex : Int -> b
-        -- callByIndex index =
-        --     values
-        --         |> Array.get index
-        --         |> Maybe.andThen identity
-        --         |> Maybe.map (\v -> toMsg (index, v))
-        --         |> Maybe.withDefault (toMsg ( 0, current ))
     in
         Choice
             Nothing
@@ -153,14 +141,6 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
                     )
                 |> Maybe.withDefault 0
 
-        {- callByIndex : Int -> msg
-        callByIndex index =
-            values
-                |> Array.get index
-                |> Maybe.andThen identity
-                |> Maybe.map (toMsg index)
-                |> Maybe.withDefault (toMsg 0 current) -}
-
         handler : Value -> Maybe msg
         handler =
             Value.fromChoice
@@ -184,3 +164,72 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
                 , selected = currentIndex
                 }
                 handler
+
+
+helperProxy
+     : ( PanelShape, CellShape )
+    -> List ( Label, Property ( Value -> Maybe a ) )
+    -> a
+    -> ( a -> a -> Bool )
+    -> Property (Value -> Maybe Value)
+helperProxy ( panelShape, cellShape ) options current compare =
+    let
+
+        optionsArray : Array.Array ( Label, Property ( Int, ( Value -> Maybe a ) ))
+        optionsArray =
+            options
+                |> Array.fromList
+                |> Array.indexedMap
+                    (\index (label, prop) ->
+                        ( label
+                        , prop
+                            |> Property.map (Tuple.pair index)
+                        )
+                    )
+
+        properties : Array.Array ( Label, Property ( Value -> Maybe Value ) )
+        properties =
+            optionsArray
+                |> Array.map
+                    (\(label, prop) ->
+                        (label, prop |> Property.map Tuple.second |> Property.map (always Just))
+                    )
+
+        values : Array.Array ( Maybe a )
+        values =
+            options
+                |> Array.fromList
+                |> Array.map (Tuple.second)
+                |> Array.map
+                    (\prop ->
+                        Property.get prop
+                            |> Maybe.andThen (\handler_ -> handler_ <| Value.get prop)
+                    )
+
+        currentIndex : Int
+        currentIndex =
+            values
+                |> Array.indexedMap Tuple.pair
+                |> Tron.Util.filterMapArray Tron.Util.flipMaybe
+                |> Tron.Util.findMapInArray
+                    (\(index, option) ->
+                        if compare option current
+                            then Just index
+                            else Nothing
+                    )
+                |> Maybe.withDefault 0
+
+    in
+        Choice
+            Nothing
+            ( panelShape
+            , cellShape
+            )
+            <| Control
+                properties
+                { form = Collapsed
+                , page = 0
+                , face = Nothing
+                , selected = currentIndex
+                }
+                Just

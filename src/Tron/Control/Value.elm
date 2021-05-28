@@ -50,6 +50,7 @@ type Value
     | FromColor Color
     | FromToggle ToggleState
     | FromButton
+    | FromGroup
     | Other
 
 
@@ -78,6 +79,7 @@ encode v =
                         ]
         FromToggle t -> E.bool <| toggleToBool t
         FromButton -> E.string ""
+        FromGroup -> E.string ""
         Other -> E.null
 
 
@@ -98,6 +100,8 @@ toString v =
         FromToggle t ->
             toggleToString t
         FromButton ->
+            ""
+        FromGroup ->
             ""
         Other ->
             ""
@@ -132,6 +136,9 @@ getTypeString value =
 
         FromButton ->
             "button"
+
+        FromGroup ->
+            "nest"
 
 
 {-| -}
@@ -222,4 +229,4 @@ get prop =
         Toggle control -> control |> Control.getValue |> FromToggle
         Action _ -> FromButton
         Choice _ _ control -> control |> Control.getValue |> .selected |> FromChoice
-        Group _ _ _ -> Other
+        Group _ _ _ -> FromGroup

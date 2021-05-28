@@ -576,6 +576,9 @@ valueDecoder type_ =
         "button" ->
             D.succeed FromButton
 
+        "nest" ->
+            D.succeed FromGroup
+
         _ ->
             D.succeed Other
 
@@ -626,6 +629,9 @@ fromString type_ str =
 
         "button" ->
             Ok FromButton
+
+        "nest" ->
+            Ok FromGroup
 
         _ ->
             Err str

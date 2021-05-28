@@ -219,12 +219,13 @@ labels
     -> a
     -> Tron ( Int, Label )
 labels toLabel options current =
-    let
+    {- let
         labelToValue =
             options
                 |> List.map (\v -> ( toLabel v, v ) )
                 |> Dict.fromList
-    in choice
+    in -}
+    choice
         (options
             |> List.map toLabel
             |> buttons

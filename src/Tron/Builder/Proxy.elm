@@ -53,8 +53,9 @@ so that is easier and shorter to use `Proxy`-based `Builder` if you don't need a
 -}
 
 
-import Tron as B
-import Tron.Builder as B
+import Tron.Deferred as Def
+import Tron.Builder.Any as B
+import Tron.Builder as BB
 
 import Color exposing (Color)
 import Axis exposing (Axis)
@@ -73,25 +74,25 @@ import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url)
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Nest exposing (Form(..), ItemId)
 
-import Tron.Control.Value exposing (Value(..))
+import Tron.Control.Value as Value exposing (Value(..))
 import Tron.Builder.Choice as Choice
 import Tron.Expose.Convert exposing (toProxied)
 
 
 {-| -}
-type alias Tron = B.Tron Value
+type alias Tron = Def.Tron Value
 
 
 {-| -}
-type alias Set = B.Set Value
+type alias Set = Def.Set Value
 
 
 {-| -}
-type alias Icon = B.Icon
+type alias Icon = Button.Icon
 
 
 {-| -}
-type alias Face = B.Face
+type alias Face = Button.Face
 
 
 {-| -}
@@ -101,17 +102,17 @@ none = B.none
 
 {-| -}
 root : Set -> Tron
-root = B.root
+root set = B.root set Just
 
 
 {-| -}
 float : Axis -> Float -> Tron
-float axis default = B.float axis default FromSlider
+float axis default = B.float axis default Just
 
 
 {-| -}
 int : { min: Int, max : Int, step : Int } -> Int -> Tron
-int axis default = B.int axis default (toFloat >> FromSlider)
+int axis default = B.int axis default Just
 
 
 {-| -}
@@ -121,7 +122,7 @@ number = float
 
 {-| -}
 xy : ( Axis, Axis ) -> ( Float, Float ) -> Tron
-xy xAxis yAxis = B.xy xAxis yAxis FromXY
+xy xAxis yAxis = B.xy xAxis yAxis Just
 
 
 {-| -}
@@ -131,27 +132,27 @@ coord = xy
 
 {-| -}
 input : ( a -> String ) -> ( String -> Maybe a ) -> a -> Tron
-input toString fromString current = B.input toString fromString current (toString >> FromInput)
+input toString fromString current = B.input toString current Just
 
 
 {-| -}
 text : String -> Tron
-text default = B.text default FromInput
+text default = B.text default Just
 
 
 {-| -}
 color : Color -> Tron
-color current = B.color current FromColor
+color current = B.color current Just
 
 
 {-| -}
 button : Tron
-button = B.button <| always FromButton
+button = B.button Just
 
 
 {-| -}
 toggle : Bool -> Tron
-toggle current = B.toggle current (boolToToggle >> FromToggle)
+toggle current = B.toggle current Just
 
 
 {-| -}
@@ -161,29 +162,34 @@ bool = toggle
 
 {-| -}
 nest : Set -> Tron
-nest = B.nest
+nest set = B.nest set Just
 
 
 {-| -}
 choice
-     : B.Set comparable
+     : Def.Set comparable
     -> comparable
     -> Tron
-choice items current =
-    B.choice items current (always ())
-        |> toProxied |> Property.map Tuple.first
+choice set current =
+    Choice.helperProxy
+        Property.defaultNestShape
+        set
+        current
+        (==)
 
 
 {-| -}
 choiceBy
-     : B.Set a
+     : Def.Set a
     -> a
     -> ( a -> a -> Bool )
     -> Tron
-choiceBy items current compare =
-    B.choiceBy items current compare (always ())
-        |> toProxied |> Property.map Tuple.first
-
+choiceBy set current compare =
+    Choice.helperProxy
+        Property.defaultNestShape
+        set
+        current
+        compare
 
 
 {-| -}
@@ -192,8 +198,8 @@ strings
     -> String
     -> Tron
 strings options current =
-    B.strings options current (always ())
-        |> toProxied |> Property.map Tuple.first
+    B.strings options current
+        |> Property.map (always Just)
 
 
 {-| -}
@@ -203,8 +209,8 @@ labels
     -> a
     -> Tron
 labels toLabel options current =
-    B.labels toLabel options current () (always ())
-        |> toProxied |> Property.map Tuple.first
+    B.labels toLabel options current
+        |> Property.map (always Just)
 
 
 {-| -}
@@ -213,8 +219,8 @@ palette
     -> Color
     -> Tron
 palette colors currentColor =
-    B.palette colors currentColor (always ())
-        |> toProxied |> Property.map Tuple.first
+    B.palette colors currentColor
+        |> Property.map (always Just)
 
 
 {-| -}
@@ -223,29 +229,31 @@ useColor = B.useColor
 
 
 {-| -}
-face : Face -> B.Tron a -> B.Tron a
+face : Face -> Def.Tron a -> Def.Tron a
 face = B.face
 
 
 {-| -}
-buttons : List a -> List (B.Tron a)
-buttons = B.buttons
+buttons : List a -> List (Def.Tron a)
+buttons =
+    B.buttons
+        >> List.map (Property.map <| always << Just)
 
 
 {-| -}
-toSet : (a -> Label) -> List (B.Tron a) -> B.Set a
-toSet = B.toSet
+toSet : (a -> Label) -> List (Def.Tron a) -> Def.Set a
+toSet = BB.toSet
 
 
 {-| -}
-addLabels : (a -> Label) -> List (B.Tron a) -> B.Set a
-addLabels = B.addLabels
+addLabels : (a -> Label) -> List (Def.Tron a) -> Def.Set a
+addLabels = BB.addLabels
 
 
 {-| The replacement for `handleWith` since we convert everything automatically for Proxy. -}
-autoHandle : B.Tron a -> Tron
+autoHandle : Def.Tron a -> Tron
 autoHandle =
-    toProxied >> Property.map Tuple.first
+    Property.map <| always Just
 
 
 {-| -}
@@ -274,35 +282,35 @@ makeUrl = Button.makeUrl
 
 
 {-| -}
-expand : B.Tron a -> B.Tron a
+expand : Def.Tron a -> Def.Tron a
 expand = B.expand
 
 
 {-| -}
-collapse : B.Tron a -> B.Tron a
+collapse : Def.Tron a -> Def.Tron a
 collapse = B.collapse
 
 
 {-| -}
-addPath : Tron -> B.Tron ( List Int, Value )
-addPath = B.addPath
+addPath : Tron -> Def.Tron ( List Int, Value )
+addPath = BB.addPath
 
 
 {-| -}
-addLabeledPath : Tron -> B.Tron ( List String, Value )
-addLabeledPath = B.addLabeledPath
+addLabeledPath : Tron -> Def.Tron ( List String, Value )
+addLabeledPath = BB.addLabeledPath
 
 
 {-| -}
 toChoice : Tron -> Tron
-toChoice = B.toChoice FromChoice
+toChoice = B.toChoice
 
 
 {-| -}
-shape : PanelShape -> B.Tron a -> B.Tron a
+shape : PanelShape -> Def.Tron a -> Def.Tron a
 shape = B.shape
 
 
 {-| -}
-cells : CellShape -> B.Tron a -> B.Tron a
+cells : CellShape -> Def.Tron a -> Def.Tron a
 cells = B.cells

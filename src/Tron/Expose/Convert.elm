@@ -88,7 +88,7 @@ toProxied prop =
         Group focus shape control ->
             control
                 |> Nest.mapItems (Tuple.mapSecond toProxied)
-                |> convertWith (always Other)
+                |> convertWith (always FromGroup)
                 -- TODO: notify expanded/collapsed/detached?
                 |> Group focus shape
 
@@ -195,7 +195,7 @@ reflect prop =
         Group focus shape control ->
             Group focus shape
                 <| Nest.mapItems (Tuple.mapSecond reflect)
-                <| Control.map (Tuple.mapFirst <| always Other)
+                <| Control.map (Tuple.mapFirst <| always FromGroup)
                 <| Control.reflect
                 <| control
 
