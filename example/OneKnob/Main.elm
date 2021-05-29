@@ -3,7 +3,7 @@ module OneKnob.Main exposing (main)
 
 import Html exposing (Html)
 
-import Tron exposing (Tron)
+import Tron.Deferred exposing (Tron)
 import WithTron exposing (ProgramWithTron)
 import Tron.Option as Option
 import Tron.Builder as Builder

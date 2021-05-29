@@ -1,6 +1,6 @@
 module Tron.Expose.Convert
     exposing
-    ( toExposed, toProxied, toStrExposed, toUnit
+    ( toExposed, toProxied, toStrExposed
     , reflect, lift, evaluate
     , toDeferredRaw
     )
@@ -23,13 +23,6 @@ import Tron.Expose.Data exposing (..)
 import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
 import Tron.Control.Value as Value exposing (Value(..))
-
-
-{-| Instead of messages, store nothing, but values.
--}
-toUnit : Tron a -> Tron ()
-toUnit =
-    map <| always ()
 
 
 {-| Store a `Value` together with message, which mirrors a value

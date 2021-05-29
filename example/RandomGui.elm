@@ -9,10 +9,14 @@ import Url.Builder as Url
 
 import Tron exposing (Tron)
 import Tron.Control as Core exposing (Control(..))
-import Tron.Control.Nest exposing (ChoiceControl, GroupControl, Form(..), ItemId, expand, getItems)
-import Tron.Control.Toggle exposing (ToggleState(..))
-import Tron.Control.Text exposing (TextState(..))
+import Tron.Control.Nest as Nest exposing (ChoiceControl, GroupControl, Form(..), ItemId, expand, getItems)
+import Tron.Control.Toggle as Toggle exposing (ToggleState(..))
+import Tron.Control.Text as Text exposing (TextState(..))
 import Tron.Control.Button as Button exposing (Face(..), Icon(..))
+import Tron.Control.Number as Number
+import Tron.Control.XY as XY
+import Tron.Control.Color as Color
+
 import Tron.Property  exposing (Property(..))
 import Tron.Property as Gui exposing ( Label )
 import Tron.Style.PanelShape exposing (PanelShape, cols)
@@ -66,11 +70,6 @@ property (DeepLevel deep) =
             )
 
 
-handler : Random.Generator (Maybe ( a -> () ))
-handler =
-    Random.constant <| Just <| always ()
-
-
 roundBy : Int -> Float -> Float
 roundBy _ f =
     toFloat (floor (f * 100)) / 100
@@ -92,7 +91,7 @@ axis =
             )
 
 
-number : Random.Generator ( Control Axis Float () )
+number : Random.Generator ( Number.Control () )
 number =
     axis
         |> Random.andThen
@@ -100,12 +99,16 @@ number =
                 Random.map3
                     Control
                     (Random.constant theAxis)
-                    (Random.float theAxis.min theAxis.max)
-                    handler
+                    (Random.map2
+                        Tuple.pair
+                        (Random.constant Nothing)
+                        (Random.float theAxis.min theAxis.max)
+                    )
+                    (Random.constant ())
             )
 
 
-coordinate : Random.Generator ( Control ( Axis, Axis ) ( Float, Float ) () )
+coordinate : Random.Generator ( XY.Control () )
 coordinate =
     Random.map2 Tuple.pair axis axis
         |> Random.andThen
@@ -115,26 +118,33 @@ coordinate =
                     (Random.constant ( xAxis, yAxis ))
                     (Random.map2
                         Tuple.pair
-                        (Random.float xAxis.min xAxis.max)
-                        (Random.float yAxis.min yAxis.max)
+                        (Random.constant Nothing)
+                        <| Random.map2
+                            Tuple.pair
+                            (Random.float xAxis.min xAxis.max)
+                            (Random.float yAxis.min yAxis.max)
                     )
-                    handler
+                    (Random.constant ())
             )
 
 
-text : Random.Generator ( Control () ( TextState, String ) () )
+text : Random.Generator ( Text.Control () )
 text =
     Random.constant
-        <| Control () ( Ready, "foobar" ) <| Just <| always ()
+        <| Control () ( Ready, "foobar" ) ()
 
 
-color : Random.Generator (Control () Color ())
+color : Random.Generator ( Color.Control () )
 color =
     Random.map3
         Control
         (Random.constant ())
-        randomColor
-        handler
+        (Random.map2
+            Tuple.pair
+            (Random.constant Nothing)
+            randomColor
+        )
+        (Random.constant ())
 
 
 button : Random.Generator ( Control Face () () )
@@ -148,7 +158,7 @@ button =
                     )
                 >> Maybe.withDefault Default
                 )
-        |> Random.map (\icon -> Control icon () <| Just <| always ())
+        |> Random.map (\icon -> Control icon () ())
 
 
 controls : DeepLevel -> Random.Generator ( Array ( Label, Tron () ) )
@@ -198,13 +208,14 @@ choice deep =
                         (\f s ->
                             { form = f
                             , selected = s
+                            , face = Nothing
                             , page = 0
                             }
                         )
                         form
                         (Random.int 0 <| Array.length cs - 1)
                     )
-                    handler
+                    (Random.constant ())
             )
 
 
@@ -225,7 +236,7 @@ group deep =
                         )
                         form
                     )
-                    handler
+                    (Random.constant ())
             )
 
 
@@ -283,8 +294,7 @@ toggle =
                 Control
                     ()
                     tState
-                    <| Just
-                    <| always ()
+                    ()
             )
 
 

@@ -149,12 +149,12 @@ init ( userInit, userFor ) maybeUrl renderTarget ports flags =
         (
             ( initialModel
             , state |> addInitOptions renderTarget
-            , firstTree |> Exp.toUnit
+            , firstTree |> Tron.toUnit
             )
         , Cmd.batch
             [ userEffect |> Cmd.map ToUser
             , guiEffect |> Cmd.map ToTron
-            , performInitEffects ports (firstTree |> Exp.toUnit) |> Cmd.map ToUser
+            , performInitEffects ports (firstTree |> Tron.toUnit) |> Cmd.map ToUser
             , case maybeUrl of
                 Just url ->
                     Task.succeed url
@@ -214,7 +214,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                 , userFor newUserModel
                     |> Property.transferTransientState prevTree
                     |> Property.loadValues prevTree
-                    |> Exp.toUnit
+                    |> Tron.toUnit
                 )
             , userEffect |> Cmd.map ToUser
             )
@@ -250,7 +250,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                 (
                     ( model
                     , state
-                    , nextRoot |> Exp.toUnit
+                    , nextRoot |> Tron.toUnit
                     )
                 , nextRoot
                     |> Exp.freshRun
@@ -477,7 +477,7 @@ element
 element renderTarget ports def =
     Browser.element
         { init =
-            init ( def.init, def.for >> Exp.toUnit ) Nothing renderTarget ports
+            init ( def.init, def.for >> Tron.toUnit ) Nothing renderTarget ports
         , update =
             update ( def.update, def.for ) ports
         , view =
@@ -534,7 +534,7 @@ document renderTarget ports def =
     Browser.document
         { init =
             \flags ->
-                init ( def.init, def.for >> Exp.toUnit) Nothing renderTarget ports flags
+                init ( def.init, def.for >> Tron.toUnit) Nothing renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =
@@ -617,7 +617,7 @@ application renderTarget ports def =
     Browser.application
         { init =
             \flags url _ ->
-                init ( def.init, def.for >> Exp.toUnit ) (Just url) renderTarget ports flags
+                init ( def.init, def.for >> Tron.toUnit ) (Just url) renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =

@@ -115,7 +115,7 @@ update
 update msg state tree  =
     case msg of
         NoOp ->
-            ( state, tree |> Exp.toUnit, Cmd.none )
+            ( state, tree |> Tron.toUnit, Cmd.none )
 
         ApplyMouse mouseAction ->
             tree
@@ -134,7 +134,7 @@ update msg state tree  =
                     expTree |> updateMany updates
             in
                 ( state
-                , nextRoot |> Exp.toUnit
+                , nextRoot |> Tron.toUnit
                 , updates
                     |> List.map (Tuple.second >> Exp.freshRun)
                     |> Cmd.batch
@@ -142,7 +142,7 @@ update msg state tree  =
 
         MouseDown path ->
             ( state
-            , Focus.on tree path |> Exp.toUnit
+            , Focus.on tree path |> Tron.toUnit
             , Cmd.none
             )
 
@@ -159,7 +159,7 @@ update msg state tree  =
                 { state
                 | viewport = Size (w, h)
                 }
-            , tree |> Exp.toUnit
+            , tree |> Tron.toUnit
             , Cmd.none
             )
 
@@ -170,7 +170,7 @@ update msg state tree  =
                         |> updateTextAt path val
             in
                 ( state
-                , nextRoot |> Exp.toUnit
+                , nextRoot |> Tron.toUnit
                 , Cmd.none
                 )
 
@@ -179,7 +179,7 @@ update msg state tree  =
                 nextRoot = detachAt path tree
             in
                 ( state
-                , nextRoot |> Exp.toUnit
+                , nextRoot |> Tron.toUnit
                 , Cmd.none -- FIXME: Detach.sendTree gui.detach nextRoot
                 )
 
@@ -188,7 +188,7 @@ update msg state tree  =
                 nextRoot = switchPageAt path pageNum tree
             in
                 ( state
-                , nextRoot |> Exp.toUnit
+                , nextRoot |> Tron.toUnit
                 , Cmd.none
                 )
 
@@ -235,7 +235,7 @@ handleMouse : MouseAction -> State -> Tron ( Exp.Value -> Maybe msg ) -> ( State
 handleMouse mouseAction state tree =
     let
         rootPath = getRootPath state
-        unitTree = tree |> Exp.toUnit
+        unitTree = tree |> Tron.toUnit
         curMouseState =
             state.mouse
         nextMouseState =
@@ -385,7 +385,7 @@ handleMouse mouseAction state tree =
 
                 else refocusedTree
 
-        ) |> Exp.toUnit
+        ) |> Tron.toUnit
 
         , if finishedDragging
             then
@@ -422,7 +422,7 @@ handleKeyDown keyCode path state tree =
                 nextRoot = tree |> updateMany updates
             in
                 ( state
-                , nextRoot |> Exp.toUnit
+                , nextRoot |> Tron.toUnit
                 , updates
                     |> List.map (Tuple.second >> Exp.freshRun)
                     |> Cmd.batch
@@ -431,20 +431,20 @@ handleKeyDown keyCode path state tree =
 
     in case keyCode of
         -- left arrow
-        37 -> ( state, tree |> Focus.shift Focus.Left |> Exp.toUnit, Cmd.none )
+        37 -> ( state, tree |> Focus.shift Focus.Left |> Tron.toUnit, Cmd.none )
         -- right arrow
-        39 -> ( state, tree |> Focus.shift Focus.Right |> Exp.toUnit, Cmd.none )
+        39 -> ( state, tree |> Focus.shift Focus.Right |> Tron.toUnit, Cmd.none )
         -- up arrow
-        38 -> ( state, tree |> Focus.shift Focus.Up |> Exp.toUnit, Cmd.none )
+        38 -> ( state, tree |> Focus.shift Focus.Up |> Tron.toUnit, Cmd.none )
         -- down arrow
-        40 -> ( state, tree |> Focus.shift Focus.Down |> Exp.toUnit, Cmd.none )
+        40 -> ( state, tree |> Focus.shift Focus.Down |> Tron.toUnit, Cmd.none )
         -- space
         32 ->
             (
                 { state
                 | hidden = not state.hidden
                 }
-            , tree |> Exp.toUnit
+            , tree |> Tron.toUnit
             , Cmd.none
             )
             -- executeByPath ()
@@ -459,14 +459,14 @@ handleKeyDown keyCode path state tree =
                             -- FIXME: second time search for a path
                             tree
                                 |> setAt path nextProp
-                                |> Exp.toUnit
+                                |> Tron.toUnit
                         -- FIXME: inside, we check if it is a text prop again
                         , Exp.freshRun nextProp
                             --|> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()
         -- else
-        _ -> ( state, tree |> Exp.toUnit, Cmd.none )
+        _ -> ( state, tree |> Tron.toUnit, Cmd.none )
 
 
 toExposed : State -> Tron a -> Tron ( Exp.RawOutUpdate, a )

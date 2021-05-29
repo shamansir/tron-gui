@@ -1,5 +1,5 @@
 module Tron.Control.Value exposing
-    ( Value(..), get
+    ( Value(..), get, lift
     , encode
     , toString, getTypeString
     , toggleToBool, toggleToString
@@ -38,7 +38,7 @@ import Tron.Control as Control
 import Tron.Control.Nest as Nest exposing (ItemId)
 import Tron.Control.Toggle as Toggle exposing (ToggleState, toggleToBool, toggleToString)
 import Tron.Control.XY as XY
-import Tron.Property exposing (Property(..))
+import Tron.Property as Property exposing (Property(..))
 
 
 {-| -}
@@ -230,3 +230,8 @@ get prop =
         Action _ -> FromButton
         Choice _ _ control -> control |> Control.getValue |> .selected |> FromChoice
         Group _ _ _ -> FromGroup
+
+
+lift : Property a -> Property (Value -> Maybe a)
+lift =
+    Property.map (always << Just)

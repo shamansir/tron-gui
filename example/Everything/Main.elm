@@ -17,7 +17,9 @@ import Url exposing (Url)
 import Tron exposing (Tron)
 import Tron.Core as Core
 import Tron.Core as T
+import Tron.Expose as Exp
 import Tron.Expose.Data as Exp
+import Tron.Expose.Convert as Exp
 import Tron.Mouse exposing (Position)
 import Tron.Detach as Detach exposing (fromUrl)
 import Tron.Style.Theme exposing (Theme)
@@ -80,7 +82,8 @@ type Mode
 type alias Model =
     { mode : Mode
     , theme : Theme
-    , gui : Core.Model Msg
+    , state : Core.State
+    , gui : Tron ()
     , example : Example.Model
     , url : Url
     }
@@ -90,28 +93,27 @@ init : Url -> Navigation.Key -> ( Model, Cmd Msg )
 init url _ =
     let
         ( initialModel, initEffects ) = Example.init
-        ( gui, startGui ) =
-            initialModel
-                |> exampleGui url
+        ( state, startGui ) = Core.init
     in
         (
             { mode = TronGui
             , example = initialModel
             , theme = Theme.light
-            , gui = gui
+            , state = state
                 |> Core.reshape ( 7, 7 )
                 |> Core.dock Dock.bottomLeft
+            , gui = ExampleGui.for initialModel |> Tron.toUnit
             , url = url
             }
         , Cmd.batch
             [ initEffects |> Cmd.map ToExample
-            , startGui
+            , startGui |> Cmd.map ToTron
             ]
         )
 
 
 view : Model -> Html Msg
-view { mode, gui, example, theme } =
+view { mode, state, example, gui, theme } =
     Html.div
         [ Attr.class <| "example --" ++ Theme.toString theme ]
         [ Html.button
@@ -152,7 +154,8 @@ view { mode, gui, example, theme } =
             DatGui -> Html.div [] []
             TronGui ->
                 gui
-                    |> Core.view theme
+                --ExampleGui.for example
+                    |> Core.view theme state
                     |> Html.map ToTron
         , Example.view example
         ]
@@ -167,38 +170,28 @@ update msg model =
                 { model
                 | mode = DatGui
                 }
-            , model.gui
-                |> Core.encode
+            , model.gui --ExampleGui.for model.example
+                |> Exp.encode
                 |> startDatGui
             )
 
         ( ChangeMode TronGui, _ ) ->
             let
-                ( gui, startGui ) =
-                    model.example |> exampleGui model.url
+                ( state, startGui ) =
+                    Core.init
             in
                 (
                     { model
-                    | gui = gui
+                    | state = state
                     , mode = TronGui
                     }
                 , Cmd.batch
                     [ destroyDatGui ()
-                    , startGui
+                    , startGui |> Cmd.map ToTron
                     ]
                 )
 
         ( ToExample dmsg, _ ) ->
-            -- If your GUI structure never changes (unlike with `Goose` example),
-            -- you need neither `updatedBy` function nor this condition check,
-            -- at all! Just leave the `else` part in your code.
---                if ExampleGui.updatedBy dmsg then
-                -- HonkOn -> True
-                -- HonkOff -> True
-                -- PunkOn -> True
-                -- PunkOff -> True
-                -- _ -> False
-
 
                 let
                     ( nextExample, updateEffects ) =
@@ -208,10 +201,7 @@ update msg model =
                         { model
                         | example = nextExample
                         , gui =
-                            model.gui
-                                |> Core.over
-                                    (ExampleGui.for nextExample
-                                        |> Tron.map ToExample)
+                            ExampleGui.for nextExample |> Tron.toUnit
                         }
                     , updateEffects |> Cmd.map ToExample
                     )
@@ -252,19 +242,19 @@ update msg model =
 
         ( Randomize newTree, _ ) ->
             let
-                ( newGui, startGui ) =
-                    newTree |> Core.init
+                ( newState, startGui ) =
+                    Core.init
+
             in
                 (
                     { model
-                    | gui = newGui
-                        |> Core.map (always NoOp)
+                    | state = newState
                         |> Core.dock Dock.bottomCenter
                     }
                 , case model.mode of
                     DatGui ->
-                        newGui
-                            |> Core.encode
+                        newTree
+                            |> Exp.encode
                             |> startDatGui
                     TronGui ->
                         startGui
@@ -275,17 +265,15 @@ update msg model =
             let
                 ( example, exampleEffects ) =
                     Example.init
-                ( gui, startGui ) =
-                    example |> exampleGui model.url
+                gui =
+                    ExampleGui.for example
+                    -- example |> exampleGui model.url
             in
                 (
                     { model
-                    | gui = gui
+                    | gui = gui |> Tron.toUnit
                     }
-                , Cmd.batch
-                    [ exampleEffects |> Cmd.map ToExample
-                    , startGui
-                    ]
+                , exampleEffects |> Cmd.map ToExample
                 )
 
         ( SwitchTheme, _ ) ->
@@ -299,7 +287,7 @@ update msg model =
         ( ChangeDock newDock, _ ) ->
             (
                 { model
-                | gui = model.gui |> Core.dock newDock
+                | state = model.state |> Core.dock newDock
                 }
             , Cmd.none
             )
@@ -308,12 +296,12 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions { mode, gui } =
+subscriptions { mode, state } =
     case mode of
         DatGui ->
             updateFromDatGui FromDatGui
         TronGui ->
-            Core.subscriptions gui |> Sub.map ToTron
+            Core.subscriptions state |> Sub.map ToTron
 
 
 main : Program () Model Msg
@@ -331,6 +319,7 @@ main =
         }
 
 
+{-
 exampleGui : Url -> Example.Model -> ( Core.Model Msg, Cmd Msg )
 exampleGui url model =
     let
@@ -353,6 +342,7 @@ exampleGui url model =
             ]
             |> Cmd.map ToTron
         )
+-}
 
 
 port startDatGui : Exp.RawProperty -> Cmd msg

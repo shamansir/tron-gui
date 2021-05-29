@@ -3,7 +3,7 @@ module Example.Default.Gui exposing (..)
 
 import Color exposing (Color)
 
-import Tron exposing (Tron)
+import Tron.Deferred exposing (Tron)
 import Tron.Builder as Gui
 import Tron.Property  exposing (Property)
 import Tron.Property as Property
@@ -73,7 +73,7 @@ for model =
         ]
 
 
-nestedButtons : Choice -> Property Msg
+nestedButtons : Choice -> Tron Msg
 nestedButtons curChoice =
     Gui.nest
         [ ( "a", Gui.button <| always <| Pressed A )
@@ -84,7 +84,7 @@ nestedButtons curChoice =
         ] |> Gui.shape (cols 2)
 
 
-colorNest : Property Msg
+colorNest : Tron Msg
 colorNest =
     let
         colorCompKnob msg =
@@ -100,7 +100,7 @@ colorNest =
             ] |> Gui.shape (cols 1)
 
 
-allControlsNest : Model -> Property Msg
+allControlsNest : Model -> Tron Msg
 allControlsNest model =
     let
         colorCompKnob msg =

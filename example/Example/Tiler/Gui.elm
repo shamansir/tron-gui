@@ -88,7 +88,7 @@ loadActionType =
 isFullscreenEnabled : ValueAt -> FullscreenStatus
 isFullscreenEnabled =
     V.ask (V.toggle [ "Sizes", "Fullscreen" ])
-        >> Maybe.map (Proxy.toggleToBool)
+        >> Maybe.map Proxy.toggleToBool
         >> Maybe.map (\v -> if v then Fullscreen else CustomSize)
         >> Maybe.withDefault Fullscreen
 
@@ -96,9 +96,9 @@ isFullscreenEnabled =
 isGradientEnabled : ValueAt -> GradientStatus
 isGradientEnabled =
     V.ask (V.toggle [ "Randomness", "Gradient" ])
-        >> Maybe.map (Proxy.toggleToBool)
+        >> Maybe.map Proxy.toggleToBool
         >> Maybe.map (\v -> if v then Gradient else Discrete)
-        >> Maybe.withDefault Gradient
+        >> Maybe.withDefault Discrete
 
 
 getPreselectedTileset : Model -> Tileset

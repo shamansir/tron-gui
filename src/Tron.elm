@@ -1,6 +1,7 @@
 module Tron exposing
     ( Tron, Set
     , map, mapSet, andThen, with
+    , toUnit
     )
 
 {-| This is the `Tron a`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application. In this case, it represents your components.
@@ -19,7 +20,7 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 
 # Common helpers
 
-@docs map, mapSet, andThen, with
+@docs map, mapSet, andThen, with, toUnit
 -}
 
 import Tron.Property as Property exposing (Property)
@@ -95,3 +96,10 @@ mapSet : (a -> b) -> Set a -> Set b
 mapSet =
     List.map << Tuple.mapSecond << map
 
+
+
+{-| Store nothing, but values.
+-}
+toUnit : Tron a -> Tron ()
+toUnit =
+    map <| always ()
