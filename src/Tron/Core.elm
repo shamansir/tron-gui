@@ -309,13 +309,21 @@ handleMouse mouseAction state tree =
 
                 Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( maybeFrom, ( curX, curY ) ) a ) ) ->
                     let
+                        ( xToAlter, yToAlter ) = maybeFrom |> Maybe.withDefault ( curX, curY )
                         ( dX, dY ) = distanceXY knobDistance nextMouseState
                         ( nextX, nextY ) =
-                            ( alter xAxis dX curX
-                            , alter yAxis dY curY
+                            ( alter xAxis dX xToAlter
+                            , alter yAxis dY yToAlter
                             )
                         nextControl =
-                            Control ( xAxis, yAxis ) ( maybeFrom, ( nextX, nextY ) ) a
+                            Control
+                                ( xAxis, yAxis )
+                                ( if finishedDragging
+                                    then Nothing
+                                    else maybeFrom
+                                , ( nextX, nextY )
+                                )
+                                a
                     in
                         updateAt
                             path
@@ -327,10 +335,16 @@ handleMouse mouseAction state tree =
                         hueAxis = { min = 0, max = 1, step = 0.01 }
                         lgtAxis = { min = 0, max = 1, step = 0.01 }
                         curHsla = Color.toHsla curColor
+                        ( hueToAlter, lightnessToAlter ) =
+                            case maybeFromColor of
+                                Just fromColor ->
+                                    case Color.toHsla fromColor of
+                                        hsla -> ( hsla.hue, hsla.lightness )
+                                Nothing -> ( curHsla.hue, curHsla.lightness )
                         ( dX, dY ) = distanceXY knobDistance nextMouseState
                         ( nextHue, nextLightness ) =
-                            ( alter hueAxis dX curHsla.hue
-                            , alter lgtAxis dY curHsla.lightness
+                            ( alter hueAxis dX hueToAlter
+                            , alter lgtAxis dY lightnessToAlter
                             )
                         nextColor =
                             Color.hsla
@@ -342,7 +356,14 @@ handleMouse mouseAction state tree =
                                 nextLightness -- curHsla.lightness
                                 curHsla.alpha
                         nextControl =
-                            Control state_ ( maybeFromColor, nextColor ) a
+                            Control
+                                state_
+                                ( if finishedDragging
+                                    then Nothing
+                                    else maybeFromColor
+                                , nextColor
+                                )
+                                a
                     in
                         updateAt
                             path
@@ -378,6 +399,36 @@ handleMouse mouseAction state tree =
                                 updateAt
                                     path
                                     (always <| Number nextControl)
+                                    refocusedTree
+
+                        Just ( path, Coordinate ( Control axes ( _, curValue ) a ) ) ->
+                            let
+                                nextControl =
+                                    Control
+                                        axes
+                                        ( Just curValue
+                                        , curValue
+                                        )
+                                        a
+                            in
+                                updateAt
+                                    path
+                                    (always <| Coordinate nextControl)
+                                    refocusedTree
+
+                        Just ( path, Color ( Control state_ ( _, curColor ) a ) ) ->
+                            let
+                                nextControl =
+                                    Control
+                                        state_
+                                        ( Just curColor
+                                        , curColor
+                                        )
+                                        a
+                            in
+                                updateAt
+                                    path
+                                    (always <| Color nextControl)
                                     refocusedTree
 
                         _ -> refocusedTree

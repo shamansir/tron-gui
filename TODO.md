@@ -36,7 +36,7 @@
 
 ## Inner API / Logic
 
-* Fix X/Y & Color controls;
+* Move keyboard & mouse drag-start/dragging/drag-end logic to controls themselves;
 * Move `Util` stuff to the corresponding modules;
 * Move functions related to controls to the controls themselves, hide the `Control` constructor from others;
 * Debug `RenderMode` (i.e. ensure `Debug` view still works);
@@ -64,6 +64,7 @@
 
 ## Examples
 
+* Fix `Everything` example;
 * Add some indication of the WS server status to the examples;
 * Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
 * Include links to the examples in the docs;
