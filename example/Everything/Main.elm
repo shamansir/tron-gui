@@ -14,10 +14,12 @@ import Html.Events as Html
 import Random
 import Url exposing (Url)
 
+import WithTron.Logic as WithTron
 import Tron exposing (Tron)
 import Tron.Deferred as Def
 import Tron.Core as Core
 import Tron.Core as T
+import Tron.Option as Option
 import Tron.Expose as Exp
 import Tron.Expose.Data as Exp
 import Tron.Expose.Convert as Exp
@@ -64,9 +66,11 @@ import RandomGui as Gui exposing (generator)
 
 type Msg
     = NoOp
+    | SetClientId Detach.ClientId
     | ChangeMode Mode
     | ChangeDock Dock
-    | FromDatGui Exp.RawInUpdate
+    | SendUpdate Exp.RawOutUpdate
+    | ReceiveRaw Exp.RawInUpdate
     | ToTron Core.Msg
     | ToExample Example.Msg
     | Randomize (Tron ())
@@ -84,9 +88,10 @@ type alias Model =
     { mode : Mode
     , theme : Theme
     , state : Core.State
-    , randomGui : Maybe (Tron ())
+    , lastGui : Tron ()
     , example : Example.Model
     , url : Url
+    , isRandom : Bool
     }
 
 
@@ -95,26 +100,35 @@ init url _ =
     let
         ( initialModel, initEffects ) = Example.init
         ( state, startGui ) = Core.init
+        initialGui =
+            ExampleGui.for initialModel
+                    |> Tron.toUnit
     in
         (
             { mode = TronGui
             , example = initialModel
             , theme = Theme.light
-            , state = state
-                |> Core.reshape ( 7, 7 )
-                |> Core.dock Dock.bottomLeft
-            , randomGui = Nothing
+            , state =
+                state
+                    |> Core.reshape ( 7, 7 )
+                    |> Core.dock Dock.bottomLeft
+            , lastGui =
+                ExampleGui.for initialModel
+                    |> Tron.toUnit
             , url = url
+            , isRandom = False
             }
         , Cmd.batch
             [ initEffects |> Cmd.map ToExample
             , startGui |> Cmd.map ToTron
+            , WithTron.performInitEffects portCommunication initialGui
+            , applyUrl portCommunication url
             ]
         )
 
 
 view : Model -> Html Msg
-view { mode, state, example, randomGui, theme } =
+view { mode, state, example, lastGui, theme } =
     Html.div
         [ Attr.class <| "example --" ++ Theme.toString theme ]
         [ Html.button
@@ -154,12 +168,7 @@ view { mode, state, example, randomGui, theme } =
         , case mode of
             DatGui -> Html.div [] []
             TronGui ->
-                (case randomGui of
-                    Just gui ->
-                        gui
-                    Nothing ->
-                        ExampleGui.for example |> Tron.toUnit
-                )
+                lastGui
                     |> Core.view theme state
                     |> Html.map ToTron
         , Example.view example
@@ -176,14 +185,9 @@ update msg model =
                 | mode = DatGui
                 }
             ,
-                (case model.randomGui of
-                    Just gui ->
-                        gui
-                    Nothing ->
-                        ExampleGui.for model.example |> Tron.toUnit
-                )
-                |> Exp.encode
-                |> startDatGui
+                model.lastGui
+                    |> Exp.encode
+                    |> startDatGui
             )
 
         ( ChangeMode TronGui, _ ) ->
@@ -202,78 +206,89 @@ update msg model =
                     ]
                 )
 
-        ( ToExample dmsg, _ ) ->
-
+        ( SetClientId clientId, _ ) ->
+            (
                 let
-                    ( nextExample, updateEffects ) =
-                        model.example |> Example.update dmsg
-                in
-                    (
-                        { model
-                        | example = nextExample
+                    curState = model.state
+                    newState =
+                        { curState
+                        | detach =
+                            case curState.detach of
+                                ( _, detachState ) -> ( Just clientId, detachState )
                         }
-                    , updateEffects |> Cmd.map ToExample
-                    )
-            {- else
-                { model
-                | example =
-                    Example.update dmsg model.example
-                } -}
+                in
+                    { model
+                    | state = newState
+                    }
+            , case portCommunication of
+                Option.Detachable { ack } ->
+                    Exp.encodeAck clientId
+                        |> ack
+                _ -> Cmd.none
+            )
+
+        ( SendUpdate rawUpdate, _ ) ->
+            ( model
+            , rawUpdate
+                |> WithTron.tryTransmitting portCommunication
+            )
+
+        ( ToExample dmsg, _ ) ->
+            let
+                ( nextExample, updateEffects ) =
+                    model.example |> Example.update dmsg
+            in
+                (
+                    { model
+                    | example = nextExample
+                    , lastGui =
+                        if model.isRandom
+                            then model.lastGui
+                            else ExampleGui.for nextExample |> Tron.toUnit
+                    }
+                , updateEffects |> Cmd.map ToExample
+                )
 
         ( ToTron guiMsg, TronGui ) ->
-            case model.randomGui of
-                Just randomGui ->
-                    let
-                        (nextState, nextGui, cmds) =
-                            randomGui
+            let
+                (nextState, nextGui, cmds) =
+                    ( if model.isRandom
+                        then
+                            model.lastGui
                                 |> Def.lift
-                                |> Core.update guiMsg model.state
-                    in
-                        (
-                            { model
-                            | randomGui = Just nextGui
-                            , state = nextState
-                            }
-                        , Cmd.none -- FIXME
-                        )
-                Nothing ->
-                    let
-                        (nextState, nextGui, cmds) =
-                            ExampleGui.for model.example |> Core.update guiMsg model.state
-                    in
-                        (
-                            { model
-                            | state = nextState
-                            --| gui = nextGui
-                            }
-                        , Cmd.none -- FIXME
-                        )
-            {- case model.gui |> Core.update guiMsg of
-                ( nextGui, cmds ) ->
-                    (
-                        { model
-                        | gui = nextGui
-                        }
-                    , cmds
-                    ) -}
+                                |> Def.map (always NoOp)
+                        else
+                            ExampleGui.for model.example
+                                |> Def.map ToExample
+                    ) |> Core.update guiMsg model.state
+            in
+                (
+                    { model
+                    | state = nextState
+                    , lastGui = nextGui
+                    }
+                , cmds |> Cmd.map Tuple.second
+                )
 
         ( ToTron _, DatGui ) -> ( model, Cmd.none )
 
-        ( FromDatGui guiUpdate, DatGui ) ->
+        -- ( FromDatGui guiUpdate, DatGui ) ->
+        ( ReceiveRaw guiUpdate, DatGui ) ->
             ( model
-            , (case model.randomGui of
-                    Just gui ->
-                        gui
+            ,
+                (if model.isRandom
+                    then
+                        model.lastGui
                             |> Def.lift
                             |> Def.map (always NoOp)
-                    Nothing ->
+                    else
                         ExampleGui.for model.example
                             |> Def.map ToExample
                 )
                 |> Core.applyRaw guiUpdate
             )
 
-        ( FromDatGui _, TronGui ) -> ( model, Cmd.none )
+        ( ReceiveRaw _, TronGui ) -> ( model, Cmd.none )
 
         ( TriggerRandom, _ ) ->
             ( model
@@ -285,43 +300,35 @@ update msg model =
             )
 
         ( Randomize newTree, _ ) ->
-            let
-                ( newState, startGui ) =
-                    Core.init
-
-            in
-                (
-                    { model
-                    | state = newState
-                        |> Core.dock Dock.bottomCenter
-                    }
-                , case model.mode of
-                    DatGui ->
-                        newTree
-                            |> Exp.encode
-                            |> startDatGui
-                    TronGui ->
-                        startGui
-                            |> Cmd.map ToTron
-                )
+            (
+                { model
+                | isRandom = True
+                }
+            , case model.mode of
+                DatGui ->
+                    newTree
+                        |> Exp.encode
+                        |> startDatGui
+                TronGui ->
+                    WithTron.performInitEffects portCommunication newTree
+            )
 
         ( TriggerDefault, _ ) ->
             let
                 ( example, exampleEffects ) =
                     Example.init
-                ( defaultState, startGui ) =
-                    Core.init
-                    -- example |> exampleGui model.url
+                -- ( defaultState, startGui ) =
+                --     Core.init
+                --     -- example |> exampleGui model.url
             in
                 (
                     { model
                     | example = example
-                    , state = defaultState
-                    , randomGui = Nothing
+                    , isRandom = False
                     }
                 , Cmd.batch
                     [ exampleEffects |> Cmd.map ToExample
-                    , startGui |> Cmd.map ToTron
+                    --, startGui |> Cmd.map ToTron
                     ]
                 )
 
@@ -348,9 +355,12 @@ subscriptions : Model -> Sub Msg
 subscriptions { mode, state } =
     case mode of
         DatGui ->
-            updateFromDatGui FromDatGui
+            updateFromDatGui ReceiveRaw
         TronGui ->
-            Core.subscriptions state |> Sub.map ToTron
+            Sub.batch
+                [ Core.subscriptions state |> Sub.map ToTron
+                , WithTron.addSubscriptionsOptions portCommunication |> Sub.map ReceiveRaw
+                ]
 
 
 main : Program () Model Msg
@@ -366,6 +376,36 @@ main =
         , onUrlRequest = always NoOp
         , onUrlChange = always NoOp
         }
+
+
+portCommunication : Option.PortCommunication msg
+portCommunication =
+    Option.Detachable
+        { ack = ackToWs
+        , transmit = sendUpdateToWs
+        , receive = receieveUpdateFromWs identity
+        }
+
+
+-- See WithTron.applyUrl
+applyUrl
+    :  Option.PortCommunication msg
+    -> Url.Url
+    -> Cmd Msg
+applyUrl ports url =
+    let
+        ( maybeClientId, state ) = Detach.fromUrl url
+    in
+        case ( ports, maybeClientId ) of
+            ( Option.Detachable { ack }, Just clientId ) ->
+                Exp.encodeAck clientId
+                    |> ack
+                    |> Cmd.map (always NoOp)
+            ( Option.Detachable { ack }, Nothing ) ->
+                WithTron.nextClientId
+                    |> Cmd.map SetClientId
+
+            _ -> Cmd.none
 
 
 {-
@@ -402,6 +442,6 @@ port destroyDatGui : () -> Cmd msg
 
 port ackToWs : Exp.Ack -> Cmd msg
 
-port receieveUpdateFromWs : (Exp.RawOutUpdate -> msg) -> Sub msg
+port receieveUpdateFromWs : (Exp.RawInUpdate -> msg) -> Sub msg
 
 port sendUpdateToWs : Exp.RawOutUpdate -> Cmd msg

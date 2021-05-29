@@ -114,6 +114,9 @@ import Tron.Detach as Detach
 import Tron.Property as Property exposing (LabelPath)
 import Tron.Expose.Data as Exp
 
+import WithTron.Logic exposing (..)
+
+
 
 {-| Adds `Model msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
 type alias ProgramWithTron flags model msg =
@@ -269,7 +272,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                     }
                 , prevTree
                 )
-            , case ports of
+            , case ports of -- FIXME: move to WithTron.Logic
                 Detachable { ack } ->
                     Exp.encodeAck clientId
                         |> ack
@@ -309,64 +312,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                 )
 
 
-performInitEffects : PortCommunication msg -> Tron () -> Cmd msg
-performInitEffects ports tree =
-        case ports of
-            SendJson { ack } ->
-                tree |> Exp.encode |> ack
-            DatGui { ack } ->
-                tree |> Exp.encode |> ack
-            _ -> Cmd.none
-
-
-tryTransmitting : PortCommunication msg -> Exp.RawOutUpdate -> Cmd msg
-tryTransmitting ports rawUpdate =
-    case ports of
-        Detachable { transmit } ->
-            transmit rawUpdate
-        SendJson { transmit } ->
-            transmit rawUpdate
-        SendStrings { transmit } ->
-            transmit
-                ( rawUpdate.update.labelPath
-                , rawUpdate.update.stringValue
-                )
-        _ -> Cmd.none
-
-
-addInitOptions : RenderTarget -> State -> State
-addInitOptions target gui =
-    case target of
-        Html dock _ -> gui |> Core.dock dock
-        Nowhere -> gui
-        Aframe _ -> gui
-
-
-addSubscriptionsOptions : PortCommunication msg -> Sub Exp.RawInUpdate
-addSubscriptionsOptions ports =
-    case ports of
-        Detachable { receive } ->
-            receive
-        DatGui { receive } ->
-            receive
-        _ -> Sub.none
-
-
-useRenderTarget : RenderTarget -> State -> Tron () -> Html Core.Msg
-useRenderTarget target state tree =
-    case target of
-        Html dock theme -> tree |> Core.view theme (state |> Core.dock dock)
-        Nowhere -> Html.div [] []
-        Aframe _ -> Html.div [] [] -- FIXME
-
-
-setDetachState : ( Maybe Detach.ClientId, Detach.State ) -> State -> State
-setDetachState detachState state =
-    { state
-    | detach = detachState
-    }
-
-
+-- FIXME: move to WithTron.Logic
 applyUrl
     :  PortCommunication msg
     -> Url.Url
@@ -384,12 +330,9 @@ applyUrl ports url =
                 --     |> Task.perform SetClientId
             ( Detachable { ack }, Nothing ) ->
                 nextClientId
+                    |> Cmd.map SetClientId
+
             _ -> Cmd.none
-
-
-nextClientId : Cmd (WithTronMsg msg)
-nextClientId =
-    Random.generate SetClientId Detach.clientIdGenerator
 
 
 {-| Wrapper for `Program.sandbox` with `for` function and `Tron` options.

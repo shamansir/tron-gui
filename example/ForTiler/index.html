@@ -74,6 +74,25 @@
 
         requestNext();
 
+        setTimeout(() => app.ports.screenSizeChanged.send(loadSizeInfo()), 40);
+        window.addEventListener('resize', () => {
+            app.ports.screenSizeChanged.send(loadSizeInfo());
+        });
+
+        setTimeout(() => app.ports.setPreselectedTileset.send('BarFooooo', 400));
+
+        function loadSizeInfo() {
+            return {
+                sizeInTiles: [Math.floor(window.innerWidth / 20), Math.floor(window.innerHeight / 10)],
+                logoPosition: [7, 10],
+                titlePosition: [20, 15],
+                textBlockSize: 5,
+                screenSize: [window.innerWidth, window.innerHeight]
+            };
+        }
+
+
+
     </script>
 
 </body>

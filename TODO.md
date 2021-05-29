@@ -1,7 +1,7 @@
 ## Public API
 
 * Breaking: Close `ProxyValue` constructors from public;
-* `TronRef` -> `Tron.Deferred`
+* `TronRef` -> `Tron.Deferred` // make `Tron.Deferred` main `Tron` (because it is mainly used in `user.for`) and `Tron a` — some `Tron.?` instead;
 * Breaking: Stick to just one `WithTron.Backed`, since anyway it is possible to convert one to another using `Tron` methods;
 * Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;
 * Breaking, Bug: Adjust default values in knobs/XY to the actual range, or else it is rendered improperly;
@@ -27,6 +27,7 @@
 
 ## New controls
 
+* Live Controls;
 * Choice-by-click control — the button that changes state while it's clicked;
     * Maybe reuse `Nest.Form` for that;
 * Multiple-choice control;
@@ -35,6 +36,7 @@
 
 ## Inner API / Logic
 
+* Fix X/Y & Color controls;
 * Move `Util` stuff to the corresponding modules;
 * Move functions related to controls to the controls themselves, hide the `Control` constructor from others;
 * Debug `RenderMode` (i.e. ensure `Debug` view still works);
