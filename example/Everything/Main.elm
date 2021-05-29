@@ -15,6 +15,7 @@ import Random
 import Url exposing (Url)
 
 import Tron exposing (Tron)
+import Tron.Deferred as Def
 import Tron.Core as Core
 import Tron.Core as T
 import Tron.Expose as Exp
@@ -83,7 +84,7 @@ type alias Model =
     { mode : Mode
     , theme : Theme
     , state : Core.State
-    , gui : Tron ()
+    , randomGui : Maybe (Tron ())
     , example : Example.Model
     , url : Url
     }
@@ -102,7 +103,7 @@ init url _ =
             , state = state
                 |> Core.reshape ( 7, 7 )
                 |> Core.dock Dock.bottomLeft
-            , gui = ExampleGui.for initialModel |> Tron.toUnit
+            , randomGui = Nothing
             , url = url
             }
         , Cmd.batch
@@ -113,7 +114,7 @@ init url _ =
 
 
 view : Model -> Html Msg
-view { mode, state, example, gui, theme } =
+view { mode, state, example, randomGui, theme } =
     Html.div
         [ Attr.class <| "example --" ++ Theme.toString theme ]
         [ Html.button
@@ -153,8 +154,12 @@ view { mode, state, example, gui, theme } =
         , case mode of
             DatGui -> Html.div [] []
             TronGui ->
-                gui
-                --ExampleGui.for example
+                (case randomGui of
+                    Just gui ->
+                        gui
+                    Nothing ->
+                        ExampleGui.for example |> Tron.toUnit
+                )
                     |> Core.view theme state
                     |> Html.map ToTron
         , Example.view example
@@ -170,7 +175,13 @@ update msg model =
                 { model
                 | mode = DatGui
                 }
-            , model.gui --ExampleGui.for model.example
+            ,
+                (case model.randomGui of
+                    Just gui ->
+                        gui
+                    Nothing ->
+                        ExampleGui.for model.example |> Tron.toUnit
+                )
                 |> Exp.encode
                 |> startDatGui
             )
@@ -200,8 +211,6 @@ update msg model =
                     (
                         { model
                         | example = nextExample
-                        , gui =
-                            ExampleGui.for nextExample |> Tron.toUnit
                         }
                     , updateEffects |> Cmd.map ToExample
                     )
@@ -212,20 +221,55 @@ update msg model =
                 } -}
 
         ( ToTron guiMsg, TronGui ) ->
-            case model.gui |> Core.update guiMsg of
+            case model.randomGui of
+                Just randomGui ->
+                    let
+                        (nextState, nextGui, cmds) =
+                            randomGui
+                                |> Def.lift
+                                |> Core.update guiMsg model.state
+                    in
+                        (
+                            { model
+                            | randomGui = Just nextGui
+                            , state = nextState
+                            }
+                        , Cmd.none -- FIXME
+                        )
+                Nothing ->
+                    let
+                        (nextState, nextGui, cmds) =
+                            ExampleGui.for model.example |> Core.update guiMsg model.state
+                    in
+                        (
+                            { model
+                            | state = nextState
+                            --| gui = nextGui
+                            }
+                        , Cmd.none -- FIXME
+                        )
+            {- case model.gui |> Core.update guiMsg of
                 ( nextGui, cmds ) ->
                     (
                         { model
                         | gui = nextGui
                         }
                     , cmds
-                    )
+                    ) -}
 
         ( ToTron _, DatGui ) -> ( model, Cmd.none )
 
         ( FromDatGui guiUpdate, DatGui ) ->
             ( model
-            , model.gui
+            , (case model.randomGui of
+                    Just gui ->
+                        gui
+                            |> Def.lift
+                            |> Def.map (always NoOp)
+                    Nothing ->
+                        ExampleGui.for model.example
+                            |> Def.map ToExample
+                )
                 |> Core.applyRaw guiUpdate
             )
 
@@ -265,15 +309,20 @@ update msg model =
             let
                 ( example, exampleEffects ) =
                     Example.init
-                gui =
-                    ExampleGui.for example
+                ( defaultState, startGui ) =
+                    Core.init
                     -- example |> exampleGui model.url
             in
                 (
                     { model
-                    | gui = gui |> Tron.toUnit
+                    | example = example
+                    , state = defaultState
+                    , randomGui = Nothing
                     }
-                , exampleEffects |> Cmd.map ToExample
+                , Cmd.batch
+                    [ exampleEffects |> Cmd.map ToExample
+                    , startGui |> Cmd.map ToTron
+                    ]
                 )
 
         ( SwitchTheme, _ ) ->

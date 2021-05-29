@@ -1,6 +1,6 @@
 module Tron.Deferred exposing
     ( Tron, Set
-    , map, mapSet, andThen, with, toUnit
+    , map, mapSet, andThen, with, toUnit, lift
     )
 
 {-| This is the `Tron a`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application. In this case, it represents your components.
@@ -19,7 +19,7 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 
 # Common helpers
 
-@docs map, mapSet, andThen, with, toUnit
+@docs map, mapSet, andThen, with, toUnit, lift
 -}
 
 import Tron as T
@@ -109,5 +109,6 @@ toUnit =
     map <| always ()
 
 
-fromStatic : T.Tron a -> Tron a
-fromStatic = Value.lift
+{-| -}
+lift : T.Tron a -> Tron a
+lift = Value.lift
