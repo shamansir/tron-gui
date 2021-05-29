@@ -8,6 +8,7 @@ import Tron.Style.Theme exposing (Theme(..))
 import Tron.Focus exposing (Focused(..))
 import Tron.Style.Placement exposing (Placement(..))
 import Tron.Style.Selected exposing (Selected(..))
+import Tron.Control.Nest as Nest
 
 
 transparent = Color.rgba 0.0 0.0 0.0 0.0
@@ -36,13 +37,36 @@ secondaryLines theme _ =
 back : Theme -> ( Placement, Focused, Selected ) -> Color
 back theme ( placement, focused, _ ) =
     case placement of
-        OnAPlate -> transparent
+        OnAPlate ->
+            case ( theme, focused ) of
+                ( Dark, FocusedBy n ) -> Color.rgba 0.5 0.5 0.5 <| 0.05 -- * toFloat n
+                ( Light, FocusedBy n ) -> Color.rgba 0.5 0.5 0.5 <| 1 - 0.05 -- * toFloat n
+                _ -> transparent
         AtRoot ->
             case ( theme, focused ) of
                 ( Dark, NotFocused ) -> Color.rgba 0.05 0.05 0.05 0.9
                 ( Light, NotFocused ) -> Color.rgba 1.0 1.0 1.0 0.9
                 ( Dark, FocusedBy _ ) -> Color.rgb 0.2 0.2 0.2
                 ( Light, FocusedBy _ ) -> Color.rgb 1.0 1.0 1.0
+
+
+{-|
+-}
+cellBorder : Theme -> ( Placement, Focused, Selected ) -> Maybe Nest.Form -> Color
+cellBorder theme ( placement, focused, selected ) maybeCollapsed =
+    case ( theme, maybeCollapsed ) of
+        ( Dark, Just Nest.Expanded ) -> Color.rgb 1.0 1.0 1.0
+        ( Light, Just Nest.Expanded ) -> Color.rgb 0.0 0.0 0.0
+        _ ->
+            case ( theme, selected ) of
+                ( Dark, Selected ) -> Color.rgb 1.0 1.0 1.0
+                ( Light, Selected ) -> Color.rgb 0.0 0.0 0.0
+                _ -> transparent
+                    {- case ( theme, focused ) of
+                        ( Dark, FocusedBy n ) -> Color.rgba 0.5 0.5 0.5 <| 0.05 -- * toFloat n
+                        ( Light, FocusedBy n ) -> Color.rgba 0.5 0.5 0.5 <| 1 - 0.05 -- * toFloat n
+                        _ -> transparent -}
+
 
 
 {-|

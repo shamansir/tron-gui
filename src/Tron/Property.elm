@@ -526,6 +526,16 @@ collapse prop =
         _ -> prop
 
 
+isExpanded : Property a -> Maybe Nest.Form
+isExpanded prop =
+    case prop of
+        Group _ _ control ->
+            Just <| Nest.getForm control
+        Choice _ _ control ->
+            Just <| Nest.getForm control
+        _ -> Nothing
+
+
 detach : Property a -> Property a
 detach prop =
     case prop of

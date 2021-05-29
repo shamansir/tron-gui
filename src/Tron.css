@@ -173,7 +173,7 @@
 .cell__label {
     text-anchor: middle;
     dominant-baseline: middle;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .cell--button .button__label,

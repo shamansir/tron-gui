@@ -67,6 +67,12 @@ view theme state path bounds maybeSelectedInside cellShape ( label, prop ) =
             , SA.ry <| String.fromFloat Cell.borderRadius
             , SA.width <| String.fromFloat (bounds.width - Cell.gap) ++ "px"
             , SA.height <| String.fromFloat (bounds.height - Cell.gap) ++ "px"
+            , SA.strokeWidth
+                <| String.fromInt (strokeWidthFor state <| isExpanded prop) ++ "px"
+            , SA.stroke
+                <| Color.toCssString
+                <| Coloring.cellBorder theme state <| isExpanded prop
+            --, SA.strokeDasharray <| strokeDashFor state
             ]
             []
         , viewProperty
@@ -542,3 +548,23 @@ iconSize cs bounds =
     case CS.units cs of
         ( CS.Single, CS.Single ) -> ( 32, 32 )
         _ -> ( bounds.width / 2.25, bounds.height / 2.25 )
+
+
+strokeWidthFor : State -> Maybe Nest.Form -> Int
+strokeWidthFor ( placement, focused, selected ) maybeCollapsed =
+    case maybeCollapsed of
+        Just Nest.Expanded -> 1
+        _ ->
+            case selected of
+                Selected -> 1
+                Usual ->
+                    case focused of
+                        FocusedBy _  -> 1
+                        _ -> 0
+
+
+strokeDashFor : State -> String
+strokeDashFor ( _, focused , _ ) =
+    case focused of
+        FocusedBy _ -> "5,1"
+        NotFocused -> ""
