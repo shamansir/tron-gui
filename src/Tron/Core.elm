@@ -14,6 +14,7 @@ import Html exposing (Html)
 import Html.Events as HE
 import Json.Encode as E
 import Json.Decode as D
+import Array
 
 import Size exposing (..)
 
@@ -36,6 +37,7 @@ import Tron.Focus as Focus exposing (..)
 import Tron.Detach as Detach exposing (ClientId)
 import Tron.Detach exposing (State(..))
 import Tron.Control.Value exposing (..)
+import Tron.Control.Nest as Nest
 import Tron.Builder exposing (..)
 import Tron.Deferred as Def
 
@@ -370,6 +372,34 @@ handleMouse mouseAction state tree =
                             (always <| Color nextControl)
                             tree
 
+                Just ( path, Choice focus_ shape_ ( Control items value a ) ) ->
+                    if (value.type_ == Nest.Knob) then
+                        let
+                            valueToAlter = value.prevSelected |> Maybe.withDefault value.selected
+                            dY = distanceY knobDistance nextMouseState
+                            nextVal =
+                                alter
+                                    { min = 0, max = toFloat <| Array.length items - 1, step = 1 }
+                                    dY
+                                    (toFloat valueToAlter)
+                            nextControl =
+                                Control
+                                    items
+                                    { value
+                                    | selected = floor nextVal
+                                    , prevSelected =
+                                        if finishedDragging
+                                        then Nothing
+                                        else value.prevSelected
+                                    }
+                                    a
+                        in
+                            updateAt
+                                path
+                                (always <| Choice focus_ shape_ nextControl)
+                                tree
+                    else tree
+
                 _ ->
                     tree
 
@@ -431,6 +461,21 @@ handleMouse mouseAction state tree =
                                     (always <| Color nextControl)
                                     refocusedTree
 
+                        Just ( path, Choice focus_ shape_ ( Control state_ value a ) ) ->
+                            if (value.type_ == Nest.Knob) then
+                                let
+                                    nextControl =
+                                        Control
+                                            state_
+                                            { value | prevSelected = Just value.selected }
+                                            a
+                                in
+                                    updateAt
+                                        path
+                                        (always <| Choice focus_ shape_ nextControl)
+                                        refocusedTree
+                            else refocusedTree
+
                         _ -> refocusedTree
 
 
@@ -449,6 +494,10 @@ handleMouse mouseAction state tree =
                             Number _ -> Exp.freshRun prop
                             Coordinate _ -> Exp.freshRun prop
                             Color _ -> Exp.freshRun prop
+                            Choice _ _ (Control _ { type_ } _) ->
+                                if type_ == Nest.Knob
+                                    then Exp.freshRun prop
+                                    else Cmd.none
                             _ -> Cmd.none
                     Nothing -> Cmd.none
 

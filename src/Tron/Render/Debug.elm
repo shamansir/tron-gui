@@ -67,11 +67,11 @@ propertyDebug ( label, prop )  =
         Action _ ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " button" ]
-        Switch (Control items ( _, value ) _) ->
+        {- Switch (Control items ( _, value ) _) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " switch: " ++ String.fromInt value
                     ++ (items |> Array.get value |> Maybe.withDefault "-")
-                ]
+                ] -}
         Group maybeFocus _ (Control _ { form } _) ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " nested: "

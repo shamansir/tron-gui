@@ -3,7 +3,7 @@ module Tron.Builder.Proxy exposing
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
     , nest, choice, choiceBy, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
-    , toChoice, toSet, autoHandle
+    , toChoice, toSet, autoHandle, toSwitch, toKnob
     , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
     )
@@ -72,7 +72,7 @@ import Tron.Style.Theme exposing (Theme)
 import Tron.Control.Text exposing (TextState(..))
 import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url)
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
-import Tron.Control.Nest exposing (Form(..), ItemId)
+import Tron.Control.Nest as Nest exposing (Form(..), ItemId)
 
 import Tron.Control.Value as Value exposing (Value(..))
 import Tron.Builder.Choice as Choice
@@ -304,6 +304,16 @@ addLabeledPath = BB.addLabeledPath
 {-| -}
 toChoice : Tron -> Tron
 toChoice = B.toChoice
+
+
+{-| -}
+toSwitch : Tron -> Tron
+toSwitch = Property.setChoiceType Nest.SwitchThrough
+
+
+{-| -}
+toKnob : Tron -> Tron
+toKnob = Property.setChoiceType Nest.Knob
 
 
 {-| -}

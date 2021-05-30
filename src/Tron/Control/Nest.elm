@@ -12,7 +12,12 @@ type Form
     = Expanded
     | Collapsed
     | Detached
-    -- TODO: | ChoiceToggle
+
+
+type ChoiceType -- FIXME: can't be `Expanded` and `Knob` / `SwitchThrough` at the same time
+    = Pages
+    | SwitchThrough
+    | Knob
 
 
 type alias ItemId = Int
@@ -34,7 +39,9 @@ type alias ChoiceControl item a =
         { form : Form
         , face : Maybe Button.Face
         , selected : ItemId
+        , prevSelected : Maybe ItemId -- FIXME: needed only for `Knob`
         , page : PageNum
+        , type_ : ChoiceType
         }
         a
 
@@ -134,6 +141,33 @@ getForm (Core.Control _ { form } _) = form
 
 is : Form -> Core.Control setup { r | form : Form } a -> Bool
 is checkedForm (Core.Control _ { form } _) = checkedForm == form
+
+
+getChoiceType : Core.Control setup { r | type_ : ChoiceType } a -> ChoiceType
+getChoiceType (Core.Control _ { type_ } _) = type_
+
+
+toNext : ChoiceControl item a -> ChoiceControl item a
+toNext (Core.Control items value a) =
+    Core.Control
+        items
+        { value
+        | selected =
+            if value.selected >= Array.length items - 1 then
+                0
+            else
+                value.selected + 1
+        , prevSelected = Nothing
+        }
+        a
+
+
+setChoiceType : ChoiceType -> Core.Control setup { r | type_ : ChoiceType } a -> Core.Control setup { r | type_ : ChoiceType } a
+setChoiceType newType (Core.Control setup value a) =
+    Core.Control
+        setup
+        { value | type_ = newType }
+        a
 
 
 getItems : Core.Control ( Array item ) value a -> Array item
@@ -282,5 +316,7 @@ toChoice (Core.Control items { form, page, face } a) =
         , page = page
         , face = face
         , selected = 0
+        , prevSelected = Nothing
+        , type_ = Pages
         }
         a

@@ -3,7 +3,7 @@ module Tron.Builder exposing
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
     , nest, choice, choiceBy, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
-    , toChoice, toSet, handleWith
+    , toChoice, toSet, handleWith, toSwitch, toKnob
     , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
     )
@@ -785,6 +785,24 @@ toChoice f =
     B.toChoice
         >> Property.map
             (always <| Value.fromChoice >> Maybe.map f)
+
+
+{-| Convert choice control to a switch by click form:
+
+    Builder.choice ... |> Builder.toSwitch
+-}
+toSwitch : Tron msg -> Tron msg
+toSwitch =
+    Property.setChoiceType Nest.SwitchThrough
+
+
+{-| Convert choice control to the knob form:
+
+    Builder.choice ... |> Builder.toKnob
+-}
+toKnob : Tron msg -> Tron msg
+toKnob =
+    Property.setChoiceType Nest.Knob
 
 
 {-| Handle a set of items with a converter of item to a message

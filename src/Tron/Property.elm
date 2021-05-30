@@ -19,7 +19,6 @@ import Tron.Control.Text as Text exposing (..)
 import Tron.Control.Color as Color exposing (..)
 import Tron.Control.Toggle as Toggle exposing (..)
 import Tron.Control.Nest as Nest exposing (..)
-import Tron.Control.Switch as Switch exposing (..)
 import Tron.Util as Util
 
 import Tron.Pages as Pages exposing (Pages)
@@ -52,7 +51,6 @@ type Property a
     | Color (Color.Control a)
     | Toggle (Toggle.Control a)
     | Action (Button.Control a)
-    | Switch (Switch.Control a)
     | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Label, Property a ) a)
     | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property a ) a)
 
@@ -144,7 +142,6 @@ map f prop =
         Color control -> Color <| Control.map f control
         Toggle control -> Toggle <| Control.map f control
         Action control -> Action <| Control.map f control
-        Switch control -> Switch <| Control.map f control
         Choice focus shape control ->
             Choice
                 focus
@@ -216,7 +213,6 @@ fold1 f prop =
         Color control -> control |> Control.fold f |> Just
         Toggle control -> control |> Control.fold f |> Just
         Action control -> control |> Control.fold f |> Just
-        Switch control -> control |> Control.fold f |> Just
         Choice _ _ control -> control |> Control.fold f |> Just
         Group _ _ control -> control |> Control.fold f |> Just
 
@@ -403,9 +399,19 @@ execute item =
         Text textControl ->
             Just <| Text <| Text.ensureEditing textControl
         Choice focus shape control ->
-            Just
-                <| Choice focus shape
-                <| Nest.toggle control
+            case Nest.getChoiceType control of
+                Nest.Pages ->
+                    Just
+                        <| Choice focus shape
+                        <| Nest.toggle control
+                Nest.Knob ->
+                    Just
+                        <| Choice focus shape
+                        <| Nest.toNext control
+                Nest.SwitchThrough ->
+                    Just
+                        <| Choice focus shape
+                        <| Nest.toNext control
         Group focus shape control ->
             Just
                 <| Group focus shape
@@ -604,6 +610,16 @@ ensureEditingAt path =
     updateAt path ensureEditing
 
 
+setChoiceType : Nest.ChoiceType -> Property a -> Property a
+setChoiceType newType prop =
+    case prop of
+        Choice focus shape control ->
+            Choice focus shape
+                <| Nest.setChoiceType newType
+                <| control
+        _ -> prop
+
+
 {-
 reshape : Shape -> Property a -> Property a
 reshape shape prop =
@@ -635,7 +651,6 @@ run prop =
         Color control -> control |> Control.run
         Toggle control -> control |> Control.run
         Action control -> control |> Control.run
-        Switch control -> control |> Control.run
         Choice _ _ control -> control |> Control.run
         Group _ _ control -> control |> Control.run
 
@@ -650,7 +665,6 @@ get prop =
         Color control -> control |> Control.get |> Just
         Toggle control -> control |> Control.get |> Just
         Action control -> control |> Control.get |> Just
-        Switch control -> control |> Control.get |> Just
         Choice _ _ control -> control |> Control.get |> Just
         Group _ _ control -> control |> Control.get |> Just
 
@@ -755,8 +769,6 @@ compareValues propA propB =
         (Toggle controlA, Toggle controlB) ->
             Control.getValue controlA == Control.getValue controlB
         (Action _, Action _) -> True
-        (Switch controlA, Switch controlB) ->
-            Tuple.second (Control.getValue controlA) == Tuple.second (Control.getValue controlB)
         (Choice _ _ controlA, Choice _ _ controlB) ->
             Nest.whichSelected controlA == Nest.whichSelected controlB
         (Group _ _ _, Group _ _ _) -> True
@@ -875,8 +887,6 @@ setValueTo from to =
             Toggle <| Control.setValue (Control.getValue controlA) <| controlB
         (Action controlA, Action controlB) ->
             Action <| Control.setValue (Control.getValue controlA) <| controlB
-        (Switch controlA, Switch controlB) ->
-            Switch <| Control.setValue (Control.getValue controlA) <| controlB
         (Choice _ _ controlA, Choice focus shape controlB) ->
             Choice focus shape <| Control.setValue (Control.getValue controlA) <| controlB
         (Group _ _ controlA, Group focus shape controlB) ->
