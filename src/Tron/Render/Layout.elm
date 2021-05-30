@@ -266,6 +266,16 @@ buttonMaskDefs =
                 ]
                 []
             ]
+        , Svg.mask
+            [ SA.id "button-text-mask-wide" ]
+            [ Svg.rect
+                [ SA.fill "url(#button-mask-gradient)"
+                , SA.width <| String.fromFloat (Cell.width * 2)
+                , SA.height <| String.fromFloat Cell.height
+                , SA.x "0", SA.y "0"
+                ]
+                []
+            ]
         ]
 
 

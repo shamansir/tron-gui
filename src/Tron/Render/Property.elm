@@ -385,7 +385,7 @@ text theme state ( editing, value ) onInput bounds =
                 , SA.y <| String.fromFloat <| cy + 1
                 , SA.class "text--ready"
                 , SA.fill <| Color.toCssString <| Coloring.lines theme state
-                , SA.mask "url(#button-text-mask)"
+                --, SA.mask "url(#button-text-mask)"
                 ]
                 [ Svg.text <|
                     if String.length value <= 6 then
@@ -486,7 +486,10 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                 , SA.y <| String.fromFloat labelY
                 , SA.class "button__label"
                 , SA.fill <| Color.toCssString <| Coloring.text theme state
-                , SA.mask "url(#button-text-mask)"
+                , SA.mask <|
+                    if not <| CS.isHorizontal cellShape
+                        then "url(#button-text-mask)"
+                        else "url(#button-text-mask-wide)"
                 ]
                 [ Svg.text label ]
     in case face of
