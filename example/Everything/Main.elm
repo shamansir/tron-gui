@@ -62,7 +62,7 @@ For the actual examples of using Tron in your applications, see other examples n
 -}
 
 
-import RandomGui as Gui exposing (generator)
+import Tron.Random as Gui exposing (generator)
 
 
 type Msg

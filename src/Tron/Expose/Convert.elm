@@ -72,6 +72,11 @@ toProxied prop =
                 |> convertWith (always FromButton)
                 |> Action
 
+        Switch control ->
+            control
+                |> convertWith (Tuple.second >> FromSwitch)
+                |> Switch
+
         Choice focus shape control ->
             control
                 |> Nest.mapItems (Tuple.mapSecond toProxied)
@@ -176,6 +181,11 @@ reflect prop =
                 <| control
         Action control ->
             Action
+                <| Control.map (Tuple.mapFirst <| always FromButton)
+                <| Control.reflect
+                <| control
+        Switch control ->
+            Switch
                 <| Control.map (Tuple.mapFirst <| always FromButton)
                 <| Control.reflect
                 <| control

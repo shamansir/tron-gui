@@ -282,6 +282,21 @@ applyStringValue str prop =
                             Nothing
                 )
 
+        Switch control ->
+            helper
+                "switch"
+                (\v ->
+                    case v of
+                        FromSwitch n ->
+                            control
+                                |> Control.update ( Tuple.mapSecond <| always n )
+                                |> Switch
+                                |> Just
+
+                        _ ->
+                            Nothing
+                )
+
         Action control ->
             helper
                 "button"
@@ -393,6 +408,14 @@ encodePropertyAt path property =
             E.object
                 [ ( "type", E.string "button" )
                 , ( "path", encodeRawPath path )
+                ]
+
+        Switch (Control items ( _, val ) _) ->
+            E.object
+                [ ( "type", E.string "slider" )
+                , ( "path", encodeRawPath path )
+                , ( "items", E.array E.string items )
+                , ( "current", E.int val )
                 ]
 
         Choice _ _ (Control items { form, selected } _) ->

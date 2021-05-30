@@ -3,6 +3,7 @@ module Tron.Render.Property exposing (..)
 
 import Bounds exposing (..)
 
+import Array exposing (Array)
 import Svg exposing (Svg)
 import Svg.Attributes as SA
 import Html
@@ -154,6 +155,10 @@ viewProperty
 
             button theme state face cellShape label bounds
 
+        Switch (Control items ( _, value ) _) ->
+
+            switch theme state bounds items value
+
         Color (Control _ (_, value) _) ->
 
             color theme state value bounds
@@ -192,6 +197,52 @@ viewProperty
 
 knob : Theme -> State -> BoundsF -> Float -> Float -> Svg msg
 knob theme state bounds value relValue =
+    let
+        toAngle v = (-120) + (v * 120 * 2)
+        path stroke d =
+            Svg.path
+                [ SA.d d
+                , SA.fill "none"
+                , SA.stroke stroke
+                , SA.strokeWidth "2"
+                , SA.strokeLinecap "round"
+                ]
+                []
+        radiusA = (bounds.width * 0.27) - 1
+        radiusB = bounds.height * 0.27
+        ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
+        roundedValue = Basics.toFloat (floor (value * 100)) / 100
+    in
+        Svg.g
+            [ resetTransform ]
+            [ path (Coloring.lines theme state |> Color.toCssString)
+                <| describeArc
+                    { x = cx, y = cy }
+                    { radiusA = radiusA, radiusB = radiusB }
+                    { from = toAngle 0, to = toAngle relValue }
+            , path (Coloring.secondaryLines theme state |> Color.toCssString)
+                <| describeArc
+                    { x = cx, y = cy }
+                    { radiusA = radiusA, radiusB = radiusB }
+                    { from = toAngle relValue, to = toAngle 1 }
+            , path (Coloring.lines theme state |> Color.toCssString)
+                <| describeMark
+                    { x = cx, y = cy }
+                    { radiusA = radiusA, radiusB = radiusB }
+                    (toAngle relValue)
+            , Svg.text_
+                [ SA.x <| String.fromFloat cx
+                , SA.y <| String.fromFloat cy
+                , SA.class "knob__value"
+                , SA.style "pointer-events: none"
+                , SA.fill <| Color.toCssString <| Coloring.text theme state
+                ]
+                [ Svg.text <| String.fromFloat roundedValue ]
+            ]
+
+
+switch : Theme -> State -> BoundsF -> Array String -> Int -> Svg msg
+switch theme state bounds value relValue =
     let
         toAngle v = (-120) + (v * 120 * 2)
         path stroke d =
