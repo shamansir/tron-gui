@@ -163,9 +163,9 @@ viewProperty
 
             color theme state value bounds
 
-        Choice _ _ ( Control items { form, face, type_, selected } _) ->
+        Choice _ _ ( Control items { form, face, mode, selected } _) ->
 
-            case ( type_, face, maybeSelectedInside ) of
+            case ( mode, face, maybeSelectedInside ) of
 
                 ( _, Just buttonFace, _ ) ->
                     button theme state buttonFace cellShape label bounds

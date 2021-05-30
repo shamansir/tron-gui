@@ -373,32 +373,33 @@ handleMouse mouseAction state tree =
                             tree
 
                 Just ( path, Choice focus_ shape_ ( Control items value a ) ) ->
-                    if (value.type_ == Nest.Knob) then
-                        let
-                            valueToAlter = value.prevSelected |> Maybe.withDefault value.selected
-                            dY = distanceY knobDistance nextMouseState
-                            nextVal =
-                                alter
-                                    { min = 0, max = toFloat <| Array.length items - 1, step = 1 }
-                                    dY
-                                    (toFloat valueToAlter)
-                            nextControl =
-                                Control
-                                    items
-                                    { value
-                                    | selected = floor nextVal
-                                    , prevSelected =
-                                        if finishedDragging
-                                        then Nothing
-                                        else value.prevSelected
-                                    }
-                                    a
-                        in
-                            updateAt
-                                path
-                                (always <| Choice focus_ shape_ nextControl)
-                                tree
-                    else tree
+                    case value.mode of
+                        Nest.Knob ->
+                            let
+                                valueToAlter = value.prevSelected |> Maybe.withDefault value.selected
+                                dY = distanceY knobDistance nextMouseState
+                                nextVal =
+                                    alter
+                                        { min = 0, max = toFloat <| Array.length items - 1, step = 1 }
+                                        dY
+                                        (toFloat valueToAlter)
+                                nextControl =
+                                    Control
+                                        items
+                                        { value
+                                        | selected = floor nextVal
+                                        , prevSelected =
+                                            if finishedDragging
+                                            then Nothing
+                                            else value.prevSelected
+                                        }
+                                        a
+                            in
+                                updateAt
+                                    path
+                                    (always <| Choice focus_ shape_ nextControl)
+                                    tree
+                        _ -> tree
 
                 _ ->
                     tree
@@ -462,19 +463,20 @@ handleMouse mouseAction state tree =
                                     refocusedTree
 
                         Just ( path, Choice focus_ shape_ ( Control state_ value a ) ) ->
-                            if (value.type_ == Nest.Knob) then
-                                let
-                                    nextControl =
-                                        Control
-                                            state_
-                                            { value | prevSelected = Just value.selected }
-                                            a
-                                in
-                                    updateAt
-                                        path
-                                        (always <| Choice focus_ shape_ nextControl)
-                                        refocusedTree
-                            else refocusedTree
+                            case value.mode of
+                                Nest.Knob ->
+                                    let
+                                        nextControl =
+                                            Control
+                                                state_
+                                                { value | prevSelected = Just value.selected }
+                                                a
+                                    in
+                                        updateAt
+                                            path
+                                            (always <| Choice focus_ shape_ nextControl)
+                                            refocusedTree
+                                _ -> refocusedTree
 
                         _ -> refocusedTree
 
@@ -494,10 +496,10 @@ handleMouse mouseAction state tree =
                             Number _ -> Exp.freshRun prop
                             Coordinate _ -> Exp.freshRun prop
                             Color _ -> Exp.freshRun prop
-                            Choice _ _ (Control _ { type_ } _) ->
-                                if type_ == Nest.Knob
-                                    then Exp.freshRun prop
-                                    else Cmd.none
+                            Choice _ _ (Control _ { mode } _) ->
+                                case mode of
+                                    Nest.Knob -> Exp.freshRun prop
+                                    _ -> Cmd.none
                             _ -> Cmd.none
                     Nothing -> Cmd.none
 
