@@ -57,6 +57,7 @@
 * Do not store cell size in the `Gui msg`, it should be recalculated every time;
 * Do not store dock in the `Gui msg`, it should be recalculated every time;
 * Breaking: Change choice and nest to work with `Array`s since we usually need to get item by index? But Array syntax is not very friendly for API
+* Rename `Property` -> `Tree` or smth;
 
 ## Deployment
 

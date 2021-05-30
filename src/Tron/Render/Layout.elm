@@ -246,6 +246,29 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
         ( size, bp )
 
 
+buttonMaskDefs : Html msg
+buttonMaskDefs =
+    Svg.defs [ ]
+        [ Svg.linearGradient
+            [ SA.id "button-mask-gradient" ]
+            [ Svg.stop [ SA.offset "0.0", SA.stopColor "white", SA.stopOpacity "0" ] []
+            , Svg.stop [ SA.offset "0.2", SA.stopColor "white", SA.stopOpacity "1" ] []
+            , Svg.stop [ SA.offset "0.8", SA.stopColor "white", SA.stopOpacity "1" ] []
+            , Svg.stop [ SA.offset "1.0", SA.stopColor "white", SA.stopOpacity "0" ] []
+            ]
+        , Svg.mask
+            [ SA.id "button-text-mask" ]
+            [ Svg.rect
+                [ SA.fill "url(#button-mask-gradient)"
+                , SA.width <| String.fromFloat Cell.width
+                , SA.height <| String.fromFloat Cell.height
+                , SA.x "0", SA.y "0"
+                ]
+                []
+            ]
+        ]
+
+
 view
     :  Theme
     -> Dock
@@ -381,7 +404,8 @@ view theme dock bounds detach getDetachAbility root layout =
                 , SA.class "grid"
                 ]
 
-                [ Svg.g
+                [ buttonMaskDefs
+                , Svg.g
                     []
                     [ Svg.g [ SA.class "grid__backs" ] platesBacksRendered
                     , Svg.g [ SA.class "grid__cells" ] cellsRendered
