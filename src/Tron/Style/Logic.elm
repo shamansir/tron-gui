@@ -185,3 +185,7 @@ boundsFromSize
         , height = gridHeightInPx
         } -}
 
+
+
+paginationMaskIdFor : Path -> String
+paginationMaskIdFor path = "pagination-mask-" ++ Path.toString path

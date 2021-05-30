@@ -21,6 +21,7 @@ import Tron.Style.Selected exposing (Selected(..))
 import Tron.Style.Placement exposing (Placement(..))
 import Tron.Style.Coloring as Coloring
 import Tron.Style.Cell as Cell
+import Tron.Style.CellShape as CS
 import Tron.Style.Theme exposing (Theme)
 
 import Svg exposing (Svg)
@@ -83,41 +84,44 @@ paging
      : Theme
     -> Path
     -> BoundsF
+    -> CS.CellShape
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
-paging _ path bounds ( current, total ) =
+paging _ path bounds cellShape ( current, total ) =
     let
-        itemWidth = (bounds.width - 20) / Basics.toFloat total
+        itemWidth = bounds.width / Basics.toFloat total
+        cellWidth = (CS.numify cellShape |> Tuple.first) * Cell.width
         backgroundRect =
             Svg.rect
-            [ SA.x <| String.fromFloat <| 10
-            , SA.y <| String.fromFloat <| bounds.height - 20
-            , SA.rx <| String.fromFloat <| 5.0
-            , SA.ry <| String.fromFloat <| 5.0
-            , SA.width <| String.fromFloat <| bounds.width - 20
-            , SA.height <| String.fromFloat 10.0
+            [ SA.x <| String.fromFloat 5
+            , SA.y <| String.fromFloat <| bounds.height - 35
+            , SA.rx <| String.fromFloat <| 10.0
+            , SA.ry <| String.fromFloat <| 10.0
+            , SA.width <| String.fromFloat <| bounds.width - 10
+            , SA.height <| String.fromFloat 30.0
             , SA.style "pointer-events: none; cursor: pointer;"
-            , SA.fill "rgba(200,200,200,0.3)"
+            , SA.fill "black"--"rgba(200,200,200,0.3)"
             ]
             []
-        currentPageRect page =
+        pageRect page =
             Svg.rect
-                [ SA.x <| String.fromFloat <| 10 + (Basics.toFloat page * itemWidth)
-                , SA.y <| String.fromFloat <| bounds.height - 20
-                , SA.rx <| String.fromFloat <| 5.0
-                , SA.ry <| String.fromFloat <| 5.0
-                , SA.width <| String.fromFloat <| itemWidth
-                , SA.height <| String.fromFloat 10.0
-                , SA.style "pointer-events: none; cursor: pointer;"
-                , SA.fill "gray"
+                [ SA.x <| String.fromFloat <| (Basics.toFloat page * itemWidth) + cellWidth / Basics.toFloat total
+                , SA.y <| String.fromFloat <| bounds.height - 11
+                , SA.rx <| String.fromFloat <| 2.0
+                , SA.ry <| String.fromFloat <| 2.0
+                , SA.width <| String.fromFloat <| cellWidth / Basics.toFloat total -- itemWidth / 4
+                , SA.height <| String.fromFloat 4.0
+                , SA.style "pointer-events: all; cursor: pointer;"
+                , HE.onClick <| SwitchPage path page
+                , SA.fill <| if page == current then "white" else "gray"
                 ]
                 [ ]
         switchingRect page =
             Svg.rect
-                [ SA.x <| String.fromFloat <| 10 + (Basics.toFloat page * itemWidth)
-                , SA.y <| String.fromFloat <| bounds.height - 24
-                , SA.width <| String.fromFloat <| itemWidth
-                , SA.height <| String.fromFloat 17.0
+                [ SA.x <| String.fromFloat <| Basics.toFloat page * itemWidth
+                , SA.y <| String.fromFloat <| bounds.height - 20
+                , SA.width <| String.fromFloat itemWidth
+                , SA.height <| String.fromFloat 20
                 , SA.style "pointer-events: all; cursor: pointer;"
                 , HE.onClick <| SwitchPage path page
                 , SA.fill "transparent"
@@ -132,15 +136,11 @@ paging _ path bounds ( current, total ) =
             []
             <| List.map
             (\page ->
-                if page == current then
-                    Svg.g
-                        []
-                        [ currentPageRect page
-                        , switchingRect page
-                        ]
-
-                else
-                    switchingRect page
+                Svg.g
+                    []
+                    [ pageRect page
+                    , switchingRect page
+                    ]
             )
             <| List.range 0 (total - 1)
         ]

@@ -142,15 +142,25 @@ viewPagingControls
      : Theme
     -> Path
     -> BoundsF
+    -> CellShape
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
-viewPagingControls path theme pixelBounds paging  =
+viewPagingControls theme path pixelBounds cellShape paging  =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
                 S.g [ ] [ ]
             Fancy ->
-                Plate.paging path theme pixelBounds paging
+                Svg.svg
+                    [ SA.width <| String.fromFloat pixelBounds.width
+                    , SA.height <| String.fromFloat pixelBounds.height
+                    ]
+                    [ paginationMaskDefs pixelBounds path
+                    , S.g
+                        [ SA.mask <| "url(#" ++ paginationMaskIdFor path ++ ")" ]
+                        [ paging |> Plate.paging theme path pixelBounds cellShape
+                        ]
+                    ]
 
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
@@ -246,8 +256,8 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
         ( size, bp )
 
 
-buttonMaskDefs : Html msg
-buttonMaskDefs =
+maskDefs : Html msg
+maskDefs =
     Svg.defs [ ]
         [ Svg.linearGradient
             [ SA.id "button-mask-gradient" ]
@@ -273,6 +283,29 @@ buttonMaskDefs =
                 , SA.width <| String.fromFloat (Cell.width * 2)
                 , SA.height <| String.fromFloat Cell.height
                 , SA.x "0", SA.y "0"
+                ]
+                []
+            ]
+        ]
+
+
+paginationMaskDefs : BoundsF -> Path -> Html msg
+paginationMaskDefs bounds path =
+    Svg.defs [ ]
+        [ Svg.mask
+            [ SA.id <| paginationMaskIdFor path ]
+            [ Svg.rect
+                [ SA.fill "white"
+                , SA.width <| String.fromFloat bounds.width -- "100%" --<| String.fromFloat (Cell.width * 3)
+                , SA.height <| String.fromFloat bounds.height -- "100%" -- <| String.fromFloat (Cell.height * 3)
+                , SA.x "0", SA.y "0", SA.rx "10", SA.ry "10"
+                ]
+                []
+            , Svg.rect
+                [ SA.fill "black"
+                , SA.width <| String.fromFloat <| bounds.width - 10 -- "96%" --<| String.fromFloat (Cell.width * 3 - 12)
+                , SA.height <| String.fromFloat <| bounds.height - 19 -- "93%" --<| String.fromFloat (Cell.height * 3 - 20)
+                , SA.x "6", SA.y "6", SA.rx "8", SA.ry "8"
                 ]
                 []
             ]
@@ -367,6 +400,10 @@ view theme dock bounds detach getDetachAbility root layout =
                                 plate.path
                                 plate.bounds
                                 ( plate.source
+                                    |> Property.getCellShape
+                                    |> Maybe.withDefault (Property.defaultNestShape |> Tuple.second)
+                                )
+                                ( plate.source
                                     |> Property.getPageNum
                                     |> Maybe.withDefault 1
                                 , n
@@ -414,7 +451,7 @@ view theme dock bounds detach getDetachAbility root layout =
                 , SA.class "grid"
                 ]
 
-                [ buttonMaskDefs
+                [ maskDefs
                 , Svg.g
                     []
                     [ Svg.g [ SA.class "grid__backs" ] platesBacksRendered
