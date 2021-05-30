@@ -14,7 +14,7 @@ type Form
     | Detached
 
 
-type ChoiceType -- FIXME: can't be `Expanded` and `Knob` / `SwitchThrough` at the same time
+type ChoiceMode -- FIXME: can't be `Expanded` and `Knob` / `SwitchThrough` at the same time
     = Pages
     | SwitchThrough
     | Knob
@@ -41,7 +41,7 @@ type alias ChoiceControl item a =
         , selected : ItemId
         , prevSelected : Maybe ItemId -- FIXME: needed only for `Knob`
         , page : PageNum
-        , type_ : ChoiceType
+        , mode : ChoiceMode
         }
         a
 
@@ -143,8 +143,8 @@ is : Form -> Core.Control setup { r | form : Form } a -> Bool
 is checkedForm (Core.Control _ { form } _) = checkedForm == form
 
 
-getChoiceType : Core.Control setup { r | type_ : ChoiceType } a -> ChoiceType
-getChoiceType (Core.Control _ { type_ } _) = type_
+getChoiceMode : Core.Control setup { r | mode : ChoiceMode } a -> ChoiceMode
+getChoiceMode (Core.Control _ { mode } _) = mode
 
 
 toNext : ChoiceControl item a -> ChoiceControl item a
@@ -162,11 +162,11 @@ toNext (Core.Control items value a) =
         a
 
 
-setChoiceType : ChoiceType -> Core.Control setup { r | type_ : ChoiceType } a -> Core.Control setup { r | type_ : ChoiceType } a
-setChoiceType newType (Core.Control setup value a) =
+setChoiceMode : ChoiceMode -> Core.Control setup { r | mode : ChoiceMode } a -> Core.Control setup { r | mode : ChoiceMode } a
+setChoiceMode newMode (Core.Control setup value a) =
     Core.Control
         setup
-        { value | type_ = newType }
+        { value | mode = newMode }
         a
 
 
@@ -317,6 +317,6 @@ toChoice (Core.Control items { form, page, face } a) =
         , face = face
         , selected = 0
         , prevSelected = Nothing
-        , type_ = Pages
+        , mode = Pages
         }
         a

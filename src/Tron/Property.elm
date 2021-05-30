@@ -399,7 +399,7 @@ execute item =
         Text textControl ->
             Just <| Text <| Text.ensureEditing textControl
         Choice focus shape control ->
-            case Nest.getChoiceType control of
+            case Nest.getChoiceMode control of
                 Nest.Pages ->
                     Just
                         <| Choice focus shape
@@ -610,12 +610,12 @@ ensureEditingAt path =
     updateAt path ensureEditing
 
 
-setChoiceType : Nest.ChoiceType -> Property a -> Property a
-setChoiceType newType prop =
+setChoiceMode : Nest.ChoiceMode -> Property a -> Property a
+setChoiceMode newMode prop =
     case prop of
         Choice focus shape control ->
             Choice focus shape
-                <| Nest.setChoiceType newType
+                <| Nest.setChoiceMode newMode
                 <| control
         _ -> prop
 

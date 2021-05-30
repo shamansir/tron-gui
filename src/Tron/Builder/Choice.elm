@@ -10,7 +10,7 @@ import Tron.Control exposing (Control(..))
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
 import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
-import Tron.Control.Nest exposing (Form(..), ChoiceType(..))
+import Tron.Control.Nest exposing (Form(..), ChoiceMode(..))
 import Tron.Util exposing (findMap)
 import Tron.Control.Value as Value exposing (Value(..))
 import Json.Decode exposing (index)
@@ -85,7 +85,7 @@ helper ( panelShape, cellShape ) options current compare =
                 , face = Nothing
                 , selected = currentIndex
                 , prevSelected = Nothing
-                , type_ = Pages
+                , mode = Pages
                 }
                 ( currentIndex, current )
 
@@ -165,7 +165,7 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
                 , face = Nothing
                 , selected = currentIndex
                 , prevSelected = Nothing
-                , type_ = Pages
+                , mode = Pages
                 }
                 handler
 
@@ -236,6 +236,6 @@ helperProxy ( panelShape, cellShape ) options current compare =
                 , face = Nothing
                 , selected = currentIndex
                 , prevSelected = Nothing
-                , type_ = Pages
+                , mode = Pages
                 }
                 Just

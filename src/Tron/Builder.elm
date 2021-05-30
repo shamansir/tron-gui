@@ -793,7 +793,7 @@ toChoice f =
 -}
 toSwitch : Tron msg -> Tron msg
 toSwitch =
-    Property.setChoiceType Nest.SwitchThrough
+    Property.setChoiceMode Nest.SwitchThrough
 
 
 {-| Convert choice control to the knob form:
@@ -802,7 +802,7 @@ toSwitch =
 -}
 toKnob : Tron msg -> Tron msg
 toKnob =
-    Property.setChoiceType Nest.Knob
+    Property.setChoiceMode Nest.Knob
 
 
 {-| Handle a set of items with a converter of item to a message

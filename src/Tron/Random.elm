@@ -211,7 +211,7 @@ choice deep =
                             , face = Nothing
                             , page = 0
                             , prevSelected = Nothing
-                            , type_ = Nest.Pages
+                            , mode = Nest.Pages
                             }
                         )
                         form

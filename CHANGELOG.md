@@ -1,6 +1,6 @@
 ### 9.0.0
 
-* Add more types of `Choice` control, now it can be a knob (changed by drag or switched by click, use `Builder.toKnob`) or just a click-through switch  (use `Builder.toSwitch`);
+* Add modes for `Choice` control: now it can be a knob (changed by drag or switched by click, use `Builder.toKnob`) or just a click-through switch  (use `Builder.toSwitch`);
 * Fix the major bug with `Path.pop` returning reverse result and, so, working with second-level panels;
 * Significantly improve knobs/drag-driven-controls behaviour, fix knobs to use current value when user starts dragging;
 * Add the border to the expanded and/or focused items;
