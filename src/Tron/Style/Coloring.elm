@@ -40,7 +40,7 @@ back theme ( placement, focused, _ ) =
         OnAPlate ->
             case ( theme, focused ) of
                 ( Dark, FocusedBy n ) -> Color.rgba 0.5 0.5 0.5 <| 0.05 -- * toFloat n
-                ( Light, FocusedBy n ) -> Color.rgba 0.5 0.5 0.5 <| 1 - 0.05 -- * toFloat n
+                ( Light, FocusedBy n ) -> Color.rgba 0.5 0.5 0.5 <| 0.05 -- * toFloat n
                 _ -> transparent
         AtRoot ->
             case ( theme, focused ) of

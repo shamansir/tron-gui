@@ -29,6 +29,7 @@ import Tron.Style.Theme exposing (Theme)
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock exposing (Dock)
 import Tron.Style.Dock as Dock
+import Tron.Property as Property
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -244,14 +245,18 @@ update msg model =
                     , lastGui =
                         if model.isRandom
                             then model.lastGui
-                            else ExampleGui.for nextExample |> Tron.toUnit
+                            else
+                                ExampleGui.for nextExample
+                                    |> Property.transferTransientState model.lastGui
+                                    |> Property.loadValues model.lastGui
+                                    |> Tron.toUnit
                     }
                 , updateEffects |> Cmd.map ToExample
                 )
 
         ( ToTron guiMsg, TronGui ) ->
             let
-                (nextState, nextGui, cmds) =
+                (nextState, nextGui, guiEffect) =
                     ( if model.isRandom
                         then
                             model.lastGui
@@ -259,6 +264,8 @@ update msg model =
                                 |> Def.map (always NoOp)
                         else
                             ExampleGui.for model.example
+                                |> Property.transferTransientState model.lastGui
+                                |> Property.loadValues model.lastGui
                                 |> Def.map ToExample
                     ) |> Core.update guiMsg model.state
             in
@@ -267,7 +274,7 @@ update msg model =
                     | state = nextState
                     , lastGui = nextGui
                     }
-                , cmds |> Cmd.map Tuple.second
+                , guiEffect |> Cmd.map Tuple.second
                 )
 
         ( ToTron _, DatGui ) -> ( model, Cmd.none )
@@ -303,6 +310,7 @@ update msg model =
             (
                 { model
                 | isRandom = True
+                , lastGui = newTree
                 }
             , case model.mode of
                 DatGui ->
