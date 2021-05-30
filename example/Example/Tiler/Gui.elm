@@ -144,6 +144,7 @@ colorScheme curProduct =
         , ( "Opacity", Tron.int { min = 0, max = 255, step = 1 } 0 )
         ]
         |> Tron.shape (cols 2)
+        |> Tron.expand
 
 
 products : Tron ()
@@ -158,6 +159,7 @@ products =
         Product.default
         Product.compare
     |> Tron.shape (rows 3)
+    |> Tron.expand
     --|> Tron.toKnob
     --|> Tron.toSwitch
     --    |> Tron.cells (CellShape.twiceByHalf)
