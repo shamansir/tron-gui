@@ -1,4 +1,4 @@
-module RandomGui exposing (generator)
+module Tron.Random exposing (generator)
 
 
 import Random
@@ -16,6 +16,7 @@ import Tron.Control.Button as Button exposing (Face(..), Icon(..))
 import Tron.Control.Number as Number
 import Tron.Control.XY as XY
 import Tron.Control.Color as Color
+import Tron.Control.Switch as Switch
 
 import Tron.Property  exposing (Property(..))
 import Tron.Property as Gui exposing ( Label )
@@ -45,7 +46,7 @@ generator =
 
 property : DeepLevel -> Random.Generator (Tron ())
 property (DeepLevel deep) =
-    Random.int 1 8
+    Random.int 1 9
         |> Random.andThen
             (\n ->
                 case n of
@@ -66,6 +67,7 @@ property (DeepLevel deep) =
                             group (DeepLevel <| deep + 1)
                                 |> Random.andThen group_
                         else button |> Random.map Action
+                    9 -> switch |> Random.map Switch
                     _ -> Random.constant Nil
             )
 
@@ -173,6 +175,7 @@ controls deep =
                 Color _ -> "color"
                 Toggle _ -> "toggle"
                 Action _ -> "button"
+                Switch _ -> "switch"
                 Choice _ _ _ -> "choice"
                 Group _ _ _ -> "group"
         addLabel : Tron () -> Random.Generator ( Label, Tron () )
@@ -235,6 +238,28 @@ group deep =
                             }
                         )
                         form
+                    )
+                    (Random.constant ())
+            )
+
+
+switch : Random.Generator ( Switch.Control () )
+switch =
+    Random.int 1 9
+        |> Random.andThen
+            (\howMany ->
+                Random.list howMany (Random.int 1 9)
+                    |> Random.map (Tuple.pair howMany)
+            )
+        |> Random.andThen
+            (\(howMany, items) ->
+                Random.map3
+                    Control
+                    (Random.constant <| Array.fromList <| List.map String.fromInt <| items)
+                    (Random.map2
+                        Tuple.pair
+                        (Random.constant Nothing)
+                        (Random.int 0 howMany)
                     )
                     (Random.constant ())
             )

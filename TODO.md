@@ -1,7 +1,8 @@
 ## Public API
 
 * Breaking: Close `ProxyValue` constructors from public;
-* `TronRef` -> `Tron.Deferred` // make `Tron.Deferred` main `Tron` (because it is mainly used in `user.for`) and `Tron a` — some `Tron.?` instead;
+* Breaking: `TronRef` -> `Tron.Deferred` // make `Tron.Deferred` main `Tron` (because it is mainly used in `user.for`) and `Tron a` — some `Tron.?` instead;
+* Breaking: Add `Debug` render mode for the public use & test (i.e. `Option`);
 * Breaking: Stick to just one `WithTron.Backed`, since anyway it is possible to convert one to another using `Tron` methods;
 * Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;
 * Breaking, Bug: Adjust default values in knobs/XY to the actual range, or else it is rendered improperly;
@@ -37,6 +38,8 @@
 ## Inner API / Logic
 
 * Move keyboard & mouse drag-start/dragging/drag-end logic to controls themselves;
+* Move all possible control-related logic to the controls themselves;
+    * Such logic can be found in code by adding some fake `()`-control and checking the places where we have to cover it / compiler fails;
 * Move `Util` stuff to the corresponding modules;
 * Move functions related to controls to the controls themselves, hide the `Control` constructor from others;
 * Debug `RenderMode` (i.e. ensure `Debug` view still works);

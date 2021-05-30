@@ -19,6 +19,7 @@ import Tron.Control.Text as Text exposing (..)
 import Tron.Control.Color as Color exposing (..)
 import Tron.Control.Toggle as Toggle exposing (..)
 import Tron.Control.Nest as Nest exposing (..)
+import Tron.Control.Switch as Switch exposing (..)
 import Tron.Util as Util
 
 import Tron.Pages as Pages exposing (Pages)
@@ -51,6 +52,7 @@ type Property a
     | Color (Color.Control a)
     | Toggle (Toggle.Control a)
     | Action (Button.Control a)
+    | Switch (Switch.Control a)
     | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Label, Property a ) a)
     | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property a ) a)
 
@@ -142,6 +144,7 @@ map f prop =
         Color control -> Color <| Control.map f control
         Toggle control -> Toggle <| Control.map f control
         Action control -> Action <| Control.map f control
+        Switch control -> Switch <| Control.map f control
         Choice focus shape control ->
             Choice
                 focus
@@ -213,6 +216,7 @@ fold1 f prop =
         Color control -> control |> Control.fold f |> Just
         Toggle control -> control |> Control.fold f |> Just
         Action control -> control |> Control.fold f |> Just
+        Switch control -> control |> Control.fold f |> Just
         Choice _ _ control -> control |> Control.fold f |> Just
         Group _ _ control -> control |> Control.fold f |> Just
 
@@ -220,18 +224,8 @@ fold1 f prop =
 
 andThen : (a -> Property b) -> Property a -> Property b
 -- FIXME: should be changed to `andThen` with getting rid of function in Control
-andThen f prop =
-    case prop of
-        Nil -> Nil
-        Number control -> control |> Control.fold f
-        Coordinate control -> control |> Control.fold f
-        Text control -> control |> Control.fold f
-        Color control -> control |> Control.fold f
-        Toggle control -> control |> Control.fold f
-        Action control -> control |> Control.fold f
-        Choice _ _ control -> control |> Control.fold f
-        Group _ _ control -> control |> Control.fold f
-
+andThen f =
+    fold1 f >> Maybe.withDefault Nil
 
 
 with : (a -> Property a -> Property b) -> Property a -> Property b
@@ -641,6 +635,7 @@ run prop =
         Color control -> control |> Control.run
         Toggle control -> control |> Control.run
         Action control -> control |> Control.run
+        Switch control -> control |> Control.run
         Choice _ _ control -> control |> Control.run
         Group _ _ control -> control |> Control.run
 
@@ -655,6 +650,7 @@ get prop =
         Color control -> control |> Control.get |> Just
         Toggle control -> control |> Control.get |> Just
         Action control -> control |> Control.get |> Just
+        Switch control -> control |> Control.get |> Just
         Choice _ _ control -> control |> Control.get |> Just
         Group _ _ control -> control |> Control.get |> Just
 
@@ -749,16 +745,18 @@ compareValues propA propB =
     case (propA, propB) of
         (Nil, Nil) -> True
         (Number controlA, Number controlB) ->
-            Control.getValue controlA == Control.getValue controlB
+            Tuple.second (Control.getValue controlA) == Tuple.second (Control.getValue controlB)
         (Coordinate controlA, Coordinate controlB) ->
-            Control.getValue controlA == Control.getValue controlB
+            Tuple.second (Control.getValue controlA) == Tuple.second (Control.getValue controlB)
         (Text controlA, Text controlB) ->
             Control.getValue controlA == Control.getValue controlB
         (Color controlA, Color controlB) ->
-            Control.getValue controlA == Control.getValue controlB
+            Tuple.second (Control.getValue controlA) == Tuple.second (Control.getValue controlB)
         (Toggle controlA, Toggle controlB) ->
             Control.getValue controlA == Control.getValue controlB
         (Action _, Action _) -> True
+        (Switch controlA, Switch controlB) ->
+            Tuple.second (Control.getValue controlA) == Tuple.second (Control.getValue controlB)
         (Choice _ _ controlA, Choice _ _ controlB) ->
             Nest.whichSelected controlA == Nest.whichSelected controlB
         (Group _ _ _, Group _ _ _) -> True
@@ -862,7 +860,7 @@ move f propA propB =
         _ -> f propA propB
 
 
-setValueTo : Property a -> Property b -> Property b
+setValueTo : Property a -> Property b -> Property b -- FIXME: return `Maybe`
 setValueTo from to =
     case ( from, to ) of
         (Number controlA, Number controlB) ->
@@ -875,6 +873,10 @@ setValueTo from to =
             Color <| Control.setValue (Control.getValue controlA) <| controlB
         (Toggle controlA, Toggle controlB) ->
             Toggle <| Control.setValue (Control.getValue controlA) <| controlB
+        (Action controlA, Action controlB) ->
+            Action <| Control.setValue (Control.getValue controlA) <| controlB
+        (Switch controlA, Switch controlB) ->
+            Switch <| Control.setValue (Control.getValue controlA) <| controlB
         (Choice _ _ controlA, Choice focus shape controlB) ->
             Choice focus shape <| Control.setValue (Control.getValue controlA) <| controlB
         (Group _ _ controlA, Group focus shape controlB) ->
