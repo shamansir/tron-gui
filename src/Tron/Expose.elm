@@ -282,7 +282,7 @@ applyStringValue str prop =
                             Nothing
                 )
 
-        Switch control ->
+        {- Switch control ->
             helper
                 "switch"
                 (\v ->
@@ -295,7 +295,7 @@ applyStringValue str prop =
 
                         _ ->
                             Nothing
-                )
+                ) -}
 
         Action control ->
             helper
@@ -410,13 +410,13 @@ encodePropertyAt path property =
                 , ( "path", encodeRawPath path )
                 ]
 
-        Switch (Control items ( _, val ) _) ->
+        {- Switch (Control items ( _, val ) _) ->
             E.object
                 [ ( "type", E.string "slider" )
                 , ( "path", encodeRawPath path )
                 , ( "items", E.array E.string items )
                 , ( "current", E.int val )
-                ]
+                ] -}
 
         Choice _ _ (Control items { form, selected } _) ->
             E.object

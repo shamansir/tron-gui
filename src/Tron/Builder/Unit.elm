@@ -3,7 +3,7 @@ module Tron.Builder.Unit exposing
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
     , nest, choice, choiceBy, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
-    , toChoice, toSet, dontHandle
+    , toChoice, toSet, dontHandle, toSwitch, toKnob
     , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
     )
@@ -68,6 +68,7 @@ import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
 import Tron.Style.PanelShape as Shape exposing (rows, cols)
 import Tron.Style.Theme exposing (Theme)
+import Tron.Builder as BB
 
 
 -- TODO: make controls init themselves, so get rid of these imports below
@@ -75,7 +76,7 @@ import Tron.Control.Text exposing (TextState(..))
 import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url)
 import Tron.Control.Toggle exposing (boolToToggle, toggleToBool, toggleToString)
 import Tron.Control.XY exposing (xyToString, xyFromString)
-import Tron.Control.Nest exposing (Form(..))
+import Tron.Control.Nest as Nest exposing (Form(..))
 
 
 {-| -}
@@ -291,6 +292,16 @@ addLabeledPath = B.addLabeledPath
 {-| -}
 toChoice : Tron -> Tron
 toChoice = B.toChoice
+
+
+{-| -}
+toSwitch : Tron -> Tron
+toSwitch = Property.setChoiceType Nest.SwitchThrough
+
+
+{-| -}
+toKnob : Tron -> Tron
+toKnob = Property.setChoiceType Nest.Knob
 
 
 {-| -}

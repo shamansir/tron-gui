@@ -235,7 +235,6 @@ get prop =
         Color control -> control |> Control.getValue |> Tuple.second |> FromColor
         Toggle control -> control |> Control.getValue |> FromToggle
         Action _ -> FromButton
-        Switch control -> control |> Control.getValue |> Tuple.second |> FromSwitch
         Choice _ _ control -> control |> Control.getValue |> .selected |> FromChoice
         Group _ _ _ -> FromGroup
 

@@ -115,7 +115,7 @@ viewProperty
     -> Svg Msg_
 viewProperty
     theme
-    ( ( placement, focus, selected ) as state )
+    ( ( placement, focus, _ ) as state )
     path
     bounds
     maybeSelectedInside
@@ -155,22 +155,22 @@ viewProperty
 
             button theme state face cellShape label bounds
 
-        Switch (Control items ( _, value ) _) ->
+        {- Switch (Control items ( _, value ) _) ->
 
-            switch theme state bounds items value
+            switch theme state bounds items value -}
 
         Color (Control _ (_, value) _) ->
 
             color theme state value bounds
 
-        Choice _ _ ( Control _ { form, face } _) ->
+        Choice _ _ ( Control items { form, face, type_, selected } _) ->
 
-            case ( face, maybeSelectedInside ) of
+            case ( type_, face, maybeSelectedInside ) of
 
-                ( Just buttonFace, _ ) ->
+                ( _, Just buttonFace, _ ) ->
                     button theme state buttonFace cellShape label bounds
 
-                ( Nothing, Just theSelectedProp ) ->
+                ( Nest.Pages, Nothing, Just theSelectedProp ) ->
                     viewProperty
                         theme
                         ( placement, focus, Selected )
@@ -180,7 +180,28 @@ viewProperty
                         cellShape
                         theSelectedProp
 
-                ( Nothing, Nothing ) ->
+                ( Nest.SwitchThrough, Nothing, Just theSelectedProp ) ->
+                    viewProperty
+                        theme
+                        ( placement, focus, Selected )
+                        path
+                        bounds
+                        Nothing
+                        cellShape
+                        theSelectedProp
+
+                ( Nest.Knob, Nothing, _ ) ->
+                    knobSwitch
+                        theme
+                        state
+                        bounds
+                        (items |> Array.map Tuple.first)
+                        selected
+
+                ( Nest.SwitchThrough, Nothing, Nothing ) ->
+                    arrow theme state form bounds
+
+                ( Nest.Pages, Nothing, Nothing ) ->
                     arrow theme state form bounds
 
         Group _ _ ( Control _ { form, face } _) ->
@@ -199,6 +220,7 @@ knob : Theme -> State -> BoundsF -> Float -> Float -> Svg msg
 knob theme state bounds value relValue =
     let
         toAngle v = (-120) + (v * 120 * 2)
+        -- FIXME: move aligning the value to control
         path stroke d =
             Svg.path
                 [ SA.d d
@@ -212,6 +234,7 @@ knob theme state bounds value relValue =
         radiusB = bounds.height * 0.27
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
         roundedValue = Basics.toFloat (floor (value * 100)) / 100
+
     in
         Svg.g
             [ resetTransform ]
@@ -241,8 +264,8 @@ knob theme state bounds value relValue =
             ]
 
 
-switch : Theme -> State -> BoundsF -> Array String -> Int -> Svg msg
-switch theme state bounds value relValue =
+knobSwitch : Theme -> State -> BoundsF -> Array String -> Int -> Svg msg
+knobSwitch theme state bounds items curItemId =
     let
         toAngle v = (-120) + (v * 120 * 2)
         path stroke d =
@@ -257,7 +280,8 @@ switch theme state bounds value relValue =
         radiusA = (bounds.width * 0.27) - 1
         radiusB = bounds.height * 0.27
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
-        roundedValue = Basics.toFloat (floor (value * 100)) / 100
+        curItem = items |> Array.get curItemId |> Maybe.withDefault "?"
+        relValue = Basics.toFloat curItemId / Basics.toFloat (Array.length items)
     in
         Svg.g
             [ resetTransform ]
@@ -283,7 +307,7 @@ switch theme state bounds value relValue =
                 , SA.style "pointer-events: none"
                 , SA.fill <| Color.toCssString <| Coloring.text theme state
                 ]
-                [ Svg.text <| String.fromFloat roundedValue ]
+                [ Svg.text curItem ]
             ]
 
 

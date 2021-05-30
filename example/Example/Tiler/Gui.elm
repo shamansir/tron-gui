@@ -158,7 +158,9 @@ products =
         Product.default
         Product.compare
     |> Tron.shape (rows 3)
---    |> Tron.cells (CellShape.twiceByHalf)
+    --|> Tron.toKnob
+    --|> Tron.toSwitch
+    --    |> Tron.cells (CellShape.twiceByHalf)
 
 
 clickOpacity : ActionType -> Tron ()

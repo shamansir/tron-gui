@@ -16,7 +16,6 @@ import Tron.Control.Button as Button exposing (Face(..), Icon(..))
 import Tron.Control.Number as Number
 import Tron.Control.XY as XY
 import Tron.Control.Color as Color
-import Tron.Control.Switch as Switch
 
 import Tron.Property  exposing (Property(..))
 import Tron.Property as Gui exposing ( Label )
@@ -67,7 +66,6 @@ property (DeepLevel deep) =
                             group (DeepLevel <| deep + 1)
                                 |> Random.andThen group_
                         else button |> Random.map Action
-                    9 -> switch |> Random.map Switch
                     _ -> Random.constant Nil
             )
 
@@ -175,7 +173,6 @@ controls deep =
                 Color _ -> "color"
                 Toggle _ -> "toggle"
                 Action _ -> "button"
-                Switch _ -> "switch"
                 Choice _ _ _ -> "choice"
                 Group _ _ _ -> "group"
         addLabel : Tron () -> Random.Generator ( Label, Tron () )
@@ -213,6 +210,8 @@ choice deep =
                             , selected = s
                             , face = Nothing
                             , page = 0
+                            , prevSelected = Nothing
+                            , type_ = Nest.Pages
                             }
                         )
                         form
@@ -243,7 +242,7 @@ group deep =
             )
 
 
-switch : Random.Generator ( Switch.Control () )
+{- switch : Random.Generator ( Switch.Control () )
 switch =
     Random.int 1 9
         |> Random.andThen
@@ -262,7 +261,7 @@ switch =
                         (Random.int 0 howMany)
                     )
                     (Random.constant ())
-            )
+            ) -}
 
 
 shapeFor

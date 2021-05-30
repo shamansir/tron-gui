@@ -19,9 +19,9 @@
 ## UX / Design
 
 * Show the value on XY controllers as well;
+* Fix knobs showing the values < min or > max;
 * Find a way to show long labels in two lines or scale the font or smth.;
 * Test keyboard navigation, adapt it to the Dock;
-* Fix knobs to use current value when user starts dragging;
 * _Active_ condition for a button, some effect for when it is pressed;
 * Fix/improve knobs to support on-the-fly change of the value;
 * Vertical pagination;
@@ -40,6 +40,7 @@
 * Move keyboard & mouse drag-start/dragging/drag-end logic to controls themselves;
 * Move all possible control-related logic to the controls themselves;
     * Such logic can be found in code by adding some fake `()`-control and checking the places where we have to cover it / compiler fails;
+    * Also can be found by closing `Property` and `Control` constructors from exposing;
 * Move `Util` stuff to the corresponding modules;
 * Move functions related to controls to the controls themselves, hide the `Control` constructor from others;
 * Debug `RenderMode` (i.e. ensure `Debug` view still works);
