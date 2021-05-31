@@ -3,7 +3,7 @@ module Tron.Builder.Unit exposing
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
     , nest, choice, choiceBy, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
-    , toChoice, toSet, dontHandle, toSwitch, toKnob
+    , live, toChoice, toSet, dontHandle, toSwitch, toKnob
     , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
     )
@@ -302,6 +302,11 @@ toSwitch = Property.setChoiceMode Nest.SwitchThrough
 {-| -}
 toKnob : Tron -> Tron
 toKnob = Property.setChoiceMode Nest.Knob
+
+
+{-| -}
+live : Tron -> Tron
+live = Property.Live
 
 
 {-| -}

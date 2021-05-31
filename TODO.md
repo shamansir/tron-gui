@@ -28,12 +28,8 @@
 
 ## New controls
 
-* Live Controls;
-* Choice-by-click control — the button that changes state while it's clicked;
-    * Maybe reuse `Nest.Form` for that;
 * Multiple-choice control;
 * Locked controls;
-* Knob with fixed values, they could even labeled as strings (i.e. 3, 5, 7, 9, 15, _smooth_);
 
 ## Inner API / Logic
 

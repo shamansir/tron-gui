@@ -237,6 +237,7 @@ get prop =
         Action _ -> FromButton
         Choice _ _ control -> control |> Control.getValue |> .selected |> FromChoice
         Group _ _ _ -> FromGroup
+        Live innerProp -> get innerProp
 
 
 lift : Property a -> Property (Value -> Maybe a)

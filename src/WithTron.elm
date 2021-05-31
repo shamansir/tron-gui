@@ -217,6 +217,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                 , userFor newUserModel
                     |> Property.transferTransientState prevTree
                     |> Property.loadValues prevTree
+                    --|> Property.loadLiveValues nextGui
                     |> Tron.toUnit
                 )
             , userEffect |> Cmd.map ToUser
@@ -228,6 +229,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                  userFor model
                     |> Property.transferTransientState prevTree
                     |> Property.loadValues prevTree
+                    --|> Property.loadLiveValues nextGui
                     |> Core.update guiMsg state of
                 ( nextState, nextTree, guiEffect ) ->
                     (

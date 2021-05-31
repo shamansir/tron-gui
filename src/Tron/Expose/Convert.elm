@@ -85,6 +85,9 @@ toProxied prop =
                 -- TODO: notify expanded/collapsed/detached?
                 |> Group focus shape
 
+        Live innerProp ->
+            Live <| toProxied innerProp
+
 
 
 -- FIXME: make it: Tron msg -> Tron RawOutUpdate and use `Property.map2` to join
@@ -191,6 +194,9 @@ reflect prop =
                 <| Control.map (Tuple.mapFirst <| always FromGroup)
                 <| Control.reflect
                 <| control
+        Live innerProp ->
+            Live
+                <| reflect innerProp
 
 
 lift : Property a -> Property (Value -> Maybe a)

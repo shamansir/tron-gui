@@ -327,6 +327,11 @@ applyStringValue str prop =
         Group _ _ _ ->
             Nothing
 
+        Live innerProp ->
+            innerProp
+                |> applyStringValue str
+                |> Maybe.map Live
+
 
 encodeRawPath : RawPath -> E.Value
 encodeRawPath =
@@ -482,6 +487,9 @@ encodePropertyAt path property =
                   )
                 , ( "nest", encodeNested path items )
                 ]
+
+        Live innerProp ->
+            encodePropertyAt path innerProp
 
 
 encodeNested : RawPath -> Array ( Label, Property a ) -> RawProperty
