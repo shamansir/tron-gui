@@ -9,6 +9,7 @@ import Tron.Expose.Data as Exp
 import Tron.Option exposing (..)
 import Tron.Core as Core exposing (State)
 import Tron.Detach as Detach
+import Tron.Render.Layout as L
 
 import Html exposing (Html)
 
@@ -44,6 +45,7 @@ addInitOptions target gui =
         Html dock _ -> gui |> Core.dock dock
         Nowhere -> gui
         Aframe _ -> gui
+        Debug dock _ -> gui |> Core.dock dock
 
 
 addSubscriptionsOptions : PortCommunication msg -> Sub Exp.RawInUpdate
@@ -59,9 +61,10 @@ addSubscriptionsOptions ports =
 useRenderTarget : RenderTarget -> State -> Tron () -> Html Core.Msg
 useRenderTarget target state tree =
     case target of
-        Html dock theme -> tree |> Core.view theme (state |> Core.dock dock)
+        Html dock theme -> tree |> Core.view L.Fancy theme (state |> Core.dock dock)
         Nowhere -> Html.div [] []
         Aframe _ -> Html.div [] [] -- FIXME
+        Debug dock theme -> tree |> Core.view L.Debug theme (state |> Core.dock dock)
 
 
 setDetachState : ( Maybe Detach.ClientId, Detach.State ) -> State -> State

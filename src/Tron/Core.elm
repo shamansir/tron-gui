@@ -716,8 +716,8 @@ subscriptions _ =
         ]
 
 
-view : Theme -> State -> Tron a -> Html Msg
-view theme state tree  =
+view : Mode -> Theme -> State -> Tron a -> Html Msg
+view mode theme state tree  =
     let
         cellsSize = getSizeInCells state tree
         bounds =
@@ -736,5 +736,5 @@ view theme state tree  =
     then case layout state tree of
         ( root, theLayout ) ->
             theLayout
-                |> Layout.view theme state.dock bounds detachState toDetachAbility root
+                |> Layout.view mode theme state.dock bounds detachState toDetachAbility root
     else Html.div [] []

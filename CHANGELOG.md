@@ -3,6 +3,7 @@
 * Add modes for `Choice` control: now it can be a knob (changed by drag or switched by click, use `Builder.toKnob`) or just a click-through switch  (use `Builder.toSwitch`);
 * Add _Live_ controls: the value is changing together with the updates, use `Builder.live` to convert any control to its live version;
 * New pagination style;
+* Add `Debug` option to render targets, which could help with observation of the problems with UI;
 * Fix the major bug with `Path.pop` returning reverse result and, so, working with second-level panels;
 * Significantly improve knobs/drag-driven-controls behaviour, fix knobs to use current value when user starts dragging;
 * Add the border to the expanded and/or focused items;

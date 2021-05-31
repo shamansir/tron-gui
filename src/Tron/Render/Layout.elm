@@ -61,12 +61,9 @@ type Mode
     | Fancy
 
 
-mode : Mode
-mode = Fancy
-
-
 viewProperty
-    :  Theme
+    :  Mode
+    -> Theme
     -> State
     -> Path
     -> BoundsF
@@ -75,6 +72,7 @@ viewProperty
     -> ( Label, Property a )
     -> Svg Msg_
 viewProperty
+    mode
     theme
     ( ( _, focus, selected ) as state )
     path
@@ -110,8 +108,8 @@ viewProperty
                     ( label, prop )
 
 
-viewPlateBack : Theme -> BoundsF -> Svg Msg_
-viewPlateBack theme pixelBounds =
+viewPlateBack : Mode -> Theme -> BoundsF -> Svg Msg_
+viewPlateBack mode theme pixelBounds =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -125,12 +123,13 @@ viewPlateBack theme pixelBounds =
 
 viewPlateControls
      : Detach.Ability
+    -> Mode
     -> Theme
     -> Path
     -> BoundsF
     -> ( Label, Property a )
     -> Svg Msg_
-viewPlateControls detach theme path pixelBounds ( label, source )  =
+viewPlateControls detach mode theme path pixelBounds ( label, source )  =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -139,13 +138,14 @@ viewPlateControls detach theme path pixelBounds ( label, source )  =
                 Plate.controls detach theme path pixelBounds ( label, source )
 
 viewPagingControls
-     : Theme
+     : Mode
+    -> Theme
     -> Path
     -> BoundsF
     -> CellShape
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
-viewPagingControls theme path pixelBounds cellShape paging  =
+viewPagingControls mode theme path pixelBounds cellShape paging  =
     positionAt_ pixelBounds <|
         case mode of
             Debug ->
@@ -313,7 +313,8 @@ paginationMaskDefs bounds path =
 
 
 view
-    :  Theme
+    :  Mode
+    -> Theme
     -> Dock
     -> BoundsF
     -> Detach.State
@@ -321,7 +322,7 @@ view
     -> Property a
     -> Layout
     -> Html Msg_
-view theme dock bounds detach getDetachAbility root layout =
+view mode theme dock bounds detach getDetachAbility root layout =
     let
 
         keyDownHandler_ =
@@ -338,7 +339,7 @@ view theme dock bounds detach getDetachAbility root layout =
 
         platesBacksRendered =
             plates
-                |> List.map (.bounds >> viewPlateBack theme )
+                |> List.map (.bounds >> viewPlateBack mode theme )
 
         rootCellsCount =
             cells
@@ -351,6 +352,7 @@ view theme dock bounds detach getDetachAbility root layout =
                 (\cell ->
 
                     viewProperty
+                        mode
                         theme
                         ( if (Path.sub rootPath cell.path |> Path.howDeep) == 1
                             then AtRoot
@@ -382,6 +384,7 @@ view theme dock bounds detach getDetachAbility root layout =
                             |> CS.isSquare then
                             viewPlateControls
                                 (getDetachAbility plate.path)
+                                mode
                                 theme
                                 plate.path
                                 plate.bounds
@@ -396,6 +399,7 @@ view theme dock bounds detach getDetachAbility root layout =
                         1 -> Svg.none
                         n ->
                             viewPagingControls
+                                mode
                                 theme
                                 plate.path
                                 plate.bounds

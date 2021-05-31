@@ -1,7 +1,7 @@
 module Tron.Option exposing
     ( RenderTarget(..), PortCommunication(..) --FIXME: don't expose values
     , noCommunication, sendJson, sendStrings, detachable, withDatGui
-    , hidden, toHtml, toVr
+    , hidden, toHtml, toDebug, toVr
     )
 
 
@@ -38,6 +38,7 @@ import Tron.Msg exposing (Msg_(..))
 type RenderTarget
     = Html Dock Theme
     | Aframe Theme
+    | Debug Dock Theme
     | Nowhere
 
 
@@ -223,6 +224,12 @@ hidden = Nowhere
 -}
 toHtml : Dock -> Theme -> RenderTarget
 toHtml = Html
+
+
+{-| Render to Debug mode where all the controls are represented as text boxes with information.
+-}
+toDebug : Dock -> Theme -> RenderTarget
+toDebug = Debug
 
 
 {-| Render to Virtual Reality using given theme (dark/light); Experimental. Uses `a-frame` library for render, so it should be included in your HTML;
