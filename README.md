@@ -15,7 +15,7 @@ For the moment, the provided controls are:
 * color control;
 * toggle control;
 * button, can have some icon or none, or be a color switch;
-* choice control — a panel with options;
+* choice control — a panel with options, or a click-through button, or a knob;
 * group control — a panel with any other controls;
 
 Group and choice controls support _pagination_ if the items doesn't fit;
@@ -27,10 +27,14 @@ The encoders and decoders for JSON are included, so all the structure can be tra
 Next major features planned are:
 
 * multi-choice control;
-* design improvements;
 * controls with the shapes of 1x0.5, 2x2, 0.5x1 and so on, so that it would be easier to create complex panels; shapes are already there in API, but they are still experimental;
 * support for `a-frame` and rendering to it, which would allow operate Tron in VR; see `AFrame` example for current status;
 
+See `TODO.md` for more.
+
+See `CHANGELOG.md` for the list of all the changes through versions.
+
+Huge thanks to @imilman for the design/UX and priceless help through development.
 
 ## Screenshots
 
