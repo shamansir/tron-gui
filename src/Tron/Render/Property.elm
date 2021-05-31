@@ -230,6 +230,8 @@ knob : Theme -> State -> BoundsF -> Float -> Float -> Svg msg
 knob theme state bounds value relValue =
     let
         toAngle v = (-120) + (v * 120 * 2)
+        minAngle = toAngle 0
+        maxAngle = toAngle 1
         -- FIXME: move aligning the value to control
         path stroke d =
             Svg.path
@@ -252,17 +254,25 @@ knob theme state bounds value relValue =
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
-                    { from = toAngle 0, to = toAngle relValue }
+                    { from = minAngle
+                    , to = toAngle relValue
+                    --, to = if relValue <= 1 then toAngle relValue else maxAngle
+                    }
             , path (Coloring.secondaryLines theme state |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
-                    { from = toAngle relValue, to = toAngle 1 }
+                    { from = toAngle relValue --from = if relValue >= 0 then toAngle relValue else minAngle
+                    , to = maxAngle
+                    }
             , path (Coloring.lines theme state |> Color.toCssString)
                 <| describeMark
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
-                    (toAngle relValue)
+                    ( toAngle relValue {- if toAngle relValue > 1 then maxAngle else
+                      if toAngle relValue < 0 then minAngle
+                      else toAngle relValue -}
+                    )
             , Svg.text_
                 [ SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat cy

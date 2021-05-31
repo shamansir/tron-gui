@@ -42,7 +42,7 @@ import Dict.Extra as Dict
 import Html exposing (Html)
 
 import Tron exposing (Tron)
-import Tron.Deferred as Def
+import Tron.OfValue as Def
 import WithTron exposing (..)
 import WithTron.ValueAt exposing (ValueAt)
 

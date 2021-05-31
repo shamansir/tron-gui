@@ -3,7 +3,7 @@ module Example.Default.Gui exposing (..)
 
 import Color exposing (Color)
 
-import Tron.Deferred exposing (Tron)
+import Tron.OfValue exposing (Tron)
 import Tron.Builder as Gui
 import Tron.Property  exposing (Property)
 import Tron.Property as Property

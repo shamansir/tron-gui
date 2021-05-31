@@ -1,7 +1,7 @@
 module Example.Goose.Gui exposing (for)
 
 
-import Tron.Deferred exposing (Tron)
+import Tron.OfValue exposing (Tron)
 import Tron.Builder as Gui
 import Tron.Style.PanelShape exposing (cols)
 import Tron.Style.PanelShape as Shape exposing (auto)

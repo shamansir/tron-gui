@@ -1,4 +1,4 @@
-module Tron.Deferred exposing
+module Tron.OfValue exposing
     ( Tron, Set
     , map, mapSet, andThen, with, toUnit, lift
     )

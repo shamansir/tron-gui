@@ -39,7 +39,7 @@ import Tron.Detach exposing (State(..))
 import Tron.Control.Value exposing (..)
 import Tron.Control.Nest as Nest
 import Tron.Builder exposing (..)
-import Tron.Deferred as Def
+import Tron.OfValue as Def
 
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Style.Dock as Dock exposing (..)

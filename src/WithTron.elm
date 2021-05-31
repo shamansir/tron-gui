@@ -102,7 +102,7 @@ import Task
 
 import Tron.Core as Core exposing (State)
 import Tron exposing (Tron)
-import Tron.Deferred as Def
+import Tron.OfValue as Def
 --import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))

@@ -4,7 +4,7 @@ module Tron.Builder.Choice exposing (..)
 import Array
 
 
-import Tron.Deferred as Def
+import Tron.OfValue as Def
 import Tron.Property as Property exposing (..)
 import Tron.Control exposing (Control(..))
 import Tron.Style.PanelShape exposing (..)

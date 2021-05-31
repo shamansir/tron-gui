@@ -16,7 +16,7 @@ or just get rid of messages at all:
 import Json.Encode as E
 
 import Tron exposing (Tron)
-import Tron.Deferred as Def
+import Tron.OfValue as Def
 import Tron.Control as Control
 import Tron.Control.Nest as Nest
 import Tron.Expose.Data exposing (..)

@@ -16,7 +16,7 @@ import Url exposing (Url)
 
 import WithTron.Logic as WithTron
 import Tron exposing (Tron)
-import Tron.Deferred as Def
+import Tron.OfValue as Def
 import Tron.Core as Core
 import Tron.Core as T
 import Tron.Option as Option

@@ -144,7 +144,7 @@ import Axis exposing (Axis)
 import Url.Builder as Url
 import Dict
 
-import Tron.Deferred as Def exposing (Tron)
+import Tron.OfValue as Def exposing (Tron)
 import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Control.Value as Value exposing (..)

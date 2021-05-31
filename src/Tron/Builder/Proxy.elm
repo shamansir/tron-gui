@@ -53,7 +53,7 @@ so that is easier and shorter to use `Proxy`-based `Builder` if you don't need a
 -}
 
 
-import Tron.Deferred as Def
+import Tron.OfValue as Def
 import Tron.Builder.Any as B
 import Tron.Builder as BB
 

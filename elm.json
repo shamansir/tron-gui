@@ -6,7 +6,7 @@
     "version": "8.0.1",
     "exposed-modules": [
         "Tron",
-        "Tron.Deferred",
+        "Tron.OfValue",
         "Tron.Random",
         "WithTron",
         "WithTron.Backed",
