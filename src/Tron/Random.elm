@@ -175,6 +175,7 @@ controls deep =
                 Action _ -> "button"
                 Choice _ _ _ -> "choice"
                 Group _ _ _ -> "group"
+                Live innerProp -> labelFor innerProp
         addLabel : Tron () -> Random.Generator ( Label, Tron () )
         addLabel prop =
             Random.int 0 10000

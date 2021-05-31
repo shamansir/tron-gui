@@ -53,6 +53,7 @@ type Property a
     | Action (Button.Control a)
     | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Label, Property a ) a)
     | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property a ) a)
+    | Live (Property a)
 
 
 knobDistance = 90
@@ -88,6 +89,8 @@ find1 path root = -- TODO: reuse `fildAll` + `tail`?
                             control
                                 |> Nest.get index
                                 |> Maybe.andThen (helper pathTail)
+                        -- Live innerProp ->
+                        --     helper ipath (label, innerProp)
                         _ -> Nothing
     in
         helper (Path.toList path) ( "", root )
@@ -127,6 +130,8 @@ findAll path root =
                                 |> Nest.get index
                                 |> Maybe.map (helper pathTail)
                                 |> Maybe.withDefault []
+                        -- Live innerProp ->
+                        --     helper ipath (label, innerProp)
                         _ -> [ ]
     in
         helper (Path.toList path) ( "", root )
@@ -156,6 +161,8 @@ map f prop =
                 <| (control
                     |> Nest.mapItems (Tuple.mapSecond <| map f)
                     |> Control.map f)
+        Live innerProp ->
+            Live <| map f innerProp
 
 
 {- zip
@@ -184,15 +191,17 @@ fold f from root =
                     val
 
         helper : Path -> Property a -> b -> b
-        helper curPath item val =
-            case item of
+        helper curPath prop val =
+            case prop of
                 Choice _ _ control ->
-                    f curPath item
+                    f curPath prop
                         <| foldItems curPath (Nest.getItems control) val
                 Group _ _ control ->
-                    f curPath item
+                    f curPath prop
                         <| foldItems curPath (Nest.getItems control) val
-                _ -> f curPath item val
+                -- Live innerProp ->
+                --     helper curPath innerProp val
+                _ -> f curPath prop val
 
     in
         helper Path.start root from
@@ -215,6 +224,7 @@ fold1 f prop =
         Action control -> control |> Control.fold f |> Just
         Choice _ _ control -> control |> Control.fold f |> Just
         Group _ _ control -> control |> Control.fold f |> Just
+        Live innerProp -> fold1 f innerProp
 
 
 
@@ -304,6 +314,8 @@ replaceWithPathsMap aMap f root =
                         <| (control
                                 |> Nest.indexedMapItems (replaceItem curPath)
                                 |> Control.map (aMap curPath))
+                Live innerProp ->
+                    Live <| helper curPath innerProp
                 _ -> f curPath <| map (aMap curPath) <| item
 
     in
@@ -341,6 +353,9 @@ addPathFrom from root =
                             |> Nest.indexedMapItems (replaceItem curPath)
                             |> Control.map (Tuple.pair curPath)
                         )
+
+                Live innerProp ->
+                    Live <| helper curPath innerProp
 
                 prop -> map (Tuple.pair curPath) prop
 
@@ -416,6 +431,9 @@ execute item =
             Just
                 <| Group focus shape
                 <| Nest.toggle control
+        Live innerProp ->
+            execute innerProp
+                |> Maybe.map Live
         _ -> Nothing
 
 
@@ -470,6 +488,8 @@ transferTransientState propA propB =
                     Text
                         (Text.getTransientState controlA
                             |> Text.restoreTransientState controlB)
+                ( Live innerPropA, Live innerPropB ) ->
+                    Live <| transferTransientState innerPropA innerPropB
                 _ -> propB_
     in move f propA propB
 
@@ -653,6 +673,7 @@ run prop =
         Action control -> control |> Control.run
         Choice _ _ control -> control |> Control.run
         Group _ _ control -> control |> Control.run
+        Live innerProp -> run innerProp
 
 
 get : Property a -> Maybe a
@@ -667,6 +688,7 @@ get prop =
         Action control -> control |> Control.get |> Just
         Choice _ _ control -> control |> Control.get |> Just
         Group _ _ control -> control |> Control.get |> Just
+        Live innerProp -> get innerProp
 
 
 getCellShape : Property a -> Maybe CellShape
@@ -676,6 +698,8 @@ getCellShape prop =
             Just cellShape
         Group _ ( _, cellShape ) _ ->
             Just cellShape
+        Live innerProp ->
+            getCellShape innerProp
         _ -> Nothing
 
 
@@ -686,6 +710,8 @@ getPageNum prop =
             Just <| Nest.getPage control
         Group _ _ control ->
             Just <| Nest.getPage control
+        Live innerProp ->
+            getPageNum innerProp
         _ -> Nothing
 
 
@@ -720,6 +746,10 @@ setFace face prop =
             Choice focus shape
                 <| Nest.setFace face
                 <| control
+        Live innerProp ->
+            Live
+                <| setFace face
+                <| innerProp
         _ -> prop
 
 
@@ -772,6 +802,7 @@ compareValues propA propB =
         (Choice _ _ controlA, Choice _ _ controlB) ->
             Nest.whichSelected controlA == Nest.whichSelected controlB
         (Group _ _ _, Group _ _ _) -> True
+        (Live innerPropA, Live innerPropB) -> compareValues innerPropA innerPropB
         (_, _) -> False
 
 
@@ -891,6 +922,8 @@ setValueTo from to =
             Choice focus shape <| Control.setValue (Control.getValue controlA) <| controlB
         (Group _ _ controlA, Group focus shape controlB) ->
             Group focus shape <| Control.setValue (Control.getValue controlA) <| controlB
+        (Live _, Live _) -> to
+            -- Number <| Control.setValue (Control.getValue controlB) <| controlA
         (_, _) -> to
 
 
@@ -900,3 +933,7 @@ setValueTo from to =
 
 loadValues : Property a -> Property b -> Property b
 loadValues = move setValueTo
+
+
+-- loadLiveValues : Property a -> Property b -> Property b
+-- loadLiveValues = move

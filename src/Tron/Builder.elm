@@ -3,7 +3,7 @@ module Tron.Builder exposing
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
     , nest, choice, choiceBy, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
-    , toChoice, toSet, handleWith, toSwitch, toKnob
+    , live, toChoice, toSet, handleWith, toSwitch, toKnob
     , expand, collapse, shape, cells
     , addPath, addLabeledPath, addLabels
     )
@@ -803,6 +803,15 @@ toSwitch =
 toKnob : Tron msg -> Tron msg
 toKnob =
     Property.setChoiceMode Nest.Knob
+
+
+{-| Convert any control to update its value live (i.e. on every change take them from you model)
+
+    Builder.knob ... |> Builder.live
+-}
+live : Tron msg -> Tron msg
+live =
+    Property.Live
 
 
 {-| Handle a set of items with a converter of item to a message

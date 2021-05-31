@@ -213,6 +213,16 @@ viewProperty
 
                 Nothing -> arrow theme state form bounds
 
+        Live innerProp ->
+            viewProperty
+                theme
+                state
+                path
+                bounds
+                maybeSelectedInside
+                cellShape
+                ( label, innerProp )
+
         _ -> Svg.none
 
 
@@ -607,9 +617,9 @@ arrow theme state form bounds =
 
 makeClass : CellShape -> Property msg -> String
 makeClass shape prop =
-    "cell"
-        ++ " cell--" ++
-            ( case prop of
+    let
+        propTypeId prop_ =
+            case prop_ of
                 Nil -> "ghost"
                 Number _ -> "number"
                 Coordinate _ -> "coord"
@@ -619,7 +629,10 @@ makeClass shape prop =
                 Action _ -> "button"
                 Choice _ _ _ -> "choice"
                 Group _ _ _ -> "group"
-            )
+                Live innerProp -> propTypeId innerProp
+    in
+    "cell"
+        ++ " cell--" ++ propTypeId prop
         ++ " cell--" ++ shapeToModifier shape
 
 

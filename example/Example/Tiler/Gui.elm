@@ -62,7 +62,11 @@ gui valueAt model =
         , ( "Make URL", Tron.button |> Tron.face (icon "link" ))
         , ( "Export", Tron.button |> Tron.face (icon "save"))
         , ( "Upload tiles", Tron.button |> Tron.face (icon "export"))
-        , ( "TestValue", Tron.int { min = 0, max = 255, step = 1 } <| Tuple.second model.screenSize )
+        , ( "TestValue",
+                Tron.int
+                    { min = 0, max = 4000, step = 1 }
+                    (Tuple.second model.screenSize)
+                |> Tron.live)
         ]
 
 

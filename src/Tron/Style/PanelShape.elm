@@ -128,4 +128,3 @@ distribute panelShape cellShape items =
                 (\r -> toFloat r * cellYMultiplier)
                 >> SizeF
             )
-            --|> Debug.log "result"

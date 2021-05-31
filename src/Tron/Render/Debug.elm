@@ -96,3 +96,6 @@ propertyDebug ( label, prop )  =
                 , textAt 5 50
                     <| " selected: " ++ String.fromInt state.selected
                 ]
+
+        Live innerProp ->
+            propertyDebug ( label, innerProp )
