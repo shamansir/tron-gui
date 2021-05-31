@@ -1,6 +1,6 @@
 module Tron.Expose.Convert
     exposing
-    ( toExposed, toProxied, toStrExposed
+    ( toUnit, toExposed, toProxied, toStrExposed
     , reflect, lift, evaluate
     , toDeferredRaw
     )
@@ -10,6 +10,14 @@ module Tron.Expose.Convert
 or just get rid of messages at all:
 
 @docs toUnit, toProxied, toExposed, toStrExposed
+
+# Operations on the value
+
+@docs reflect, lift, evaluate
+
+# Internal
+
+@docs toDeferredRaw
 -}
 
 
@@ -23,6 +31,12 @@ import Tron.Expose.Data exposing (..)
 import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
 import Tron.Control.Value as Value exposing (Value(..))
+
+
+{-| Replace the `()` value everywhere within Tron GUI tree, it is useful for truly a lot of cases when you don't care about what are the associated values.
+-}
+toUnit : Tron a -> Tron ()
+toUnit = Tron.toUnit
 
 
 {-| Store a `Value` together with message, which mirrors a value
@@ -148,6 +162,8 @@ toStrExposed =
             )
 
 
+{-| Extract the value from the control and put it along with a subject of the functor.
+-}
 reflect : Property a -> Property ( Value, a )
 reflect prop =
     case prop of
@@ -199,18 +215,21 @@ reflect prop =
                 <| reflect innerProp
 
 
+{-| Create proxied property. Notice that It will return the `a` disregardless of what `Value` is. -}
 lift : Property a -> Property (Value -> Maybe a)
 lift =
     Property.map (always << Just)
 
 
 
+{-| Use current value of the control and apply it to the handler. -}
 evaluate : Property (Value -> Maybe a) -> Property (Maybe a)
 evaluate =
     reflect
     >> Property.map (\(v, handler) -> handler v)
 
 
+{-| -}
 toDeferredRaw : Property a -> Property (Value -> Maybe RawValue)
 toDeferredRaw =
     Property.addPaths

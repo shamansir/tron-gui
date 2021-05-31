@@ -14,7 +14,7 @@ module Tron.Expose.Data exposing
 
 # Helpers
 
-@docs Update, RawPath, RawClientId
+@docs Update, RawPath, RawClientId, noValue
 -}
 
 import Json.Encode as E
@@ -77,6 +77,7 @@ type alias Ack =
     }
 
 
+{-| -}
 noValue : RawValue
 noValue =
     { path = []

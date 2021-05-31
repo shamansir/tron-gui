@@ -11,7 +11,7 @@ module Tron.Control.Value exposing
 
 Used for converting values from controls to JSON;
 
-@docs Value
+@docs Value, get, lift
 
 # Encode and convert
 
@@ -34,6 +34,7 @@ import Color.Convert as Color
 import Json.Decode as D
 import Json.Encode as E
 
+--import Tron exposing (Tron)
 import Tron.Control as Control
 import Tron.Control.Nest as Nest exposing (ItemId)
 import Tron.Control.Toggle as Toggle exposing (ToggleState, toggleToBool, toggleToString)
@@ -225,6 +226,7 @@ fromColor proxy =
         _ -> Nothing
 
 
+{-| get proxied value from `Tron` -}
 get : Property a -> Value
 get prop =
     case prop of
@@ -240,6 +242,7 @@ get prop =
         Live innerProp -> get innerProp
 
 
+{-| convert usual `Tron a` to `Tron.OfValue a`. Please prefer the one from the `Tron.OfValue` module. -}
 lift : Property a -> Property (Value -> Maybe a)
 lift =
     Property.map (always << Just)

@@ -46,7 +46,10 @@ so that is easier and shorter to use `Unit`-based `Builder` if you don't need an
 @docs shape, cells
 
 # Conversion
-@docs toSet, toChoice, addLabels, dontHandle
+@docs toSet, toChoice, toSwitch, toKnob, addLabels, dontHandle
+
+# Live
+@docs live
 
 # Add Path
 @docs addPath, addLabeledPath

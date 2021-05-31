@@ -1,6 +1,15 @@
 module Tron.Random exposing (generator)
 
 
+{-| Using this module, you may generate the random UI structure if you would ever want to, for testing purposes, for example.
+
+# Generate random UI
+
+@docs generator
+
+See also: `Tron.OfValue`, `WithTron.for`, `Tron.OfValue.lift`
+-}
+
 import Random
 import Array exposing (Array)
 import Color exposing (..)
@@ -36,6 +45,7 @@ type Icon
     | Goose
 
 
+{-| -}
 generator : Random.Generator (Tron ())
 generator =
     group (DeepLevel 0)

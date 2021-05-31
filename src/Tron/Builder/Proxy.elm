@@ -46,7 +46,10 @@ so that is easier and shorter to use `Proxy`-based `Builder` if you don't need a
 @docs shape, cells
 
 # Conversion
-@docs toSet, toChoice, addLabels, autoHandle
+@docs toSet, toChoice, toSwitch, toKnob, addLabels, autoHandle
+
+# Live
+@docs live
 
 # Add Path
 @docs addPath, addLabeledPath

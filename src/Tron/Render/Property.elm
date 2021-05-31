@@ -234,8 +234,8 @@ knob : Theme -> State -> BoundsF -> Float -> Float -> Svg msg
 knob theme state bounds value relValue =
     let
         toAngle v = (-120) + (v * 120 * 2)
-        minAngle = Debug.log "minAngle" <| toAngle 0
-        maxAngle = Debug.log "maxAngle" <| toAngle 1
+        minAngle = toAngle 0
+        maxAngle =toAngle 1
         -- FIXME: move aligning the value to control
         path stroke d =
             Svg.path
@@ -250,8 +250,6 @@ knob theme state bounds value relValue =
         radiusB = bounds.height * 0.27
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
         roundedValue = Basics.toFloat (floor (value * 100)) / 100
-        _ = Debug.log "value" <| value
-        _ = Debug.log "relValue" <| relValue
         valueAngle =
             if relValue > 1 then maxAngle else
             if relValue < 0 then minAngle

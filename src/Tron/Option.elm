@@ -9,7 +9,7 @@ module Tron.Option exposing
 
 # Rendering
 
-@docs RenderTarget, hidden, toHtml, toVr
+@docs RenderTarget, hidden, toHtml, toVr, toDebug
 
 # Port communication
 

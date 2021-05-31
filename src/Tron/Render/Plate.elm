@@ -116,7 +116,7 @@ paging _ path bounds cellShape ( current, total ) =
             , SA.rx <| String.fromFloat <| 10.0
             , SA.ry <| String.fromFloat <| 10.0
             , SA.width <| String.fromFloat <| bounds.width - 10
-            , SA.height <| String.fromFloat 30.0
+            , SA.height <| String.fromFloat 31.0
             , SA.style "pointer-events: none; cursor: pointer;"
             , SA.fill "black"--"rgba(200,200,200,0.3)"
             ]

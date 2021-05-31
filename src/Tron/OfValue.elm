@@ -36,17 +36,19 @@ type alias Tron a =
     T.Tron (Value -> Maybe a)
 
 
-{-| `Set msg` is just the list of controls' definitions together with their labels.
+{-| `Set a` is just the list of controls' definitions together with their labels.
 -}
 type alias Set a =
     List ( Property.Label, Tron a )
 
 
+{-| The usual `map` function which allows you to change the contained value to a new one.
+-}
 map : (a -> b) -> Tron a -> Tron b
 map f = Property.map <| (<<) (Maybe.map f)
 
 
-{-| The usual `andThen` function which allows you to change the message type
+{-| The usual `andThen` function which allows you to update the control with new inner value.
 -}
 andThen : (a -> Tron b) -> Tron a -> Tron b
 andThen f prop =

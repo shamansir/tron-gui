@@ -129,8 +129,14 @@ For more information, see the `examples` folder in the source code.
 # Shape
 @docs shape, cells
 
-# Conversion
-@docs toSet, toChoice, addLabels
+# Live
+
+Usually in your `for` function you set the default value to the control, but if you change the control with `live`, then you'll be able to pass some dynamic value from your model to it.
+
+@docs live
+
+# Conversion between types of controls + helpers
+@docs toSet, toChoice, toKnob, toSwitch, addLabels, handleWith
 
 # Add Path
 @docs addPath, addLabeledPath
