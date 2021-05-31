@@ -21,6 +21,7 @@
 * Test keyboard navigation, adapt it to the Dock;
 * _Active_ condition for a button, some effect for when it is pressed;
 * Vertical pagination;
+* Support touch events;
 
 ## New controls
 
