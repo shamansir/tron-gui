@@ -22,7 +22,7 @@ import Tron.Style.Placement exposing (Placement(..))
 import Tron.Style.Coloring as Coloring
 import Tron.Style.Cell as Cell
 import Tron.Style.CellShape as CS
-import Tron.Style.Theme exposing (Theme)
+import Tron.Style.Theme as Theme exposing (Theme)
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
@@ -66,11 +66,29 @@ controls detachAbility theme path bounds ( label, prop ) =
                     localUrl
                     ( Cell.gap, Cell.gap )
             CannotBeDetached -> Svg.none
+        , let
+            labelLength = String.length label
+            rectWidth =  Basics.toFloat labelLength * 7.5
+            rectHeight = 12
+        in
+            Svg.rect
+                [ SA.x <| String.fromFloat <| (bounds.width / 2) - (rectWidth / 2)
+                , SA.y <| String.fromFloat <| Cell.gap - 2
+                , SA.rx "5"
+                , SA.ry "5"
+                , SA.width <| String.fromFloat rectWidth
+                , SA.height <| String.fromFloat rectHeight
+                , SA.fill <| Color.toCssString <| Coloring.titleBack theme state
+                -- , SA.strokeWidth "1"
+                -- , SA.stroke "white"
+                ]
+                [
+                ]
         , Svg.text_
             [ SA.class "plate-controls__title"
             , SA.x <| String.fromFloat <| bounds.width / 2
             , SA.y <| String.fromFloat <| Cell.gap + 1
-            , SA.fill <| Color.toCssString <| Coloring.text theme state
+            , SA.fill <| Color.toCssString <| Coloring.title theme state
             ]
             [ Svg.text label ]
         {- , collapseButton

@@ -52,8 +52,17 @@ back theme ( placement, focused, _ ) =
 
 {-|
 -}
-cellBorder : Theme -> ( Placement, Focused, Selected ) -> Maybe Nest.Form -> Color
-cellBorder theme ( placement, focused, selected ) maybeCollapsed =
+titleBack : Theme -> ( Placement, Focused, Selected ) -> Color
+titleBack theme state = back theme state
+    {- case theme of
+        Dark -> Color.black
+        Light -> Color.white -}
+
+
+{-|
+-}
+border : Theme -> ( Placement, Focused, Selected ) -> Maybe Nest.Form -> Color
+border theme ( placement, focused, selected ) maybeCollapsed =
     case ( theme, maybeCollapsed ) of
         ( Dark, Just Nest.Expanded ) -> Color.rgb 1.0 1.0 1.0
         ( Light, Just Nest.Expanded ) -> Color.rgb 0.0 0.0 0.0
@@ -79,6 +88,14 @@ text theme ( _, _, selected ) =
             case theme of
                 Dark -> Color.white
                 Light -> Color.black
+
+
+title : Theme -> ( Placement, Focused, Selected ) -> Color
+title theme ( _, _, selected ) =
+    Color.rgb255 144 144 144
+    -- case theme of
+    --     Dark -> Color.white
+    --     Light -> Color.black
 
 
 

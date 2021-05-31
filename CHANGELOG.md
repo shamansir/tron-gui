@@ -8,9 +8,9 @@
 * Significantly improve knobs/drag-driven-controls behaviour, fix knobs to use current value when user starts dragging;
 * Add the border to the expanded and/or focused items;
 * Add the text mask to wide texts on controls so that they would overlflow the borders just slightly;
-* Add `Random` UI generator to the API;
+* Add `Tron.Random` UI generator to the API just for fun;
 * `Tron.Expose.ProxyValue` -> `Tron.Control.Value`;
-* Major changes in the core API, no more functions or messages are stored in the `Model`, `Tron` just assigngs some value to the control now, instead of storing a handler, but there's also `Tron.Deferred` from now on, from which we could probably get rid in the future completely;
+* Major changes in the core API, no more functions or messages are stored in the `Model`, `Tron` just assigngs some value to the control now, instead of storing a handler, but there's also `Tron.OfValue` from now on, which converts the control's value to the user `msg`;
 * Get rid of `Tron.Builder.String`, it is not very useful and can easily be converted from `Tron ()` or `Tron Value`;
 
 ### 8.0.1

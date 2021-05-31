@@ -72,7 +72,7 @@ view theme state path bounds maybeSelectedInside cellShape ( label, prop ) =
                 <| String.fromInt (strokeWidthFor state <| isExpanded prop) ++ "px"
             , SA.stroke
                 <| Color.toCssString
-                <| Coloring.cellBorder theme state <| isExpanded prop
+                <| Coloring.border theme state <| isExpanded prop
             --, SA.strokeDasharray <| strokeDashFor state
             ]
             []

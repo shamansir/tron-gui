@@ -2,7 +2,6 @@
 
 * Breaking: Close `ProxyValue` constructors from public;
 * Breaking: `TronRef` -> `Tron.Deferred` // make `Tron.Deferred` main `Tron` (because it is mainly used in `user.for`) and `Tron a` — some `Tron.?` instead;
-* Breaking: Add `Debug` render mode for the public use & test (i.e. `Option`);
 * Breaking: Stick to just one `WithTron.Backed`, since anyway it is possible to convert one to another using `Tron` methods;
 * Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;
 * Breaking, Bug: Adjust default values in knobs/XY to the actual range, or else it is rendered improperly;
@@ -65,7 +64,6 @@
 
 ## Examples
 
-* Fix `Everything` example;
 * Add some indication of the WS server status to the examples;
 * Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
 * Include links to the examples in the docs;
