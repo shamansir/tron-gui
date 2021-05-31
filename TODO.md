@@ -18,11 +18,8 @@
 ## UX / Design
 
 * Show the value on XY controllers as well;
-* Fix knobs showing the values < min or > max;
-* Find a way to show long labels in two lines or scale the font or smth.;
 * Test keyboard navigation, adapt it to the Dock;
 * _Active_ condition for a button, some effect for when it is pressed;
-* Fix/improve knobs to support on-the-fly change of the value;
 * Vertical pagination;
 
 ## New controls

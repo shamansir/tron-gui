@@ -129,8 +129,12 @@ viewProperty
                 theme
                 state
                 bounds
-                value
-                <| (value - min) / (max - min)
+                (if value < min then min
+                   else if value > max then max
+                   else value)
+                (if value < min then 0
+                   else if value > max then 1
+                   else (value - min) / (max - min))
 
         Coordinate (Control ( xAxis, yAxis ) ( _, ( xValue, yValue ) ) _) ->
 
@@ -230,8 +234,8 @@ knob : Theme -> State -> BoundsF -> Float -> Float -> Svg msg
 knob theme state bounds value relValue =
     let
         toAngle v = (-120) + (v * 120 * 2)
-        minAngle = toAngle 0
-        maxAngle = toAngle 1
+        minAngle = Debug.log "minAngle" <| toAngle 0
+        maxAngle = Debug.log "maxAngle" <| toAngle 1
         -- FIXME: move aligning the value to control
         path stroke d =
             Svg.path
@@ -246,7 +250,12 @@ knob theme state bounds value relValue =
         radiusB = bounds.height * 0.27
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
         roundedValue = Basics.toFloat (floor (value * 100)) / 100
-
+        _ = Debug.log "value" <| value
+        _ = Debug.log "relValue" <| relValue
+        valueAngle =
+            if relValue > 1 then maxAngle else
+            if relValue < 0 then minAngle
+            else toAngle relValue
     in
         Svg.g
             [ resetTransform ]
@@ -255,24 +264,20 @@ knob theme state bounds value relValue =
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = minAngle
-                    , to = toAngle relValue
-                    --, to = if relValue <= 1 then toAngle relValue else maxAngle
+                    , to = valueAngle
                     }
             , path (Coloring.secondaryLines theme state |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
-                    { from = toAngle relValue --from = if relValue >= 0 then toAngle relValue else minAngle
+                    { from = valueAngle
                     , to = maxAngle
                     }
             , path (Coloring.lines theme state |> Color.toCssString)
                 <| describeMark
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
-                    ( toAngle relValue {- if toAngle relValue > 1 then maxAngle else
-                      if toAngle relValue < 0 then minAngle
-                      else toAngle relValue -}
-                    )
+                    valueAngle
             , Svg.text_
                 [ SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat cy

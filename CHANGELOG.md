@@ -5,7 +5,11 @@
 * New pagination style;
 * Add `Debug` option to render targets, which could help with observation of the problems with UI;
 * Fix the major bug with `Path.pop` returning reverse result and, so, working with second-level panels;
-* Significantly improve knobs/drag-driven-controls behaviour, fix knobs to use current value when user starts dragging;
+* Significantly improve knobs/drag-driven-controls behaviour
+    * Fix dragging in general;
+    * Fix knobs to use current value when user starts dragging;
+    * Fix/improve knobs to support on-the-fly change of the value;
+    * Fix knobs showing the values `< min` or `> max`;
 * Add the border to the expanded and/or focused items;
 * Add the text mask to wide texts on controls so that they would overlflow the borders just slightly;
 * Add `Tron.Random` UI generator to the API just for fun;
