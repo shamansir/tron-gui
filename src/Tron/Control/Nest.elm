@@ -12,10 +12,6 @@ type Form
     = Expanded
     | Collapsed
     | Detached
-
-
-type ChoiceMode -- FIXME: can't be `Expanded` and `Knob` / `SwitchThrough` at the same time
-    = Pages
     | SwitchThrough
     | Knob
 
@@ -41,7 +37,6 @@ type alias ChoiceControl item a =
         , selected : ItemId
         , prevSelected : Maybe ItemId -- FIXME: needed only for `Knob`
         , page : PageNum
-        , mode : ChoiceMode
         }
         a
 
@@ -131,6 +126,8 @@ toggle (Core.Control setup state handler) =
                 Expanded -> Collapsed
                 Collapsed -> Expanded
                 Detached -> Detached
+                SwitchThrough -> SwitchThrough -- toggle is performed another way in Core
+                Knob -> Knob -- toggle is performed another way in Core
         }
         handler
 
@@ -143,8 +140,8 @@ is : Form -> Core.Control setup { r | form : Form } a -> Bool
 is checkedForm (Core.Control _ { form } _) = checkedForm == form
 
 
-getChoiceMode : Core.Control setup { r | mode : ChoiceMode } a -> ChoiceMode
-getChoiceMode (Core.Control _ { mode } _) = mode
+setForm : Form -> Core.Control setup { r | form : Form } a -> Core.Control setup { r | form : Form } a
+setForm form (Core.Control setup value a) = Core.Control setup { value | form = form } a
 
 
 toNext : ChoiceControl item a -> ChoiceControl item a
@@ -159,14 +156,6 @@ toNext (Core.Control items value a) =
                 value.selected + 1
         , prevSelected = Nothing
         }
-        a
-
-
-setChoiceMode : ChoiceMode -> Core.Control setup { r | mode : ChoiceMode } a -> Core.Control setup { r | mode : ChoiceMode } a
-setChoiceMode newMode (Core.Control setup value a) =
-    Core.Control
-        setup
-        { value | mode = newMode }
         a
 
 
@@ -317,6 +306,5 @@ toChoice (Core.Control items { form, page, face } a) =
         , face = face
         , selected = 0
         , prevSelected = Nothing
-        , mode = Pages
         }
         a

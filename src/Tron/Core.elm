@@ -373,7 +373,7 @@ handleMouse mouseAction state tree =
                             tree
 
                 Just ( path, Choice focus_ shape_ ( Control items value a ) ) ->
-                    case value.mode of
+                    case value.form of
                         Nest.Knob ->
                             let
                                 valueToAlter = value.prevSelected |> Maybe.withDefault value.selected
@@ -463,7 +463,7 @@ handleMouse mouseAction state tree =
                                     refocusedTree
 
                         Just ( path, Choice focus_ shape_ ( Control state_ value a ) ) ->
-                            case value.mode of
+                            case value.form of
                                 Nest.Knob ->
                                     let
                                         nextControl =
@@ -496,8 +496,8 @@ handleMouse mouseAction state tree =
                             Number _ -> Exp.freshRun prop
                             Coordinate _ -> Exp.freshRun prop
                             Color _ -> Exp.freshRun prop
-                            Choice _ _ (Control _ { mode } _) ->
-                                case mode of
+                            Choice _ _ (Control _ { form } _) ->
+                                case form of
                                     Nest.Knob -> Exp.freshRun prop
                                     _ -> Cmd.none
                             _ -> Cmd.none

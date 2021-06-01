@@ -299,12 +299,12 @@ toChoice = B.toChoice
 
 {-| -}
 toSwitch : Tron -> Tron
-toSwitch = Property.setChoiceMode Nest.SwitchThrough
+toSwitch = Property.setForm Nest.SwitchThrough
 
 
 {-| -}
 toKnob : Tron -> Tron
-toKnob = Property.setChoiceMode Nest.Knob
+toKnob = Property.setForm Nest.Knob
 
 
 {-| -}

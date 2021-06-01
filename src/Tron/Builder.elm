@@ -799,7 +799,7 @@ toChoice f =
 -}
 toSwitch : Tron msg -> Tron msg
 toSwitch =
-    Property.setChoiceMode Nest.SwitchThrough
+    Property.setForm Nest.SwitchThrough
 
 
 {-| Convert choice control to the knob form:
@@ -808,7 +808,7 @@ toSwitch =
 -}
 toKnob : Tron msg -> Tron msg
 toKnob =
-    Property.setChoiceMode Nest.Knob
+    Property.setForm Nest.Knob
 
 
 {-| Convert any control to update its value live (i.e. on every change take them from you model)

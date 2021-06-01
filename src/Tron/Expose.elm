@@ -433,26 +433,14 @@ encodePropertyAt path property =
                 , ( "expanded"
                   , E.bool <|
                         case form of
-                            Expanded ->
-                                True
-
-                            Collapsed ->
-                                False
-
-                            Detached ->
-                                False
+                            Expanded -> True
+                            _ -> False
                   )
                 , ( "detached"
                   , E.bool <|
                         case form of
-                            Detached ->
-                                True
-
-                            Collapsed ->
-                                False
-
-                            Expanded ->
-                                False
+                            Detached -> True
+                            _ -> False
                   )
                 , ( "options", encodeNested path items )
                 ]
@@ -464,26 +452,14 @@ encodePropertyAt path property =
                 , ( "expanded"
                   , E.bool <|
                         case form of
-                            Expanded ->
-                                True
-
-                            Collapsed ->
-                                False
-
-                            Detached ->
-                                False
+                            Expanded -> True
+                            _ -> False
                   )
                 , ( "detached"
                   , E.bool <|
                         case form of
-                            Detached ->
-                                True
-
-                            Collapsed ->
-                                False
-
-                            Expanded ->
-                                False
+                            Detached -> True
+                            _ -> False
                   )
                 , ( "nest", encodeNested path items )
                 ]

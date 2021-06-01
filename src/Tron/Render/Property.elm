@@ -167,14 +167,14 @@ viewProperty
 
             color theme state value bounds
 
-        Choice _ _ ( Control items { form, face, mode, selected } _) ->
+        Choice _ _ ( Control items { form, face, selected } _) ->
 
-            case ( mode, face, maybeSelectedInside ) of
+            case ( form, face, maybeSelectedInside ) of
 
                 ( _, Just buttonFace, _ ) ->
                     button theme state buttonFace cellShape label bounds
 
-                ( Nest.Pages, Nothing, Just theSelectedProp ) ->
+                ( SwitchThrough, Nothing, Just theSelectedProp ) ->
                     viewProperty
                         theme
                         ( placement, focus, Selected )
@@ -184,17 +184,7 @@ viewProperty
                         cellShape
                         theSelectedProp
 
-                ( Nest.SwitchThrough, Nothing, Just theSelectedProp ) ->
-                    viewProperty
-                        theme
-                        ( placement, focus, Selected )
-                        path
-                        bounds
-                        Nothing
-                        cellShape
-                        theSelectedProp
-
-                ( Nest.Knob, Nothing, _ ) ->
+                ( Knob, Nothing, _ ) ->
                     knobSwitch
                         theme
                         state
@@ -202,10 +192,26 @@ viewProperty
                         (items |> Array.map Tuple.first)
                         selected
 
-                ( Nest.SwitchThrough, Nothing, Nothing ) ->
+                ( _, Nothing, Just theSelectedProp ) ->
+                    viewProperty
+                        theme
+                        ( placement, focus, Selected )
+                        path
+                        bounds
+                        Nothing
+                        cellShape
+                        theSelectedProp
+
+                ( SwitchThrough, Nothing, Nothing ) ->
                     arrow theme state form bounds
 
-                ( Nest.Pages, Nothing, Nothing ) ->
+                ( Expanded, Nothing, Nothing ) ->
+                    arrow theme state form bounds
+
+                ( Collapsed, Nothing, Nothing ) ->
+                    arrow theme state form bounds
+
+                ( Detached, Nothing, Nothing ) ->
                     arrow theme state form bounds
 
         Group _ _ ( Control _ { form, face } _) ->
@@ -625,6 +631,7 @@ arrow theme state form bounds =
                 Expanded -> rotate 180
                 Detached -> rotate 45
                 Collapsed -> rotate 0
+                _ -> rotate 0
         ]
 
 

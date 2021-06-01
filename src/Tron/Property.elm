@@ -414,11 +414,11 @@ execute item =
         Text textControl ->
             Just <| Text <| Text.ensureEditing textControl
         Choice focus shape control ->
-            case Nest.getChoiceMode control of
-                Nest.Pages ->
+            case Nest.getForm control of
+                {- Nest.Pages ->
                     Just
                         <| Choice focus shape
-                        <| Nest.toggle control
+                     <| Nest.toggle control -}
                 Nest.Knob ->
                     Just
                         <| Choice focus shape
@@ -427,6 +427,7 @@ execute item =
                     Just
                         <| Choice focus shape
                         <| Nest.toNext control
+                _ -> Nothing
         Group focus shape control ->
             Just
                 <| Group focus shape
@@ -630,12 +631,16 @@ ensureEditingAt path =
     updateAt path ensureEditing
 
 
-setChoiceMode : Nest.ChoiceMode -> Property a -> Property a
-setChoiceMode newMode prop =
+setForm : Nest.Form -> Property a -> Property a
+setForm newForm prop =
     case prop of
         Choice focus shape control ->
             Choice focus shape
-                <| Nest.setChoiceMode newMode
+                <| Nest.setForm newForm
+                <| control
+        Group focus shape control ->
+            Group focus shape
+                <| Nest.setForm newForm
                 <| control
         _ -> prop
 
@@ -901,6 +906,7 @@ move f propA propB =
                     Group focus shape <| Nest.setItems (zipItems controlA controlB) <| control
                 otherProp -> otherProp
         _ -> f propA propB
+
 
 
 setValueTo : Property a -> Property b -> Property b -- FIXME: return `Maybe`
