@@ -242,8 +242,7 @@ packItemsAtRoot dock size_ rp shape items =
 
                 maybePackedCloseTo =
                     {- SmartPack.pack
-                        D.Right
-                        -}
+                        D.Right -}
                     SmartPack.packCloseTo
                         (Dock.toDistribution dock parentIdx)
                         (case parentPos of

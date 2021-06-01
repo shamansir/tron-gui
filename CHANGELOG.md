@@ -1,3 +1,7 @@
+### 9.0.1
+
+* Fix layouting of the controls at the root position when they don't fit in viewport;
+
 ### 9.0.0
 
 * Add modes for `Choice` control: now it can be a knob (changed by drag or switched by click, use `Builder.toKnob`) or just a click-through switch  (use `Builder.toSwitch`);

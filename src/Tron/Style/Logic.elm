@@ -101,28 +101,47 @@ firstCellAt dock size itemsCount =
     rootPosition dock size itemsCount 0
 
 
+-- FIXME: pack using `SmartPack` insetad of `if`'s
 {-| -}
 rootPosition : Dock -> Size Cells -> Int -> Int -> ( Int, Int )
 rootPosition dock (Size (cw, ch)) itemsCount index =
     case Dock.anchors dock of
         ( Left, Top ) ->
-            ( index, 0 )
+            if itemsCount <= cw
+            then ( index, 0 )
+            else ( index |> remainderBy cw, index // cw )
         ( Left, Middle ) ->
-            ( 0, ch // 2 - itemsCount // 2 + index )
+            if itemsCount <= ch
+            then ( 0, ch // 2 - itemsCount // 2 + index )
+            else ( index // ch, index |> remainderBy ch )
         ( Left, Bottom ) ->
-            ( index, ch - 1 )
+            if itemsCount <= cw
+            then ( index, ch - 1 )
+            else ( index |> remainderBy cw, ch - 1 - (index // cw) )
         ( Center, Top ) ->
-            ( cw // 2 - itemsCount // 2 + index, 0 )
+            if itemsCount <= cw
+            then ( cw // 2 - itemsCount // 2 + index, 0 )
+            else ( index |> remainderBy cw, index // cw )
         ( Center, Middle ) ->
-            ( cw // 2 - itemsCount // 2 + index, ch // 2 )
+            if itemsCount <= cw
+            then ( cw // 2 - itemsCount // 2 + index, ch // 2 )
+            else ( index |> remainderBy cw, ch // 2 + index // cw )
         ( Center, Bottom ) ->
-            ( cw // 2 - itemsCount // 2 + index, ch - 1 )
+            if itemsCount <= cw
+            then ( cw // 2 - itemsCount // 2 + index, ch - 1 )
+            else ( index |> remainderBy cw, ch - 1 - (index // cw) )
         ( Right, Top ) ->
-            ( cw - itemsCount + index, 0 )
+            if itemsCount <= cw
+            then ( cw - itemsCount + index, 0 )
+            else ( index |> remainderBy cw, index // cw )
         ( Right, Middle ) ->
-            ( cw - 1, ch // 2 - itemsCount // 2 + index )
+            if itemsCount <= ch
+            then ( cw - 1, ch // 2 - itemsCount // 2 + index )
+            else ( cw - 1 - (index // ch), index |> remainderBy ch )
         ( Right, Bottom ) ->
-            ( cw - itemsCount + index, 0 )
+            if itemsCount <= cw
+            then ( cw - itemsCount + index, ch - 1 )
+            else ( index |> remainderBy cw, ch - 1 - (index // cw) )
 
 
 {-| -}
