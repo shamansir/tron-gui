@@ -30,6 +30,7 @@ import Tron.Style.Theme as Theme
 import Tron.Style.Dock exposing (Dock)
 import Tron.Style.Dock as Dock
 import Tron.Property as Property
+import Tron.Render.Layout as Mode
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -170,7 +171,7 @@ view { mode, state, example, lastGui, theme } =
             DatGui -> Html.div [] []
             TronGui ->
                 lastGui
-                    |> Core.view theme state
+                    |> Core.view Mode.Fancy theme state
                     |> Html.map ToTron
         , Example.view example
         ]
