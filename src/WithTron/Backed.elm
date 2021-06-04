@@ -280,6 +280,7 @@ byProxy renderTarget ( ack, transmit ) for =
         renderTarget
         ( ack >> Cmd.map (always ())
         , transmit >> Cmd.map (always ())
+        , Sub.none
         )
         { for = \valueAt _ -> for valueAt
         , init = \_ _ -> ( (), Cmd.none )
@@ -302,6 +303,7 @@ byProxyApp
     ->
         ( Exp.RawProperty -> Cmd msg
         , Exp.RawOutUpdate -> Cmd msg
+        , Sub Exp.RawInUpdate
         )
     ->  { for : ValueAt -> model -> Tron msg
         , init : flags -> ValueAt -> ( model, Cmd msg )
@@ -310,7 +312,7 @@ byProxyApp
         , update : msg -> ValueAt -> model -> ( model, Cmd msg )
         }
     -> AppBackedByProxy flags model msg
-byProxyApp renderTarget ( ack, transmit ) def =
+byProxyApp renderTarget ( ack, transmit, receive ) def =
     let
 
         valueAt dict =
@@ -389,9 +391,10 @@ byProxyApp renderTarget ( ack, transmit ) def =
     in
     element
         renderTarget
-        (SendJson
+        (SendReceiveJson
             { ack = ack >> Cmd.map (Tuple.pair Nothing)
             , transmit = transmit >> Cmd.map (Tuple.pair Nothing)
+            , receive = receive
             }
         )
         { for = for_

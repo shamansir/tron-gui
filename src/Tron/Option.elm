@@ -1,6 +1,6 @@
 module Tron.Option exposing
     ( RenderTarget(..), PortCommunication(..) --FIXME: don't expose values
-    , noCommunication, sendJson, sendStrings, detachable, withDatGui
+    , noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
     , hidden, toHtml, toDebug, toVr
     )
 
@@ -13,7 +13,7 @@ module Tron.Option exposing
 
 # Port communication
 
-@docs PortCommunication, noCommunication, sendJson, sendStrings, detachable, withDatGui
+@docs PortCommunication, noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
 -}
 
 
@@ -55,6 +55,11 @@ type PortCommunication msg
     | SendJson
         { ack : Exp.RawProperty -> Cmd msg
         , transmit : Exp.RawOutUpdate -> Cmd msg
+        }
+    | SendReceiveJson
+        { ack : Exp.RawProperty -> Cmd msg
+        , transmit : Exp.RawOutUpdate -> Cmd msg
+        , receive : Sub Exp.RawInUpdate
         }
     | SendStrings
         { transmit : ( List String, String ) -> Cmd msg
@@ -120,6 +125,21 @@ sendJson
         }
     -> PortCommunication msg
 sendJson = SendJson
+
+
+{-| Send JSON values and receive updates using given ports:
+
+- `ack` sends the encoded GUI structure at start of the application;
+- `transmit` sends the value and path to it in JSON, if it was changed;
+ -}
+sendReceiveJson
+    :
+        { ack : Exp.RawProperty -> Cmd msg
+        , transmit : Exp.RawOutUpdate -> Cmd msg
+        , receive : Sub Exp.RawInUpdate
+        }
+    -> PortCommunication msg
+sendReceiveJson = SendReceiveJson
 
 
 {-| Send values as strings using given ports:

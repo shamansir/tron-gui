@@ -16,12 +16,14 @@ import Html exposing (Html)
 
 performInitEffects : PortCommunication msg -> Tron () -> Cmd msg
 performInitEffects ports tree =
-        case ports of
-            SendJson { ack } ->
-                tree |> Exp.encode |> ack
-            DatGui { ack } ->
-                tree |> Exp.encode |> ack
-            _ -> Cmd.none
+    case ports of
+        SendJson { ack } ->
+            tree |> Exp.encode |> ack
+        SendReceiveJson { ack } ->
+            tree |> Exp.encode |> ack
+        DatGui { ack } ->
+            tree |> Exp.encode |> ack
+        _ -> Cmd.none
 
 
 tryTransmitting : PortCommunication msg -> Exp.RawOutUpdate -> Cmd msg
@@ -30,6 +32,8 @@ tryTransmitting ports rawUpdate =
         Detachable { transmit } ->
             transmit rawUpdate
         SendJson { transmit } ->
+            transmit rawUpdate
+        SendReceiveJson { transmit } ->
             transmit rawUpdate
         SendStrings { transmit } ->
             transmit
@@ -51,6 +55,8 @@ addInitOptions target gui =
 addSubscriptionsOptions : PortCommunication msg -> Sub Exp.RawInUpdate
 addSubscriptionsOptions ports =
     case ports of
+        SendReceiveJson { receive } ->
+            receive
         Detachable { receive } ->
             receive
         DatGui { receive } ->
