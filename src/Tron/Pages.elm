@@ -91,7 +91,7 @@ distributeBy fits =
 
 
 distribute : Int -> List a -> Pages (List a)
-distribute maxItems = distributeBy (\list _ -> List.length list <= maxItems)
+distribute maxItems = distributeBy (\list _ -> List.length list < maxItems)
 
 
 distributeOver : Count -> List a -> Pages (List a)

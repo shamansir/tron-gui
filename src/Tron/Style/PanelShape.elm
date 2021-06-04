@@ -77,10 +77,11 @@ distribute panelShape cellShape items =
             if (modBy n itemCount) == 0
                 then itemCount // n
                 else itemCount // n + 1
-        onAPage ( c, r )=
+        onAPage ( c, r ) =
             ceiling
-                (toFloat c * cellXMultiplier
-                * toFloat r * cellYMultiplier)
+                ( toFloat c * cellXMultiplier
+                * toFloat r * cellYMultiplier
+                )
         pagesFor =
             Pages.distribute << onAPage
 
