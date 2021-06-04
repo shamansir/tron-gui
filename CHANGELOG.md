@@ -1,6 +1,8 @@
 ### 9.0.2
 
+* Fix pagination issue;
 * Add `Docker` argument to run a specific example;
+* Add `SendReceiveJson` option with ability to send JSON;
 
 ### 9.0.1
 
