@@ -595,7 +595,7 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
 
 
 color : Theme -> State -> Color -> BoundsF -> Svg msg
-color _ _ value bounds =
+color theme state value bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
         radius = (min bounds.width bounds.height) / 6
@@ -604,6 +604,8 @@ color _ _ value bounds =
         , SA.cy <| String.fromFloat center.y
         , SA.r <| String.fromFloat radius
         , SA.fill <| Color.toCssString value
+        , SA.strokeWidth "1"
+        , SA.stroke <| Color.toCssString <| Coloring.lines theme state
         ]
         [
         ]

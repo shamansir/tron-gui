@@ -1,4 +1,4 @@
-### 9.0.2
+### 10.0.0
 
 * Fix pagination issue;
 * Add `Docker` argument to run a specific example;
