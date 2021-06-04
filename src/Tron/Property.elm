@@ -2,6 +2,7 @@ module Tron.Property exposing (..)
 
 
 import Array exposing (Array)
+import Dict exposing (Dict)
 
 import Task
 
@@ -222,8 +223,8 @@ fold1 f prop =
         Color control -> control |> Control.fold f |> Just
         Toggle control -> control |> Control.fold f |> Just
         Action control -> control |> Control.fold f |> Just
-        Choice _ _ control -> control |> Control.fold f |> Just
-        Group _ _ control -> control |> Control.fold f |> Just
+        Choice _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well
+        Group _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well
         Live innerProp -> fold1 f innerProp
 
 
@@ -376,6 +377,34 @@ addLabeledPath =
 addPaths : Property a -> Property ( ( Path, LabelPath ), a )
 addPaths =
     replaceWithPathsMap (Tuple.pair) (always identity)
+
+
+getPathsMap : Property a -> Dict (List Int) LabelPath
+getPathsMap =
+    let
+        dict = Dict.empty
+        storePaths prop dict_ =
+            case get prop |> Maybe.map Tuple.first of
+                Just ( path, labelPath ) ->
+                    dict_ |> Dict.insert (Path.toList path) labelPath
+                Nothing -> dict_
+    in
+        addPaths
+            >> fold (always storePaths) dict
+
+
+getInvPathsMap : Property a -> Dict LabelPath (List Int)
+getInvPathsMap =
+    let
+        dict = Dict.empty
+        storePaths prop dict_ =
+            case get prop |> Maybe.map Tuple.first of
+                Just ( path, labelPath ) ->
+                    dict_ |> Dict.insert labelPath (Path.toList path)
+                Nothing -> dict_
+    in
+        addPaths
+            >> fold (always storePaths) dict
 
 
 updateAt : Path -> (Property a -> Property a) -> Property a -> Property a

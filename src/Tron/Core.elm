@@ -15,6 +15,7 @@ import Html.Events as HE
 import Json.Encode as E
 import Json.Decode as D
 import Array
+import Dict
 
 import Size exposing (..)
 
@@ -200,9 +201,35 @@ applyRaw
      : Exp.RawInUpdate
     -> Tron (Exp.Value -> Maybe msg)
     -> Cmd msg
-applyRaw rawUpdate =
-    Exp.apply (Exp.fromPort rawUpdate)
-        >> Exp.freshRun
+applyRaw rawUpdate tree =
+    tree
+        |> Exp.apply (Exp.fromPort <| fillPaths rawUpdate tree)
+        |> Exp.freshRun
+
+
+fillPaths : Exp.RawInUpdate -> Tron a -> Exp.RawInUpdate
+fillPaths update_ tree =
+    case ( update_.labelPath, update_.path ) of
+        ( [], [] ) -> update_
+        ( labelPath, [] ) ->
+            let paths = getInvPathsMap tree
+            in
+                { update_
+                | path =
+                    paths
+                        |> Dict.get labelPath
+                        |> Maybe.withDefault update_.path
+                }
+        ( [], path ) ->
+            let paths = getPathsMap tree
+            in
+                { update_
+                | labelPath =
+                    paths
+                        |> Dict.get path
+                        |> Maybe.withDefault update_.labelPath
+                }
+        ( _, _ ) -> update_
 
 
 trackResize : Sub Msg

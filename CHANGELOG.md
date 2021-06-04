@@ -1,3 +1,7 @@
+### 9.0.2
+
+* Add `Docker` argument to run a specific example;
+
 ### 9.0.1
 
 * Fix layouting of the controls at the root position when they don't fit in viewport;

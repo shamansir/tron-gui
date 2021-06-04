@@ -272,15 +272,16 @@ byProxy
     ->
         ( Exp.RawProperty -> Cmd msg
         , Exp.RawOutUpdate -> Cmd msg
+        , Sub Exp.RawInUpdate
         )
     -> (ValueAt -> Tron ())
     -> BackedByProxy
-byProxy renderTarget ( ack, transmit ) for =
+byProxy renderTarget ( ack, transmit, receive ) for =
     byProxyApp
         renderTarget
         ( ack >> Cmd.map (always ())
         , transmit >> Cmd.map (always ())
-        , Sub.none
+        , receive
         )
         { for = \valueAt _ -> for valueAt
         , init = \_ _ -> ( (), Cmd.none )

@@ -686,6 +686,7 @@ swap : RawOutUpdate -> RawInUpdate
 swap { update } =
     { path = update.path
     , value = update.value
+    , labelPath = update.labelPath
     , type_ = update.type_
     }
 
@@ -693,6 +694,7 @@ swap { update } =
 loadValue : RawValue -> RawInUpdate
 loadValue update =
     { path = update.path
+    , labelPath = update.labelPath
     , value = update.value
     , type_ = update.type_
     }

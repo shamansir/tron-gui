@@ -22,6 +22,7 @@ or just get rid of messages at all:
 
 
 import Json.Encode as E
+import Dict exposing (Dict)
 
 import Tron exposing (Tron)
 import Tron.OfValue as Def

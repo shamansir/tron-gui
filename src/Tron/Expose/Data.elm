@@ -66,6 +66,7 @@ type alias RawOutUpdate =
 from the incoming ports by Tron. -}
 type alias RawInUpdate =
     { path : RawPath
+    , labelPath : List String
     , value : E.Value
     , type_ : String
     }
