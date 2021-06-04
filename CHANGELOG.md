@@ -1,8 +1,9 @@
 ### 10.0.0
 
 * Fix pagination issue;
-* Add `Docker` argument to run a specific example;
+* The border around color controls;
 * Add `SendReceiveJson` option with ability to send JSON;
+* Add `Docker` argument to run a specific example;
 
 ### 9.0.1
 
