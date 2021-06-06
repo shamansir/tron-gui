@@ -2,7 +2,7 @@ module Tron.Expose.Convert
     exposing
     ( toUnit, toExposed, toProxied, toStrExposed
     , reflect, lift, evaluate
-    , toDeferredRaw
+    , toDeferredRaw, encodeAck
     )
 
 
@@ -17,18 +17,19 @@ or just get rid of messages at all:
 
 # Internal
 
-@docs toDeferredRaw
+@docs toDeferredRaw, encodeAck
 -}
 
 
 import Json.Encode as E
 import Dict exposing (Dict)
+import HashId exposing (HashId)
 
 import Tron exposing (Tron)
 import Tron.OfValue as Def
 import Tron.Control as Control
 import Tron.Control.Nest as Nest
-import Tron.Expose.Data exposing (..)
+import Tron.Expose.Data as Exp
 import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
 import Tron.Control.Value as Value exposing (Value(..))
@@ -118,7 +119,7 @@ the required information about the value, such as:
 
 Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
-toExposed : Tron a -> Tron ( RawValue, a )
+toExposed : Tron a -> Tron ( Exp.Value, a )
 toExposed =
     toProxied
         >> Property.addPaths
@@ -131,7 +132,7 @@ toExposed =
             )
 
 
-proxyToRaw : ( Path, LabelPath ) -> Value -> RawValue
+proxyToRaw : ( Path, LabelPath ) -> Value -> Exp.Value
 proxyToRaw (path, labelPath) proxyVal =
     { path = Path.toList path
     , labelPath = labelPath
@@ -231,10 +232,23 @@ evaluate =
 
 
 {-| -}
-toDeferredRaw : Property a -> Property (Value -> Maybe RawValue)
+toDeferredRaw : Property a -> Property (Value -> Maybe Exp.Value)
 toDeferredRaw =
     Property.addPaths
         >> Property.map
             (\(path, _) ->
                 Just << proxyToRaw path
             )
+
+
+-- {-| -}
+-- encodeClientId : HashId -> E.Value
+-- encodeClientId =
+--     HashId.toString >> E.string
+
+
+{-| -}
+encodeAck : HashId -> Exp.Ack
+encodeAck =
+    -- encodeClientId
+    Exp.Ack << (HashId.toString >> E.string)

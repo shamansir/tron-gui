@@ -5,7 +5,6 @@ module Tron.Expose exposing (..)
 import Array as Array exposing (Array)
 import Color exposing (Color)
 import Dict exposing (Dict)
-import HashId exposing (HashId)
 import Json.Decode as D
 import Json.Encode as E
 import Color.Convert as Color
@@ -19,8 +18,8 @@ import Tron.Control.XY as XY
 import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
 import Tron.Control.Value as Value exposing (Value(..))
-import Tron.Expose.Data exposing (..)
-import Tron.Expose.Convert exposing (..)
+import Tron.Expose.Data as Exp
+import Tron.Expose.Convert as Exp
 import Tron.Util as Util
 import Task
 
@@ -66,7 +65,7 @@ runProperty value property =
             Cmd.none
 
 
-run : Update -> Property msg -> Cmd msg
+run : Exp.Update -> Property msg -> Cmd msg
 run { path, value } prop =
     case path of
         [] ->
@@ -121,7 +120,7 @@ applyProperty value prop =
             prop
 
 
-apply : Update -> Property a -> Property a
+apply : Exp.Update -> Property a -> Property a
 apply { path, value } prop =
     case path of
         [] ->
@@ -145,7 +144,7 @@ apply { path, value } prop =
                     prop
 
 
-loadValues : Dict (List Int) Value -> Property a -> Property a
+loadValues : Dict Exp.Path Value -> Property a -> Property a
 loadValues dict prop =
     dict
         |> Dict.toList
@@ -166,7 +165,7 @@ loadStringValues dict prop =
         prop
 
 
-loadJsonValues : Dict (List Int) RawValue -> Property a -> Property a
+loadJsonValues : Dict Exp.Path Exp.Value -> Property a -> Property a
 loadJsonValues dict prop =
     dict
         |> Dict.toList
@@ -333,7 +332,7 @@ applyStringValue str prop =
                 |> Maybe.map Live
 
 
-encodeRawPath : RawPath -> E.Value
+encodeRawPath : Exp.Path -> E.Value
 encodeRawPath =
     E.list E.int
 
@@ -343,7 +342,7 @@ encodePath =
     Path.toList >> encodeRawPath
 
 
-encodePropertyAt : RawPath -> Property a -> RawProperty
+encodePropertyAt : Exp.Path -> Property a -> Exp.Property
 encodePropertyAt path property =
     case property of
         Nil ->
@@ -492,7 +491,7 @@ encodePropertyAt path property =
             encodePropertyAt path innerProp
 
 
-encodeNested : RawPath -> Array ( Label, Property a ) -> RawProperty
+encodeNested : Exp.Path -> Array ( Label, Property a ) -> Exp.Property
 encodeNested path items =
     E.list
         (\( id, ( label, property ) ) ->
@@ -511,23 +510,9 @@ encodeNested path items =
             items
 
 
-encode : Property msg -> RawProperty
+encode : Property msg -> Exp.Property
 encode =
     encodePropertyAt []
-
-
-encodeClientId : HashId -> E.Value
-encodeClientId =
-    HashId.toString >> E.string
-
-
-encodeAck : HashId -> Ack
-encodeAck =
-    Ack << encodeClientId
-
-
-noClientId : Ack
-noClientId = Ack <| E.null
 
 
 {-
@@ -680,27 +665,25 @@ fromPort portUpdate =
 
 
 
--- TODO: move functions below to `Expose.Convert` module?
+-- FIXME: move functions below to `Expose.Convert` module? (it is exposed to Public API, so may be not)
 
-swap : RawOutUpdate -> RawInUpdate
+swap : Exp.Out -> Exp.In
 swap { update } =
     { path = update.path
     , value = update.value
-    , labelPath = update.labelPath
     , type_ = update.type_
     }
 
 
-loadValue : RawValue -> RawInUpdate
+loadValue : Exp.Value -> Exp.In
 loadValue update =
     { path = update.path
-    , labelPath = update.labelPath
     , value = update.value
     , type_ = update.type_
     }
 
 
-fromPort : RawInUpdate -> Update
+fromPort : Exp.In -> Exp.Update
 fromPort portUpdate =
     { path = portUpdate.path
     , value =
@@ -709,7 +692,7 @@ fromPort portUpdate =
     }
 
 
-toProxy : RawOutUpdate -> Value
+toProxy : Exp.Out -> Value
 toProxy outUpdate =
     fromPort
         (swap outUpdate)
@@ -795,7 +778,7 @@ decodeToggle =
 
 freshRun : Property (Value -> Maybe msg) -> Cmd msg
 freshRun =
-    evaluate
+    Exp.evaluate
     -- >> Property.run
     >> runMaybe
 
@@ -807,10 +790,10 @@ runMaybe =
     >> Util.runMaybe
 
 
-runExposed : Property RawOutUpdate -> Cmd RawOutUpdate
+{-runExposed : Property Exp.Update -> Cmd Exp.Out
 runExposed prop =
     case Property.get prop of
         Just rawUpdate ->
             Task.succeed rawUpdate
                 |> Task.perform identity
-        Nothing -> Cmd.none
+        Nothing -> Cmd.none -}

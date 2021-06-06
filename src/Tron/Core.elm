@@ -2,7 +2,7 @@ module Tron.Core exposing
     ( State, Msg
     , view, update, init, subscriptions, run
     , dock, reshape
-    , applyRaw
+    , applyRaw, tryDeduce
     )
 
 
@@ -52,7 +52,7 @@ import Tron.Style.Cell as Cell exposing (..)
 import Tron.Expose as Exp
 import Tron.Expose.Data as Exp
 import Tron.Expose.Convert as Exp
-import Tron.Control.Value as Exp exposing (Value)
+import Tron.Control.Value as Control exposing (Value)
 import Tron.Control.Value as Value
 
 
@@ -113,8 +113,8 @@ run =
 update
     :  Msg
     -> State
-    -> Tron ( Exp.Value -> Maybe msg )
-    -> ( State, Tron (), Cmd (Exp.RawOutUpdate, msg ) )
+    -> Tron ( Control.Value -> Maybe msg )
+    -> ( State, Tron (), Cmd (Exp.Out, msg ) )
 update msg state tree  =
     case msg of
         NoOp ->
@@ -198,38 +198,40 @@ update msg state tree  =
 
 
 applyRaw
-     : Exp.RawInUpdate
-    -> Tron (Exp.Value -> Maybe msg)
+     : Exp.In
+    -> Tron (Control.Value -> Maybe msg)
     -> Cmd msg
-applyRaw rawUpdate tree =
-    tree
-        |> Exp.apply (Exp.fromPort <| fillPaths rawUpdate tree)
-        |> Exp.freshRun
+applyRaw rawUpdate =
+    Exp.apply (Exp.fromPort rawUpdate)
+        >> Exp.freshRun
 
 
-fillPaths : Exp.RawInUpdate -> Tron a -> Exp.RawInUpdate
-fillPaths update_ tree =
-    case ( update_.labelPath, update_.path ) of
-        ( [], [] ) -> update_
-        ( labelPath, [] ) ->
-            let paths = getInvPathsMap tree
-            in
-                { update_
-                | path =
-                    paths
-                        |> Dict.get labelPath
-                        |> Maybe.withDefault update_.path
+applyDeduced
+    :  Exp.DeduceIn
+    -> Tron (Control.Value -> Maybe msg)
+    -> Cmd msg
+applyDeduced toDeduce tree =
+    case tree |> tryDeduce toDeduce of
+        Just rawUpdate -> tree |> applyRaw rawUpdate
+        Nothing -> Cmd.none
+
+
+tryDeduce : Exp.DeduceIn -> Tron a -> Maybe Exp.In
+tryDeduce { labelPath, value } tree =
+    tree |> findPath labelPath
+        |> Maybe.andThen
+            (\path ->
+                tree
+                    |> Property.find path
+                    |> Maybe.map (Tuple.pair path)
+            )
+        |> Maybe.map
+            (\(path, prop) ->
+                { path = Path.toList path
+                , value = value
+                , type_ = prop |> Value.get |> Value.getTypeString
                 }
-        ( [], path ) ->
-            let paths = getPathsMap tree
-            in
-                { update_
-                | labelPath =
-                    paths
-                        |> Dict.get path
-                        |> Maybe.withDefault update_.labelPath
-                }
-        ( _, _ ) -> update_
+            )
 
 
 trackResize : Sub Msg
@@ -260,7 +262,7 @@ trackMouse =
 
 
 -- FIXME: return actual updates with values, then somehow extract messages from `Tron msg` for these values?
-handleMouse : MouseAction -> State -> Tron ( Exp.Value -> Maybe msg ) -> ( State, Tron (), Cmd msg )
+handleMouse : MouseAction -> State -> Tron ( Control.Value -> Maybe msg ) -> ( State, Tron (), Cmd msg )
 handleMouse mouseAction state tree =
     let
         rootPath = getRootPath state
@@ -540,7 +542,7 @@ handleKeyDown
     :  Int
     -> Path
     -> State
-    -> Tron (Exp.Value -> Maybe msg)
+    -> Tron (Control.Value -> Maybe msg)
     -> ( State, Tron (), Cmd msg )
 handleKeyDown keyCode path state tree =
     let
@@ -598,7 +600,7 @@ handleKeyDown keyCode path state tree =
         _ -> ( state, tree |> Tron.toUnit, Cmd.none )
 
 
-toExposed : State -> Tron a -> Tron ( Exp.RawOutUpdate, a )
+toExposed : State -> Tron a -> Tron ( Exp.Out, a )
 toExposed state =
     Exp.toExposed
         >> Property.map
@@ -609,7 +611,7 @@ toExposed state =
             ) )
 
 
-toProxied_ : Def.Tron msg -> Def.Tron ( Exp.Value, msg )
+toProxied_ : Def.Tron msg -> Def.Tron ( Control.Value, msg )
 toProxied_ =
     Property.map
         (\f ->
@@ -618,7 +620,7 @@ toProxied_ =
         )
 
 
-toExposed_ : State -> Def.Tron a -> Def.Tron ( Exp.RawOutUpdate, a )
+toExposed_ : State -> Def.Tron a -> Def.Tron ( Exp.Out, a )
 toExposed_ state =
     toProxied_
         >> Property.addPaths

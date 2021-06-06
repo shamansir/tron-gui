@@ -223,8 +223,8 @@ fold1 f prop =
         Color control -> control |> Control.fold f |> Just
         Toggle control -> control |> Control.fold f |> Just
         Action control -> control |> Control.fold f |> Just
-        Choice _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well
-        Group _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well
+        Choice _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well?
+        Group _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well?
         Live innerProp -> fold1 f innerProp
 
 
@@ -405,6 +405,19 @@ getInvPathsMap =
     in
         addPaths
             >> fold (always storePaths) dict
+
+
+findPath : List String -> Property a -> Maybe Path
+findPath labelPath =
+    getInvPathsMap -- FIXME: use `replace/fold`?
+        >> Dict.get labelPath
+        >> Maybe.map Path.fromList
+
+
+findByLabelPath : List String -> Property a -> Maybe (Property a)
+findByLabelPath labelPath tree =
+    findPath labelPath tree
+        |> Maybe.andThen (\path -> find path tree)
 
 
 updateAt : Path -> (Property a -> Property a) -> Property a -> Property a

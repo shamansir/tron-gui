@@ -26,7 +26,7 @@ performInitEffects ports tree =
         _ -> Cmd.none
 
 
-tryTransmitting : PortCommunication msg -> Exp.RawOutUpdate -> Cmd msg
+tryTransmitting : PortCommunication msg -> Exp.Out -> Cmd msg
 tryTransmitting ports rawUpdate =
     case ports of
         Detachable { transmit } ->
@@ -52,11 +52,14 @@ addInitOptions target gui =
         Debug dock _ -> gui |> Core.dock dock
 
 
-addSubscriptionsOptions : PortCommunication msg -> Sub Exp.RawInUpdate
-addSubscriptionsOptions ports =
+addSubscriptionsOptions : PortCommunication msg -> Tron () -> Sub Exp.In
+addSubscriptionsOptions ports tree =
     case ports of
-        SendReceiveJson { receive } ->
-            receive
+        SendReceiveJson { apply } ->
+            apply
+                |> Sub.map (\upd -> Core.tryDeduce upd tree)
+                |> Sub.map (Maybe.withDefault Exp.noInUpdate)
+
         Detachable { receive } ->
             receive
         DatGui { receive } ->

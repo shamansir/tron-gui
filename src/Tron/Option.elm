@@ -53,25 +53,25 @@ type RenderTarget
 type PortCommunication msg
     = NoCommunication
     | SendJson
-        { ack : Exp.RawProperty -> Cmd msg
-        , transmit : Exp.RawOutUpdate -> Cmd msg
+        { ack : Exp.Property -> Cmd msg
+        , transmit : Exp.Out -> Cmd msg
         }
     | SendReceiveJson
-        { ack : Exp.RawProperty -> Cmd msg
-        , transmit : Exp.RawOutUpdate -> Cmd msg
-        , receive : Sub Exp.RawInUpdate
+        { ack : Exp.Property -> Cmd msg
+        , transmit : Exp.Out -> Cmd msg
+        , apply : Sub Exp.DeduceIn
         }
     | SendStrings
         { transmit : ( List String, String ) -> Cmd msg
         }
     | Detachable
         { ack : Exp.Ack -> Cmd msg
-        , transmit : Exp.RawOutUpdate -> Cmd msg
-        , receive : Sub Exp.RawInUpdate
+        , transmit : Exp.Out -> Cmd msg
+        , receive : Sub Exp.In
         }
     | DatGui
-        { ack : Exp.RawProperty -> Cmd msg
-        , receive : Sub Exp.RawInUpdate
+        { ack : Exp.Property -> Cmd msg
+        , receive : Sub Exp.In
         }
 
 
@@ -120,8 +120,8 @@ noCommunication = NoCommunication
  -}
 sendJson
     :
-        { ack : Exp.RawProperty -> Cmd msg
-        , transmit : Exp.RawOutUpdate -> Cmd msg
+        { ack : Exp.Property -> Cmd msg
+        , transmit : Exp.Out -> Cmd msg
         }
     -> PortCommunication msg
 sendJson = SendJson
@@ -131,12 +131,14 @@ sendJson = SendJson
 
 - `ack` sends the encoded GUI structure at start of the application;
 - `transmit` sends the value and path to it in JSON, if it was changed;
+- `apply` gets the list of label paths and values and tries to apply them to
+        the current state of the tree, if they match it;
  -}
 sendReceiveJson
     :
-        { ack : Exp.RawProperty -> Cmd msg
-        , transmit : Exp.RawOutUpdate -> Cmd msg
-        , receive : Sub Exp.RawInUpdate
+        { ack : Exp.Property -> Cmd msg
+        , transmit : Exp.Out -> Cmd msg
+        , apply : Sub Exp.DeduceIn
         }
     -> PortCommunication msg
 sendReceiveJson = SendReceiveJson
@@ -206,8 +208,8 @@ See `example/Detachable` for details.
 detachable
     :
         { ack : Exp.Ack -> Cmd msg
-        , transmit : Exp.RawOutUpdate -> Cmd msg
-        , receive : Sub Exp.RawInUpdate
+        , transmit : Exp.Out -> Cmd msg
+        , receive : Sub Exp.In
         }
     -> PortCommunication msg
 detachable = Detachable
@@ -224,9 +226,9 @@ See `example/DatGui` for details.
  -}
 withDatGui
     :
-        { ack : Exp.RawProperty -> Cmd msg
+        { ack : Exp.Property -> Cmd msg
         --, receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
-        , receive : Sub Exp.RawInUpdate
+        , receive : Sub Exp.In
         }
     -> PortCommunication msg
 withDatGui = DatGui
@@ -258,5 +260,3 @@ See `example/AFrame` for details.
 -}
 toVr : Theme -> RenderTarget
 toVr = Aframe
-
-

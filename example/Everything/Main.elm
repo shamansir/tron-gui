@@ -71,8 +71,8 @@ type Msg
     | SetClientId Detach.ClientId
     | ChangeMode Mode
     | ChangeDock Dock
-    | SendUpdate Exp.RawOutUpdate
-    | ReceiveRaw Exp.RawInUpdate
+    | SendUpdate Exp.Out
+    | ReceiveRaw Exp.In
     | ToTron Core.Msg
     | ToExample Example.Msg
     | Randomize (Tron ())
@@ -361,14 +361,14 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions { mode, state } =
+subscriptions { mode, state, lastGui } =
     case mode of
         DatGui ->
             updateFromDatGui ReceiveRaw
         TronGui ->
             Sub.batch
                 [ Core.subscriptions state |> Sub.map ToTron
-                , WithTron.addSubscriptionsOptions portCommunication |> Sub.map ReceiveRaw
+                , WithTron.addSubscriptionsOptions portCommunication lastGui |> Sub.map ReceiveRaw
                 ]
 
 
@@ -443,14 +443,14 @@ exampleGui url model =
 -}
 
 
-port startDatGui : Exp.RawProperty -> Cmd msg
+port startDatGui : Exp.Property -> Cmd msg
 
-port updateFromDatGui : (Exp.RawInUpdate -> msg) -> Sub msg
+port updateFromDatGui : (Exp.In -> msg) -> Sub msg
 
 port destroyDatGui : () -> Cmd msg
 
 port ackToWs : Exp.Ack -> Cmd msg
 
-port receieveUpdateFromWs : (Exp.RawInUpdate -> msg) -> Sub msg
+port receieveUpdateFromWs : (Exp.In -> msg) -> Sub msg
 
-port sendUpdateToWs : Exp.RawOutUpdate -> Cmd msg
+port sendUpdateToWs : Exp.Out -> Cmd msg

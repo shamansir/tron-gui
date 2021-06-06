@@ -127,8 +127,8 @@ type WithTronMsg msg
     = ToUser msg
     | ToTron Core.Msg
     --| Ack Exp.Ack
-    | SendUpdate Exp.RawOutUpdate
-    | ReceiveRaw Exp.RawInUpdate
+    | SendUpdate Exp.Out
+    | ReceiveRaw Exp.In
     | SetClientId Detach.ClientId
     | UrlChange (Maybe msg) Url
 
@@ -188,11 +188,11 @@ subscriptions
     -> PortCommunication msg
     -> ( model, State, Tron () )
     -> Sub (WithTronMsg msg)
-subscriptions userSubscriptions ports ( model, state, _ ) =
+subscriptions userSubscriptions ports ( model, state, tree ) =
     Sub.batch
         [ userSubscriptions model |> Sub.map ToUser
         , Core.subscriptions state |> Sub.map ToTron
-        , addSubscriptionsOptions ports |> Sub.map ReceiveRaw
+        , addSubscriptionsOptions ports tree |> Sub.map ReceiveRaw
         ]
 
 
@@ -592,5 +592,3 @@ application renderTarget ports def =
                     External _ ->
                         ToUser <| def.onUrlRequest req
         }
-
-
