@@ -85,6 +85,10 @@ There is the `start-example.sh` script that helps to run every one of them, just
 
 Soon, there will be the ability to run specific example in Docker using environment variable.
 
+# Run tests
+
+* `elm-test`
+
 ## `WithTron` Examples
 
 ### One Knob
