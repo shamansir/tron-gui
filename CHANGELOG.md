@@ -1,6 +1,11 @@
+### 11.0.0
+
+* Add `DeduceIn` as the message with label-path and JSON value to be deduced to current state of the tree, when sent;
+* Rename `Exp.RawInUpdate` -> `Exp.In`, `Exp.RawOutUpdate` -> `Exp.Out`, `Exp.RawProperty` -> `Exp.Property`;
+
 ### 10.0.0
 
-* Fix pagination issue;
+* Fix pagination issue with distributing items;
 * The border around color controls;
 * Add `SendReceiveJson` option with ability to send JSON;
 * Add `Docker` argument to run a specific example;

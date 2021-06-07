@@ -30,6 +30,28 @@ main =
         }
 
 
+{- import Example.Default.Gui as ExampleGui
+import Example.Default.Main as Example
+import Example.Default.Model as Example
+import Example.Default.Msg as Example
+
+
+main : AppBackedByProxy () Example.Model Example.Msg
+main =
+    WithTron.Backed.byProxyApp
+        (Option.toHtml Dock.bottomCenter Theme.dark)
+        ( ack, transmit, apply identity )
+        { for =
+            \valueAt model ->
+                ExampleGui.for model
+                    |> Tron.map ( always Example.NoOp )
+        , init = always <| always Example.init
+        , update = \msg _ model -> Example.update msg model
+        , view = always Example.view
+        , subscriptions = always Example.subscriptions
+        } -}
+
+
 port ack : Exp.Property -> Cmd msg
 
 port transmit : Exp.Out -> Cmd msg

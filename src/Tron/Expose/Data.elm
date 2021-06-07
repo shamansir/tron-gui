@@ -1,6 +1,6 @@
 module Tron.Expose.Data exposing
     ( Property, Update
-    , ClientId, Value, Path
+    , ClientId, Value
     , Ack, In, Out, DeduceIn
     , noValue, noClientId, noInUpdate
     )
@@ -13,15 +13,17 @@ module Tron.Expose.Data exposing
 
 # Helpers
 
-@docs noValue, Property, Update, Path, ClientId, Value
+@docs Property, Update, ClientId, Value
+
+# No-value
+
+@docs noValue, noClientId, noInUpdate
 -}
 
 import Json.Encode as E
 
 import Tron.Control.Value as Control exposing (Value(..))
 
-
-type alias Path = List Int
 
 
 {-| The GUI Tree converted to a JSON value. -}

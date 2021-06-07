@@ -144,7 +144,7 @@ apply { path, value } prop =
                     prop
 
 
-loadValues : Dict Exp.Path Value -> Property a -> Property a
+loadValues : Dict (List Int) Value -> Property a -> Property a
 loadValues dict prop =
     dict
         |> Dict.toList
@@ -165,7 +165,7 @@ loadStringValues dict prop =
         prop
 
 
-loadJsonValues : Dict Exp.Path Exp.Value -> Property a -> Property a
+loadJsonValues : Dict (List Int) Exp.Value -> Property a -> Property a
 loadJsonValues dict prop =
     dict
         |> Dict.toList
@@ -332,7 +332,7 @@ applyStringValue str prop =
                 |> Maybe.map Live
 
 
-encodeRawPath : Exp.Path -> E.Value
+encodeRawPath : List Int -> E.Value
 encodeRawPath =
     E.list E.int
 
@@ -342,7 +342,7 @@ encodePath =
     Path.toList >> encodeRawPath
 
 
-encodePropertyAt : Exp.Path -> Property a -> Exp.Property
+encodePropertyAt : List Int -> Property a -> Exp.Property
 encodePropertyAt path property =
     case property of
         Nil ->
@@ -491,7 +491,7 @@ encodePropertyAt path property =
             encodePropertyAt path innerProp
 
 
-encodeNested : Exp.Path -> Array ( Label, Property a ) -> Exp.Property
+encodeNested : List Int -> Array ( Label, Property a ) -> Exp.Property
 encodeNested path items =
     E.list
         (\( id, ( label, property ) ) ->
