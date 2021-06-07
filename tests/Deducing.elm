@@ -63,6 +63,18 @@ suite =
                                 , type_ = "choice"
                                 })
 
+        , test "deduces path to the choice control @ nest"
+            <| \_ ->
+                Core.tryDeduce
+                    { path = [ "nest", "choice-in" ], value = E.int 2 }
+                    tree
+                    |> Expect.equal
+                            (Just
+                                { path = [ 1, 2 ]
+                                , value = E.int 2
+                                , type_ = "choice"
+                                })
+
         ]
 
 
@@ -83,6 +95,16 @@ tree =
                 ,
                     ( "bar"
                     , B.button
+                    )
+
+                ,
+                    ( "choice-in"
+                    , B.choice
+                        ([ "A", "B", "C" ]
+                            |> B.buttons
+                                |> B.addLabels identity
+                        )
+                        "C"
                     )
 
                 ]
