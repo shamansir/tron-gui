@@ -1,7 +1,7 @@
 ## Public API
 
 * Breaking: Close `ProxyValue` constructors from public;
-* Breaking: `TronRef` -> `Tron.Deferred` // make `Tron.Deferred` main `Tron` (because it is mainly used in `user.for`) and `Tron a` — some `Tron.?` instead;
+* Add `ValueAt.toggleAt`, `choiceAt`, ... and similar functions so that it would be easier to ask for values using `ValueAt`;
 * Breaking: Stick to just one `WithTron.Backed`, since anyway it is possible to convert one to another using `Tron` methods;
 * Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;
 * Breaking, Bug: Adjust default values in knobs/XY to the actual range, or else it is rendered improperly;
@@ -17,6 +17,7 @@
 
 ## UX / Design
 
+* Move pagination 5px lower;
 * Show the value on XY controllers as well;
 * Test keyboard navigation, adapt it to the Dock;
 * _Active_ condition for a button, some effect for when it is pressed;
@@ -30,6 +31,7 @@
 
 ## Inner API / Logic
 
+* Tests;
 * Move keyboard & mouse drag-start/dragging/drag-end logic to controls themselves;
 * Move all possible control-related logic to the controls themselves;
     * Such logic can be found in code by adding some fake `()`-control and checking the places where we have to cover it / compiler fails;
