@@ -54,6 +54,6 @@ main =
         }
 
 
-port sendUpdate : Exp.RawOutUpdate -> Cmd msg
+port sendUpdate : Exp.Out -> Cmd msg
 
-port initGui : Exp.RawProperty -> Cmd msg
+port initGui : Exp.Property -> Cmd msg

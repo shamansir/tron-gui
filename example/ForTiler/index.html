@@ -86,6 +86,8 @@
 
         setTimeout(() => app.ports.setPreselectedTileset.send('BarFooooo', 400));
 
+        setTimeout(() => app.ports.apply.send({ path : ['Title','X'], value: 370 }, 3000));
+
         function loadSizeInfo() {
             return {
                 sizeInTiles: [Math.floor(window.innerWidth / 20), Math.floor(window.innerHeight / 10)],

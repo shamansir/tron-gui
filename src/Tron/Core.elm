@@ -217,17 +217,17 @@ applyDeduced toDeduce tree =
 
 
 tryDeduce : Exp.DeduceIn -> Tron a -> Maybe Exp.In
-tryDeduce { labelPath, value } tree =
-    tree |> findPath labelPath
+tryDeduce { path, value } tree =
+    tree |> findPath path
         |> Maybe.andThen
-            (\path ->
+            (\idPath ->
                 tree
-                    |> Property.find path
-                    |> Maybe.map (Tuple.pair path)
+                    |> Property.find idPath
+                    |> Maybe.map (Tuple.pair idPath)
             )
         |> Maybe.map
-            (\(path, prop) ->
-                { path = Path.toList path
+            (\(idPath, prop) ->
+                { path = Path.toList idPath
                 , value = value
                 , type_ = prop |> Value.get |> Value.getTypeString
                 }

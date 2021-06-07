@@ -80,7 +80,7 @@ so the ID-path will be deduced from labelPath,
 as well as the `type` of the value will be deduced from
 current tree condition. -}
 type alias DeduceIn =
-    { labelPath : List String
+    { path : List String
     , value : E.Value
     }
 

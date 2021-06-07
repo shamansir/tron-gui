@@ -6,13 +6,7 @@ import Browser exposing (element)
 import Html exposing (Html, div)
 import Html.Attributes as Attr exposing (class)
 
-import Tron exposing (Gui, Message, init, view, update, subscriptions)
 import Tron.Style.Theme as Theme exposing (Theme)
-
-import Example.Default.Main as Example
-import Example.Default.Model as Example
-import Example.Default.Msg as Example
-import Example.Default.Gui as ExampleGui
 
 import AFrame.Render.Layout as AFrame exposing (view)
 

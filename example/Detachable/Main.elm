@@ -38,8 +38,8 @@ main =
         }
 
 
-port receieveUpdateFromWs : (Exp.RawInUpdate -> msg) -> Sub msg
+port receieveUpdateFromWs : (Exp.In -> msg) -> Sub msg
 
-port sendUpdateToWs : Exp.RawOutUpdate -> Cmd msg
+port sendUpdateToWs : Exp.Out -> Cmd msg
 
 port ackToWs : Exp.Ack -> Cmd msg

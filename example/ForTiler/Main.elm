@@ -18,7 +18,7 @@ main : AppBackedByProxy () Example.Model Example.Msg
 main =
     WithTron.Backed.byProxyApp
         (Option.toHtml Dock.bottomCenter Theme.dark)
-        ( ack, transmit, receive identity )
+        ( ack, transmit, apply identity )
         { for =
             \valueAt model ->
                 ExampleGui.gui valueAt model
@@ -30,8 +30,8 @@ main =
         }
 
 
-port ack : Exp.RawProperty -> Cmd msg
+port ack : Exp.Property -> Cmd msg
 
-port transmit : Exp.RawOutUpdate -> Cmd msg
+port transmit : Exp.Out -> Cmd msg
 
-port receive : (Exp.RawInUpdate -> msg) -> Sub msg
+port apply : (Exp.DeduceIn -> msg) -> Sub msg

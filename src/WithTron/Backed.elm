@@ -56,10 +56,10 @@ import Tron.Control.Value exposing (Value)
 
 
 {-| Path-to-value storage, to transmit them to the JS side. -}
-type alias BackedStorage = Dict Exp.RawPath Exp.RawValue
+type alias BackedStorage = Dict (List Int) Exp.Value
 
 
-type alias BackedMsg = Exp.RawValue
+type alias BackedMsg = Exp.Value
 
 
 {-| Program, backed with the path-to-value storage. -}
@@ -105,8 +105,8 @@ See `example/ReportToJsBacked` for more details.
 byJson
     :  RenderTarget
     ->
-        ( Exp.RawProperty -> Cmd msg
-        , Exp.RawOutUpdate -> Cmd msg
+        ( Exp.Property -> Cmd msg
+        , Exp.Out -> Cmd msg
         )
     -> Tron ()
     -> BackedByJson
@@ -246,10 +246,10 @@ byStrings renderTarget transmit tree =
         }
 
 
-type alias ProxyBackedStorage = Dict ( Exp.RawPath, LabelPath ) Value
+type alias ProxyBackedStorage = Dict ( List Int, List String ) Value
 
 
-type alias ProxyBackedMsg = Maybe ( Exp.RawPath, LabelPath, Value )
+type alias ProxyBackedMsg = Maybe ( List Int, List String, Value )
 
 
 {-| Program, backed with the proxy value storage. -}
@@ -270,18 +270,18 @@ See `WithTron.ValueAt` for more information and `example/ForTiler` as the exampl
 byProxy
     :  RenderTarget
     ->
-        ( Exp.RawProperty -> Cmd msg
-        , Exp.RawOutUpdate -> Cmd msg
-        , Sub Exp.RawInUpdate
+        ( Exp.Property -> Cmd msg
+        , Exp.Out -> Cmd msg
+        , Sub Exp.DeduceIn
         )
     -> (ValueAt -> Tron ())
     -> BackedByProxy
-byProxy renderTarget ( ack, transmit, receive ) for =
+byProxy renderTarget ( ack, transmit, apply ) for =
     byProxyApp
         renderTarget
         ( ack >> Cmd.map (always ())
         , transmit >> Cmd.map (always ())
-        , receive
+        , apply
         )
         { for = \valueAt _ -> for valueAt
         , init = \_ _ -> ( (), Cmd.none )
@@ -302,9 +302,9 @@ See `WithTron.ValueAt` for more information and `example/ForTiler` as the exampl
 byProxyApp
     :  RenderTarget
     ->
-        ( Exp.RawProperty -> Cmd msg
-        , Exp.RawOutUpdate -> Cmd msg
-        , Sub Exp.RawInUpdate
+        ( Exp.Property -> Cmd msg
+        , Exp.Out -> Cmd msg
+        , Sub Exp.DeduceIn
         )
     ->  { for : ValueAt -> model -> Tron msg
         , init : flags -> ValueAt -> ( model, Cmd msg )
@@ -313,7 +313,7 @@ byProxyApp
         , update : msg -> ValueAt -> model -> ( model, Cmd msg )
         }
     -> AppBackedByProxy flags model msg
-byProxyApp renderTarget ( ack, transmit, receive ) def =
+byProxyApp renderTarget ( ack, transmit, apply ) def =
     let
 
         valueAt dict =
@@ -325,7 +325,7 @@ byProxyApp renderTarget ( ack, transmit, receive ) def =
                 |> Dict.mapKeys Tuple.second
                 |> valueAt
 
-        dictByPath : ProxyBackedStorage -> Dict Exp.RawPath Value
+        dictByPath : ProxyBackedStorage -> Dict (List Int) Value
         dictByPath =
             Dict.mapKeys Tuple.first
 
@@ -395,7 +395,7 @@ byProxyApp renderTarget ( ack, transmit, receive ) def =
         (SendReceiveJson
             { ack = ack >> Cmd.map (Tuple.pair Nothing)
             , transmit = transmit >> Cmd.map (Tuple.pair Nothing)
-            , receive = receive
+            , apply = apply
             }
         )
         { for = for_
@@ -404,4 +404,3 @@ byProxyApp renderTarget ( ack, transmit, receive ) def =
         , view = view_
         , subscriptions = subscriptions_
         }
-

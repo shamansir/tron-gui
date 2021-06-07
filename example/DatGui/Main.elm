@@ -38,6 +38,6 @@ main =
         }
 
 
-port updateFromDatGui : (Exp.RawInUpdate -> msg) -> Sub msg
+port updateFromDatGui : (Exp.In -> msg) -> Sub msg
 
-port startDatGui : Exp.RawProperty -> Cmd msg
+port startDatGui : Exp.Property -> Cmd msg

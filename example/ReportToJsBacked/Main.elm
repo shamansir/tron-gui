@@ -12,9 +12,9 @@ import WithTron.Backed exposing (BackedByJson)
 import Example.Unit.Gui as ExampleGui
 
 
-port ack : Exp.RawProperty -> Cmd msg
+port ack : Exp.Property -> Cmd msg
 
-port transmit : Exp.RawOutUpdate -> Cmd msg
+port transmit : Exp.Out -> Cmd msg
 
 
 main : BackedByJson
@@ -23,4 +23,3 @@ main =
         (Option.toHtml Dock.middleRight Theme.dark)
         ( ack, transmit )
         ExampleGui.gui
-
