@@ -228,7 +228,20 @@ tryDeduce { path, value } tree =
         |> Maybe.map
             (\(idPath, prop) ->
                 { path = Path.toList idPath
-                , value = value
+                , value =
+
+                    case prop of
+                        Choice _ _ control ->
+
+                            case D.decodeValue D.string value of
+                                Ok string ->
+                                    control
+                                        |> Nest.find string
+                                        |> Maybe.map (Tuple.first >> E.int)
+                                        |> Maybe.withDefault value
+                                Err _ -> value
+                                
+                        _ -> value
                 , type_ = prop |> Value.get |> Value.getTypeString
                 }
             )

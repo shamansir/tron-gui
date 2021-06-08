@@ -75,6 +75,31 @@ suite =
                                 , type_ = "choice"
                                 })
 
+
+        , test "converts string value to its ID value @ root"
+            <| \_ ->
+                Core.tryDeduce
+                    { path = [ "choice" ], value = E.string "B" }
+                    tree
+                    |> Expect.equal
+                            (Just
+                                { path = [ 2 ]
+                                , value = E.int 1
+                                , type_ = "choice"
+                                })
+
+        , test "converts string value to its ID value @ nest"
+            <| \_ ->
+                Core.tryDeduce
+                    { path = [ "nest", "choice-in" ], value = E.string "C" }
+                    tree
+                    |> Expect.equal
+                            (Just
+                                { path = [ 1, 2 ]
+                                , value = E.int 2
+                                , type_ = "choice"
+                                })
+
         ]
 
 

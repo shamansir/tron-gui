@@ -6,6 +6,7 @@ import Array exposing (Array)
 import Tron.Control as Core exposing (Control)
 import Tron.Control.Button as Button
 import Tron.Pages exposing (PageNum)
+import Tron.Util as Util
 
 
 type Form
@@ -54,6 +55,18 @@ type alias Transient =
 
 get : ItemId -> Core.Control ( Array item ) value a -> Maybe item
 get n = getItems >> Array.get n
+
+
+find : comparable -> Core.Control ( Array (comparable, item) ) value a -> Maybe ( ItemId, item )
+find what =
+    getItems
+        >> Array.indexedMap Tuple.pair
+        >> Util.findMapInArray
+            (\(index, (label, item)) ->
+                if label == what
+                    then Just (index, item)
+                    else Nothing
+            )
 
 
 select : ItemId -> ChoiceControl item a -> ChoiceControl item a
