@@ -100,6 +100,30 @@ suite =
                                 , type_ = "choice"
                                 })
 
+        , test "deduces path to the toggle control @ root"
+            <| \_ ->
+                Core.tryDeduce
+                    { path = [ "fooA" ], value = E.bool True }
+                    tree
+                    |> Expect.equal
+                            (Just
+                                { path = [ 3 ]
+                                , value = E.bool True
+                                , type_ = "toggle"
+                                })
+
+        , test "deduces path to the text control @ root"
+            <| \_ ->
+                Core.tryDeduce
+                    { path = [ "apple" ], value = E.string "pear" }
+                    tree
+                    |> Expect.equal
+                            (Just
+                                { path = [ 4 ]
+                                , value = E.string "pear"
+                                , type_ = "text"
+                                })
+
         ]
 
 
@@ -142,5 +166,13 @@ tree =
                         |> B.addLabels identity
                 )
                 "C"
+            )
+        ,
+            ( "fooA"
+            , B.toggle False
+            )
+        ,
+            ( "apple"
+            , B.text "apple"
             )
         ]
