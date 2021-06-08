@@ -1,3 +1,9 @@
+### 11.1.0
+
+* Introduce tests for Pagination and Deducing incoming values;
+* Additional `ValueAt` helpers which should reduce boilerplate code;
+* Fix rendering pagination;
+
 ### 11.0.0
 
 * Add `DeduceIn` as the message with label-path and JSON value to be deduced to current state of the tree, when sent;
