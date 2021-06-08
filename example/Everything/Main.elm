@@ -72,7 +72,7 @@ type Msg
     | ChangeMode Mode
     | ChangeDock Dock
     | SendUpdate Exp.Out
-    | ReceiveRaw Exp.In
+    | ReceiveRaw (List Exp.In)
     | ToTron Core.Msg
     | ToExample Example.Msg
     | Randomize (Tron ())
@@ -281,19 +281,25 @@ update msg model =
         ( ToTron _, DatGui ) -> ( model, Cmd.none )
 
         -- ( FromDatGui guiUpdate, DatGui ) ->
-        ( ReceiveRaw guiUpdate, DatGui ) ->
+        ( ReceiveRaw guiUpdates, DatGui ) ->
             ( model
             ,
-                (if model.isRandom
-                    then
-                        model.lastGui
-                            |> Def.lift
-                            |> Def.map (always NoOp)
-                    else
-                        ExampleGui.for model.example
-                            |> Def.map ToExample
-                )
-                |> Core.applyRaw guiUpdate
+                let
+                    gui =
+
+                        (if model.isRandom
+                            then
+                                model.lastGui
+                                    |> Def.lift
+                                    |> Def.map (always NoOp)
+                            else
+                                ExampleGui.for model.example
+                                    |> Def.map ToExample
+                        )
+                in
+                    guiUpdates
+                        |> List.foldl (\upd list -> Core.applyRaw upd gui :: list) []
+                        |> Cmd.batch
             )
 
         ( ReceiveRaw _, TronGui ) -> ( model, Cmd.none )
@@ -364,11 +370,12 @@ subscriptions : Model -> Sub Msg
 subscriptions { mode, state, lastGui } =
     case mode of
         DatGui ->
-            updateFromDatGui ReceiveRaw
+            updateFromDatGui (ReceiveRaw << List.singleton)
         TronGui ->
             Sub.batch
                 [ Core.subscriptions state |> Sub.map ToTron
-                , WithTron.addSubscriptionsOptions portCommunication lastGui |> Sub.map ReceiveRaw
+                , WithTron.addSubscriptionsOptions portCommunication lastGui
+                    |> Sub.map ReceiveRaw
                 ]
 
 

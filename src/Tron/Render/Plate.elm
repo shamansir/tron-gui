@@ -108,9 +108,9 @@ paging
 paging theme path bounds cellShape ( current, total ) =
     let
         itemWidth = bounds.width / Basics.toFloat total
-        cellWidth = (CS.numify cellShape |> Tuple.first) -- * Cell.width
+        cellWidth = CS.numify cellShape |> Tuple.first
         rectX page = (Basics.toFloat page * itemWidth) + rectWidth
-        rectWidth = itemWidth * 0.35 * cellWidth -- itemWidth / 4
+        rectWidth = itemWidth * 0.35
         backgroundRect =
             Svg.rect
             [ SA.x <| String.fromFloat 5
