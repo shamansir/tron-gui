@@ -970,11 +970,46 @@ setValueTo from to =
 
 
 
+
+
 -- map2 use `move` for that
+
+
+insideOut : Property ( a, b ) -> Maybe ( a, Property b )
+insideOut prop =
+    get prop
+        |> Maybe.map (\val -> ( val |> Tuple.first, prop |> map Tuple.second ))
+
+
+changesBetween : Property a -> Property b -> List ( Path, Property b )
+changesBetween prev next =
+    fold2_
+        (\(maybePropA, maybePropB) changes ->
+            if Maybe.map2
+                compareValues
+                maybePropA
+                maybePropB
+                |> Maybe.withDefault True
+                |> not then
+                maybePropB
+                    |> Maybe.map (\prop -> prop :: changes)
+                    |> Maybe.withDefault changes
+            else changes
+        )
+        (prev |> addPath)
+        (next |> addPath)
+        []
+    |> List.map insideOut
+    |> List.filterMap identity
 
 
 loadValues : Property a -> Property b -> Property b
 loadValues = move setValueTo
+
+
+loadChangedValues : Property a -> Property b -> Property b -> Property b
+loadChangedValues prev next =
+    updateMany <| changesBetween prev next
 
 
 -- loadLiveValues : Property a -> Property b -> Property b

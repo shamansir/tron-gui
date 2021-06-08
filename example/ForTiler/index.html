@@ -86,7 +86,19 @@
 
         setTimeout(() => app.ports.setPreselectedTileset.send('BarFooooo', 400));
 
-        setTimeout(() => app.ports.apply.send({ path : ['Title','X'], value: 370 }, 3000));
+        setTimeout(
+            () =>
+                app.ports.apply.send(
+                    [ { path : ['Title','X'], value: 390 }
+                    , { path : ['Color Scheme','Opacity'], value: 20 }
+                    , { path : ['Tile','Fill α'], value: 22 }
+                    ]
+                )
+            , 100);
+
+        //setTimeout(() => app.ports.apply.send({ path : ['Color Scheme','Opacity'], value: 20 }), 200);
+
+        //setTimeout(() => app.ports.apply.send({ path : ['Tile','Fill α'], value: 20 }), 300);
 
         function loadSizeInfo() {
             return {

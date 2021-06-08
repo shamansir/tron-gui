@@ -52,18 +52,17 @@ addInitOptions target gui =
         Debug dock _ -> gui |> Core.dock dock
 
 
-addSubscriptionsOptions : PortCommunication msg -> Tron () -> Sub Exp.In
+addSubscriptionsOptions : PortCommunication msg -> Tron () -> Sub (List Exp.In)
 addSubscriptionsOptions ports tree =
     case ports of
         SendReceiveJson { apply } ->
             apply
-                |> Sub.map (\upd -> Core.tryDeduce upd tree)
-                |> Sub.map (Maybe.withDefault Exp.noInUpdate)
-
+                |> Sub.map (List.map <| Core.tryDeduce tree)
+                |> Sub.map (List.filterMap identity)
         Detachable { receive } ->
-            receive
+            receive |> Sub.map List.singleton
         DatGui { receive } ->
-            receive
+            receive |> Sub.map List.singleton
         _ -> Sub.none
 
 

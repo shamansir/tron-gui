@@ -211,13 +211,13 @@ applyDeduced
     -> Tron (Control.Value -> Maybe msg)
     -> Cmd msg
 applyDeduced toDeduce tree =
-    case tree |> tryDeduce toDeduce of
+    case tryDeduce tree toDeduce of
         Just rawUpdate -> tree |> applyRaw rawUpdate
         Nothing -> Cmd.none
 
 
-tryDeduce : Exp.DeduceIn -> Tron a -> Maybe Exp.In
-tryDeduce { path, value } tree =
+tryDeduce : Tron a -> Exp.DeduceIn -> Maybe Exp.In
+tryDeduce tree { path, value } =
     tree |> findPath path
         |> Maybe.andThen
             (\idPath ->
@@ -240,7 +240,7 @@ tryDeduce { path, value } tree =
                                         |> Maybe.map (Tuple.first >> E.int)
                                         |> Maybe.withDefault value
                                 Err _ -> value
-                                
+
                         _ -> value
                 , type_ = prop |> Value.get |> Value.getTypeString
                 }

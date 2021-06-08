@@ -128,7 +128,7 @@ type WithTronMsg msg
     | ToTron Core.Msg
     --| Ack Exp.Ack
     | SendUpdate Exp.Out
-    | ReceiveRaw Exp.In
+    | ReceiveRaw (List Exp.In)
     | SetClientId Detach.ClientId
     | UrlChange (Maybe msg) Url
 
@@ -209,14 +209,17 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
             let
                 ( newUserModel, userEffect ) =
                     userUpdate userMsg model
+                nextTree =
+                    userFor newUserModel
             in
 
             (
                 ( newUserModel
                 , state
-                , userFor newUserModel
+                , nextTree
                     |> Property.transferTransientState prevTree
                     |> Property.loadValues prevTree
+                    --|> Property.loadChangedValues prevTree nextTree
                     --|> Property.loadLiveValues nextGui
                     |> Tron.toUnit
                 )
@@ -245,12 +248,15 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                         ]
                     )
 
-        ReceiveRaw rawUpdate ->
+        ReceiveRaw rawUpdates ->
             let
-                nextRoot =
+                prevRoot =
                     userFor model
                         |> Property.transferTransientState prevTree
-                        |> Exp.apply (Exp.fromPort rawUpdate)
+                nextRoot =
+                    rawUpdates
+                        |> List.foldl (Exp.apply << Exp.fromPort) prevRoot
+                        --|> Exp.apply (Exp.fromPort rawUpdate)
             in
                 (
                     ( model

@@ -59,7 +59,7 @@ type PortCommunication msg
     | SendReceiveJson
         { ack : Exp.Property -> Cmd msg
         , transmit : Exp.Out -> Cmd msg
-        , apply : Sub Exp.DeduceIn
+        , apply : Sub (List Exp.DeduceIn)
         }
     | SendStrings
         { transmit : ( List String, String ) -> Cmd msg
@@ -138,7 +138,7 @@ sendReceiveJson
     :
         { ack : Exp.Property -> Cmd msg
         , transmit : Exp.Out -> Cmd msg
-        , apply : Sub Exp.DeduceIn
+        , apply : Sub (List Exp.DeduceIn)
         }
     -> PortCommunication msg
 sendReceiveJson = SendReceiveJson

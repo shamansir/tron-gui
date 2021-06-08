@@ -56,4 +56,4 @@ port ack : Exp.Property -> Cmd msg
 
 port transmit : Exp.Out -> Cmd msg
 
-port apply : (Exp.DeduceIn -> msg) -> Sub msg
+port apply : (List Exp.DeduceIn -> msg) -> Sub msg

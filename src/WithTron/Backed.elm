@@ -272,7 +272,7 @@ byProxy
     ->
         ( Exp.Property -> Cmd msg
         , Exp.Out -> Cmd msg
-        , Sub Exp.DeduceIn
+        , Sub (List Exp.DeduceIn)
         )
     -> (ValueAt -> Tron ())
     -> BackedByProxy
@@ -304,7 +304,7 @@ byProxyApp
     ->
         ( Exp.Property -> Cmd msg
         , Exp.Out -> Cmd msg
-        , Sub Exp.DeduceIn
+        , Sub (List Exp.DeduceIn)
         )
     ->  { for : ValueAt -> model -> Tron msg
         , init : flags -> ValueAt -> ( model, Cmd msg )
