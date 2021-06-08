@@ -105,10 +105,12 @@ paging
     -> CS.CellShape
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
-paging _ path bounds cellShape ( current, total ) =
+paging theme path bounds cellShape ( current, total ) =
     let
         itemWidth = bounds.width / Basics.toFloat total
-        cellWidth = (CS.numify cellShape |> Tuple.first) * Cell.width
+        cellWidth = (CS.numify cellShape |> Tuple.first) -- * Cell.width
+        rectX page = (Basics.toFloat page * itemWidth) + rectWidth
+        rectWidth = itemWidth * 0.35 * cellWidth -- itemWidth / 4
         backgroundRect =
             Svg.rect
             [ SA.x <| String.fromFloat 5
@@ -118,20 +120,28 @@ paging _ path bounds cellShape ( current, total ) =
             , SA.width <| String.fromFloat <| bounds.width - 10
             , SA.height <| String.fromFloat 31.0
             , SA.style "pointer-events: none; cursor: pointer;"
-            , SA.fill "black"--"rgba(200,200,200,0.3)"
+            , SA.fill <| case theme of
+                Theme.Dark -> "black" --"rgba(200,200,200,0.3)"
+                Theme.Light -> "white"
             ]
             []
         pageRect page =
             Svg.rect
-                [ SA.x <| String.fromFloat <| (Basics.toFloat page * itemWidth) + cellWidth / Basics.toFloat total
+                [ SA.x <| String.fromFloat <| rectX page
                 , SA.y <| String.fromFloat <| bounds.height - 11
                 , SA.rx <| String.fromFloat <| 2.0
                 , SA.ry <| String.fromFloat <| 2.0
-                , SA.width <| String.fromFloat <| cellWidth / Basics.toFloat total -- itemWidth / 4
+                , SA.width <| String.fromFloat rectWidth
                 , SA.height <| String.fromFloat 4.0
                 , SA.style "pointer-events: all; cursor: pointer;"
                 , HE.onClick <| SwitchPage path page
-                , SA.fill <| if page == current then "white" else "gray"
+                , SA.fill <|
+                    if page == current then
+                        (case theme of
+                            Theme.Dark -> "white" --"rgba(200,200,200,0.3)"
+                            Theme.Light -> "black"
+                        )
+                        else "gray"
                 ]
                 [ ]
         switchingRect page =
@@ -147,21 +157,24 @@ paging _ path bounds cellShape ( current, total ) =
                 [ ]
 
     in
+
     Svg.g
         []
-        [ backgroundRect
-        , Svg.g
-            []
-            <| List.map
-            (\page ->
-                Svg.g
-                    []
-                    [ pageRect page
-                    , switchingRect page
-                    ]
-            )
-            <| List.range 0 (total - 1)
-        ]
+        <| if total > 1 then
+            [ backgroundRect
+            , Svg.g
+                []
+                <| List.map
+                (\page ->
+                    Svg.g
+                        []
+                        [ pageRect page
+                        , switchingRect page
+                        ]
+                )
+                <| List.range 0 (total - 1)
+            ]
+            else []
 
 
 detach : Theme -> Svg msg

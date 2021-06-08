@@ -63,6 +63,15 @@ shift by bounds =
     }
 
 
+shiftF : { a | x : Float, y : Float } -> BoundsF -> BoundsF
+shiftF by bounds =
+    { x = bounds.x + by.x
+    , y = bounds.y + by.y
+    , width = bounds.width
+    , height = bounds.height
+    }
+
+
 toFloat : Bounds -> BoundsF
 toFloat bounds =
     { x = Basics.toFloat bounds.x
@@ -83,4 +92,3 @@ divide div bounds =
 
 divideBy : Float -> BoundsF -> BoundsF
 divideBy n = divide { x = n, y = n }
-

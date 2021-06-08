@@ -146,14 +146,14 @@ viewPagingControls
     -> ( Pages.PageNum, Pages.Count )
     -> Svg Msg_
 viewPagingControls mode theme path pixelBounds cellShape paging  =
-    positionAt_ pixelBounds <|
+    positionAt_ (pixelBounds |> Bounds.shiftF { x = 0, y = 5 }) <|
         case mode of
             Debug ->
                 S.g [ ] [ ]
             Fancy ->
                 Svg.svg
                     [ SA.width <| String.fromFloat pixelBounds.width
-                    , SA.height <| String.fromFloat pixelBounds.height
+                    , SA.height <| String.fromFloat (pixelBounds.height + 5)
                     ]
                     [ paginationMaskDefs pixelBounds path
                     , S.g
@@ -482,4 +482,3 @@ view mode theme dock bounds detach getDetachAbility root layout =
                 ]
 
             ]
-
