@@ -1,6 +1,7 @@
 module WithTron.ValueAt exposing
     ( ValueAt, ask
     , Decoder, number, xy, text, toggle, color, action, choice, choiceOf
+    , at, atKnob, atXY, atText, atToggle, atColor, atChoice, atChoiceOf
     , map
     )
 
@@ -9,15 +10,23 @@ for `WithTron.Backed` applications to store current values from the UI in univer
 
 For the example of such, see `example/ForTiler`, where the structure/state of GUI is dependent on current values, but also doesn't store them in its own model, since mostly connects to JavaScript.
 
-@docs ValueAt, ask
+@docs ValueAt
 
-
-# Decode / Extract
+# Asking values at path
 
 Actually, the way to get your value as a common type.
 
-@docs Decoder, number, xy, text, toggle, color, action, choice, choiceOf
+@docs at, atKnob, atXY, atText, atToggle, atColor, atChoice, atChoiceOf
 
+# Ask using decoders
+
+@docs ask, number, xy, text, toggle, color, action, choice, choiceOf
+
+# Decode
+
+@docs Decoder
+
+Actually, the way to get your value as a common type.
 
 # Common helpers
 
@@ -130,5 +139,57 @@ color =
     make Proxy.fromColor
 
 
+{-| -}
+at : (LabelPath -> Decoder a) -> LabelPath -> ValueAt -> Maybe a
+at decoder = ask << decoder
 
--- get : LabelPath -> Decoder a -> ValueAt -> Maybe a
+
+{-| -}
+atKnob : Float -> LabelPath -> ValueAt -> Float
+atKnob default path =
+    at number path
+        >> Maybe.withDefault default
+
+
+{-| -}
+atXY : ( Float, Float ) -> LabelPath -> ValueAt -> ( Float, Float )
+atXY default path =
+    at xy path
+        >> Maybe.withDefault default
+
+
+{-| -}
+atText : String -> LabelPath -> ValueAt -> String
+atText default path =
+    at text path
+        >> Maybe.withDefault default
+
+
+{-| -}
+atToggle : (Bool -> a) -> a -> LabelPath -> ValueAt -> a
+atToggle f default path =
+    at toggle path
+        >> Maybe.map Proxy.toggleToBool
+        >> Maybe.map f
+        >> Maybe.withDefault default
+
+
+{-| -}
+atChoice : ItemId -> LabelPath -> ValueAt -> ItemId
+atChoice default path =
+    at choice path
+        >> Maybe.withDefault default
+
+
+{-| -}
+atChoiceOf : List a -> a -> LabelPath -> ValueAt -> a
+atChoiceOf values default path =
+    at (choiceOf values) path
+        >> Maybe.withDefault default
+
+
+{-| -}
+atColor : Color -> LabelPath -> ValueAt -> Color
+atColor default path =
+    at color path
+        >> Maybe.withDefault default

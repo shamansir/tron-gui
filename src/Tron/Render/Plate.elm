@@ -120,7 +120,7 @@ paging theme path bounds cellShape ( current, total ) =
             , SA.width <| String.fromFloat <| bounds.width - 10
             , SA.height <| String.fromFloat 31.0
             , SA.style "pointer-events: none; cursor: pointer;"
-            , SA.fill <| case theme of
+            , SA.fill <| case theme of -- FIXME: Coloring
                 Theme.Dark -> "black" --"rgba(200,200,200,0.3)"
                 Theme.Light -> "white"
             ]
@@ -137,7 +137,7 @@ paging theme path bounds cellShape ( current, total ) =
                 , HE.onClick <| SwitchPage path page
                 , SA.fill <|
                     if page == current then
-                        (case theme of
+                        (case theme of -- FIXME: Coloring
                             Theme.Dark -> "white" --"rgba(200,200,200,0.3)"
                             Theme.Light -> "black"
                         )
