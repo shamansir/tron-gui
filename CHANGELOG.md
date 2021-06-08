@@ -1,6 +1,10 @@
+### 12.0.0
+
+* Fix sending several updates from the client with `Backed.byProxyApp`;
+
 ### 11.1.0
 
-* Introduce tests for Pagination and Deducing incoming values;
+* Introduce tests for pagination and deducing incoming values;
 * Additional `ValueAt` helpers which should reduce boilerplate code;
 * Fix rendering pagination;
 
