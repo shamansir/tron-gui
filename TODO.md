@@ -14,6 +14,7 @@
 * Breaking?: for choice, give user option either to show icon on the button, or the label, even if the items in the choice have icons;
 * Bug: selecting item on the second page of the choice control could make other panels content disappear; (Tiler: selecting _Tile/Tileset_ breaks _Color Scheme/BG Color_)
     * It seems `[0, 2]` and `[2, 0]` are conflicting in this case;
+* `Builder.noPaging`
 
 ## UX / Design
 
@@ -22,6 +23,7 @@
 * Test keyboard navigation, adapt it to the Dock;
 * _Active_ condition for a button, some effect for when it is pressed;
 * Vertical pagination;
+* Consider selecting the page which current item when update came from JS;
 * Support touch events;
 
 ## New controls
@@ -32,6 +34,10 @@
 ## Inner API / Logic
 
 * Tests;
+* Max cols / Max rows should not be needed;
+* Bug: applying updates as several packages from JS gives no effect (see `ForTiler` example);
+* Detachable mode needs more testing;
+* Bug: `toSwitch` is not sending proper events to JS;
 * Move keyboard & mouse drag-start/dragging/drag-end logic to controls themselves;
 * Move all possible control-related logic to the controls themselves;
     * Such logic can be found in code by adding some fake `()`-control and checking the places where we have to cover it / compiler fails;
