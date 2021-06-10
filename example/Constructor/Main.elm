@@ -3,7 +3,15 @@ module Constructor.Main exposing (..)
 
 import Browser exposing (Document)
 
-import Html
+import Tron.OfValue exposing (Tron)
+import Tron.Builder as Tron
+import WithTron exposing (ProgramWithTron)
+
+import Tron.Option as Option
+import Tron.Style.Dock as Dock
+import Tron.Style.Theme as Theme
+
+import Html exposing (Html)
 
 
 type alias Model = ()
@@ -12,30 +20,35 @@ type alias Model = ()
 type alias Msg = ()
 
 
-init : () -> ( Model, Cmd Msg )
-init _ = ( (), Cmd.none )
+for : Model -> Tron Msg
+for _ = Tron.none
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update _ model = ( model, Cmd.none )
+init : Model
+init = ()
 
 
-view : Model -> Document Msg
+update : Msg -> Model -> Model
+update _ model = model
+
+
+view : Model -> Html Msg
 view _ =
-    { title = ""
-    , body = []
-    }
+    Html.div [] []
 
 
-subscriptions : Model -> Sub Msg
-subscriptions _ = Sub.none
+-- subscriptions : Model -> Sub Msg
+-- subscriptions _ = Sub.none
 
 
-main : Program () Model Msg
+main : ProgramWithTron () Model Msg
 main =
-    Browser.document
-        { init = init
+    WithTron.sandbox
+        (Option.toHtml Dock.bottomCenter Theme.dark)
+        Option.noCommunication
+        { for = for
+        , init = init
         , view = view
         , update = update
-        , subscriptions = subscriptions
+        --, subscriptions = subscriptions
         }
