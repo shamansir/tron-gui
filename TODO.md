@@ -1,15 +1,12 @@
 ## Public API
 
 * Breaking: Close `ProxyValue` constructors from public;
-* Add `ValueAt.toggleAt`, `choiceAt`, ... and similar functions so that it would be easier to ask for values using `ValueAt`;
 * Breaking: Stick to just one `WithTron.Backed`, since anyway it is possible to convert one to another using `Tron` methods;
-* Breaking: Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants;
-* Breaking, Bug: Adjust default values in knobs/XY to the actual range, or else it is rendered improperly;
-* Ability to disable / enable pagination;
+* Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants: ability to disable / enable pagination from builder + Move paging inside nested controls;
 * Detachable: Add `clientId` to the URL when it was generated (so that reloading the page won't lose changes);
 * Detachable: Hide the user view by default, when interface is detached;
     * Or give user the choice if to view the original model or not;
-* Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed;
+* Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed; (Partly done);
 * Breaking?: send some special value with `RawOutUpdate` for `Choice` controls or else it is hard to get what was actually chosen;
 * Breaking?: for choice, give user option either to show icon on the button, or the label, even if the items in the choice have icons;
 * Bug: selecting item on the second page of the choice control could make other panels content disappear; (Tiler: selecting _Tile/Tileset_ breaks _Color Scheme/BG Color_)
@@ -18,7 +15,6 @@
 
 ## UX / Design
 
-* Move pagination 5px lower;
 * Show the value on XY controllers as well;
 * Test keyboard navigation, adapt it to the Dock;
 * _Active_ condition for a button, some effect for when it is pressed;
@@ -34,6 +30,11 @@
 ## Inner API / Logic
 
 * Tests;
+    * Detachable;
+    * Sending updates from/to JS;
+    * ...
+* Bug: sending value from JS to the choice is not switching it to the corresponding page;
+* Store pages inside nesting controls, do not redistribute every time;
 * Max cols / Max rows should not be needed;
 * Bug: applying updates as several packages from JS gives no effect (see `ForTiler` example);
 * Detachable mode needs more testing;
@@ -70,6 +71,7 @@
 
 ## Examples
 
+* UI Constructor;
 * Add some indication of the WS server status to the examples;
 * Include separate `Random` example to only utilize random generator, and, may be, test the detachable functionality, if the server is started;
 * Include links to the examples in the docs;
