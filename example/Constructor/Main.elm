@@ -54,6 +54,7 @@ type alias Def = ( ( Path, LabelPath ), Type )
 type Msg
     = NoOp
     | Save
+    | Append
     | Edit (Tron Def)
 
 
@@ -87,30 +88,33 @@ update msg ( state, currentGui ) =
                 | current = Nothing
                 }
             , case state.current of
-                Just prop ->
-                    case prop |> Property.find state.target of
+                Just newProp ->
+                    case newProp |> Property.find state.target of
                         Just _ ->
                             currentGui
                                 |> Property.replace
                                     (\otherPath otherProp ->
                                         if (Path.toList otherPath == Path.toList state.target) then
-                                            prop |> Tron.toUnit
+                                            newProp |> Tron.toUnit
                                         else
                                             otherProp
                                     )
-                        Nothing ->
-                            currentGui
-                                |> Property.updateAt
-                                    (Path.pop state.target
-                                        |> Maybe.map Tuple.first
-                                        |> Maybe.withDefault Path.start
-                                    )
-                                    (Property.append
-                                        ( "test"
-                                        , prop |> Tron.toUnit
-                                        )
-                                    )
+                        Nothing -> currentGui
                 Nothing -> currentGui
+            )
+        Append ->
+            (
+                { state
+                | current =
+                    state.current
+                        |> Maybe.map
+                            (Property.append
+                                ( "test"
+                                , Tron.none |> fillTypes -- FIXME: paths are wrong this way
+                                )
+                            )
+                }
+            , currentGui
             )
         Edit prop ->
             (
@@ -127,7 +131,7 @@ view ( state, tree ) =
         []
         [ preview
             <| fillTypes
-            <| addGhosts
+            --<| addGhosts
             <| tree
         , case state.current of
             Just currentProp ->
@@ -145,14 +149,33 @@ fillTypes =
 
 
 valueToType : Value -> Type
-valueToType _ = Waiting
+valueToType v =
+    case v of
+        V.FromSlider _ -> Knob
+        V.FromXY _ -> XY
+        V.FromInput _ -> Text
+        V.FromToggle _ -> Toggle
+        V.FromColor _ -> Color
+        V.FromChoice _ -> Choice
+        V.FromSwitch _ -> Choice
+        V.FromButton -> Button
+        V.FromGroup -> Group
+        V.Other -> Waiting
 
 
 editorFor : Tron Def -> Html Msg
 editorFor prop =
     Html.div
         []
-        [ Html.button
+        [ case Property.get prop
+                |> Maybe.map Tuple.second of
+            Just Group ->
+                Html.button
+                    [ Html.onClick <| Append ]
+                    [ Html.text "Append" ]
+            Just _ -> Html.div [] []
+            Nothing -> Html.div [] []
+        , Html.button
             [ Html.onClick <| Save ]
             [ Html.text "Save" ]
         ]
