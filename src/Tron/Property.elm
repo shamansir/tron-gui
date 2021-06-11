@@ -1014,3 +1014,27 @@ loadChangedValues prev next =
 
 -- loadLiveValues : Property a -> Property b -> Property b
 -- loadLiveValues = move
+
+
+append : ( Label, Property a ) -> Property a -> Property a
+append ( label, prop ) toProp =
+    case toProp of
+        Choice focus shape control ->
+            Choice focus shape
+                (control |> Nest.append ( label, prop ))
+        Group focus shape control ->
+            Group focus shape
+                (control |> Nest.append ( label, prop ))
+        _ -> toProp
+
+
+remove : ItemId -> Property a -> Property a
+remove item fromProp =
+    case fromProp of
+        Choice focus shape control ->
+            Choice focus shape
+                (control |> Nest.remove item)
+        Group focus shape control ->
+            Group focus shape
+                (control |> Nest.remove item)
+        _ -> fromProp
