@@ -16,7 +16,9 @@ import Tron.Property as Property exposing (LabelPath)
 import Tron.Control.Nest as Nest
 import Tron.Control.Value as V exposing (Value)
 import Tron.Expose.Convert as Property
+import Tron.Layout as Layout
 
+import Size
 import WithTron exposing (ProgramWithTron)
 
 import Html exposing (Html)
@@ -26,7 +28,7 @@ import Html.Events as Html
 
 type Type
     = Waiting
-    | None
+    --| None
     | Knob
     | XY
     | Color
@@ -51,9 +53,8 @@ type alias Def = ( ( Path, LabelPath ), Type )
 
 type Msg
     = NoOp
-    | Add (Tron ())
+    | Save
     | Edit (Tron Def)
-    | ShowMenu
 
 
 for : Model -> OfValue.Tron Msg
@@ -69,7 +70,9 @@ init =
         { target = Path.start
         , current = Nothing
         }
-    , Tron.root []
+    , Tron.root
+        [
+        ]
     )
 
 
@@ -78,25 +81,54 @@ update msg ( state, currentGui ) =
     case msg of
         NoOp ->
             ( state, currentGui )
-        Add prop ->
-            ( state
-            , currentGui
-                |> Property.updateAt state.target
-                    (Property.append
-                        ( "test"
-                        , prop
-                        )
-                    )
+        Save ->
+            (
+                { state
+                | current = Nothing
+                }
+            , case state.current of
+                Just prop ->
+                    case prop |> Property.find state.target of
+                        Just _ ->
+                            currentGui
+                                |> Property.replace
+                                    (\otherPath otherProp ->
+                                        if (Path.toList otherPath == Path.toList state.target) then
+                                            prop |> Tron.toUnit
+                                        else
+                                            otherProp
+                                    )
+                        Nothing ->
+                            currentGui
+                                |> Property.updateAt
+                                    (Path.pop state.target
+                                        |> Maybe.map Tuple.first
+                                        |> Maybe.withDefault Path.start
+                                    )
+                                    (Property.append
+                                        ( "test"
+                                        , prop |> Tron.toUnit
+                                        )
+                                    )
+                Nothing -> currentGui
             )
-        Edit prop -> ( state, currentGui )
-        ShowMenu -> ( state, currentGui )
+        Edit prop ->
+            (
+                { state
+                | current = Just prop
+                }
+            , currentGui
+            )
 
 
 view : Model -> Html Msg
 view ( state, tree ) =
     Html.div
         []
-        [ preview <| fillTypes <| tree
+        [ preview
+            <| fillTypes
+            <| addGhosts
+            <| tree
         , case state.current of
             Just currentProp ->
                 editorFor currentProp
@@ -117,11 +149,46 @@ valueToType _ = Waiting
 
 
 editorFor : Tron Def -> Html Msg
-editorFor _ = Html.div [] []
+editorFor prop =
+    Html.div
+        []
+        [ Html.button
+            [ Html.onClick <| Save ]
+            [ Html.text "Save" ]
+        ]
 
 
 preview : Tron Def -> Html Msg
-preview _ = Html.div [] []
+preview tree =
+    tree
+        |> Property.fold
+            (\path cell before ->
+                previewCell 0 cell :: before
+            )
+            []
+        |> Html.div []
+
+
+previewCell : Int -> Tron Def -> Html Msg
+previewCell _ prop =
+    case prop |> Property.get of
+        Just ( (path, labelPath), type_ ) ->
+            Html.button
+                [ Html.onClick <| Edit prop ]
+                [ Html.text "Edit" ]
+        Nothing ->
+            Html.button
+                [ Html.onClick <| Edit prop ]
+                [ Html.text "+" ]
+
+
+addGhosts : Tron () -> Tron ()
+addGhosts =
+    Property.replace
+        <| always
+        -- it will skip all non-group elements
+        <| Property.append ( "_Add", Tron.none )
+
 
 -- subscriptions : Model -> Sub Msg
 -- subscriptions _ = Sub.none
