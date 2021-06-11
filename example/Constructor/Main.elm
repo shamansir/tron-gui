@@ -12,8 +12,10 @@ import Tron.Style.Theme as Theme
 import Tron.Path as Path exposing (Path)
 
 import Tron.Core as Tron
-import Tron.Property as Property
+import Tron.Property as Property exposing (LabelPath)
 import Tron.Control.Nest as Nest
+import Tron.Control.Value as V exposing (Value)
+import Tron.Expose.Convert as Property
 
 import WithTron exposing (ProgramWithTron)
 
@@ -22,15 +24,36 @@ import Html.Attributes as Html
 import Html.Events as Html
 
 
+type Type
+    = Waiting
+    | None
+    | Knob
+    | XY
+    | Color
+    | Text
+    | Toggle
+    | Button
+    | Choice
+    | Group
+
+
 type alias Model =
-    ( Path
+    (
+        { target : Path
+        , current : Maybe (Tron Def)
+        }
     , Tron ()
     )
 
 
+type alias Def = ( ( Path, LabelPath ), Type )
+
+
 type Msg
     = NoOp
-    | AddButton
+    | Add (Tron ())
+    | Edit (Tron Def)
+    | ShowMenu
 
 
 for : Model -> OfValue.Tron Msg
@@ -42,39 +65,63 @@ for =
 
 init : Model
 init =
-    ( Path.start
+    (
+        { target = Path.start
+        , current = Nothing
+        }
     , Tron.root []
     )
 
 
 update : Msg -> Model -> Model
-update msg ( path, currentGui ) =
+update msg ( state, currentGui ) =
     case msg of
         NoOp ->
-            ( path, currentGui )
-        AddButton ->
-            ( path
+            ( state, currentGui )
+        Add prop ->
+            ( state
             , currentGui
-                |> Property.updateAt path
+                |> Property.updateAt state.target
                     (Property.append
                         ( "test"
-                        , Tron.button
+                        , prop
                         )
                     )
             )
+        Edit prop -> ( state, currentGui )
+        ShowMenu -> ( state, currentGui )
 
 
 view : Model -> Html Msg
-view _ =
+view ( state, tree ) =
     Html.div
         []
-        [ Html.button
-            [ Html.onClick AddButton
-            , Html.value "+"
-            ]
-            [ Html.text "+" ]
+        [ preview <| fillTypes <| tree
+        , case state.current of
+            Just currentProp ->
+                editorFor currentProp
+            Nothing -> Html.div [] []
         ]
 
+
+fillTypes : Tron () -> Tron ( ( Path, LabelPath ), Type )
+fillTypes =
+    Property.reflect
+        >> Property.map Tuple.first
+        >> Property.map valueToType
+        >> Property.addPaths
+
+
+valueToType : Value -> Type
+valueToType _ = Waiting
+
+
+editorFor : Tron Def -> Html Msg
+editorFor _ = Html.div [] []
+
+
+preview : Tron Def -> Html Msg
+preview _ = Html.div [] []
 
 -- subscriptions : Model -> Sub Msg
 -- subscriptions _ = Sub.none
