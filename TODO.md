@@ -36,6 +36,9 @@
 * Bug: sending value from JS to the choice is not switching it to the corresponding page;
 * Store pages inside nesting controls, do not redistribute every time;
 * Max cols / Max rows should not be needed;
+* Abstract `Layout.view` to `Html ((Path, Maybe a) -> Msg)`:
+    * Render Text inputs separately for that to work: texts are the only controls that don't react on click rather on input;
+    * Or, do it as `Layout.view : ((Path, Property a) -> Bounds -> ... -> msg)` and pass controls rendering functions there;
 * Bug: applying updates as several packages from JS gives no effect (see `ForTiler` example);
 * Detachable mode needs more testing;
 * Bug: `toSwitch` is not sending proper events to JS;
