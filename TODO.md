@@ -50,6 +50,7 @@
 * Move functions related to controls to the controls themselves, hide the `Control` constructor from others;
 * Debug `RenderMode` (i.e. ensure `Debug` view still works);
 * Use `Size Cells`, like integer size, in `Layout`;
+* `Layout.pack` should also put `a` (from a `Property`) into every cell;
 * Breaking?: Use some safe Unique IDs to reference the position of the control in the tree, so that while the tree structure is changing, ID's stay the same;
     * Or, store such IDs together with property;
     * Consider having `Nil (Property msg)` instead of just `Nil`, so that any property could be hidden, but not absent in the tree;
