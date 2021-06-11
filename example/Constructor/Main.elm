@@ -3,29 +3,34 @@ module Constructor.Main exposing (..)
 
 import Browser exposing (Document)
 
-import Tron.OfValue exposing (Tron)
+import Tron.OfValue as Tron exposing (Tron)
 import Tron.Builder as Tron
-import WithTron exposing (ProgramWithTron)
-
 import Tron.Option as Option
 import Tron.Style.Dock as Dock
 import Tron.Style.Theme as Theme
 
+import Tron.Path as Path exposing (Path)
+
+import WithTron exposing (ProgramWithTron)
+
 import Html exposing (Html)
 
 
-type alias Model = ()
+type alias Model =
+    ( Path
+    , Tron ()
+    )
 
 
 type alias Msg = ()
 
 
 for : Model -> Tron Msg
-for _ = Tron.none
+for = Tuple.second >> Tron.toUnit
 
 
 init : Model
-init = ()
+init = ( Path.start, Tron.root [] )
 
 
 update : Msg -> Model -> Model
