@@ -27,8 +27,7 @@ import Html.Events as Html
 
 
 type Type
-    = Waiting
-    --| None
+    = None
     | Knob
     | XY
     | Color
@@ -40,10 +39,7 @@ type Type
 
 
 type alias Model =
-    (
-        { target : Path
-        , current : Maybe (Tron Def)
-        }
+    ( Maybe (Tron Def)
     , Tron ()
     )
 
@@ -67,10 +63,7 @@ for =
 
 init : Model
 init =
-    (
-        { target = Path.start
-        , current = Nothing
-        }
+    ( Nothing
     , Tron.root
         [
         ]
@@ -78,74 +71,70 @@ init =
 
 
 update : Msg -> Model -> Model
-update msg ( state, currentGui ) =
+update msg ( current, currentGui ) =
     case msg of
         NoOp ->
-            ( state, currentGui )
+            ( current, currentGui )
         Save ->
-            (
-                { state
-                | current = Nothing
-                }
-            , case state.current of
-                Just newProp ->
-                    case newProp |> Property.find state.target of
-                        Just _ ->
-                            currentGui
-                                |> Property.replace
-                                    (\otherPath otherProp ->
-                                        if (Path.toList otherPath == Path.toList state.target) then
-                                            newProp |> Tron.toUnit
-                                        else
-                                            otherProp
-                                    )
-                        Nothing -> currentGui
+            ( Nothing
+            , case current |> Maybe.andThen extractPath of
+                Just ( newProp, path ) ->
+                    currentGui
+                        |> Property.replace
+                            (\otherPath otherProp ->
+                                if Path.toList otherPath == Path.toList path then
+                                    newProp |> Tron.toUnit
+                                else
+                                    otherProp
+                            )
                 Nothing -> currentGui
             )
         Append ->
             (
-                { state
-                | current =
-                    state.current
-                        |> Maybe.map
-                            (Property.append
-                                ( "test"
-                                , Tron.none |> fillTypes -- FIXME: paths are wrong this way
-                                )
+                current
+                    |> Maybe.map
+                        (Property.append
+                            ( "test"
+                            , Tron.none
+                                |> fillTypes -- FIXME: paths are wrong this way
                             )
-                }
+                        )
             , currentGui
             )
         Edit prop ->
-            (
-                { state
-                | current = Just prop
-                }
+            ( Just prop
             , currentGui
             )
 
 
 view : Model -> Html Msg
-view ( state, tree ) =
+view ( current, tree ) =
     Html.div
         []
         [ preview
             <| fillTypes
             --<| addGhosts
             <| tree
-        , case state.current of
+        , case current of
             Just currentProp ->
                 editorFor currentProp
             Nothing -> Html.div [] []
         ]
 
 
-fillTypes : Tron () -> Tron ( ( Path, LabelPath ), Type )
+fillTypes : Tron () -> Tron Def
 fillTypes =
     Property.reflect
         >> Property.map Tuple.first
         >> Property.map valueToType
         >> Property.addPaths
+
+
+extractPath : Tron Def -> Maybe ( Tron Def, Path )
+extractPath prop =
+    Property.get prop
+        |> Maybe.map
+            (Tuple.first >> Tuple.first >> Tuple.pair prop)
 
 
 valueToType : Value -> Type
@@ -160,7 +149,21 @@ valueToType v =
         V.FromSwitch _ -> Choice
         V.FromButton -> Button
         V.FromGroup -> Group
-        V.Other -> Waiting
+        V.Other -> None
+
+
+typeToString : Type -> String
+typeToString t =
+    case t of
+        Knob -> "Knob"
+        XY -> "XY"
+        Text -> "Text"
+        Toggle -> "Toggle"
+        Button -> "Button"
+        Color -> "Color"
+        Choice -> "Choice"
+        Group -> "Nest"
+        None -> "None"
 
 
 editorFor : Tron Def -> Html Msg
@@ -198,7 +201,7 @@ previewCell _ prop =
         Just ( (path, labelPath), type_ ) ->
             Html.button
                 [ Html.onClick <| Edit prop ]
-                [ Html.text "Edit" ]
+                [ Html.text <| "Edit (" ++ typeToString type_ ++ ")" ]
         Nothing ->
             Html.button
                 [ Html.onClick <| Edit prop ]
