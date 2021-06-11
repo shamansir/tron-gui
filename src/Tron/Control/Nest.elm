@@ -24,9 +24,16 @@ type ChoiceMode -- FIXME: can't be `Expanded` and `Knob` / `SwitchThrough` at th
 type alias ItemId = Int
 
 
-type alias GroupControl item a =
-    Core.Control
+type alias NestControl item value a
+    = Core.Control
         ( Array item )
+        value
+        a
+
+
+type alias GroupControl item a
+    = NestControl
+        item
         { form : Form
         , face : Maybe Button.Face
         , page : PageNum
@@ -35,8 +42,8 @@ type alias GroupControl item a =
 
 
 type alias ChoiceControl item a =
-    Core.Control
-        ( Array item )
+    NestControl
+        item
         { form : Form
         , face : Maybe Button.Face
         , selected : ItemId
@@ -53,11 +60,11 @@ type alias Transient =
     }
 
 
-get : ItemId -> Core.Control ( Array item ) value a -> Maybe item
+get : ItemId -> NestControl item value a -> Maybe item
 get n = getItems >> Array.get n
 
 
-find : comparable -> Core.Control ( Array (comparable, item) ) value a -> Maybe ( ItemId, item )
+find : comparable -> NestControl (comparable, item) value a -> Maybe ( ItemId, item )
 find what =
     getItems
         >> Array.indexedMap Tuple.pair
@@ -183,7 +190,7 @@ setChoiceMode newMode (Core.Control setup value a) =
         a
 
 
-getItems : Core.Control ( Array item ) value a -> Array item
+getItems : NestControl item value a -> Array item
 getItems (Core.Control items _ _) = items
 
 
@@ -197,12 +204,12 @@ setItems newItems (Core.Control _ value handler) =
 
 mapItems
      : (itemA -> itemB)
-    -> Core.Control
-            ( Array itemA )
+    -> NestControl
+            itemA
             value
             a
-    -> Core.Control
-            ( Array itemB )
+    -> NestControl
+            itemB
             value
             a
 mapItems f (Core.Control items value handler) =
@@ -211,12 +218,12 @@ mapItems f (Core.Control items value handler) =
 
 indexedMapItems
      : (Int -> itemA -> itemB)
-    -> Core.Control
-            ( Array itemA )
+    -> NestControl
+            itemA
             value
             a
-    -> Core.Control
-            ( Array itemB )
+    -> NestControl
+            itemB
             value
             a
 indexedMapItems f (Core.Control items value handler) =
@@ -226,8 +233,8 @@ indexedMapItems f (Core.Control items value handler) =
 withItem
      : Int
     -> (item -> item)
-    -> Core.Control (Array item) value a
-    -> Core.Control (Array item) value a
+    -> NestControl item value a
+    -> NestControl item value a
 withItem id f ( Core.Control items state handler ) =
     Core.Control
         ( case Array.get id items of
@@ -332,4 +339,23 @@ toChoice (Core.Control items { form, page, face } a) =
         , prevSelected = Nothing
         , mode = Pages
         }
+        a
+
+
+append : item -> NestControl item value a -> NestControl item value a
+append what (Core.Control items value a) =
+    Core.Control
+        (items |> Array.append (Array.repeat 1 what))
+        value
+        a
+
+
+remove : ItemId -> NestControl item value a -> NestControl item  value a
+remove id (Core.Control items value a) =
+    Core.Control
+        (Array.append
+            (items |> Array.slice 0 id)
+            (items |> Array.slice (id + 1) (Array.length items) )
+        )
+        value
         a
