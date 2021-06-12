@@ -43,19 +43,16 @@ type Type
 
 
 type alias Model =
-    ( Maybe (Tron Def)
+    ( Maybe ( Path, Tron Type )
     , Tron ()
     )
-
-
-type alias Def = ( ( Path, LabelPath ), Type )
 
 
 type Msg
     = NoOp
     | Save
     | Append
-    | SwitchTo (Tron Def)
+    | SwitchTo Path (Tron Type)
     | Edit String E.Value
 
 
@@ -82,8 +79,8 @@ update msg ( current, currentGui ) =
             ( current, currentGui )
         Save ->
             ( Nothing
-            , case current |> Maybe.andThen extractPath of
-                Just ( newProp, path ) ->
+            , case current of
+                Just ( path, newProp ) ->
                     currentGui
                         |> Property.replace
                             (\otherPath otherProp ->
@@ -98,21 +95,22 @@ update msg ( current, currentGui ) =
             (
                 current
                     |> Maybe.map
-                        (Property.append
+                        (Tuple.mapSecond
+                        <| Property.append
                             ( "test"
-                            , create "button"
-                                |> fillTypes -- FIXME: paths are wrong this way
+                            , create "Button"
+                                |> fillTypes
                             )
                         )
             , currentGui
             )
         Edit propName propValue ->
             ( current
-                |> Maybe.map (edit propName propValue)
+                |> Maybe.map (Tuple.mapSecond <| edit propName propValue)
             , currentGui
             )
-        SwitchTo prop ->
-            ( Just prop
+        SwitchTo path prop ->
+            ( Just ( path, prop )
             , currentGui
             )
 
@@ -126,25 +124,17 @@ view ( current, tree ) =
             --<| addGhosts
             <| tree
         , case current of
-            Just currentProp ->
-                editorFor currentProp
+            Just ( path, currentProp ) ->
+                editorFor path currentProp
             Nothing -> Html.div [] []
         ]
 
 
-fillTypes : Tron () -> Tron Def
+fillTypes : Tron () -> Tron Type
 fillTypes =
     Property.reflect
         >> Property.map Tuple.first
         >> Property.map valueToType
-        >> Property.addPaths
-
-
-extractPath : Tron Def -> Maybe ( Tron Def, Path )
-extractPath prop =
-    Property.get prop
-        |> Maybe.map
-            (Tuple.first >> Tuple.first >> Tuple.pair prop)
 
 
 valueToType : Value -> Type
@@ -176,8 +166,8 @@ typeToString t =
         None -> "None"
 
 
-editorFor : Tron Def -> Html Msg
-editorFor prop =
+editorFor : Path -> Tron Type -> Html Msg
+editorFor path prop =
     Html.div
         []
         [ typesDropdown <| typeOf prop
@@ -189,7 +179,10 @@ editorFor prop =
                         [ Html.onClick <| Append ]
                         [ Html.text "Append" ]
                     :: (Nest.getItems control
-                            |> Array.map (Tuple.second >> editorFor)
+                            |> Array.indexedMap
+                                (\idx (label, prop_) ->
+                                    editorFor (path |> Path.advance idx) prop_
+                                )
                             |> Array.toList)
             _ -> Html.div [] []
         , Html.button
@@ -198,38 +191,31 @@ editorFor prop =
         ]
 
 
-typeOf : Tron Def -> Type
+typeOf : Tron Type -> Type
 typeOf =
     Property.get
-        >> Maybe.map Tuple.second
         >> Maybe.withDefault None
 
 
-preview : Tron Def -> Html Msg
+preview : Tron Type -> Html Msg
 preview tree =
     tree
         |> Property.fold
             (\path cell before ->
-                previewCell 0 cell :: before
+                previewCell path cell :: before
             )
             []
         |> Html.div []
 
 
-previewCell : Int -> Tron Def -> Html Msg
-previewCell _ prop =
-    case prop |> Property.get of
-        Just ( (path, labelPath), type_ ) ->
-            Html.button
-                [ Html.onClick <| SwitchTo prop ]
-                [ Html.text <| "Edit (" ++ typeToString type_ ++ ")" ]
-        Nothing ->
-            Html.button
-                [ Html.onClick <| SwitchTo prop ]
-                [ Html.text "+" ]
+previewCell : Path -> Tron Type -> Html Msg
+previewCell path prop =
+    Html.button
+        [ Html.onClick <| SwitchTo path prop ]
+        [ Html.text <| "Edit (" ++ (typeToString <| typeOf prop) ++ ")" ]
 
 
-edit : String -> E.Value -> Tron Def -> Tron Def
+edit : String -> E.Value -> Tron Type -> Tron Type
 edit name value prop =
     case ( typeOf prop, name ) of
         ( _, "type" ) ->
@@ -238,7 +224,7 @@ edit name value prop =
         _ -> prop
 
 
-edit_ : (a -> Tron Def) -> D.Decoder a -> E.Value -> Tron Def -> Tron Def
+edit_ : (a -> Tron Type) -> D.Decoder a -> E.Value -> Tron Type -> Tron Type
 edit_ f decoder value prop =
     case value |> D.decodeValue decoder of
         Ok decodedValue ->
@@ -249,7 +235,8 @@ edit_ f decoder value prop =
 create : String -> Tron ()
 create s =
     case s of
-        "button" -> Tron.button
+        "Knob" -> Tron.float { min = 0, max = 1, step = 0.01 } 0
+        "Button" -> Tron.button
         _ -> Tron.none
 
 
