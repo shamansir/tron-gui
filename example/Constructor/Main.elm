@@ -2,6 +2,9 @@ module Constructor.Main exposing (..)
 
 
 import Browser exposing (Document)
+import Array
+import Json.Decode as D
+import Json.Encode as E
 
 import Tron exposing (Tron)
 import Tron.OfValue as OfValue
@@ -24,6 +27,7 @@ import WithTron exposing (ProgramWithTron)
 import Html exposing (Html)
 import Html.Attributes as Html
 import Html.Events as Html
+import Dropdown
 
 
 type Type
@@ -51,7 +55,8 @@ type Msg
     = NoOp
     | Save
     | Append
-    | Edit (Tron Def)
+    | SwitchTo (Tron Def)
+    | Edit String E.Value
 
 
 for : Model -> OfValue.Tron Msg
@@ -95,13 +100,18 @@ update msg ( current, currentGui ) =
                     |> Maybe.map
                         (Property.append
                             ( "test"
-                            , Tron.none
+                            , create "button"
                                 |> fillTypes -- FIXME: paths are wrong this way
                             )
                         )
             , currentGui
             )
-        Edit prop ->
+        Edit propName propValue ->
+            ( current
+                |> Maybe.map (edit propName propValue)
+            , currentGui
+            )
+        SwitchTo prop ->
             ( Just prop
             , currentGui
             )
@@ -170,18 +180,29 @@ editorFor : Tron Def -> Html Msg
 editorFor prop =
     Html.div
         []
-        [ case Property.get prop
-                |> Maybe.map Tuple.second of
-            Just Group ->
-                Html.button
-                    [ Html.onClick <| Append ]
-                    [ Html.text "Append" ]
-            Just _ -> Html.div [] []
-            Nothing -> Html.div [] []
+        [ typesDropdown <| typeOf prop
+        , case prop of
+            Property.Group _ _ control ->
+                Html.div
+                    []
+                    <| Html.button
+                        [ Html.onClick <| Append ]
+                        [ Html.text "Append" ]
+                    :: (Nest.getItems control
+                            |> Array.map (Tuple.second >> editorFor)
+                            |> Array.toList)
+            _ -> Html.div [] []
         , Html.button
             [ Html.onClick <| Save ]
             [ Html.text "Save" ]
         ]
+
+
+typeOf : Tron Def -> Type
+typeOf =
+    Property.get
+        >> Maybe.map Tuple.second
+        >> Maybe.withDefault None
 
 
 preview : Tron Def -> Html Msg
@@ -200,12 +221,37 @@ previewCell _ prop =
     case prop |> Property.get of
         Just ( (path, labelPath), type_ ) ->
             Html.button
-                [ Html.onClick <| Edit prop ]
+                [ Html.onClick <| SwitchTo prop ]
                 [ Html.text <| "Edit (" ++ typeToString type_ ++ ")" ]
         Nothing ->
             Html.button
-                [ Html.onClick <| Edit prop ]
+                [ Html.onClick <| SwitchTo prop ]
                 [ Html.text "+" ]
+
+
+edit : String -> E.Value -> Tron Def -> Tron Def
+edit name value prop =
+    case ( typeOf prop, name ) of
+        ( _, "type" ) ->
+            prop
+                |> edit_ (create >> fillTypes) D.string value
+        _ -> prop
+
+
+edit_ : (a -> Tron Def) -> D.Decoder a -> E.Value -> Tron Def -> Tron Def
+edit_ f decoder value prop =
+    case value |> D.decodeValue decoder of
+        Ok decodedValue ->
+            f decodedValue
+        Err _ -> prop
+
+
+create : String -> Tron ()
+create s =
+    case s of
+        "button" -> Tron.button
+        _ -> Tron.none
+
 
 
 addGhosts : Tron () -> Tron ()
@@ -218,6 +264,38 @@ addGhosts =
 
 -- subscriptions : Model -> Sub Msg
 -- subscriptions _ = Sub.none
+
+
+types : List Type
+types =
+    [ Knob
+    , XY
+    , Color
+    , Text
+    , Toggle
+    , Button
+    , Choice
+    , Group
+    ]
+
+
+typesDropdown : Type -> Html Msg
+typesDropdown currentType =
+    Dropdown.dropdown
+        { items =
+            types
+                |> List.map
+                    (\type_ ->
+                        { value = typeToString type_
+                        , text = typeToString type_
+                        , enabled = True
+                        }
+                    )
+        , emptyItem = Nothing
+        , onChange = Maybe.withDefault "" >> E.string >> Edit "type"
+        }
+        []
+        (Just <| typeToString currentType)
 
 
 main : ProgramWithTron () Model Msg
