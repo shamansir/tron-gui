@@ -21,6 +21,7 @@
 * Vertical pagination;
 * Consider selecting the page which current item when update came from JS;
 * Support touch events;
+* Nostalgic theme;
 
 ## New controls
 
