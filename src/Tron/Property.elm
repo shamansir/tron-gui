@@ -213,22 +213,6 @@ unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
-fold1 : (a -> x) -> Property a -> Maybe x
-fold1 f prop =
-    case prop of
-        Nil -> Nothing
-        Number control -> control |> Control.fold f |> Just
-        Coordinate control -> control |> Control.fold f |> Just
-        Text control -> control |> Control.fold f |> Just
-        Color control -> control |> Control.fold f |> Just
-        Toggle control -> control |> Control.fold f |> Just
-        Action control -> control |> Control.fold f |> Just
-        Choice _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well?
-        Group _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well?
-        Live innerProp -> fold1 f innerProp
-
-
-
 andThen : (a -> Property b) -> Property a -> Property b
 -- FIXME: should be changed to `andThen` with getting rid of function in Control
 andThen f =
@@ -848,6 +832,21 @@ compareValues propA propB =
         (_, _) -> False
 
 
+fold1 : (a -> x) -> Property a -> Maybe x
+fold1 f prop =
+    case prop of
+        Nil -> Nothing
+        Number control -> control |> Control.fold f |> Just
+        Coordinate control -> control |> Control.fold f |> Just
+        Text control -> control |> Control.fold f |> Just
+        Color control -> control |> Control.fold f |> Just
+        Toggle control -> control |> Control.fold f |> Just
+        Action control -> control |> Control.fold f |> Just
+        Choice _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well?
+        Group _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well?
+        Live innerProp -> fold1 f innerProp
+
+
 fold2_ : ((Maybe (Property a), Maybe (Property b)) -> c -> c) -> Property a -> Property b -> c -> c
 fold2_ f propA propB = fold2Helper f ( Just propA, Just propB )
 
@@ -906,6 +905,43 @@ fold2Helper f ( maybePropA, maybePropB ) def =
                 (Nest.getItems choiceControlB)
 
         ( _, _ ) -> f ( maybePropA, maybePropB ) def
+
+
+fold3 : ((Path, LabelPath) -> Property a -> b -> b) -> b -> Property a -> b
+fold3 f from root =
+    -- FIXME: use this one as `fold`, just omit `LabelPath`
+    let
+
+        foldItems : (Path, LabelPath) -> Array ( Label, Property a ) -> b -> b
+        foldItems ( curPath, curLabelPath ) items val =
+            items
+                --|> Array.map Tuple.second
+                |> Array.indexedMap Tuple.pair
+                |> Array.foldl
+                    (\(index, (label, innerItem)) prev ->
+                        helper
+                            ( curPath |> Path.advance index
+                            , curLabelPath ++ [ label ]
+                            )
+                            innerItem prev
+                    )
+                    val
+
+        helper : (Path, LabelPath) -> Property a -> b -> b
+        helper curPath prop val =
+            case prop of
+                Choice _ _ control ->
+                    foldItems curPath (Nest.getItems control)
+                        <| f curPath prop val
+                Group _ _ control ->
+                    foldItems curPath (Nest.getItems control)
+                        <| f curPath prop val
+                -- Live innerProp ->
+                --     helper curPath innerProp val
+                _ -> f curPath prop val
+
+    in
+        helper ( Path.start, [] ) root from
 
 
 move : (Property a -> Property b -> Property c) -> Property a -> Property b -> Property c
