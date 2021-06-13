@@ -37,7 +37,9 @@
     * ...
 * Bug: sending value from JS to the choice is not switching it to the corresponding page;
 * Store pages inside nesting controls, do not redistribute every time;
-* Max cols / Max rows should not be needed;
+* Max cols / Max rows should not be needed (replace by enabling/disabling paging);
+* Too many `fold`s in `Property`; Split things into modules;
+* Events for `Controls` and Controls' `update`/`view` should be inside the module;
 * Abstract `Layout.view` to `Html ((Path, Maybe a) -> Msg)`:
     * Render Text inputs separately for that to work: texts are the only controls that don't react on click rather on input;
     * Or, do it as `Layout.view : ((Path, Property a) -> Bounds -> ... -> msg)` and pass controls rendering functions there;
@@ -66,6 +68,7 @@
     * Breaking?: `Control`/`Tron`.`andThen` — due to handler and `Maybe`, now it is impossible to implement, so I did `Tron.with`;
     * Remove `evaluate__` functions;
     * Consider `Control setup msg value = Control (setup -> (Cmd msg, value))`
+* `(Path, LabelPath)` pairs are used quite often as well as `Path.advance` & `labelPath ++ [ label ]`, find something egeneric for that cases;
 * Do not store cell size in the `Gui msg`, it should be recalculated every time;
 * Do not store dock in the `Gui msg`, it should be recalculated every time;
 * Breaking: Change choice and nest to work with `Array`s since we usually need to get item by index? But Array syntax is not very friendly for API

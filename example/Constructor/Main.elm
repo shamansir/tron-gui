@@ -44,7 +44,7 @@ type Type
 
 
 type alias Model =
-    ( Maybe ( Path, Tron Type )
+    ( Maybe ( (Path, LabelPath) , Tron Type )
     , Tron ()
     )
 
@@ -53,7 +53,7 @@ type Msg
     = NoOp
     | Save
     | Append
-    | SwitchTo Path (Tron Type)
+    | SwitchTo (Path, LabelPath) (Tron Type)
     | Edit String E.Value
 
 
@@ -81,7 +81,7 @@ update msg ( current, currentGui ) =
         Save ->
             ( Nothing
             , case current of
-                Just ( path, newProp ) ->
+                Just ( ( path, _ ), newProp ) ->
                     currentGui
                         |> Property.replace
                             (\otherPath otherProp ->
@@ -167,8 +167,8 @@ typeToString t =
         None -> "None"
 
 
-editorFor : Path -> Tron Type -> Html Msg
-editorFor path prop =
+editorFor : ( Path, LabelPath ) -> Tron Type -> Html Msg
+editorFor ( path, labelPath ) prop =
     Html.div
         []
         [ typesDropdown <| typeOf prop
@@ -182,7 +182,11 @@ editorFor path prop =
                     :: (Nest.getItems control
                             |> Array.indexedMap
                                 (\idx (label, prop_) ->
-                                    editorFor (path |> Path.advance idx) prop_
+                                    editorFor
+                                        ( path |> Path.advance idx
+                                        , labelPath ++ [ label ]
+                                        )
+                                        prop_
                                 )
                             |> Array.toList)
             _ -> Html.div [] []
@@ -199,21 +203,26 @@ typeOf =
 
 
 preview : Tron Type -> Html Msg
-preview tree =
-    tree
-        |> Property.fold
-            (\path cell before ->
-                previewCell path cell :: before
-            )
-            []
-        |> Html.div []
+preview =
+    Property.fold3 (\path cell before -> ( path, cell ) :: before) []
+        >> List.reverse
+        -- |> List.sortBy (Tuple.first >> Path.toList)
+        >> List.map (\(path, cell) -> previewCell path cell)
+        >> Html.div []
 
 
-previewCell : Path -> Tron Type -> Html Msg
-previewCell path prop =
+previewCell : ( Path, LabelPath ) -> Tron Type -> Html Msg
+previewCell (path, labelPath) prop =
     Html.button
-        [ Html.onClick <| SwitchTo path prop ]
-        [ Html.text <| "Edit (" ++ (typeToString <| typeOf prop) ++ ")" ]
+        [ Html.onClick <| SwitchTo (path, labelPath) prop
+        , Html.class "edit-cell"
+        ]
+        [ Html.span [] [ Html.text <| Path.toString path ]
+        , Html.span [] [ Html.text <| String.join "/" <| labelPath ]
+        , Html.span []
+            [ Html.text <| typeToString <| typeOf prop ]
+        , Html.span [] [ Html.text "Edit" ]
+        ]
 
 
 edit : String -> E.Value -> Tron Type -> Tron Type
