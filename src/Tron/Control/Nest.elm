@@ -345,7 +345,7 @@ toChoice (Core.Control items { form, page, face } a) =
 append : item -> NestControl item value a -> NestControl item value a
 append what (Core.Control items value a) =
     Core.Control
-        (items |> Array.append (Array.repeat 1 what))
+        (Array.append items <| Array.repeat 1 what)
         value
         a
 
