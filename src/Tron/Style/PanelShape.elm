@@ -74,7 +74,7 @@ distribute panelShape cellShape items =
         ( cellXMultiplier, cellYMultiplier ) =
             numify cellShape
         otherSide n =
-            if (modBy n itemCount) == 0
+            if (n /= 0) && (modBy n itemCount) == 0
                 then itemCount // n
                 else itemCount // n + 1
         onAPage ( c, r ) =
