@@ -195,11 +195,11 @@ fold f from root =
         helper curPath prop val =
             case prop of
                 Choice _ _ control ->
-                    f curPath prop
-                        <| foldItems curPath (Nest.getItems control) val
+                    foldItems curPath (Nest.getItems control)
+                        <| f curPath prop val
                 Group _ _ control ->
-                    f curPath prop
-                        <| foldItems curPath (Nest.getItems control) val
+                    foldItems curPath (Nest.getItems control)
+                        <| f curPath prop val
                 -- Live innerProp ->
                 --     helper curPath innerProp val
                 _ -> f curPath prop val
