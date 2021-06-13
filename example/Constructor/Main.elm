@@ -5,6 +5,7 @@ import Browser exposing (Document)
 import Array
 import Json.Decode as D
 import Json.Encode as E
+import Color
 
 import Tron exposing (Tron)
 import Tron.OfValue as OfValue
@@ -235,8 +236,32 @@ edit_ f decoder value prop =
 create : String -> Tron ()
 create s =
     case s of
-        "Knob" -> Tron.float { min = 0, max = 1, step = 0.01 } 0
-        "Button" -> Tron.button
+        "Knob" ->
+            Tron.float { min = 0, max = 1, step = 0.01 } 0
+        "XY" ->
+            Tron.xy
+                ( { min = 0, max = 1, step = 0.01 }
+                , { min = 0, max = 1, step = 0.01 }
+                )
+                ( 0, 0 )
+        "Text" ->
+            Tron.text "foo"
+        "Toggle" ->
+            Tron.toggle False
+        "Color" ->
+            Tron.color Color.black
+        "Choice" ->
+            Tron.choice
+                [
+                    ( "foo"
+                    , Tron.button |> Tron.map (always "foo")
+                    )
+                ]
+                "foo"
+        "Button" ->
+            Tron.button
+        "Nest" ->
+            Tron.nest []
         _ -> Tron.none
 
 
