@@ -7,6 +7,7 @@
 * Detachable: Hide the user view by default, when interface is detached;
     * Or give user the choice if to view the original model or not;
 * Breaking: do not store `ClientID` in the `RawOutUpdate`, but be able to add it with `Expose.Convert` helpers and so use it only in `Detachable`, where it is needed; (Partly done);
+* Breaking: API shouldn't allow `nest` and `choice` with no items;
 * Breaking?: send some special value with `RawOutUpdate` for `Choice` controls or else it is hard to get what was actually chosen;
 * Breaking?: for choice, give user option either to show icon on the button, or the label, even if the items in the choice have icons;
 * Bug: selecting item on the second page of the choice control could make other panels content disappear; (Tiler: selecting _Tile/Tileset_ breaks _Color Scheme/BG Color_)
