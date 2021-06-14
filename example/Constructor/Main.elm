@@ -40,7 +40,8 @@ import Example.Tiler.Logic as Example_Tiler
 
 
 type Example
-    = Goose
+    = Empty
+    | Goose
     | Tiler
     | Default
 
@@ -67,6 +68,7 @@ type Msg
     = NoOp
     | Save
     | Append
+    | Remove Int
     | SwitchTo (Path, LabelPath) (Tron Type)
     | Edit String E.Value
     | LoadExample Example
@@ -113,11 +115,18 @@ update msg ( current, currentGui ) =
                     |> Maybe.map
                         (Tuple.mapSecond
                         <| Property.append
-                            ( "test"
+                            ( "stub"
                             , create "Button"
                                 |> fillTypes
                             )
                         )
+            , currentGui
+            )
+        Remove idx ->
+            (
+                current
+                    |> Maybe.map
+                        (Tuple.mapSecond <| Property.remove idx)
             , currentGui
             )
         Edit propName propValue ->
@@ -132,6 +141,7 @@ update msg ( current, currentGui ) =
         LoadExample example ->
             ( Nothing
             , case example of
+                Empty -> Tron.root []
                 Default -> Example_Default.for Example_Default.default |> Tron.toUnit
                 Goose -> Example_Goose.for Example_Goose.default |> Tron.toUnit
                 Tiler -> Example_Tiler.gui V.empty (Example_Tiler.init () V.empty |> Tuple.first) |> Tron.toUnit
@@ -158,7 +168,8 @@ view ( current, tree ) =
             [ Html.textarea [ Html.id "builder-code" ] [] ]
         , Html.div
             [ Html.id "examples" ]
-            [ Html.button [ Html.onClick <| LoadExample Goose ] [ Html.text "Goose" ]
+            [ Html.button [ Html.onClick <| LoadExample Empty ] [ Html.text "Empty" ]
+            , Html.button [ Html.onClick <| LoadExample Goose ] [ Html.text "Goose" ]
             , Html.button [ Html.onClick <| LoadExample Tiler ] [ Html.text "Tiler" ]
             , Html.button [ Html.onClick <| LoadExample Default ] [ Html.text "Default" ]
             ]
@@ -210,19 +221,20 @@ editorFor ( path, labelPath ) prop =
             Property.Group _ _ control ->
                 Html.div
                     []
-                    <| Html.button
-                        [ Html.onClick <| Append ]
-                        [ Html.text "Append" ]
-                    :: (Nest.getItems control
+                    <| (Nest.getItems control
                             |> Array.indexedMap
                                 (\idx (label, prop_) ->
-                                    editorFor
+                                    previewNestCell
+                                    -- editorFor
                                         ( path |> Path.advance idx
                                         , labelPath ++ [ label ]
                                         )
                                         prop_
                                 )
                             |> Array.toList)
+                    ++ [ Html.button
+                        [ Html.onClick <| Append ]
+                        [ Html.text "Append" ] ]
             _ -> Html.div [] []
         , Html.button
             [ Html.onClick <| Save ]
@@ -259,7 +271,32 @@ previewCell (path, labelPath) prop =
             else emptyLabelPath
         , Html.span [ Html.class "cell-type" ]
             [ Html.text <| typeToString <| typeOf prop ]
-        , Html.span [ Html.class "verb" ] [ Html.text "Edit" ]
+        , Html.span
+            [ Html.class "verb" ] [ Html.text "Edit" ]
+        ]
+
+
+previewNestCell : ( Path, LabelPath ) -> Tron Type -> Html Msg
+previewNestCell (path, labelPath) prop =
+    Html.button
+        [ Html.class "edit-cell"
+        , Html.class "edit-cell--preview"
+        ]
+        [ if Path.howDeep path > 0
+            then viewPath path
+            else emptyPath
+        , if List.length labelPath > 0
+            then viewLabelPath labelPath
+            else emptyLabelPath
+        , Html.span [ Html.class "cell-type" ]
+            [ Html.text <| typeToString <| typeOf prop ]
+        , Html.span
+            [ Html.class "verb verb--danger"
+            , Html.onClick <| case Path.pop path |> Maybe.map Tuple.second of
+                Just idx -> Remove idx
+                Nothing -> NoOp
+            ]
+            [ Html.text "Remove" ]
         ]
 
 

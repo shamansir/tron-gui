@@ -17,9 +17,9 @@ body {
 }
 
 #tree {
-    display: flex;
+    /* display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: wrap; */
 }
 
 #constructor > .editor {
@@ -41,7 +41,7 @@ body {
 }
 
 .edit-cell {
-    display: block;
+    display: inline-block;
     width: 65px;
     height: 65px;
     border: dashed 1px;
@@ -49,6 +49,10 @@ body {
     cursor: pointer;
     font-family: sans-serif;
     margin: 3px;
+}
+
+.edit-cell.edit-cell--preview {
+    cursor: auto;
 }
 
 .edit-cell > span {
@@ -101,4 +105,10 @@ body {
     font-size: 8px;
     color: royalblue;
     text-transform: lowercase;
+}
+
+.edit-cell .verb.verb--danger {
+    color: red;
+    font-weight: bold;
+    cursor: not-allowed;
 }
