@@ -404,6 +404,34 @@ findByLabelPath labelPath tree =
         |> Maybe.andThen (\path -> find path tree)
 
 
+changeLabel : Path -> String -> Property a -> Property a
+changeLabel path newLabel  =
+    let
+        inNest curPath control =
+            case Path.pop curPath of
+                Just ( before, idx ) ->
+                    if Path.howDeep curPath == 1 then
+                        Nest.withItem idx (\(_, prop) -> (newLabel, prop))
+                        <| control
+                    else
+                        Nest.withItem idx
+                            (\(label, prop) ->
+                                (label, helper before prop)
+                            )
+                        <| control
+                Nothing -> control
+        helper : Path -> Property a -> Property a
+        helper curPath current =
+            case current of
+                Choice focus shape control ->
+                    Choice focus shape <| inNest curPath <| control
+                Group focus shape control ->
+                    Group focus shape <| inNest curPath <| control
+                _ -> current
+    in
+        helper (path |> Path.reverse)
+
+
 updateAt : Path -> (Property a -> Property a) -> Property a -> Property a
 updateAt path f =
     replace
@@ -1003,9 +1031,6 @@ setValueTo from to =
         (Live _, Live _) -> to
             -- Number <| Control.setValue (Control.getValue controlB) <| controlA
         (_, _) -> to
-
-
-
 
 
 -- map2 use `move` for that

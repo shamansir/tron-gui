@@ -55,6 +55,10 @@ pop (Path l) =
                 |> Just
 
 
+reverse : Path -> Path
+reverse (Path l) = Path <| List.reverse l
+
+
 last : Path -> Maybe Int
 last =
     pop >> Maybe.map Tuple.second
@@ -92,4 +96,3 @@ sub (Path w) (Path f) =
                     else from
     in
         Path <| helper w f
-

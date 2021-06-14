@@ -71,6 +71,7 @@ type Msg
     | Remove Int
     | SwitchTo (Path, LabelPath) (Tron Type)
     | Edit String E.Value
+    | EditLabel String
     | LoadExample Example
 
 
@@ -134,6 +135,16 @@ update msg ( current, currentGui ) =
                 |> Maybe.map (Tuple.mapSecond <| edit propName propValue)
             , currentGui
             )
+        EditLabel newLabel ->
+            case current of
+                Just ( ( path, labelPath ), prop ) ->
+                    ( Just
+                        ( ( path, labelPath |> changeLastTo newLabel ), prop )
+                    , currentGui
+                        |> Property.changeLabel path newLabel
+                    )
+                Nothing -> ( current, currentGui )
+
         SwitchTo path prop ->
             ( Just ( path, prop )
             , currentGui
@@ -216,7 +227,21 @@ editorFor : ( Path, LabelPath ) -> Tron Type -> Html Msg
 editorFor ( path, labelPath ) prop =
     Html.div
         [ Html.class "editor" ]
-        [ typesDropdown <| typeOf prop
+        [ viewPath path
+        , viewLabelPath labelPath
+        , case labelPath |> List.reverse |> List.head of
+            Just label ->
+                Html.div
+                    [ ]
+                    [ Html.input
+                        [ Html.type_ "text"
+                        , Html.onInput <| EditLabel
+                        , Html.placeholder label
+                        ]
+                        [ ]
+                    ]
+            Nothing -> Html.span [] []
+        , typesDropdown <| typeOf prop
         , case prop of
             Property.Group _ _ control ->
                 Html.div
@@ -334,6 +359,19 @@ viewLabelPath =
      List.map (\n -> Html.span [ Html.class "item" ] [ Html.text n ])
         >> List.intersperse (Html.span [ Html.class "sep" ] [ Html.text "/" ])
         >> Html.span [ Html.class "label-path" ]
+
+
+changeLastTo : String -> LabelPath -> LabelPath
+changeLastTo newLabel path =
+    let
+        reversed = List.reverse path
+    in
+        (case reversed |> List.head of
+            Just _ ->
+                newLabel :: (List.tail reversed |> Maybe.withDefault [])
+            Nothing ->
+                []
+        ) |> List.reverse
 
 
 edit : String -> E.Value -> Tron Type -> Tron Type
