@@ -16,6 +16,11 @@
     <meta name="msapplication-TileColor" content="#000000">
     <meta name="theme-color" content="#000000">
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.1/codemirror.min.js" integrity="sha512-ZTpbCvmiv7Zt4rK0ltotRJVRaSBKFQHQTrwfs6DoYlBYzO1MA6Oz2WguC+LkV8pGiHraYLEpo7Paa+hoVbCfKw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.1/codemirror.min.css" integrity="sha512-xIf9AdJauwKIVtrVRZ0i4nHP61Ogx9fSRAkCLecmE2dL/U8ioWpDvFCAy4dcfecN72HHB9+7FfQj3aiO68aaaw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.1/theme/idea.min.css" integrity="sha512-N+NJU9LvDmlEQyb3xDkcXPOR8SDXQGx4kRs9wCi/U6GPfN/FSsfjIzY61Svd8eg4Y1VcbBL1XhuC3VzzQYmcJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.1/mode/elm/elm.min.js" integrity="sha512-0Gwq3miQdQKUCc7OEZaf1eJSRJhjXrjZnpc3Pg93mwF/1QF0qM61Wg8oU1QFOw0NyM9z7g8ES1MAYeviTIqgEA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <link href="./Tron.css" rel="stylesheet" type="text/css">
     <link href="./Constructor/Constructor.css" rel="stylesheet" type="text/css">
     <script src="./app.js"></script>
@@ -39,6 +44,8 @@
         const app = Elm.Constructor.Main.init({
             node : document.getElementById("elm-node")
         });
+
+        var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('builder-code'));
 
     </script>
 
