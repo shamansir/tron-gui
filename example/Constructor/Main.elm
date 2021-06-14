@@ -1,4 +1,4 @@
-module Constructor.Main exposing (..)
+port module Constructor.Main exposing (..)
 
 
 import Browser exposing (Document)
@@ -37,6 +37,9 @@ import Example.Goose.Gui as Example_Goose
 import Example.Goose.Model as Example_Goose
 import Example.Tiler.Gui as Example_Tiler
 import Example.Tiler.Logic as Example_Tiler
+
+
+import Constructor.ToBuilder as ToBuilder
 
 
 type Example
@@ -424,14 +427,9 @@ create s =
         _ -> Tron.none
 
 
-toCodeLines : Tron () -> List String
-toCodeLines _ =
-    [ "module Gui exposing (..)", "", "", "foo : Int -> Int", "foo _ = 42" ]
-
-
 viewCode : Tron () -> Html msg
 viewCode =
-    toCodeLines
+    ToBuilder.toCodeLines
         >> String.join "\n"
         >> Html.text
         >> List.singleton
@@ -446,8 +444,8 @@ addGhosts =
         <| Property.append ( "_Add", Tron.none )
 
 
--- subscriptions : Model -> Sub Msg
--- subscriptions _ = Sub.none
+subscriptions : Model -> Sub Msg
+subscriptions _ = Sub.none
 
 
 types : List Type
@@ -484,12 +482,25 @@ typesDropdown currentType =
 
 main : ProgramWithTron () Model Msg
 main =
-    WithTron.sandbox
+    WithTron.element
         (Option.toHtml Dock.bottomCenter Theme.dark)
         Option.noCommunication
         { for = for
-        , init = init
+        , init = \_ -> ( init, Cmd.none )
         , view = view
-        , update = update
-        --, subscriptions = subscriptions
+        , update =
+            (\msg model ->
+                ( update msg model
+                , case msg of
+                    LoadExample _ ->
+                        updateCodeMirror ()
+                    Save ->
+                        updateCodeMirror ()
+                    _ -> Cmd.none
+                )
+            )
+        , subscriptions = subscriptions
         }
+
+
+port updateCodeMirror : () -> Cmd msg
