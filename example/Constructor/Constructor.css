@@ -74,29 +74,31 @@ body {
     content: ')';
 }
 
-.edit-cell .path {
+.path {
     font-size: 8px;
+    display: block;
 }
 
-.edit-cell .path .sep {
+.path .sep {
     color: gray;
     padding: 0 2px;
 }
 
-.edit-cell .path .item:last-child {
+.path .item:last-child {
     font-weight: bold;
 }
 
-.edit-cell .label-path {
+.label-path {
     font-size: 8px;
+    display: block;
 }
 
-.edit-cell .label-path .sep {
+.label-path .sep {
     color: gray;
     padding: 0 2px;
 }
 
-.edit-cell .label-path .item:last-child {
+.label-path .item:last-child {
     font-weight: bold;
     font-size: 10px;
 }
