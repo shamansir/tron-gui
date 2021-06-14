@@ -20,6 +20,7 @@ import Tron.Property as Property exposing (LabelPath)
 import Tron.Control.Nest as Nest
 import Tron.Control.Value as V exposing (Value)
 import Tron.Expose.Convert as Property
+import WithTron.ValueAt as V
 import Tron.Layout as Layout
 
 import Size
@@ -29,6 +30,19 @@ import Html exposing (Html)
 import Html.Attributes as Html
 import Html.Events as Html
 import Dropdown
+
+import Example.Default.Gui as Example_Default
+import Example.Default.Model as Example_Default
+import Example.Goose.Gui as Example_Goose
+import Example.Goose.Model as Example_Goose
+import Example.Tiler.Gui as Example_Tiler
+import Example.Tiler.Logic as Example_Tiler
+
+
+type Example
+    = Goose
+    | Tiler
+    | Default
 
 
 type Type
@@ -55,6 +69,7 @@ type Msg
     | Append
     | SwitchTo (Path, LabelPath) (Tron Type)
     | Edit String E.Value
+    | LoadExample Example
 
 
 for : Model -> OfValue.Tron Msg
@@ -114,6 +129,13 @@ update msg ( current, currentGui ) =
             ( Just ( path, prop )
             , currentGui
             )
+        LoadExample example ->
+            ( Nothing
+            , case example of
+                Default -> Example_Default.for Example_Default.default |> Tron.toUnit
+                Goose -> Example_Goose.for Example_Goose.default |> Tron.toUnit
+                Tiler -> Example_Tiler.gui V.empty (Example_Tiler.init () V.empty |> Tuple.first) |> Tron.toUnit
+            )
 
 
 view : Model -> Html Msg
@@ -134,6 +156,12 @@ view ( current, tree ) =
         , Html.div
             [ Html.id "code" ]
             [ Html.textarea [ Html.id "builder-code" ] [] ]
+        , Html.div
+            [ Html.id "examples" ]
+            [ Html.button [ Html.onClick <| LoadExample Goose ] [ Html.text "Goose" ]
+            , Html.button [ Html.onClick <| LoadExample Tiler ] [ Html.text "Tiler" ]
+            , Html.button [ Html.onClick <| LoadExample Default ] [ Html.text "Default" ]
+            ]
         ]
 
 

@@ -9,12 +9,17 @@ body {
 }
 
 #tree, #constructor > .editor, #code {
-    width : 33%;
+    width : 32%;
+}
+
+#examples {
+    width : 4%;
 }
 
 #tree {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
 }
 
 #constructor > .editor {

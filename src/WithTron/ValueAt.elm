@@ -1,5 +1,5 @@
 module WithTron.ValueAt exposing
-    ( ValueAt, ask
+    ( ValueAt, empty, ask
     , Decoder, number, xy, text, toggle, color, action, choice, choiceOf
     , at, atKnob, atXY, atText, atToggle, atColor, atChoice, atChoiceOf
     , map
@@ -10,7 +10,7 @@ for `WithTron.Backed` applications to store current values from the UI in univer
 
 For the example of such, see `example/ForTiler`, where the structure/state of GUI is dependent on current values, but also doesn't store them in its own model, since mostly connects to JavaScript.
 
-@docs ValueAt
+@docs ValueAt, empty
 
 # Asking values at path
 
@@ -81,6 +81,12 @@ map f (Decoder decoder) =
 ask : Decoder a -> ValueAt -> Maybe a
 ask (Decoder decoder) =
     decoder
+
+
+{-| The instance of `ValueAt` that has no values inside
+-}
+empty : ValueAt
+empty = always Nothing
 
 
 make : (Value -> Maybe a) -> LabelPath -> Decoder a
