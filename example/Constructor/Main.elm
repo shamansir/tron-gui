@@ -119,7 +119,7 @@ update msg ( current, currentGui ) =
 view : Model -> Html Msg
 view ( current, tree ) =
     Html.div
-        []
+        [ Html.id "constructor" ]
         [ preview
             <| fillTypes
             --<| addGhosts
@@ -127,7 +127,13 @@ view ( current, tree ) =
         , case current of
             Just ( path, currentProp ) ->
                 editorFor path currentProp
-            Nothing -> Html.div [] []
+            Nothing ->
+                Html.div
+                    [ Html.class "editor", Html.class "editor--empty" ]
+                    [ Html.text "Select something" ]
+        , Html.div
+            [ Html.id "code" ]
+            [ Html.textarea [ Html.id "builder-code" ] [] ]
         ]
 
 
@@ -170,7 +176,7 @@ typeToString t =
 editorFor : ( Path, LabelPath ) -> Tron Type -> Html Msg
 editorFor ( path, labelPath ) prop =
     Html.div
-        []
+        [ Html.class "editor" ]
         [ typesDropdown <| typeOf prop
         , case prop of
             Property.Group _ _ control ->
@@ -208,7 +214,7 @@ preview =
         >> List.reverse
         -- |> List.sortBy (Tuple.first >> Path.toList)
         >> List.map (\(path, cell) -> previewCell path cell)
-        >> Html.div []
+        >> Html.div [ Html.id "tree" ]
 
 
 previewCell : ( Path, LabelPath ) -> Tron Type -> Html Msg
@@ -217,12 +223,52 @@ previewCell (path, labelPath) prop =
         [ Html.onClick <| SwitchTo (path, labelPath) prop
         , Html.class "edit-cell"
         ]
-        [ Html.span [] [ Html.text <| Path.toString path ]
-        , Html.span [] [ Html.text <| String.join "/" <| labelPath ]
-        , Html.span []
+        [ if Path.howDeep path > 0
+            then viewPath path
+            else emptyPath
+        , if List.length labelPath > 0
+            then viewLabelPath labelPath
+            else emptyLabelPath
+        , Html.span [ Html.class "cell-type" ]
             [ Html.text <| typeToString <| typeOf prop ]
-        , Html.span [] [ Html.text "Edit" ]
+        , Html.span [ Html.class "verb" ] [ Html.text "Edit" ]
         ]
+
+
+emptyPath : Html msg
+emptyPath =
+    Html.span
+        [ Html.class "path" ]
+        [ Html.span
+            [ Html.class "empty" ]
+            [ Html.text "-" ]
+        ]
+
+
+emptyLabelPath : Html msg
+emptyLabelPath =
+    Html.span
+        [ Html.class "label-path" ]
+        [ Html.span
+            [ Html.class "empty" ]
+            [ Html.text "-" ]
+        ]
+
+
+viewPath : Path -> Html msg
+viewPath =
+    Path.toList
+        >> List.map String.fromInt
+        >> List.map (\n -> Html.span [ Html.class "item" ] [ Html.text n ])
+        >> List.intersperse (Html.span [ Html.class "sep" ] [ Html.text "/" ])
+        >> Html.span [ Html.class "path" ]
+
+
+viewLabelPath : LabelPath -> Html msg
+viewLabelPath =
+     List.map (\n -> Html.span [ Html.class "item" ] [ Html.text n ])
+        >> List.intersperse (Html.span [ Html.class "sep" ] [ Html.text "/" ])
+        >> Html.span [ Html.class "label-path" ]
 
 
 edit : String -> E.Value -> Tron Type -> Tron Type
