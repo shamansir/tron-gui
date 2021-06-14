@@ -1,3 +1,99 @@
 body {
+    padding: 0;
+    margin: 0;
+}
 
+#constructor {
+    display: flex;
+    flex-direction: row;
+}
+
+#tree, #constructor > .editor, #code {
+    width : 33%;
+}
+
+#tree {
+    display: flex;
+    flex-direction: row;
+}
+
+#constructor > .editor {
+    border-style: dashed;
+    border-width: 0px 1px;
+    height: 100%;
+    padding: 5px;
+}
+
+.editor--empty {
+    font-family: sans-serif;
+    font-size: 8px;
+    color: gray;
+}
+
+#builder-code {
+    border: none;
+    background-color: lightgray;
+}
+
+.edit-cell {
+    display: block;
+    width: 65px;
+    height: 65px;
+    border: dashed 1px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: sans-serif;
+    margin: 3px;
+}
+
+.edit-cell > span {
+    display: block;
+    text-align: center;
+}
+
+.edit-cell .verb {
+    font-size: 7px;
+    color: darkgray;
+    text-transform: lowercase;
+}
+
+.edit-cell .verb:before {
+    content: '(';
+}
+
+.edit-cell .verb:after {
+    content: ')';
+}
+
+.edit-cell .path {
+    font-size: 8px;
+}
+
+.edit-cell .path .sep {
+    color: gray;
+    padding: 0 2px;
+}
+
+.edit-cell .path .item:last-child {
+    font-weight: bold;
+}
+
+.edit-cell .label-path {
+    font-size: 8px;
+}
+
+.edit-cell .label-path .sep {
+    color: gray;
+    padding: 0 2px;
+}
+
+.edit-cell .label-path .item:last-child {
+    font-weight: bold;
+    font-size: 10px;
+}
+
+.edit-cell .cell-type {
+    font-size: 8px;
+    color: royalblue;
+    text-transform: lowercase;
 }
