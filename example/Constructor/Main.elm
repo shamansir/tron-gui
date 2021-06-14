@@ -40,6 +40,7 @@ import Example.Tiler.Logic as Example_Tiler
 
 
 import Constructor.ToBuilder as ToBuilder
+import Constructor.Selector exposing (viewIconSelector)
 
 
 type Example
@@ -59,6 +60,19 @@ type Type
     | Button
     | Choice
     | Group
+
+
+types : List Type
+types =
+    [ Knob
+    , XY
+    , Color
+    , Text
+    , Toggle
+    , Button
+    , Choice
+    , Group
+    ]
 
 
 type alias Model =
@@ -247,6 +261,8 @@ editorFor ( path, labelPath ) prop =
             Nothing -> Html.span [] []
         , typesDropdown <| typeOf prop
         , case prop of
+            Property.Action _ ->
+                viewIconSelector (always NoOp)
             Property.Group _ _ control ->
                 Html.div
                     []
@@ -446,19 +462,6 @@ addGhosts =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ = Sub.none
-
-
-types : List Type
-types =
-    [ Knob
-    , XY
-    , Color
-    , Text
-    , Toggle
-    , Button
-    , Choice
-    , Group
-    ]
 
 
 typesDropdown : Type -> Html Msg

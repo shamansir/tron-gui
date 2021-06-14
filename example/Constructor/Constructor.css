@@ -127,3 +127,12 @@ body {
 .gui {
     z-index: 100;
 }
+
+.icons {
+    background-color: darkgray;
+}
+
+.icons img {
+    cursor: pointer;
+    margin: 4px;
+}
