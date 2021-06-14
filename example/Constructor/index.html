@@ -45,7 +45,17 @@
             node : document.getElementById("elm-node")
         });
 
-        var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('builder-code'));
+
+        const textArea = document.getElementById('builder-code');
+        //textArea.addEventListener("change", () => { console.log("change"); });
+
+        const myCodeMirror = CodeMirror.fromTextArea(textArea);
+
+        app.ports.updateCodeMirror.subscribe(() => {
+            console.log("change", textArea.value);
+            myCodeMirror.setValue(textArea.value);
+        });
+
 
     </script>
 

@@ -118,3 +118,12 @@ body {
     width : 400px;
     height : 750px;
 }
+
+.CodeMirror {
+    height: auto;
+    z-index: 0;
+}
+
+.gui {
+    z-index: 100;
+}
