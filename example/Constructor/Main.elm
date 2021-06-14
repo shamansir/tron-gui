@@ -174,9 +174,10 @@ view ( current, tree ) =
                 Html.div
                     [ Html.class "editor", Html.class "editor--empty" ]
                     [ Html.text "Select something" ]
+
         , Html.div
-            [ Html.id "code" ]
-            [ Html.textarea [ Html.id "builder-code" ] [] ]
+           [ Html.id "code" ]
+           [ viewCode tree ]
         , Html.div
             [ Html.id "examples" ]
             [ Html.button [ Html.onClick <| LoadExample Empty ] [ Html.text "Empty" ]
@@ -422,6 +423,19 @@ create s =
             Tron.nest []
         _ -> Tron.none
 
+
+toCodeLines : Tron () -> List String
+toCodeLines _ =
+    [ "module Gui exposing (..)", "", "", "foo : Int -> Int", "foo _ = 42" ]
+
+
+viewCode : Tron () -> Html msg
+viewCode =
+    toCodeLines
+        >> String.join "\n"
+        >> Html.text
+        >> List.singleton
+        >> Html.textarea [ Html.id "builder-code" ]
 
 
 addGhosts : Tron () -> Tron ()
