@@ -511,9 +511,12 @@ addGhosts =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
-    {-receiveFromLocalStorage identity
-        |> Sub.map Exp.decode -}
+    receiveFromLocalStorage (D.decodeValue Exp.decode)
+        |> Sub.map (\result ->
+            case result of
+                Ok prop -> FromLocalStorage prop
+                Err _ -> NoOp
+        )
 
 
 typesDropdown : Type -> Html Msg

@@ -14,6 +14,7 @@ import Tron.Control as Control exposing (..)
 import Tron.Control.Nest as Nest exposing (Form(..))
 import Tron.Control.Text as Text exposing (TextState(..))
 import Tron.Control.Toggle exposing (ToggleState(..))
+import Tron.Control.Button as Button
 import Tron.Control.XY as XY
 import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
@@ -332,6 +333,130 @@ applyStringValue str prop =
                 |> Maybe.map Live
 
 
+decode : D.Decoder (Property ())
+decode =
+    D.field "type" D.string
+    |> D.andThen
+        (\typeStr ->
+            case typeStr of
+                "ghost" -> D.succeed Nil
+                "slider" ->
+                    D.map4
+                        (\min max step current ->
+                            Number
+                                <| Control
+                                    { min = min
+                                    , max = max
+                                    , step = step
+                                    }
+                                    ( Nothing, current )
+                                    ()
+                        )
+                        (D.field "min" D.float)
+                        (D.field "max" D.float)
+                        (D.field "step" D.float)
+                        (D.field "current" D.float)
+                "xy" ->
+                    D.map7
+                        (\minX maxX stepX minY maxY stepY current ->
+                            Coordinate
+                                <| Control
+                                    (
+                                        { min = minX
+                                        , max = maxX
+                                        , step = stepX
+                                        }
+                                    ,
+                                        { min = minY
+                                        , max = maxY
+                                        , step = stepY
+                                        }
+                                    )
+                                    ( Nothing, current )
+                                    ()
+                        )
+                        (D.field "minX" D.float)
+                        (D.field "maxX" D.float)
+                        (D.field "stepX" D.float)
+                        (D.field "minY" D.float)
+                        (D.field "maxY" D.float)
+                        (D.field "stepY" D.float)
+                        (D.field "current" <|
+                            D.map2
+                                Tuple.pair
+                                (D.field "x" D.float)
+                                (D.field "y" D.float)
+                        )
+                "text" ->
+                    D.field "current" D.string
+                        |> D.map
+                            (\current ->
+                                Text <|
+                                    Control
+                                        ()
+                                        ( Ready, current )
+                                        ()
+                            )
+                "color" ->
+                    D.field "currentRgba" decodeColor
+                        |> D.map
+                            (\current ->
+                                Color <|
+                                    Control
+                                        ()
+                                        ( Nothing, current )
+                                        ()
+                            )
+
+                "toggle" ->
+                    D.field "current" decodeToggle
+                        |> D.map
+                            (\current ->
+                                Toggle <|
+                                    Control
+                                        ()
+                                        current
+                                        ()
+                            )
+
+                "button" ->
+                    D.succeed
+                        <| Action
+                        <| Control
+                            Button.Default
+                            ()
+                            ()
+
+                "group" ->
+                    D.field "nest"
+                        (D.array
+                            <| D.map2
+                                Tuple.pair
+                                (D.field "label" D.string)
+                                (D.field "property" decode)
+                        )
+                        |> D.map
+                            (\items -> Nest.createGroup items ())
+                        |> D.map (Group Nothing defaultNestShape)
+
+
+                "choice" ->
+                    D.field "options"
+                        (D.array
+                            <| D.map2
+                                Tuple.pair
+                                (D.field "label" D.string)
+                                (D.field "property" decode)
+                        )
+                        |> D.map
+                            (\items -> Nest.createChoice items ())
+                        |> D.map (Choice Nothing defaultNestShape)
+
+
+                _ -> D.succeed Nil -- or fail?
+        )
+
+
 encodeRawPath : List Int -> E.Value
 encodeRawPath =
     E.list E.int
@@ -391,6 +516,7 @@ encodePropertyAt path property =
                 [ ( "type", E.string "color" )
                 , ( "path", encodeRawPath path )
                 , ( "current", encodeColor val )
+                , ( "currentRgba", encodeRgba val )
                 ]
 
         Toggle (Control _ val _) ->
@@ -408,19 +534,11 @@ encodePropertyAt path property =
                   )
                 ]
 
-        Action _ ->
+        Action (Control face _ _) ->
             E.object
                 [ ( "type", E.string "button" )
                 , ( "path", encodeRawPath path )
                 ]
-
-        {- Switch (Control items ( _, val ) _) ->
-            E.object
-                [ ( "type", E.string "slider" )
-                , ( "path", encodeRawPath path )
-                , ( "items", E.array E.string items )
-                , ( "current", E.int val )
-                ] -}
 
         Choice _ _ (Control items { form, selected } _) ->
             E.object
@@ -699,12 +817,24 @@ toProxy outUpdate =
         |> .value
 
 
--- TODO:move all below to corresponding controls
+-- TODO: move all below to corresponding controls
 
 
 encodeColor : Color -> E.Value
 encodeColor =
     E.string << Color.colorToHexWithAlpha
+
+
+encodeRgba : Color -> E.Value
+encodeRgba color =
+    case Color.toRgba color of
+        { red, green, blue, alpha } ->
+            E.object
+                [ ( "red", E.float red )
+                , ( "green", E.float green )
+                , ( "blue", E.float blue )
+                , ( "alpha", E.float alpha )
+                ]
 
 
 decodeColor : D.Decoder Color
@@ -725,7 +855,6 @@ decodeColor =
             (D.field "blue" D.float)
             (D.field "alpha" D.float)
         ]
-
 
 
 decodeCoord : D.Decoder ( Float, Float )

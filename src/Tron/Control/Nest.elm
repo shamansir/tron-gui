@@ -60,6 +60,29 @@ type alias Transient =
     }
 
 
+createGroup : ( Array item ) -> a -> GroupControl item a
+createGroup items =
+    Core.Control
+        items
+        { form = Collapsed
+        , face = Nothing
+        , page = 0
+        }
+
+
+createChoice : ( Array item ) -> a -> ChoiceControl item a
+createChoice items =
+    Core.Control
+        items
+        { form = Collapsed
+        , face = Nothing
+        , selected = 0
+        , prevSelected = Nothing
+        , page = 0
+        , mode = Pages
+        }
+
+
 get : ItemId -> NestControl item value a -> Maybe item
 get n = getItems >> Array.get n
 
