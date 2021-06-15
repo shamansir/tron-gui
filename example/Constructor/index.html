@@ -56,6 +56,16 @@
             myCodeMirror.setValue(textArea.value);
         });
 
+        app.ports.saveToLocalStorage.subscribe((tronJson) => {
+            window.localStorage.setItem('tron-constructor', JSON.stringify(tronJson));
+        });
+
+        app.ports.triggerLoadFromLocalStorage.subscribe((tronJson) => {
+            app.ports.receiveFromLocalStorage.send(
+                JSON.parse(window.localStorage.getItem('tron-constructor'))
+            );
+        });
+
 
     </script>
 

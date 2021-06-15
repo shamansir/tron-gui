@@ -23,6 +23,8 @@ import Tron.Control.Value as V exposing (Value)
 import Tron.Control.Button as Button
 import Tron.Expose.Convert as Property
 import WithTron.ValueAt as V
+import Tron.Expose.Data as Exp
+import Tron.Expose as Exp
 import Tron.Layout as Layout
 
 import Size
@@ -92,6 +94,9 @@ type Msg
     | Edit String E.Value
     | EditLabel String
     | LoadExample Example
+    | ToLocalStorage
+    | TriggerFromLocalStorage
+    | FromLocalStorage (Tron ())
 
 
 for : Model -> OfValue.Tron Msg
@@ -176,6 +181,12 @@ update msg ( current, currentGui ) =
                 Goose -> Example_Goose.for Example_Goose.default |> Tron.toUnit
                 Tiler -> Example_Tiler.gui V.empty (Example_Tiler.init () V.empty |> Tuple.first) |> Tron.toUnit
             )
+        ToLocalStorage ->
+            ( current, currentGui )
+        TriggerFromLocalStorage ->
+            ( current, currentGui )
+        FromLocalStorage nextGui ->
+            ( current, nextGui )
 
 
 view : Model -> Html Msg
@@ -203,6 +214,8 @@ view ( current, tree ) =
             , Html.button [ Html.onClick <| LoadExample Goose ] [ Html.text "Goose" ]
             , Html.button [ Html.onClick <| LoadExample Tiler ] [ Html.text "Tiler" ]
             , Html.button [ Html.onClick <| LoadExample Default ] [ Html.text "Default" ]
+            , Html.button [ Html.onClick <| ToLocalStorage ] [ Html.text "Save" ]
+            , Html.button [ Html.onClick <| TriggerFromLocalStorage ] [ Html.text "Load" ]
             ]
         ]
 
@@ -497,7 +510,10 @@ addGhosts =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ = Sub.none
+subscriptions _ =
+    Sub.none
+    {-receiveFromLocalStorage identity
+        |> Sub.map Exp.decode -}
 
 
 typesDropdown : Type -> Html Msg
@@ -528,13 +544,17 @@ main =
         , init = \_ -> ( init, Cmd.none )
         , view = view
         , update =
-            (\msg model ->
+            (\msg (( _, gui ) as model) ->
                 ( update msg model
                 , case msg of
                     LoadExample _ ->
                         updateCodeMirror ()
                     Save ->
                         updateCodeMirror ()
+                    TriggerFromLocalStorage ->
+                        triggerLoadFromLocalStorage ()
+                    ToLocalStorage ->
+                        sendToLocalStorage <| Exp.encode <| gui
                     _ -> Cmd.none
                 )
             )
@@ -543,3 +563,12 @@ main =
 
 
 port updateCodeMirror : () -> Cmd msg
+
+
+port sendToLocalStorage : Exp.Property -> Cmd msg
+
+
+port triggerLoadFromLocalStorage : () -> Cmd msg
+
+
+port receiveFromLocalStorage : (Exp.Property -> msg) -> Sub msg
