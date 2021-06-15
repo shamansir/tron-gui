@@ -427,7 +427,7 @@ decode =
                             ()
                             ()
 
-                "group" ->
+                "nest" ->
                     D.field "nest"
                         (D.array
                             <| D.map2
