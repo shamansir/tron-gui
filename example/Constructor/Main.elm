@@ -280,6 +280,23 @@ editorFor ( path, labelPath ) prop =
                     ++ [ Html.button
                         [ Html.onClick <| Append ]
                         [ Html.text "Append" ] ]
+            Property.Choice _ _ control ->
+                Html.div
+                    []
+                    <| (Nest.getItems control
+                            |> Array.indexedMap
+                                (\idx (label, prop_) ->
+                                    previewNestCell
+                                    -- editorFor
+                                        ( path |> Path.advance idx
+                                        , labelPath ++ [ label ]
+                                        )
+                                        prop_
+                                )
+                            |> Array.toList)
+                    ++ [ Html.button
+                        [ Html.onClick <| Append ]
+                        [ Html.text "Append" ] ]
             _ -> Html.div [] []
         , Html.button
             [ Html.onClick <| Save ]
