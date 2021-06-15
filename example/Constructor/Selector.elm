@@ -5,6 +5,8 @@ import Html exposing (Html)
 import Html.Attributes as Html
 import Html.Events as Html
 
+import Tron.Control.Button as Button
+
 type Selector a = Selector (List a)
 
 
@@ -20,11 +22,12 @@ iconSelector = Selector icons
 
 
 iconSource : String -> List String
-iconSource icon = [ "assets", "tiler", "light-stroke", icon ++ ".svg" ]
+iconSource icon =
+    [ "assets", "tiler", "light-stroke", icon ++ ".svg" ]
 
 
-viewIconSelector : (List String -> msg) -> Html msg
-viewIconSelector onSelect =
+viewIconSelector : Maybe Button.Url -> (List String -> msg) -> Html msg
+viewIconSelector maybeCurrent onSelect =
     case iconSelector of
         Selector icons_ ->
             Html.div
@@ -35,6 +38,10 @@ viewIconSelector onSelect =
                         Html.img
                             [ Html.src <| String.join "/" iconSrc
                             , Html.onClick <| onSelect iconSrc
+                            , Html.class <| case maybeCurrent of
+                                Just (Button.Url currentUrl) ->
+                                    if String.join "/" iconSrc == currentUrl then "current" else ""
+                                Nothing -> ""
                             ]
                             []
                     )

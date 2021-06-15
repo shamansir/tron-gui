@@ -17,8 +17,10 @@ import Tron.Path as Path exposing (Path)
 
 import Tron.Core as Tron
 import Tron.Property as Property exposing (LabelPath)
+import Tron.Control as Core
 import Tron.Control.Nest as Nest
 import Tron.Control.Value as V exposing (Value)
+import Tron.Control.Button as Button
 import Tron.Expose.Convert as Property
 import WithTron.ValueAt as V
 import Tron.Layout as Layout
@@ -261,8 +263,16 @@ editorFor ( path, labelPath ) prop =
             Nothing -> Html.span [] []
         , typesDropdown <| typeOf prop
         , case prop of
-            Property.Action _ ->
-                viewIconSelector (E.list E.string >> Edit "icon")
+            Property.Action (Core.Control face _ _) ->
+                viewIconSelector
+                    (case face of
+                        Button.WithIcon (Button.Icon iconFn) ->
+                            Just <| iconFn Theme.Dark
+                        _ -> Nothing
+                    )
+                    (E.list E.string >> Edit "icon")
+
+
             Property.Group _ _ control ->
                 Html.div
                     []
