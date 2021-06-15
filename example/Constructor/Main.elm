@@ -262,7 +262,7 @@ editorFor ( path, labelPath ) prop =
         , typesDropdown <| typeOf prop
         , case prop of
             Property.Action _ ->
-                viewIconSelector (always NoOp)
+                viewIconSelector (E.list E.string >> Edit "icon")
             Property.Group _ _ control ->
                 Html.div
                     []
@@ -417,10 +417,19 @@ edit name value prop =
         ( _, "type" ) ->
             prop
                 |> edit_ (create >> fillTypes) D.string value
+        ( Button, "icon" ) ->
+            prop
+                |> edit_
+                    (\iconPath ->
+                        prop
+                            |> Tron.face (Tron.iconAt iconPath)
+                    )
+                    (D.list D.string)
+                    value
         _ -> prop
 
 
-edit_ : (a -> Tron Type) -> D.Decoder a -> E.Value -> Tron Type -> Tron Type
+edit_ : (x -> Tron a) -> D.Decoder x -> E.Value -> Tron a -> Tron a
 edit_ f decoder value prop =
     case value |> D.decodeValue decoder of
         Ok decodedValue ->
