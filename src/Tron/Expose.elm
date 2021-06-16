@@ -21,8 +21,11 @@ import Tron.Property as Property exposing (..)
 import Tron.Control.Value as Value exposing (Value(..))
 import Tron.Expose.Data as Exp
 import Tron.Expose.Convert as Exp
+import Tron.Style.Theme as Theme
+import Tron.Style.PanelShape as PS
+import Tron.Style.CellShape as CS
 import Tron.Util as Util
-import Task
+
 
 
 runProperty : Value -> Property msg -> Cmd msg
@@ -335,6 +338,23 @@ applyStringValue str prop =
 
 decode : D.Decoder (Property ())
 decode =
+    let
+        faceAndShape maybeShape maybeFace prop =
+            case ( maybeShape, maybeFace ) of
+                ( Just ( panelShape, cellShape ), Just face ) ->
+                    prop
+                        |> Property.setFace face
+                        |> Property.setPanelShape panelShape
+                        |> Property.setCellShape cellShape
+                ( Just ( panelShape, cellShape ), Nothing ) ->
+                    prop
+                        |> Property.setPanelShape panelShape
+                        |> Property.setCellShape cellShape
+                ( Nothing, Just face ) ->
+                    prop
+                        |> Property.setFace face
+                ( Nothing, Nothing ) -> prop
+    in
     D.field "type" D.string
     |> D.andThen
         (\typeStr ->
@@ -420,12 +440,19 @@ decode =
                             )
 
                 "button" ->
-                    D.succeed
+                    ( D.succeed
                         <| Action
                         <| Control
                             Button.Default
                             ()
-                            ()
+                            () )
+                    |> D.map2
+                        (\maybeFace button ->
+                            maybeFace
+                                |> Maybe.map (\face -> Property.setFace face button)
+                                |> Maybe.withDefault button
+                        )
+                        (D.maybe <| D.field "face" decodeFace)
 
                 "nest" ->
                     D.field "nest"
@@ -438,7 +465,9 @@ decode =
                         |> D.map
                             (\items -> Nest.createGroup items ())
                         |> D.map (Group Nothing defaultNestShape)
-
+                        |> D.map3 faceAndShape
+                            (D.maybe <| D.field "shape" decodeShape)
+                            (D.maybe <| D.field "face" decodeFace)
 
                 "choice" ->
                     D.field "options"
@@ -451,6 +480,9 @@ decode =
                         |> D.map
                             (\items -> Nest.createChoice items ())
                         |> D.map (Choice Nothing defaultNestShape)
+                        |> D.map3 faceAndShape
+                            (D.maybe <| D.field "shape" decodeShape)
+                            (D.maybe <| D.field "face" decodeFace)
 
 
                 _ -> D.succeed Nil -- or fail?
@@ -538,9 +570,10 @@ encodePropertyAt path property =
             E.object
                 [ ( "type", E.string "button" )
                 , ( "path", encodeRawPath path )
+                , ( "face", encodeFace face )
                 ]
 
-        Choice _ _ (Control items { form, selected } _) ->
+        Choice _ shape (Control items { face, form, selected } _) ->
             E.object
                 [ ( "type", E.string "choice" )
                 , ( "path", encodeRawPath path )
@@ -572,9 +605,11 @@ encodePropertyAt path property =
                                 False
                   )
                 , ( "options", encodeNested path items )
+                , ( "face", face |> Maybe.map encodeFace |> Maybe.withDefault E.null )
+                , ( "shape", encodeShape shape )
                 ]
 
-        Group _ _ (Control items { form } _) ->
+        Group _ shape (Control items { face, form } _) ->
             E.object
                 [ ( "type", E.string "nest" )
                 , ( "path", encodeRawPath path )
@@ -603,6 +638,8 @@ encodePropertyAt path property =
                                 False
                   )
                 , ( "nest", encodeNested path items )
+                , ( "face", face |> Maybe.map encodeFace |> Maybe.withDefault E.null )
+                , ( "shape", encodeShape shape )
                 ]
 
         Live innerProp ->
@@ -679,6 +716,117 @@ encode =
 -}
 -- select : Path -> Model msg -> Model msg
 -- select selector gui = gui
+
+encodeFace : Button.Face -> E.Value
+encodeFace face =
+    case face of
+        Button.Default -> E.object [ ( "kind", E.string "default" ) ]
+        Button.WithIcon (Button.Icon fn) ->
+            E.object
+                [ ( "kind", E.string "icon" )
+                , ( "dark", case fn Theme.Dark of
+                        (Button.Url path) -> E.string path
+                  )
+                , ( "light", case fn Theme.Light of
+                        (Button.Url path) -> E.string path
+                  )
+                ]
+        Button.WithColor color ->
+            E.object
+                [ ( "kind", E.string "color" )
+                , ( "color", encodeColor color )
+                ]
+
+
+decodeFace : D.Decoder Button.Face
+decodeFace =
+    D.field "kind" D.string
+    |> D.andThen
+        (\kind ->
+            case kind of
+                "default" ->
+                    D.succeed Button.Default
+                "color" ->
+                    D.field "color" decodeColor
+                        |> D.map Button.WithColor
+                "icon" ->
+                    D.map2
+                        (\darkSrc lightSrc theme ->
+                            case theme of
+                                Theme.Dark -> Button.Url darkSrc
+                                Theme.Light -> Button.Url lightSrc
+                        )
+                        (D.field "dark" D.string)
+                        (D.field "light" D.string)
+                        |> D.map (Button.Icon >> Button.WithIcon)
+                _ -> D.succeed Button.Default
+        )
+
+
+encodeShape : Property.NestShape -> E.Value
+encodeShape ( panelShape, cellShape ) =
+    E.object
+        [
+            ( "panel"
+            , case PS.numify panelShape of
+                ( cols, rows ) ->
+                    E.object
+                        [ ( "cols", E.int cols )
+                        , ( "rows", E.int rows )
+                        ]
+            )
+        ,
+            ( "cell"
+            , case CS.units cellShape of
+                ( horz, vert ) ->
+                    E.object
+                        [ ( "horz", encodeCellUnit horz )
+                        , ( "vert", encodeCellUnit vert )
+                        ]
+            )
+        ]
+
+
+decodeShape : D.Decoder NestShape
+decodeShape =
+    D.map2
+        Tuple.pair
+        (D.field "panel"
+            <| D.map PS.create
+            <| D.map2
+                Tuple.pair
+                (D.field "cols" D.int)
+                (D.field "rows" D.int)
+        )
+        (D.field "cell"
+            <| D.map CS.create
+            <| D.map2
+                Tuple.pair
+                (D.field "horz" decodeCellUnit)
+                (D.field "vert" decodeCellUnit)
+
+        )
+
+
+encodeCellUnit : CS.Unit -> E.Value
+encodeCellUnit unit =
+    E.string <| case unit of
+        CS.Single -> "single"
+        CS.Half -> "half"
+        CS.Twice -> "twice"
+
+
+decodeCellUnit : D.Decoder CS.Unit
+decodeCellUnit =
+    D.string
+        |> D.map (\str ->
+            case str of
+                "single" -> CS.Single
+                "half" -> CS.Half
+                "twice" -> CS.Twice
+                _ -> CS.Single
+        )
+
 
 
 valueDecoder :
@@ -769,6 +917,7 @@ fromString type_ str =
 
         _ ->
             Err str
+
 
 
 {- fromPort :

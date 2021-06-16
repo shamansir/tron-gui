@@ -3,7 +3,7 @@ module Tron.Style.CellShape exposing
     , default
     , single, half, halfByOne, oneByHalf, twiceByHalf, halfByTwice, twiceByTwice
     , isHorizontal, isVertical, isSquare, isSmallSquare, isLargeSquare
-    , numify, units, toString
+    , numify, units, create, toString
     )
 
 {-| # Cell Shape
@@ -27,7 +27,7 @@ Cell Shape is the place it takes in nested panels. Considering the default shape
 @docs isHorizontal, isVertical, isSquare, isSmallSquare, isLargeSquare
 
 # Other Helpers
-@docs numify, units, toString
+@docs numify, units, create, toString
 -}
 
 
@@ -179,3 +179,8 @@ isVertical cs =
 -}
 units : CellShape -> ( Unit, Unit )
 units (CellShape horz vert) = ( horz, vert )
+
+
+{-| Create cell shape from unit representation -}
+create : ( Unit, Unit ) -> CellShape
+create ( horz, vert ) = CellShape horz vert

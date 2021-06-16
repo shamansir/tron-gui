@@ -2,7 +2,7 @@ module Tron.Style.PanelShape exposing
     ( PanelShape
     , auto, rows, cols
     , by
-    , distribute
+    , distribute, numify, create
     )
 
 
@@ -21,11 +21,11 @@ You are not required to specify both sides, just use `rows` or `cols` helpers to
 @docs by
 
 # Helpers
-@docs distribute
+@docs distribute, numify, create
 -}
 
 
-import Tron.Style.CellShape exposing (CellShape(..), numify)
+import Tron.Style.CellShape as CS exposing (CellShape(..))
 import Tron.Pages as Pages exposing (Pages)
 import Size exposing (..)
 
@@ -72,7 +72,7 @@ distribute panelShape cellShape items =
     let
         itemCount = List.length items
         ( cellXMultiplier, cellYMultiplier ) =
-            numify cellShape
+            CS.numify cellShape
         otherSide n =
             if (n /= 0) && (modBy n itemCount) == 0
                 then itemCount // n
@@ -129,3 +129,28 @@ distribute panelShape cellShape items =
                 (\r -> toFloat r * cellYMultiplier)
                 >> SizeF
             )
+
+
+{-| Returns columns and rows to take, and -1 is the value should be auto-calculated.
+-}
+numify : PanelShape -> ( Int, Int )
+numify ps =
+    case ps of
+        Auto -> ( -1, -1 )
+        Rows n -> ( -1, n )
+        Cols n -> ( n, -1 )
+        Shape nc nr -> ( nc, nr )
+
+
+{-| Create panel shape from its numeric representation.
+-}
+create : ( Int, Int ) -> PanelShape
+create ( nc, nr ) =
+    if (nc == -1) && (nr == -1) then
+        Auto
+    else if (nc == -1) then
+        Rows nr
+    else if (nr == -1) then
+        Cols nc
+    else
+        Shape nc nr
