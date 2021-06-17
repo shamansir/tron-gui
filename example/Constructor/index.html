@@ -41,6 +41,13 @@
     <div id="elm-node"></div>
     <script type="text/javascript">
 
+        // disable scroll on space
+        window.addEventListener('keydown', function(e) {
+            if(e.keyCode == 32 && e.target == document.body) {
+                e.preventDefault();
+            }
+        });
+
         const app = Elm.Constructor.Main.init({
             node : document.getElementById("elm-node")
         });

@@ -94,6 +94,7 @@ type Msg
     | SwitchTo (Path, LabelPath) (Tron Type)
     | Edit String E.Value
     | EditLabel String
+    | EditPanelShape PS.PanelShape
     | EditCellShape CS.CellShape
     | LoadExample Example
     | ToLocalStorage
@@ -164,6 +165,11 @@ update msg ( current, currentGui ) =
         EditCellShape newCellShape ->
             ( current
                 |> Maybe.map (Tuple.mapSecond <| Property.setCellShape newCellShape)
+            , currentGui
+            )
+        EditPanelShape newPanelShape ->
+            ( current
+                |> Maybe.map (Tuple.mapSecond <| Property.setPanelShape newPanelShape)
             , currentGui
             )
         EditLabel newLabel ->
@@ -270,7 +276,8 @@ editorFor ( path, labelPath ) prop =
         shapeEditor ( panelShape, cellShape ) =
             Html.div
                 []
-                [ viewCellShapeSelector cellShape EditCellShape
+                [ viewPanelShapeSelector panelShape EditPanelShape
+                , viewCellShapeSelector cellShape EditCellShape
                 ]
 
         itemsEditor items =
@@ -325,21 +332,21 @@ editorFor ( path, labelPath ) prop =
             Property.Group _ shape control ->
                 Html.div
                     []
-                    [ shapeEditor shape
-                    , itemsEditor <| Nest.getItems control
+                    [ itemsEditor <| Nest.getItems control
                     , Html.button
                         [ Html.onClick <| Append ]
                         [ Html.text "Append" ]
+                    , shapeEditor shape
                     ]
 
             Property.Choice _ shape control ->
                 Html.div
                     []
-                    [ shapeEditor shape
-                    , itemsEditor <| Nest.getItems control
+                    [ itemsEditor <| Nest.getItems control
                     , Html.button
                         [ Html.onClick <| Append ]
                         [ Html.text "Append" ]
+                    , shapeEditor shape
                     ]
 
             _ -> Html.div [] []

@@ -57,6 +57,12 @@ possibleUnits = [ CS.Half, CS.Single, CS.Twice ]
 possibleShapes = cartesian possibleUnits possibleUnits
 
 
+possiblePanelSide = [ -1, 1, 2, 3, 4, 5 ]
+
+
+possiblePanelShapes = cartesian possiblePanelSide possiblePanelSide
+
+
 cartesian : List a -> List b -> List (a,b)
 cartesian xs ys =
     List.concatMap
@@ -70,6 +76,21 @@ unitToStr unit =
         CS.Single -> "1"
         CS.Half -> "0.5"
         CS.Twice -> "2"
+
+
+panelShapeToString : PS.PanelShape -> String
+panelShapeToString ps =
+    let
+        ( nc, nr ) = PS.numify ps
+    in
+        if (nc == -1) && (nr == -1) then
+            "auto"
+        else if (nc == -1) then
+            String.fromInt nr ++ " rows"
+        else if (nr == -1) then
+            String.fromInt nc ++ " cols"
+        else
+            String.fromInt nr ++ " x " ++ String.fromInt nc
 
 
 viewCellShapeSelector : CS.CellShape -> (CS.CellShape -> msg) -> Html msg
@@ -95,3 +116,25 @@ viewCellShapeSelector current onSelect =
             )
         <| List.map CS.create
         <| possibleShapes
+
+
+viewPanelShapeSelector : PS.PanelShape -> (PS.PanelShape -> msg) -> Html msg
+viewPanelShapeSelector current onSelect =
+    Html.div
+        [ Html.class "panel-shapes"
+        ]
+        <| List.map
+            (\panelShape ->
+                Html.div
+                    [ Html.onClick <| onSelect panelShape
+                    , Html.class
+                        <| case ( PS.numify panelShape, PS.numify current ) of
+                            ( ( horzA, vertA ), ( horzB, vertB ) ) ->
+                                if horzA == horzB && vertA == vertB then "current"
+                                else ""
+                    ]
+                    [ Html.text <| panelShapeToString panelShape
+                    ]
+            )
+        <| List.map PS.create
+        <| possiblePanelShapes

@@ -142,7 +142,7 @@ numify ps =
         Shape nc nr -> ( nc, nr )
 
 
-{-| Create panel shape from its numeric representation.
+{-| Create panel shape from its numeric representation. Put -1 for auto calculation.
 -}
 create : ( Int, Int ) -> PanelShape
 create ( nc, nr ) =

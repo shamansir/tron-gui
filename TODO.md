@@ -16,6 +16,7 @@
 
 ## UX / Design
 
+* Find a way to disable browser scrolling on space;
 * Show the value on XY controllers as well;
 * Test keyboard navigation, adapt it to the Dock;
 * _Active_ condition for a button, some effect for when it is pressed;
