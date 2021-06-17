@@ -12,6 +12,8 @@ import Tron.Control.Value as V
 import Tron.Control.Button as Button
 import Tron.Control.Nest as Nest
 import Tron.Style.Theme as Theme
+import Tron.Style.PanelShape as PS
+import Tron.Style.CellShape as CS
 
 
 toCodeLines : Tron () -> List String
@@ -19,6 +21,7 @@ toCodeLines root =
     [ "module Gui exposing (..)"
     , ""
     , "import Tron.Builder.Unit as Tron"
+    , "import Tron.Style.CellShape as CS"
     , "import Color"
     , ""
     , "root : Tron ()"
@@ -147,7 +150,10 @@ indent n strings =
 
 
 formLines : Nest.Form -> List String
-formLines form = []
+formLines form =
+    case form of
+        Nest.Expanded -> [ "|> Tron.expand" ]
+        _ -> []
 
 
 faceLines : Maybe Button.Face -> List String
@@ -165,8 +171,51 @@ faceLines face =
         Nothing -> []
 
 
+panelShapeLines : PS.PanelShape -> List String
+panelShapeLines ps =
+    case PS.numify ps of
+        ( nc, nr ) ->
+            if (nc == -1) && (nr == -1) then
+                []
+            else if (nc == -1) then
+                [ "|> Tron.rows " ++ String.fromInt nr ]
+            else if (nr == -1) then
+                [ "|> Tron.cols " ++ String.fromInt nc ]
+            else
+                [ "|> Tron.by " ++ String.fromInt nc ++ " " ++ String.fromInt nr ]
+
+
+cellShapeLines : CS.CellShape -> List String
+cellShapeLines cs  =
+    case CS.numify cs of
+        ( horz, vert ) ->
+            if (horz == 1) && (vert == 1) then
+                []
+            else [ "|> Tron.cells CS." ++ cellShapeToStr horz vert ++ "" ]
+
+
+cellShapeToStr : Float -> Float -> String
+cellShapeToStr horz vert =
+    let
+        sideToStr n =
+            if n == 1 then "one"
+            else if n == 0.5 then "half"
+            else if n == 2 then "twice"
+            else "unknown"
+        sideToStrCap n =
+            if n == 1 then "One"
+            else if n == 0.5 then "Half"
+            else if n == 2 then "Twice"
+            else "Unknown"
+    in
+    if (horz == 0.5) && (vert == 0.5) then
+        "half"
+    else sideToStr horz ++ "By" ++ sideToStrCap vert
+
+
 shapeLines : NestShape -> List String
-shapeLines ( panelShape, cellShape ) = []
+shapeLines ( panelShape, cellShape ) =
+    panelShapeLines panelShape ++ cellShapeLines cellShape
 
 
 colorLines : { red : Float, blue : Float, green : Float, alpha : Float } -> List String

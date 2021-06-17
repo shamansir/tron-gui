@@ -588,6 +588,8 @@ main =
                         triggerLoadFromLocalStorage ()
                     ToLocalStorage ->
                         sendToLocalStorage <| Exp.encode <| nextGui
+                    FromLocalStorage _ ->
+                        updateCodeMirror ()
                     _ -> Cmd.none
                 )
             )
