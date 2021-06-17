@@ -807,6 +807,24 @@ setFace face prop =
         _ -> prop
 
 
+clearFace : Property a -> Property a
+clearFace prop =
+    case prop of
+        Group focus shape control ->
+            Group focus shape
+                <| Nest.clearFace
+                <| control
+        Choice focus shape control ->
+            Choice focus shape
+                <| Nest.clearFace
+                <| control
+        Live innerProp ->
+            Live
+                <| clearFace
+                <| innerProp
+        _ -> prop
+
+
 toChoice : Property a -> Property a
 toChoice prop =
     case prop of

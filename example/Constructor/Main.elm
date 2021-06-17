@@ -295,13 +295,26 @@ editorFor ( path, labelPath ) prop =
                 |> Html.div []
 
         faceEditor face =
-            viewIconSelector
-                (case face of
-                    Button.WithIcon (Button.Icon iconFn) ->
-                        Just <| iconFn Theme.Dark
-                    _ -> Nothing
-                )
-                (E.list E.string >> Edit "icon")
+            Html.div
+                []
+                [ Html.text "Face:"
+                , Html.button
+                    [ Html.onClick <| Edit "auto" <| E.null ]
+                    [ Html.text "Auto" ]
+                , Html.button
+                    [ Html.onClick <| Edit "color" <| E.null ]
+                    [ Html.text "Color" ]
+                , Html.button
+                    [ Html.onClick <| Edit "icon" <| E.list E.string [] ]
+                    [ Html.text "Clear icon" ]
+                , viewIconSelector
+                    (case face of
+                        Just (Button.WithIcon (Button.Icon iconFn)) ->
+                            Just <| iconFn Theme.Dark
+                        _ -> Nothing
+                    )
+                    (E.list E.string >> Edit "icon")
+                ]
 
     in
     Html.div
@@ -327,22 +340,24 @@ editorFor ( path, labelPath ) prop =
 
         , case prop of
             Property.Action (Core.Control face _ _) ->
-                faceEditor face
+                faceEditor <| Just face
 
-            Property.Group _ shape control ->
+            Property.Group _ shape (Core.Control _ { face } _ as control) ->
                 Html.div
                     []
-                    [ itemsEditor <| Nest.getItems control
+                    [ faceEditor <| face
+                    , itemsEditor <| Nest.getItems control
                     , Html.button
                         [ Html.onClick <| Append ]
                         [ Html.text "Append" ]
                     , shapeEditor shape
                     ]
 
-            Property.Choice _ shape control ->
+            Property.Choice _ shape (Core.Control _ { face } _ as control) ->
                 Html.div
                     []
-                    [ itemsEditor <| Nest.getItems control
+                    [ faceEditor <| face
+                    , itemsEditor <| Nest.getItems control
                     , Html.button
                         [ Html.onClick <| Append ]
                         [ Html.text "Append" ]
@@ -468,18 +483,38 @@ edit : String -> E.Value -> Tron Type -> Tron Type
 edit name value prop =
     case ( typeOf prop, name ) of
         ( _, "type" ) ->
-            prop
-                |> edit_ (create >> fillTypes) D.string value
+            prop |> edit_ (create >> fillTypes) D.string value
         ( Button, "icon" ) ->
-            prop
-                |> edit_
-                    (\iconPath ->
-                        prop
-                            |> Tron.face (Tron.iconAt iconPath)
-                    )
-                    (D.list D.string)
-                    value
+            prop |> editIcon value
+        ( Choice, "icon" ) ->
+            prop |> editIcon value
+        ( Group, "icon" ) ->
+            prop |> editIcon value
+        ( Button, "color" ) ->
+            prop |> Property.setFace (Button.WithColor <| Color.yellow)
+        ( Group, "color" ) ->
+            prop |> Property.setFace (Button.WithColor <| Color.yellow)
+        ( Choice, "color" ) ->
+            prop |> Property.setFace (Button.WithColor <| Color.yellow)
+        ( Group, "auto" ) ->
+            prop |> Property.clearFace
+        ( Choice, "auto" ) ->
+            prop |> Property.clearFace
         _ -> prop
+
+
+editIcon : E.Value -> Tron Type -> Tron Type
+editIcon value prop =
+    prop |>
+        edit_
+            (\iconPath ->
+                if List.length iconPath > 0 then
+                    prop
+                        |> Tron.face (Tron.iconAt iconPath)
+                else prop |> Property.setFace Button.Default
+            )
+            (D.list D.string)
+            value
 
 
 edit_ : (x -> Tron a) -> D.Decoder x -> E.Value -> Tron a -> Tron a
