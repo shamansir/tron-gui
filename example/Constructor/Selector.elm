@@ -19,6 +19,9 @@ icons =
     ]
 
 
+productsIcons = [] -- TODO;
+
+
 iconSelector : Selector String
 iconSelector = Selector icons
 

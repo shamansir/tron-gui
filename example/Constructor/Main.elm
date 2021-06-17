@@ -510,9 +510,6 @@ create s =
         "Choice" ->
             Tron.choice
                 [
-                    ( "foo"
-                    , Tron.button |> Tron.map (always "foo")
-                    )
                 ]
                 "foo"
         "Button" ->
@@ -577,8 +574,11 @@ main =
         , init = \_ -> ( init, Cmd.none )
         , view = view
         , update =
-            (\msg (( _, gui ) as model) ->
-                ( update msg model
+            (\msg model ->
+                let
+                    ( nextCurrent, nextGui ) = update msg model
+                in
+                ( ( nextCurrent, nextGui )
                 , case msg of
                     LoadExample _ ->
                         updateCodeMirror ()
@@ -587,7 +587,7 @@ main =
                     TriggerFromLocalStorage ->
                         triggerLoadFromLocalStorage ()
                     ToLocalStorage ->
-                        sendToLocalStorage <| Exp.encode <| gui
+                        sendToLocalStorage <| Exp.encode <| nextGui
                     _ -> Cmd.none
                 )
             )

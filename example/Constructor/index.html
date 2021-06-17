@@ -60,7 +60,7 @@
 
         app.ports.updateCodeMirror.subscribe(() => {
             console.log("change", textArea.value);
-            myCodeMirror.setValue(textArea.value);
+            setTimeout(() => { myCodeMirror.setValue(textArea.value) }, 300);
         });
 
         app.ports.sendToLocalStorage.subscribe((tronJson) => {

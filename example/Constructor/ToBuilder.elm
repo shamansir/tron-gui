@@ -2,18 +2,24 @@ module Constructor.ToBuilder exposing (..)
 
 
 import Array
-import Color
+import Color exposing (Color)
 
 import Tron exposing (Tron)
 
 import Tron.Property exposing (..)
 import Tron.Control exposing (..)
 import Tron.Control.Value as V
+import Tron.Control.Button as Button
+import Tron.Control.Nest as Nest
+import Tron.Style.Theme as Theme
 
 
 toCodeLines : Tron () -> List String
 toCodeLines root =
     [ "module Gui exposing (..)"
+    , ""
+    , "import Tron.Builder.Unit as Tron"
+    , "import Color"
     , ""
     , "root : Tron ()"
     ] ++ "root = " :: (propToLines root |> indent 4)
@@ -23,7 +29,7 @@ propToLines : Tron () -> List String
 propToLines prop =
     case prop of
 
-        Nil -> []
+        Nil -> [ "Tron.none" ]
 
         Number (Control { min, max, step } ( _, value ) _) ->
             [
@@ -76,24 +82,38 @@ propToLines prop =
                     ++ if V.toggleToBool value then "True" else "False"
             ]
 
-        Action _ ->
-            [
-                "Tron.button"
-            ]
+        Action (Control face _ _) ->
+            "Tron.button"
+            :: faceLines (Just face)
 
-        Group _ _ (Control items { form, face } _) ->
+        Group _ shape (Control items { form, face } _) ->
             "Tron.nest"
                 :: (list labelAndPropToLines (Array.toList items) |> indent 4)
+                ++ shapeLines shape
+                ++ faceLines face
+                ++ formLines form
+
+        Choice _ shape (Control items { form, face } _) ->
+            "Tron.choice"
+                :: (list labelAndPropToLines (Array.toList items) |> indent 4)
+                ++ ([
+                     Array.toList items
+                     |> List.head
+                     |> Maybe.map Tuple.first
+                     |> Maybe.map quote
+                     |> Maybe.withDefault "-"
+                    ] |> indent 4)
+                ++ shapeLines shape
+                ++ faceLines face
+                ++ formLines form
 
         Live prop_ ->
             propToLines prop_ ++ [ "|> live" ]
 
-        _ -> []
-
 
 labelAndPropToLines : ( String, Tron () ) -> List String
 labelAndPropToLines ( label, prop ) =
-    [ "( \"" ++ label ++ "\""
+    [ "( " ++ quote label
     , "  , " ]
     ++ (propToLines prop |> indent 4)
     ++ [ "  )" ]
@@ -123,3 +143,54 @@ indent n strings =
     strings
         |> List.map2 (++)
             (List.repeat (List.length strings) (List.repeat n " " |> String.join ""))
+
+
+
+formLines : Nest.Form -> List String
+formLines form = []
+
+
+faceLines : Maybe Button.Face -> List String
+faceLines face =
+    case face of
+        Just Button.Default -> []
+        Just (Button.WithIcon (Button.Icon fn)) ->
+            [ "|> Tron.face"
+            , "    (Tron.iconAt " ++ iconUrlToString (fn Theme.Dark) ++ ")" ]
+        Just (Button.WithColor color) ->
+            [ "|> Tron.face"
+            , "    (Tron.useColor <| Color.fromRgba " ]
+            ++ (colorLines (Color.toRgba color) |> indent 8)
+            ++ [ "    )" ]
+        Nothing -> []
+
+
+shapeLines : NestShape -> List String
+shapeLines ( panelShape, cellShape ) = []
+
+
+colorLines : { red : Float, blue : Float, green : Float, alpha : Float } -> List String
+colorLines { red, green, blue, alpha } =
+    [ "{ red = " ++ String.fromFloat red
+    , ", green = " ++ String.fromFloat green
+    , ", blue = " ++ String.fromFloat blue
+    , ", alpha = " ++ String.fromFloat alpha
+    , "}"
+    ]
+
+quote : String -> String
+quote str =
+    "\"" ++ str ++ "\""
+
+
+iconUrlToString : Button.Url -> String
+iconUrlToString url =
+    case url of
+        Button.Url theUrl ->
+            "["
+            ++ (theUrl
+                |> String.split "/"
+                |> List.map quote
+                |> List.intersperse " , "
+                |> String.join "")
+            ++ "]"
