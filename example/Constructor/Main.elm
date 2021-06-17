@@ -25,7 +25,8 @@ import Tron.Expose.Convert as Property
 import WithTron.ValueAt as V
 import Tron.Expose.Data as Exp
 import Tron.Expose as Exp
-import Tron.Layout as Layout
+import Tron.Style.PanelShape as PS
+import Tron.Style.CellShape as CS
 
 import Size
 import WithTron exposing (ProgramWithTron)
@@ -44,7 +45,7 @@ import Example.Tiler.Logic as Example_Tiler
 
 
 import Constructor.ToBuilder as ToBuilder
-import Constructor.Selector exposing (viewIconSelector)
+import Constructor.Selector exposing (..)
 
 
 type Example
@@ -93,6 +94,7 @@ type Msg
     | SwitchTo (Path, LabelPath) (Tron Type)
     | Edit String E.Value
     | EditLabel String
+    | EditCellShape CS.CellShape
     | LoadExample Example
     | ToLocalStorage
     | TriggerFromLocalStorage
@@ -157,6 +159,11 @@ update msg ( current, currentGui ) =
         Edit propName propValue ->
             ( current
                 |> Maybe.map (Tuple.mapSecond <| edit propName propValue)
+            , currentGui
+            )
+        EditCellShape newCellShape ->
+            ( current
+                |> Maybe.map (Tuple.mapSecond <| Property.setCellShape newCellShape)
             , currentGui
             )
         EditLabel newLabel ->
@@ -258,10 +265,44 @@ typeToString t =
 
 editorFor : ( Path, LabelPath ) -> Tron Type -> Html Msg
 editorFor ( path, labelPath ) prop =
+    let
+
+        shapeEditor ( panelShape, cellShape ) =
+            Html.div
+                []
+                [ viewCellShapeSelector cellShape EditCellShape
+                ]
+
+        itemsEditor items =
+            items
+                |> Array.indexedMap
+                    (\idx (label, prop_) ->
+                        previewNestCell
+                        -- editorFor
+                            ( path |> Path.advance idx
+                            , labelPath ++ [ label ]
+                            )
+                            prop_
+                    )
+                |> Array.toList
+                |> Html.div []
+
+        faceEditor face =
+            viewIconSelector
+                (case face of
+                    Button.WithIcon (Button.Icon iconFn) ->
+                        Just <| iconFn Theme.Dark
+                    _ -> Nothing
+                )
+                (E.list E.string >> Edit "icon")
+
+    in
     Html.div
         [ Html.class "editor" ]
+
         [ viewPath path
         , viewLabelPath labelPath
+
         , case labelPath |> List.reverse |> List.head of
             Just label ->
                 Html.div
@@ -274,53 +315,35 @@ editorFor ( path, labelPath ) prop =
                         [ ]
                     ]
             Nothing -> Html.span [] []
+
         , typesDropdown <| typeOf prop
+
         , case prop of
             Property.Action (Core.Control face _ _) ->
-                viewIconSelector
-                    (case face of
-                        Button.WithIcon (Button.Icon iconFn) ->
-                            Just <| iconFn Theme.Dark
-                        _ -> Nothing
-                    )
-                    (E.list E.string >> Edit "icon")
+                faceEditor face
 
-
-            Property.Group _ _ control ->
+            Property.Group _ shape control ->
                 Html.div
                     []
-                    <| (Nest.getItems control
-                            |> Array.indexedMap
-                                (\idx (label, prop_) ->
-                                    previewNestCell
-                                    -- editorFor
-                                        ( path |> Path.advance idx
-                                        , labelPath ++ [ label ]
-                                        )
-                                        prop_
-                                )
-                            |> Array.toList)
-                    ++ [ Html.button
+                    [ shapeEditor shape
+                    , itemsEditor <| Nest.getItems control
+                    , Html.button
                         [ Html.onClick <| Append ]
-                        [ Html.text "Append" ] ]
-            Property.Choice _ _ control ->
+                        [ Html.text "Append" ]
+                    ]
+
+            Property.Choice _ shape control ->
                 Html.div
                     []
-                    <| (Nest.getItems control
-                            |> Array.indexedMap
-                                (\idx (label, prop_) ->
-                                    previewNestCell
-                                    -- editorFor
-                                        ( path |> Path.advance idx
-                                        , labelPath ++ [ label ]
-                                        )
-                                        prop_
-                                )
-                            |> Array.toList)
-                    ++ [ Html.button
+                    [ shapeEditor shape
+                    , itemsEditor <| Nest.getItems control
+                    , Html.button
                         [ Html.onClick <| Append ]
-                        [ Html.text "Append" ] ]
+                        [ Html.text "Append" ]
+                    ]
+
             _ -> Html.div [] []
+
         , Html.button
             [ Html.onClick <| Save ]
             [ Html.text "Save" ]
