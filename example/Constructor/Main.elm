@@ -222,7 +222,7 @@ view : Model -> Html Msg
 view ( current, tree ) =
     Html.div
         [ Html.id "constructor" ]
-        [ preview
+        [ preview (current |> Maybe.map (Tuple.first >> Tuple.first) |> Maybe.withDefault Path.start)
             <| fillTypes
             --<| addGhosts
             <| tree
@@ -394,20 +394,22 @@ typeOf =
         >> Maybe.withDefault None
 
 
-preview : Tron Type -> Html Msg
-preview =
+preview : Path -> Tron Type -> Html Msg
+preview current =
     Property.fold3 (\path cell before -> ( path, cell ) :: before) []
         >> List.reverse
         -- |> List.sortBy (Tuple.first >> Path.toList)
-        >> List.map (\(path, cell) -> previewCell path cell)
+        >> List.map (\(path, cell) ->
+            previewCell (Path.equal current <| Tuple.first path) path cell)
         >> Html.div [ Html.id "tree" ]
 
 
-previewCell : ( Path, LabelPath ) -> Tron Type -> Html Msg
-previewCell (path, labelPath) prop =
+previewCell : Bool -> ( Path, LabelPath ) -> Tron Type -> Html Msg
+previewCell isCurrent (path, labelPath) prop =
     Html.button
         [ Html.onClick <| SwitchTo (path, labelPath) prop
         , Html.class "edit-cell"
+        , Html.class <| if isCurrent then "edit-cell--current" else ""
         ]
         [ if Path.howDeep path > 0
             then viewPath path

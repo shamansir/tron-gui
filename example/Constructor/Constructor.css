@@ -74,6 +74,10 @@ body {
     content: ')';
 }
 
+.edit-cell.edit-cell--current {
+    border-color: green;
+}
+
 .edit-cell .move-forward {
     position: absolute;
     top: 25px;
