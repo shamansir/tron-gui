@@ -810,6 +810,10 @@ setFace face prop =
 clearFace : Property a -> Property a
 clearFace prop =
     case prop of
+        Action control ->
+            Action
+                <| Button.setFace Button.Default
+                <| control
         Group focus shape control ->
             Group focus shape
                 <| Nest.clearFace

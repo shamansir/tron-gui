@@ -479,6 +479,13 @@ decode =
                         )
                         |> D.map
                             (\items -> Nest.createChoice items ())
+                        |> D.map2
+                            (\maybeMode control ->
+                                case maybeMode of
+                                    Just mode -> control |> Nest.setChoiceMode mode
+                                    Nothing -> control
+                            )
+                            (D.maybe <| D.field "mode" decodeChoiceMode)
                         |> D.map (Choice Nothing defaultNestShape)
                         |> D.map3 faceAndShape
                             (D.maybe <| D.field "shape" decodeShape)
@@ -573,7 +580,7 @@ encodePropertyAt path property =
                 , ( "face", encodeFace face )
                 ]
 
-        Choice _ shape (Control items { face, form, selected } _) ->
+        Choice _ shape (Control items { face, form, selected, mode } _) ->
             E.object
                 [ ( "type", E.string "choice" )
                 , ( "path", encodeRawPath path )
@@ -607,6 +614,7 @@ encodePropertyAt path property =
                 , ( "options", encodeNested path items )
                 , ( "face", face |> Maybe.map encodeFace |> Maybe.withDefault E.null )
                 , ( "shape", encodeShape shape )
+                , ( "mode", encodeChoiceMode mode )
                 ]
 
         Group _ shape (Control items { face, form } _) ->
@@ -760,6 +768,30 @@ decodeFace =
                         (D.field "light" D.string)
                         |> D.map (Button.Icon >> Button.WithIcon)
                 _ -> D.succeed Button.Default
+        )
+
+
+encodeChoiceMode : Nest.ChoiceMode -> E.Value
+encodeChoiceMode face =
+    case face of
+        Nest.Pages -> E.object [ ( "kind", E.string "pages" ) ]
+        Nest.SwitchThrough -> E.object [ ( "kind", E.string "switch" ) ]
+        Nest.Knob -> E.object [ ( "kind", E.string "knob" ) ]
+
+
+decodeChoiceMode : D.Decoder Nest.ChoiceMode
+decodeChoiceMode =
+    D.field "kind" D.string
+    |> D.andThen
+        (\kind ->
+            case kind of
+                "pages" ->
+                    D.succeed Nest.Pages
+                "switch" ->
+                    D.succeed Nest.SwitchThrough
+                "knob" ->
+                    D.succeed Nest.Knob
+                _ -> D.succeed Nest.Pages
         )
 
 

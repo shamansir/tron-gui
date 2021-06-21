@@ -96,7 +96,7 @@ propToLines prop =
                 ++ faceLines face
                 ++ formLines form
 
-        Choice _ shape (Control items { form, face } _) ->
+        Choice _ shape (Control items { form, face, mode } _) ->
             "Tron.choice"
                 :: (list labelAndPropToLines (Array.toList items) |> indent 4)
                 ++ ([
@@ -109,6 +109,8 @@ propToLines prop =
                 ++ shapeLines shape
                 ++ faceLines face
                 ++ formLines form
+                ++ modeLines mode
+
 
         Live prop_ ->
             propToLines prop_ ++ [ "|> live" ]
@@ -154,6 +156,14 @@ formLines form =
     case form of
         Nest.Expanded -> [ "|> Tron.expand" ]
         _ -> []
+
+
+modeLines : Nest.ChoiceMode -> List String
+modeLines mode =
+    case mode of
+        Nest.Pages -> []
+        Nest.Knob -> [ "|> Tron.toKnob" ]
+        Nest.SwitchThrough -> [ "|> Tron.toSwitch" ]
 
 
 faceLines : Maybe Button.Face -> List String

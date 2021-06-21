@@ -98,6 +98,7 @@ type Msg
     | EditLabel String
     | EditPanelShape PS.PanelShape
     | EditCellShape CS.CellShape
+    | EditChoiceMode Nest.ChoiceMode
     | LoadExample Example
     | ToLocalStorage
     | TriggerFromLocalStorage
@@ -186,6 +187,11 @@ update msg ( current, currentGui ) =
         EditPanelShape newPanelShape ->
             ( current
                 |> Maybe.map (Tuple.mapSecond <| Property.setPanelShape newPanelShape)
+            , currentGui
+            )
+        EditChoiceMode newChoiceMode ->
+            ( current
+                |> Maybe.map (Tuple.mapSecond <| Property.setChoiceMode newChoiceMode)
             , currentGui
             )
         EditLabel newLabel ->
@@ -332,6 +338,21 @@ editorFor ( path, labelPath ) prop =
                     (E.list E.string >> Edit "icon")
                 ]
 
+        choiceModeEditor =
+            Html.div
+                []
+                [ Html.text "Mode:"
+                , Html.button
+                    [ Html.onClick <| EditChoiceMode Nest.Pages ]
+                    [ Html.text "Pages" ]
+                , Html.button
+                    [ Html.onClick <| EditChoiceMode Nest.Knob ]
+                    [ Html.text "Knob" ]
+                , Html.button
+                    [ Html.onClick <| EditChoiceMode Nest.SwitchThrough ]
+                    [ Html.text "Switch" ]
+                ]
+
     in
     Html.div
         [ Html.class "editor" ]
@@ -373,6 +394,7 @@ editorFor ( path, labelPath ) prop =
                 Html.div
                     []
                     [ faceEditor <| face
+                    , choiceModeEditor
                     , itemsEditor <| Nest.getItems control
                     , Html.button
                         [ Html.onClick <| Append ]
@@ -532,6 +554,8 @@ edit name value prop =
             prop |> Property.setFace (Button.WithColor <| Color.yellow)
         ( Choice, "color" ) ->
             prop |> Property.setFace (Button.WithColor <| Color.yellow)
+        ( Button, "auto" ) ->
+            prop |> Property.clearFace
         ( Group, "auto" ) ->
             prop |> Property.clearFace
         ( Choice, "auto" ) ->
