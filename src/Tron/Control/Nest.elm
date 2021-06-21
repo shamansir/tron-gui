@@ -382,3 +382,41 @@ remove id (Core.Control items value a) =
         )
         value
         a
+
+
+forward : ItemId -> NestControl item value a -> NestControl item  value a
+forward id (Core.Control items value a) =
+    if (id >= Array.length items - 1) then Core.Control items value a
+    else
+        Core.Control
+            (Array.append
+                (items |> Array.slice 0 id) -- all before item
+                (Array.append
+                    (items |> Array.slice (id + 1) (id + 2)) -- item after the current
+                    (Array.append
+                        (items |> Array.slice id (id + 1)) -- current item
+                        (items |> Array.slice (id + 2) (Array.length items)) -- everything else
+                    )
+                )
+            )
+            value
+            a
+
+
+backward : ItemId -> NestControl item value a -> NestControl item  value a
+backward id (Core.Control items value a) =
+    if (id <= 0) then Core.Control items value a
+    else
+        Core.Control
+            (Array.append
+                (items |> Array.slice 0 (id - 1)) -- before item, one less
+                (Array.append
+                    (items |> Array.slice id (id + 1)) -- current item
+                    (Array.append
+                        (items |> Array.slice (id - 1) id) -- item after the current
+                        (items |> Array.slice (id + 1) (Array.length items)) -- everything else
+                    )
+                )
+            )
+            value
+            a

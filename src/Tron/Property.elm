@@ -1117,3 +1117,27 @@ remove item fromProp =
             Group focus shape
                 (control |> Nest.remove item)
         _ -> fromProp
+
+
+forward : ItemId -> Property a -> Property a
+forward item inProp =
+    case inProp of
+        Choice focus shape control ->
+            Choice focus shape
+                (control |> Nest.forward item)
+        Group focus shape control ->
+            Group focus shape
+                (control |> Nest.forward item)
+        _ -> inProp
+
+
+backward : ItemId -> Property a -> Property a
+backward item inProp =
+    case inProp of
+        Choice focus shape control ->
+            Choice focus shape
+                (control |> Nest.backward item)
+        Group focus shape control ->
+            Group focus shape
+                (control |> Nest.backward item)
+        _ -> inProp

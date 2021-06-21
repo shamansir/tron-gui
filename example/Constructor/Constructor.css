@@ -48,6 +48,7 @@ body {
     border-radius: 10px;
     cursor: pointer;
     margin: 3px;
+    position: relative;
 }
 
 .edit-cell.edit-cell--preview {
@@ -71,6 +72,28 @@ body {
 
 .edit-cell .verb:after {
     content: ')';
+}
+
+.edit-cell .move-forward {
+    position: absolute;
+    top: 25px;
+    right: 0px;
+    padding: 0px 1px 0px 3px;
+    background-color: darkgray;
+    border-bottom-left-radius: 3px;
+    border-top-left-radius: 3px;
+    cursor: e-resize;
+}
+
+.edit-cell .move-backward {
+    position: absolute;
+    top: 25px;
+    left: 0px;
+    padding: 0px 3px 0px 1px;
+    background-color: darkgray;
+    border-bottom-right-radius: 3px;
+    border-top-right-radius: 3px;
+    cursor: w-resize;
 }
 
 .path {

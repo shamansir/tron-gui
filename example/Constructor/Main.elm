@@ -90,6 +90,8 @@ type Msg
     = NoOp
     | Save
     | Append
+    | Forward Int
+    | Backward Int
     | Remove Int
     | SwitchTo (Path, LabelPath) (Tron Type)
     | Edit String E.Value
@@ -155,6 +157,20 @@ update msg ( current, currentGui ) =
                 current
                     |> Maybe.map
                         (Tuple.mapSecond <| Property.remove idx)
+            , currentGui
+            )
+        Forward idx ->
+            (
+                current
+                    |> Maybe.map
+                        (Tuple.mapSecond <| Property.forward idx)
+            , currentGui
+            )
+        Backward idx ->
+            (
+                current
+                    |> Maybe.map
+                        (Tuple.mapSecond <| Property.backward idx)
             , currentGui
             )
         Edit propName propValue ->
@@ -408,6 +424,10 @@ previewCell (path, labelPath) prop =
 
 previewNestCell : ( Path, LabelPath ) -> Tron Type -> Html Msg
 previewNestCell (path, labelPath) prop =
+    let
+        maybeIdx = Path.pop path |> Maybe.map Tuple.second
+    in
+
     Html.button
         [ Html.class "edit-cell"
         , Html.class "edit-cell--preview"
@@ -421,8 +441,22 @@ previewNestCell (path, labelPath) prop =
         , Html.span [ Html.class "cell-type" ]
             [ Html.text <| typeToString <| typeOf prop ]
         , Html.span
+            [ Html.class "move-forward"
+            , Html.onClick <| case maybeIdx of
+                Just idx -> Forward idx
+                Nothing -> NoOp
+            ]
+            [ Html.text "↦" ]
+        , Html.span
+            [ Html.class "move-backward"
+            , Html.onClick <| case maybeIdx of
+                Just idx -> Backward idx
+                Nothing -> NoOp
+            ]
+            [ Html.text "↤" ]
+        , Html.span
             [ Html.class "verb verb--danger"
-            , Html.onClick <| case Path.pop path |> Maybe.map Tuple.second of
+            , Html.onClick <| case maybeIdx of
                 Just idx -> Remove idx
                 Nothing -> NoOp
             ]

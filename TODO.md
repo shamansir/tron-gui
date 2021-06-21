@@ -87,3 +87,7 @@
 * Include links to the examples in the docs;
 * Share examples somewhere, i.e. deploy to github;
 * A-Frame renderer & Demo to some senseful state;
+* Constructor:
+    * Highlight current cell;
+    * Reorder items in the nesting;
+    * Choice: ToKnob / ToSwitch;
