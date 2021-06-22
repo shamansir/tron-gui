@@ -416,13 +416,51 @@ typeOf =
 
 
 preview : Path -> Tron Type -> Html Msg
-preview current =
+preview current root =
+    let
+        helper prop =
+            let
+                ( path, labelPath ) =
+                    prop
+                        |> Property.get
+                        |> Maybe.map Tuple.first
+                        |> Maybe.withDefault ( Path.start, [] )
+                previewProp =
+                    previewCell
+                        (Path.equal path current)
+                        ( path, labelPath )
+                        (prop |> Property.map Tuple.second)
+                viewItems control =
+                    Nest.getItems control
+                        |> Array.map Tuple.second
+                        |> Array.toList
+                        |> List.map
+                            (helper >> List.singleton >> Html.li [])
+
+            in
+                case prop of
+                    Property.Group _ _ control ->
+                        Html.ul
+                            []
+                            ( previewProp :: viewItems control )
+                    Property.Choice _ _ control ->
+                        Html.ul
+                            []
+                            ( previewProp :: viewItems control )
+                    _ ->
+                        previewProp
+    in
+        helper <| Property.addPaths <| root
+
+
+    {-
     Property.fold3 (\path cell before -> ( path, cell ) :: before) []
         >> List.reverse
         -- |> List.sortBy (Tuple.first >> Path.toList)
         >> List.map (\(path, cell) ->
             previewCell (Path.equal current <| Tuple.first path) path cell)
         >> Html.div [ Html.id "tree" ]
+    -}
 
 
 previewCell : Bool -> ( Path, LabelPath ) -> Tron Type -> Html Msg
