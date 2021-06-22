@@ -242,8 +242,7 @@ view ( current, tree ) =
 
         , Html.div
            [ Html.id "code" ]
-           [ viewCode tree ]
-        , Html.div
+           [ Html.div
             [ Html.id "examples" ]
             [ Html.button [ Html.onClick <| LoadExample Empty ] [ Html.text "Empty" ]
             , Html.button [ Html.onClick <| LoadExample Goose ] [ Html.text "Goose" ]
@@ -251,8 +250,8 @@ view ( current, tree ) =
             , Html.button [ Html.onClick <| LoadExample Default ] [ Html.text "Default" ]
             , Html.button [ Html.onClick <| ToLocalStorage ] [ Html.text "Save" ]
             , Html.button [ Html.onClick <| TriggerFromLocalStorage ] [ Html.text "Load" ]
-            ]
-        ]
+            ], viewCode tree
+        ]]
 
 
 fillTypes : Tron () -> Tron Type

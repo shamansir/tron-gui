@@ -7,15 +7,16 @@ body {
 #constructor {
     display: flex;
     flex-direction: row;
+    max-height: 100vh;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: 10px;
 }
 
 #tree, #constructor > .editor, #code {
-    width : 32%;
+    width : 33.33%;
 }
 
-#examples {
-    width : 4%;
-}
 
 #tree {
     /* display: flex;
@@ -24,12 +25,19 @@ body {
 }
 
 #constructor > .editor {
-    border-style: dashed;
-    border-width: 0px 1px;
+    border: 1px solid lightgray;
+    border-radius: 10px;
     height: 100%;
-    padding: 5px;
+    padding: 10px;
+    box-sizing: border-box;
 }
-
+#code{
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+.editor * {
+    margin-bottom: 5px;
+}
 .editor--empty {
     font-size: 8px;
     color: gray;
@@ -44,11 +52,12 @@ body {
     display: inline-block;
     width: 65px;
     height: 65px;
-    border: dashed 1px;
+    border: none;
     border-radius: 10px;
     cursor: pointer;
-    margin: 3px;
+    margin: 5px;
     position: relative;
+    box-sizing: border-box;
 }
 
 .edit-cell.edit-cell--preview {
@@ -75,7 +84,7 @@ body {
 }
 
 .edit-cell.edit-cell--current {
-    border-color: green;
+    border: 1px solid black;
 }
 
 .edit-cell .move-forward {
