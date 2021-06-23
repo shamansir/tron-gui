@@ -6,6 +6,7 @@ import Array
 import Json.Decode as D
 import Json.Encode as E
 import Color
+import Dict exposing (Dict)
 
 import Tron exposing (Tron)
 import Tron.OfValue as OfValue
@@ -81,9 +82,10 @@ types =
 
 
 type alias Model =
-    ( Maybe ( (Path, LabelPath) , Tron Type )
-    , Tron ()
-    )
+    { current : Maybe ( (Path, LabelPath) , Tron Type )
+    , expands : Dict (List Int) Bool
+    , tree : Tron ()
+    }
 
 
 type Msg
@@ -107,30 +109,33 @@ type Msg
 
 for : Model -> OfValue.Tron Msg
 for =
-    Tuple.second
+    .tree
     >> Tron.map (always NoOp)
     >> OfValue.lift
 
 
 init : Model
 init =
-    ( Nothing
-    , Tron.root
-        [
-        ]
-    )
+    { current = Nothing
+    , tree =
+        Tron.root
+            [
+            ]
+    , expands = Dict.empty
+    }
 
 
 update : Msg -> Model -> Model
-update msg ( current, currentGui ) =
+update msg model =
     case msg of
         NoOp ->
-            ( current, currentGui )
+            model
         Save ->
-            ( Nothing
-            , case current of
+            { model
+            | current = Nothing
+            , tree = case model.current of
                 Just ( ( path, _ ), newProp ) ->
-                    currentGui
+                    model.tree
                         |> Property.replace
                             (\otherPath otherProp ->
                                 if Path.toList otherPath == Path.toList path then
@@ -138,11 +143,12 @@ update msg ( current, currentGui ) =
                                 else
                                     otherProp
                             )
-                Nothing -> currentGui
-            )
+                Nothing -> model.tree
+            }
         Append ->
-            (
-                current
+            { model
+            | current =
+                model.current
                     |> Maybe.map
                         (Tuple.mapSecond
                         <| Property.append
@@ -151,91 +157,103 @@ update msg ( current, currentGui ) =
                                 |> fillTypes
                             )
                         )
-            , currentGui
-            )
+            }
         Remove idx ->
-            (
-                current
+            { model
+            | current =
+                model.current
                     |> Maybe.map
                         (Tuple.mapSecond <| Property.remove idx)
-            , currentGui
-            )
+            }
         Forward idx ->
-            (
-                current
+            { model
+            | current =
+                model.current
                     |> Maybe.map
                         (Tuple.mapSecond <| Property.forward idx)
-            , currentGui
-            )
+            }
         Backward idx ->
-            (
-                current
+            { model
+            | current =
+                model.current
                     |> Maybe.map
                         (Tuple.mapSecond <| Property.backward idx)
-            , currentGui
-            )
+            }
         Edit propName propValue ->
-            ( current
+            { model
+            | current =
+                model.current
                 |> Maybe.map (Tuple.mapSecond <| edit propName propValue)
-            , currentGui
-            )
+            }
         EditCellShape newCellShape ->
-            ( current
+            { model
+            | current =
+                model.current
                 |> Maybe.map (Tuple.mapSecond <| Property.setCellShape newCellShape)
-            , currentGui
-            )
+            }
         EditPanelShape newPanelShape ->
-            ( current
+            { model
+            | current =
+                model.current
                 |> Maybe.map (Tuple.mapSecond <| Property.setPanelShape newPanelShape)
-            , currentGui
-            )
+            }
         EditChoiceMode newChoiceMode ->
-            ( current
-                |> Maybe.map (Tuple.mapSecond <| Property.setChoiceMode newChoiceMode)
-            , currentGui
-            )
+            { model
+            | current =
+                model.current
+                    |> Maybe.map (Tuple.mapSecond <| Property.setChoiceMode newChoiceMode)
+            }
         EditLabel newLabel ->
-            case current of
+            case model.current of
                 Just ( ( path, labelPath ), prop ) ->
-                    ( Just
-                        ( ( path, labelPath |> changeLastTo newLabel ), prop )
-                    , currentGui
-                        |> Property.changeLabel path newLabel
-                    )
-                Nothing -> ( current, currentGui )
+                    { model
+                    | current =
+                        Just
+                            ( ( path, labelPath |> changeLastTo newLabel ), prop )
+                    , tree =
+                        model.tree |> Property.changeLabel path newLabel
+                    }
+                Nothing -> model
 
         SwitchTo path prop ->
-            ( Just ( path, prop )
-            , currentGui
-            )
+            { model
+            | current = Just ( path, prop )
+            }
         LoadExample example ->
-            ( Nothing
-            , case example of
+            { model
+            | current = Nothing
+            , tree = case example of
                 Empty -> Tron.root []
                 Default -> Example_Default.for Example_Default.default |> Tron.toUnit
                 Goose -> Example_Goose.for Example_Goose.default |> Tron.toUnit
                 Tiler -> Example_Tiler.gui V.empty (Example_Tiler.init () V.empty |> Tuple.first) |> Tron.toUnit
-            )
+            }
         ToLocalStorage ->
-            ( current, currentGui )
+            model
         TriggerFromLocalStorage ->
-            ( current, currentGui )
+            model
         FromLocalStorage nextGui ->
-            ( current, nextGui )
+            { model
+            | tree = nextGui
+            }
 
 
 view : Model -> Html Msg
-view ( current, tree ) =
+view model =
     Html.div
         [ Html.id "constructor" ]
         [ Html.div
             [ Html.id "tree" ]
-            [ preview (current |> Maybe.map (Tuple.first >> Tuple.first) |> Maybe.withDefault Path.start)
+            [ preview
+                (model.current
+                    |> Maybe.map (Tuple.first >> Tuple.first)
+                    |> Maybe.withDefault Path.start
+                )
                 <| fillTypes
                 --<| addGhosts
-                <| tree
+                <| model.tree
             ]
-        , case current of
+        , case model.current of
             Just ( path, currentProp ) ->
                 editorFor path currentProp
             Nothing ->
@@ -254,7 +272,7 @@ view ( current, tree ) =
                 , Html.button [ Html.onClick <| ToLocalStorage ] [ Html.text "Save" ]
                 , Html.button [ Html.onClick <| TriggerFromLocalStorage ] [ Html.text "Load" ]
                 ]
-            , viewCode tree
+            , viewCode model.tree
             ]
         ]
 
@@ -731,9 +749,9 @@ main =
         , update =
             (\msg model ->
                 let
-                    ( nextCurrent, nextGui ) = update msg model
+                    nextModel = update msg model
                 in
-                ( ( nextCurrent, nextGui )
+                ( nextModel
                 , case msg of
                     LoadExample _ ->
                         updateCodeMirror ()
@@ -742,7 +760,7 @@ main =
                     TriggerFromLocalStorage ->
                         triggerLoadFromLocalStorage ()
                     ToLocalStorage ->
-                        sendToLocalStorage <| Exp.encode <| nextGui
+                        sendToLocalStorage <| Exp.encode <| nextModel.tree
                     FromLocalStorage _ ->
                         updateCodeMirror ()
                     _ -> Cmd.none
