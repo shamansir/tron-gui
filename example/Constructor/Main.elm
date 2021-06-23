@@ -105,6 +105,7 @@ type Msg
     | ToLocalStorage
     | TriggerFromLocalStorage
     | FromLocalStorage (Tron ())
+    | ExpandOrCollapse Path
 
 
 for : Model -> OfValue.Tron Msg
@@ -121,7 +122,9 @@ init =
         Tron.root
             [
             ]
-    , expands = Dict.empty
+    , expands =
+        Dict.empty
+            |> Dict.insert [] True
     }
 
 
@@ -222,6 +225,7 @@ update msg model =
         LoadExample example ->
             { model
             | current = Nothing
+            , expands = Dict.empty |> Dict.insert [] True
             , tree = case example of
                 Empty -> Tron.root []
                 Default -> Example_Default.for Example_Default.default |> Tron.toUnit
@@ -236,6 +240,19 @@ update msg model =
             { model
             | tree = nextGui
             }
+        ExpandOrCollapse path ->
+            { model
+            | expands
+                = model.expands
+                    |> Dict.update
+                        (Path.toList path)
+                        (\maybeCur ->
+                            case maybeCur of
+                                Just True -> Just False
+                                Just False -> Just True
+                                Nothing -> Just True
+                        )
+            }
 
 
 view : Model -> Html Msg
@@ -245,6 +262,7 @@ view model =
         [ Html.div
             [ Html.id "tree" ]
             [ preview
+                model.expands
                 (model.current
                     |> Maybe.map (Tuple.first >> Tuple.first)
                     |> Maybe.withDefault Path.start
@@ -438,8 +456,8 @@ typeOf =
         >> Maybe.withDefault None
 
 
-preview : Path -> Tron Type -> Html Msg
-preview current root =
+preview : Dict (List Int) Bool -> Path -> Tron Type -> Html Msg
+preview expands current root =
     let
         helper prop =
             let
@@ -448,28 +466,39 @@ preview current root =
                         |> Property.get
                         |> Maybe.map Tuple.first
                         |> Maybe.withDefault ( Path.start, [] )
+                isExpanded =
+                    expands
+                        |> Dict.get (Path.toList path)
+                        |> Maybe.withDefault False
                 previewProp =
                     viewCellAsALine
                         (Path.equal path current)
+                        isExpanded
                         ( path, labelPath )
                         (prop |> Property.map Tuple.second)
                 viewItems control =
-                    Nest.getItems control
-                        |> Array.map Tuple.second
-                        |> Array.toList
-                        |> List.map
-                            (helper >> List.singleton >> Html.li [])
+                    if isExpanded then
+                        Nest.getItems control
+                            |> Array.map Tuple.second
+                            |> Array.toList
+                            |> List.map
+                                (helper >> List.singleton >> Html.li [])
+                    else []
 
             in
                 case prop of
                     Property.Group _ _ control ->
-                        Html.ul
+                        Html.div
                             []
-                            ( previewProp :: viewItems control )
+                            [ previewProp
+                            , Html.ul [] <| viewItems control
+                            ]
                     Property.Choice _ _ control ->
-                        Html.ul
+                        Html.div
                             []
-                            ( previewProp :: viewItems control )
+                            [ previewProp
+                            , Html.ul [] <| viewItems control
+                            ]
                     _ ->
                         previewProp
     in
@@ -486,8 +515,8 @@ preview current root =
     -}
 
 
-viewCellAsALine : Bool -> ( Path, LabelPath ) -> Tron Type -> Html Msg
-viewCellAsALine isCurrent (path, labelPath) prop =
+viewCellAsALine : Bool -> Bool -> ( Path, LabelPath ) -> Tron Type -> Html Msg
+viewCellAsALine isCurrent isExpanded (path, labelPath) prop =
     Html.button
         [ Html.onClick <| SwitchTo (path, labelPath) prop
         , Html.class "edit-cell-line"
@@ -499,9 +528,23 @@ viewCellAsALine isCurrent (path, labelPath) prop =
         , if List.length labelPath > 0
             then viewLabelPath labelPath
             else emptyLabelPath
-        , Html.span [ Html.class "cell-type" ]
+        , Html.span
+            [ Html.class "cell-type" ]
             [ Html.text <| typeToString <| typeOf prop ]
+        , case typeOf prop of
+            Choice -> expandCollapseButton path isExpanded
+            Group -> expandCollapseButton path isExpanded
+            _ -> Html.span [] []
         ]
+
+
+expandCollapseButton : Path -> Bool -> Html Msg
+expandCollapseButton path isExpanded =
+    Html.button
+        [ Html.class "expand-collapse"
+        , Html.onClick <| ExpandOrCollapse path
+        ]
+        [ Html.text <| if isExpanded then "▲" else "▼" ]
 
 
 previewCell : Bool -> ( Path, LabelPath ) -> Tron Type -> Html Msg

@@ -48,6 +48,10 @@ body {
     background-color: lightgray;
 }
 
+#tree ul li {
+    list-style-type: none;
+}
+
 .edit-cell {
     display: inline-block;
     width: 65px;
@@ -88,6 +92,13 @@ body {
 
 .edit-cell-line.edit-cell-line--current {
     border: 1px solid black;
+}
+
+.edit-cell-line .expand-collapse {
+    padding: 2px;
+    font-size: 8px;
+    border: 1px solid lightgray;
+    border-radius : 3px;
 }
 
 .edit-cell > span {
