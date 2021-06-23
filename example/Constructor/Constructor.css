@@ -64,6 +64,32 @@ body {
     cursor: auto;
 }
 
+.edit-cell-line {
+    border: 1px solid lightgray;
+}
+
+.edit-cell-line > span {
+    display: inline;
+    padding: 5px 2px;
+}
+
+.edit-cell-line .cell-type {
+    font-size: 8px;
+    color: blue;
+}
+
+.edit-cell-line .cell-type::before {
+    content: "(";
+}
+
+.edit-cell-line .cell-type::after {
+    content: ")";
+}
+
+.edit-cell-line.edit-cell-line--current {
+    border: 1px solid black;
+}
+
 .edit-cell > span {
     display: block;
     text-align: center;

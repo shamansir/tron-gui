@@ -228,10 +228,13 @@ view : Model -> Html Msg
 view ( current, tree ) =
     Html.div
         [ Html.id "constructor" ]
-        [ preview (current |> Maybe.map (Tuple.first >> Tuple.first) |> Maybe.withDefault Path.start)
-            <| fillTypes
-            --<| addGhosts
-            <| tree
+        [ Html.div
+            [ Html.id "tree" ]
+            [ preview (current |> Maybe.map (Tuple.first >> Tuple.first) |> Maybe.withDefault Path.start)
+                <| fillTypes
+                --<| addGhosts
+                <| tree
+            ]
         , case current of
             Just ( path, currentProp ) ->
                 editorFor path currentProp
@@ -241,17 +244,19 @@ view ( current, tree ) =
                     [ Html.text "Select something" ]
 
         , Html.div
-           [ Html.id "code" ]
-           [ Html.div
-            [ Html.id "examples" ]
-            [ Html.button [ Html.onClick <| LoadExample Empty ] [ Html.text "Empty" ]
-            , Html.button [ Html.onClick <| LoadExample Goose ] [ Html.text "Goose" ]
-            , Html.button [ Html.onClick <| LoadExample Tiler ] [ Html.text "Tiler" ]
-            , Html.button [ Html.onClick <| LoadExample Default ] [ Html.text "Default" ]
-            , Html.button [ Html.onClick <| ToLocalStorage ] [ Html.text "Save" ]
-            , Html.button [ Html.onClick <| TriggerFromLocalStorage ] [ Html.text "Load" ]
-            ], viewCode tree
-        ]]
+            [ Html.id "code" ]
+            [ Html.div
+                [ Html.id "examples" ]
+                [ Html.button [ Html.onClick <| LoadExample Empty ] [ Html.text "Empty" ]
+                , Html.button [ Html.onClick <| LoadExample Goose ] [ Html.text "Goose" ]
+                , Html.button [ Html.onClick <| LoadExample Tiler ] [ Html.text "Tiler" ]
+                , Html.button [ Html.onClick <| LoadExample Default ] [ Html.text "Default" ]
+                , Html.button [ Html.onClick <| ToLocalStorage ] [ Html.text "Save" ]
+                , Html.button [ Html.onClick <| TriggerFromLocalStorage ] [ Html.text "Load" ]
+                ]
+            , viewCode tree
+            ]
+        ]
 
 
 fillTypes : Tron () -> Tron Type
@@ -426,7 +431,7 @@ preview current root =
                         |> Maybe.map Tuple.first
                         |> Maybe.withDefault ( Path.start, [] )
                 previewProp =
-                    previewCell
+                    viewCellAsALine
                         (Path.equal path current)
                         ( path, labelPath )
                         (prop |> Property.map Tuple.second)
@@ -461,6 +466,24 @@ preview current root =
             previewCell (Path.equal current <| Tuple.first path) path cell)
         >> Html.div [ Html.id "tree" ]
     -}
+
+
+viewCellAsALine : Bool -> ( Path, LabelPath ) -> Tron Type -> Html Msg
+viewCellAsALine isCurrent (path, labelPath) prop =
+    Html.button
+        [ Html.onClick <| SwitchTo (path, labelPath) prop
+        , Html.class "edit-cell-line"
+        , Html.class <| if isCurrent then "edit-cell-line--current" else ""
+        ]
+        [ if Path.howDeep path > 0
+            then viewPath path
+            else emptyPath
+        , if List.length labelPath > 0
+            then viewLabelPath labelPath
+            else emptyLabelPath
+        , Html.span [ Html.class "cell-type" ]
+            [ Html.text <| typeToString <| typeOf prop ]
+        ]
 
 
 previewCell : Bool -> ( Path, LabelPath ) -> Tron Type -> Html Msg
