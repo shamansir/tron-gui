@@ -337,7 +337,7 @@ editorFor ( path, labelPath ) prop =
 
         shapeEditor ( panelShape, cellShape ) =
             Html.div
-                []
+                [Html.class "shape"]
                 [ viewPanelShapeSelector panelShape EditPanelShape
                 , viewCellShapeSelector cellShape EditCellShape
                 ]

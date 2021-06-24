@@ -44,7 +44,6 @@ body {
     box-sizing: border-box;
 }
 
-
 .editor--empty {
     font-size: 16px;
     color: gray;
@@ -58,11 +57,13 @@ body {
 #tree ul li {
     list-style-type: none;
 }
-.cell-editor{
+
+.cell-editor {
     display: flex;
     flex-wrap: wrap;
     margin: 10px 0;
 }
+
 .edit-cell {
     display: inline-block;
     background-color: #efefef;
@@ -129,7 +130,6 @@ body {
     color: darkgray;
     text-transform: lowercase;
 }
-
 
 .edit-cell.edit-cell--current {
     border: 1px solid black;
@@ -208,49 +208,72 @@ body {
 }
 
 .icons {
-    background-color: darkgray;
+    background-color: #6f6f6f;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
 }
 
 .icons img {
     cursor: pointer;
-    margin: 4px;
+    padding: 10px;
+    border-radius: 5px;
 }
 
 .icons .current {
-    border: 1px green solid;
+    background-color: #909090;
 }
 
-.cell-shapes > div {
-    display: inline-block;
-    width: 40px;
-    height: 10px;
-    border: 1px dashed black;
-    cursor: pointer;
-    border-radius: 5px;
-    margin: 5px;
-    padding: 15px 0;
-    font-size: 10px;
-    text-align: center;
+.shape {
+    margin: 20px 0;
+    display: flex;
+    border-top: 1px solid lightgray;
+    padding: 10px 0;}
+
+.cell-shapes {
+    width: 30%;
 }
 
-.cell-shapes > div.current {
-    border: 1px dashed lightgreen;
+.cell-shapes:before {
+    content: 'Cell shape';
+    display: block;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.panel-shapes {
+    width: 70%;
+}
+
+.panel-shapes:before {
+    content: 'Panel shape';
+    display: block;
+    font-weight: bold;
+    margin-bottom: 10px;
 }
 
 .panel-shapes > div {
-    display: inline-block;
-    width: 40px;
-    height: 10px;
-    border: 1px dashed darkblue;
-    cursor: pointer;
-    border-radius: 5px;
-    margin: 5px;
-    padding: 15px 0;
-    font-size: 10px;
-    text-align: center;
-    color: darkblue;
+    width: 16%;
 }
 
-.panel-shapes > div.current {
-    border: 1px dashed lightgreen;
+.cell-shapes > div {
+    width: 50%;
+}
+
+.panel-shapes > div,
+.cell-shapes > div {
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 5px;
+    padding: 10px 0;
+    white-space: nowrap;
+    text-align: center;
+    color: gray;
+    box-sizing: border-box;
+}
+
+.panel-shapes > div.current,
+.cell-shapes > div.current {
+    background-color: #efefef;
+    color: black;
 }
