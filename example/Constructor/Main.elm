@@ -526,7 +526,7 @@ viewCellAsALine isCurrent isExpanded (path, labelPath) prop =
             then viewPath path
             else emptyPath
         , if List.length labelPath > 0
-            then viewLabelPath labelPath
+            then viewLabel labelPath
             else emptyLabelPath
         , Html.span
             [ Html.class "cell-type" ]
@@ -642,6 +642,16 @@ viewLabelPath : LabelPath -> Html msg
 viewLabelPath =
      List.map (\n -> Html.span [ Html.class "item" ] [ Html.text n ])
         >> List.intersperse (Html.span [ Html.class "sep" ] [ Html.text "/" ])
+        >> Html.span [ Html.class "label-path" ]
+
+
+viewLabel : LabelPath -> Html msg
+viewLabel =
+     List.reverse
+        >> List.head
+        >> Maybe.map (\n -> Html.span [ Html.class "item" ] [ Html.text n ])
+        >> Maybe.withDefault (Html.span [] [])
+        >> List.singleton
         >> Html.span [ Html.class "label-path" ]
 
 
