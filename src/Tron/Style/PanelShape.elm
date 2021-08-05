@@ -1,7 +1,8 @@
 module Tron.Style.PanelShape exposing
-    ( PanelShape
+    ( PanelShape, Pagination, Grouping
     , auto, rows, cols
     , by
+    , singlePage, manyPages, pagesEnabled
     , distribute, numify, create
     )
 
@@ -30,8 +31,24 @@ import Tron.Pages as Pages exposing (Pages)
 import Size exposing (..)
 
 
+maxCols = 3
+
+maxRows = 3
+
+
+{-| -}
+type Pagination
+    = SinglePage
+    | ManyPages
+
+
 {-| -}
 type PanelShape
+    = PanelShape Pagination Grouping
+
+
+{-| -}
+type Grouping
     = Auto
     | Rows Int
     | Cols Int
@@ -40,35 +57,42 @@ type PanelShape
 
 {-| Calculate both rows and column numbers automatically, based on the number of cells inside. -}
 auto : PanelShape
-auto = Auto
+auto = PanelShape ManyPages Auto
 
 
 {-| Specify how many cell rows there should be in the panel, and calculate columns number automatically. -}
 rows : Int -> PanelShape
-rows = Rows
+rows = PanelShape ManyPages << Rows
 
 
 {-| Specify how many cell columns there should be in the panel, and calculate rows number automatically. -}
 cols : Int -> PanelShape
-cols = Cols
+cols = PanelShape ManyPages << Cols
 
 
 {-| Specify panel size manually, i.e. how many cells horizontally and how many vertically. -}
 by : Int -> Int -> PanelShape
-by = Shape
+by c r = PanelShape ManyPages <| Shape c r
 
 
-maxCols : Int
-maxCols = 3
+singlePage : PanelShape -> PanelShape
+singlePage (PanelShape _ ps) = PanelShape SinglePage ps
 
 
-maxRows : Int
-maxRows = 3
+manyPages : PanelShape -> PanelShape
+manyPages (PanelShape _ ps) = PanelShape ManyPages ps
+
+
+pagesEnabled : PanelShape -> Bool
+pagesEnabled (PanelShape pages _) =
+    case pages of
+        SinglePage -> False
+        ManyPages -> True
 
 
 {-| Get numeric size of a panel in cells, and a set of pages required, if there are overflows. Floats, since there could be half-cells. -}
 distribute : PanelShape -> CellShape -> List a -> ( Pages (List a), SizeF Cells )
-distribute panelShape cellShape items =
+distribute (PanelShape pagination grouping) cellShape items =
     let
         itemCount = List.length items
         ( cellXMultiplier, cellYMultiplier ) =
@@ -86,7 +110,7 @@ distribute panelShape cellShape items =
             Pages.distribute << onAPage
 
     in
-        ( case panelShape of
+        ( case grouping of
             Auto ->
                 let n = itemCount // 2
                 in
@@ -108,20 +132,26 @@ distribute panelShape cellShape items =
         )
         |>
             (\(c, r) ->
-                if c > maxCols
-                then
-                    ( pagesFor ( maxCols, r ) items
-                    , ( maxCols, r )
-                    )
-                else if r > maxRows
-                then
-                    ( pagesFor ( c, maxRows ) items
-                    , ( c, maxRows )
-                    )
-                else
-                    ( Pages.single <| items
-                    , (c, r)
-                    )
+                case pagination of
+                    ManyPages ->
+                        if c > maxCols
+                            then
+                                ( pagesFor ( maxCols, r ) items
+                                , ( maxCols, r )
+                                )
+                            else if r > maxRows
+                            then
+                                ( pagesFor ( c, maxRows ) items
+                                , ( c, maxRows )
+                                )
+                            else
+                                ( Pages.single <| items
+                                , (c, r)
+                                )
+                    SinglePage ->
+                        ( Pages.single <| items
+                        , (c, r)
+                        )
             )
         |> Tuple.mapSecond
             (Tuple.mapBoth
@@ -134,7 +164,7 @@ distribute panelShape cellShape items =
 {-| Returns columns and rows to take, and -1 is the value should be auto-calculated.
 -}
 numify : PanelShape -> ( Int, Int )
-numify ps =
+numify (PanelShape _ ps) =
     case ps of
         Auto -> ( -1, -1 )
         Rows n -> ( -1, n )
@@ -146,11 +176,12 @@ numify ps =
 -}
 create : ( Int, Int ) -> PanelShape
 create ( nc, nr ) =
-    if (nc == -1) && (nr == -1) then
-        Auto
-    else if (nc == -1) then
-        Rows nr
-    else if (nr == -1) then
-        Cols nc
-    else
-        Shape nc nr
+    PanelShape ManyPages
+         <| if (nc == -1) && (nr == -1) then
+                Auto
+            else if (nc == -1) then
+                Rows nr
+            else if (nr == -1) then
+                Cols nc
+            else
+                Shape nc nr

@@ -646,13 +646,13 @@ viewLabelPath =
 
 
 viewLabel : LabelPath -> Html msg
-viewLabel =
-     List.reverse
-        >> List.head
-        >> Maybe.map (\n -> Html.span [ Html.class "item" ] [ Html.text n ])
-        >> Maybe.withDefault (Html.span [] [])
-        >> List.singleton
-        >> Html.span [ Html.class "label-path" ]
+viewLabel path =
+    Html.span
+        [ Html.class "label-path" ]
+        [ case List.reverse path of
+            (last::_) -> Html.span [ Html.class "item" ] [ Html.text last ]
+            _ -> Html.span [] []
+        ]
 
 
 changeLastTo : String -> LabelPath -> LabelPath

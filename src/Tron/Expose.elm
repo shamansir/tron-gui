@@ -805,6 +805,7 @@ encodeShape ( panelShape, cellShape ) =
                     E.object
                         [ ( "cols", E.int cols )
                         , ( "rows", E.int rows )
+                        , ( "pages", E.bool <| PS.pagesEnabled panelShape )
                         ]
             )
         ,
@@ -824,11 +825,16 @@ decodeShape =
     D.map2
         Tuple.pair
         (D.field "panel"
-            <| D.map PS.create
-            <| D.map2
-                Tuple.pair
+            <| D.map3
+                (\cols rows pages ->
+                    PS.create ( cols, rows ) |> if pages then PS.manyPages else PS.singlePage
+                )
                 (D.field "cols" D.int)
                 (D.field "rows" D.int)
+                (D.map (Maybe.withDefault True)
+                    <| D.maybe
+                    <| D.field "pages" D.bool
+                )
         )
         (D.field "cell"
             <| D.map CS.create
