@@ -2,7 +2,7 @@ module Tron.Style.PanelShape exposing
     ( PanelShape, Pagination, Grouping
     , auto, rows, cols
     , by
-    , singlePage, manyPages, pagesEnabled
+    , singlePage, manyPages, pagesEnabled, togglePagination
     , distribute, numify, create
     )
 
@@ -21,8 +21,11 @@ You are not required to specify both sides, just use `rows` or `cols` helpers to
 # Manual
 @docs by
 
+# Pagination
+@docs distribute, singlePage, manyPages, pagesEnabled, togglePagination
+
 # Helpers
-@docs distribute, numify, create
+@docs numify, create
 -}
 
 
@@ -75,19 +78,30 @@ by : Int -> Int -> PanelShape
 by c r = PanelShape ManyPages <| Shape c r
 
 
+{-| Do not distribute items over pages -}
 singlePage : PanelShape -> PanelShape
 singlePage (PanelShape _ ps) = PanelShape SinglePage ps
 
 
+{-| Distribute items over pages automatically (when number of columns / rows overflows 3). Default condition. -}
 manyPages : PanelShape -> PanelShape
 manyPages (PanelShape _ ps) = PanelShape ManyPages ps
 
 
+{-| Check if pagination is enabled. -}
 pagesEnabled : PanelShape -> Bool
 pagesEnabled (PanelShape pages _) =
     case pages of
         SinglePage -> False
         ManyPages -> True
+
+
+{-| Turn pagination off or on. -}
+togglePagination : PanelShape -> PanelShape
+togglePagination (PanelShape pages ps) =
+    case pages of
+        SinglePage -> PanelShape ManyPages ps
+        ManyPages -> PanelShape SinglePage ps
 
 
 {-| Get numeric size of a panel in cells, and a set of pages required, if there are overflows. Floats, since there could be half-cells. -}

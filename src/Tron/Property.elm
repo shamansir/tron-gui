@@ -860,6 +860,31 @@ setCellShape cs prop =
         _ -> prop
 
 
+
+updatePanelShape : (PanelShape -> PanelShape) -> Property a -> Property a
+updatePanelShape fn prop =
+    case prop of
+        Group focus ( ps, cs ) control ->
+            Group focus ( fn ps, cs ) control
+        Choice focus ( ps, cs ) control ->
+            Choice focus ( fn ps, cs ) control
+        _ -> prop
+
+
+updateCellShape : (CellShape -> CellShape) -> Property a -> Property a
+updateCellShape fn prop =
+    case prop of
+        Group focus ( ps, cs ) control ->
+            Group focus ( ps, fn cs ) control
+        Choice focus ( ps, cs ) control ->
+            Choice focus ( ps, fn cs ) control
+        _ -> prop
+
+
+togglePagination : Property a -> Property a
+togglePagination = updatePanelShape PS.togglePagination
+
+
 compareValues : Property a -> Property b -> Bool
 compareValues propA propB =
     case (propA, propB) of

@@ -22,6 +22,7 @@ toCodeLines root =
     , ""
     , "import Tron.Builder.Unit as Tron"
     , "import Tron.Style.CellShape as CS"
+    , "import Tron.Style.PanelShape as PS"
     , "import Color"
     , ""
     , "root : Tron ()"
@@ -183,7 +184,7 @@ faceLines face =
 
 panelShapeLines : PS.PanelShape -> List String
 panelShapeLines ps =
-    case PS.numify ps of
+    (case PS.numify ps of
         ( nc, nr ) ->
             if (nc == -1) && (nr == -1) then
                 []
@@ -192,7 +193,8 @@ panelShapeLines ps =
             else if (nr == -1) then
                 [ "|> Tron.cols " ++ String.fromInt nc ]
             else
-                [ "|> Tron.by " ++ String.fromInt nc ++ " " ++ String.fromInt nr ]
+                [ "|> Tron.by " ++ String.fromInt nc ++ " " ++ String.fromInt nr ])
+    ++ (if not <| PS.pagesEnabled ps then [ ] else [ "|> PS.singlePage " ])
 
 
 cellShapeLines : CS.CellShape -> List String

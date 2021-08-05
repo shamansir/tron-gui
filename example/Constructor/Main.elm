@@ -106,6 +106,7 @@ type Msg
     | TriggerFromLocalStorage
     | FromLocalStorage (Tron ())
     | ExpandOrCollapse Path
+    | TogglePagination
 
 
 for : Model -> OfValue.Tron Msg
@@ -199,6 +200,12 @@ update msg model =
             | current =
                 model.current
                 |> Maybe.map (Tuple.mapSecond <| Property.setPanelShape newPanelShape)
+            }
+        TogglePagination ->
+            { model
+            | current =
+                model.current
+                |> Maybe.map (Tuple.mapSecond <| Property.togglePagination)
             }
         EditChoiceMode newChoiceMode ->
             { model
@@ -393,6 +400,21 @@ editorFor ( path, labelPath ) prop =
                     [ Html.text "Switch" ]
                 ]
 
+        paginationSwitch ps =
+            Html.div
+                []
+                [ Html.input
+                    [ Html.type_ "checkbox"
+                    , Html.onClick <| TogglePagination
+                    , Html.checked <| PS.pagesEnabled ps
+                    , Html.id "pagination-cb"
+                    ]
+                    []
+                , Html.label
+                    [ Html.for "pagination-cb" ]
+                    [ Html.text "Pagination" ]
+                ]
+
     in
     Html.div
         [ Html.class "editor" ]
@@ -427,6 +449,7 @@ editorFor ( path, labelPath ) prop =
                     , Html.button
                         [ Html.onClick <| Append ]
                         [ Html.text "Append" ]
+                    , paginationSwitch <| Tuple.first shape
                     , shapeEditor shape
                     ]
 
@@ -439,6 +462,7 @@ editorFor ( path, labelPath ) prop =
                     , Html.button
                         [ Html.onClick <| Append ]
                         [ Html.text "Append" ]
+                    , paginationSwitch <| Tuple.first shape
                     , shapeEditor shape
                     ]
 
