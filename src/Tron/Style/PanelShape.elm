@@ -13,7 +13,7 @@ Panel shape is how many cells the panel takes in the GUI grid (it is automatical
 
 You are not required to specify both sides, just use `rows` or `cols` helpers to say how many rows or columns you want in the panel and other side will be calculated automatically. Or even use `auto` and both sides will be suggested, but this usually doesn't look good. To specify both sides manually, use `by`.
 
-@docs PanelShape
+@docs PanelShape, Pagination, Grouping
 
 # Automatic
 @docs auto, rows, cols
@@ -40,14 +40,14 @@ maxRows = 3
 
 
 {-| -}
-type Pagination
-    = SinglePage
-    | ManyPages
+type PanelShape
+    = PanelShape Pagination Grouping
 
 
 {-| -}
-type PanelShape
-    = PanelShape Pagination Grouping
+type Pagination
+    = SinglePage
+    | ManyPages
 
 
 {-| -}
