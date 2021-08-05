@@ -337,7 +337,7 @@ editorFor ( path, labelPath ) prop =
 
         shapeEditor ( panelShape, cellShape ) =
             Html.div
-                []
+                [Html.class "shape"]
                 [ viewPanelShapeSelector panelShape EditPanelShape
                 , viewCellShapeSelector cellShape EditCellShape
                 ]
@@ -354,7 +354,7 @@ editorFor ( path, labelPath ) prop =
                             prop_
                     )
                 |> Array.toList
-                |> Html.div []
+                |> Html.div [Html.class "cell-editor"]
 
         faceEditor face =
             Html.div
@@ -517,7 +517,7 @@ preview expands current root =
 
 viewCellAsALine : Bool -> Bool -> ( Path, LabelPath ) -> Tron Type -> Html Msg
 viewCellAsALine isCurrent isExpanded (path, labelPath) prop =
-    Html.button
+    Html.div
         [ Html.onClick <| SwitchTo (path, labelPath) prop
         , Html.class "edit-cell-line"
         , Html.class <| if isCurrent then "edit-cell-line--current" else ""
@@ -549,7 +549,7 @@ expandCollapseButton path isExpanded =
 
 previewCell : Bool -> ( Path, LabelPath ) -> Tron Type -> Html Msg
 previewCell isCurrent (path, labelPath) prop =
-    Html.button
+    Html.div
         [ Html.onClick <| SwitchTo (path, labelPath) prop
         , Html.class "edit-cell"
         , Html.class <| if isCurrent then "edit-cell--current" else ""
@@ -573,7 +573,7 @@ previewNestCell (path, labelPath) prop =
         maybeIdx = Path.pop path |> Maybe.map Tuple.second
     in
 
-    Html.button
+    Html.div
         [ Html.class "edit-cell"
         , Html.class "edit-cell--preview"
         ]
@@ -591,21 +591,21 @@ previewNestCell (path, labelPath) prop =
                 Just idx -> Forward idx
                 Nothing -> NoOp
             ]
-            [ Html.text "↦" ]
+            [ Html.text "▶︎" ]
         , Html.span
             [ Html.class "move-backward"
             , Html.onClick <| case maybeIdx of
                 Just idx -> Backward idx
                 Nothing -> NoOp
             ]
-            [ Html.text "↤" ]
+            [ Html.text "◀︎" ]
         , Html.span
             [ Html.class "verb verb--danger"
             , Html.onClick <| case maybeIdx of
                 Just idx -> Remove idx
                 Nothing -> NoOp
             ]
-            [ Html.text "Remove" ]
+            [ Html.text "✕" ]
         ]
 
 
@@ -625,7 +625,7 @@ emptyLabelPath =
         [ Html.class "label-path" ]
         [ Html.span
             [ Html.class "empty" ]
-            [ Html.text "-" ]
+            [ Html.text "root" ]
         ]
 
 

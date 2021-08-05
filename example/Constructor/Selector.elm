@@ -93,7 +93,7 @@ panelShapeToString ps =
         else if (nr == -1) then
             String.fromInt nc ++ " cols"
         else
-            String.fromInt nr ++ " x " ++ String.fromInt nc
+            String.fromInt nr ++ " × " ++ String.fromInt nc
 
 
 viewCellShapeSelector : CS.CellShape -> (CS.CellShape -> msg) -> Html msg
@@ -114,12 +114,11 @@ viewCellShapeSelector current onSelect =
                     [ Html.text <|
                         case CS.units cellShape of
                             ( horz, vert ) ->
-                                unitToStr horz ++ "x" ++ unitToStr vert
+                                unitToStr horz ++ " × " ++ unitToStr vert
                     ]
             )
         <| List.map CS.create
         <| possibleShapes
-
 
 viewPanelShapeSelector : PS.PanelShape -> (PS.PanelShape -> msg) -> Html msg
 viewPanelShapeSelector current onSelect =
