@@ -1,3 +1,9 @@
+
+### 12.1.0
+
+* Make pagination optional for Choice and Group panels, add `PanelShape.singlePage` / `PanelShape.manyPages` + more helpers;
+* The UI constuctor comes as the powerful example;
+
 ### 12.0.0
 
 * Fix sending several updates from the client with `Backed.byProxyApp`;
