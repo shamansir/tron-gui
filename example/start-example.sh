@@ -16,6 +16,7 @@ else
     echo "DatGui — connecting to 'dat.gui' using JS transfer"
     echo "OneKnob — only one control and its value, nothing else"
     echo "Random — random interface by a click of a button"
+    echo "Constructor — constructor for the interface"
     echo "AFrame — render to virtual reality using A-Frame (currently, the early draft)"
     echo "ReportToJsJson — a demonstration of sending any value update to port as JSON,"
     echo "                 as well as the complete GUI structure"
