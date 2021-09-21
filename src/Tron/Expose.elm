@@ -125,23 +125,37 @@ applyProperty value prop =
 
 
 apply : Exp.Update -> Property a -> Property a
-apply { path, value } prop =
-    case path of
+apply { path, labelPath, value } prop =
+    case labelPath of
         [] ->
             applyProperty value prop
 
-        id :: next ->
+        label :: next -> -- id :: next
             case prop of
                 Group focus shape control ->
                     control
-                        |> Nest.withItem id
-                            (Tuple.mapSecond <| apply { path = next, value = value })
+                        {- |> Nest.withItemBy id
+                            (Tuple.mapSecond <| apply { path = next, labelPath = labelPath, value = value }) -}
+                        |> Nest.withItemAt label
+                            (apply
+                                { path = List.tail path |> Maybe.withDefault []
+                                , labelPath = next
+                                , value = value
+                                }
+                            )
                         |> Group focus shape
 
                 Choice focus shape control ->
                     control
-                        |> Nest.withItem id
-                            (Tuple.mapSecond <| apply { path = next, value = value })
+                        {- |> Nest.withItem id
+                            (Tuple.mapSecond <| apply { path = next, value = value }) -}
+                        |> Nest.withItemAt label
+                            (apply
+                                { path = List.tail path |> Maybe.withDefault []
+                                , labelPath = next
+                                , value = value
+                                }
+                            )
                         |> Choice focus shape
 
                 _ ->

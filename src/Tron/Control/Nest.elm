@@ -269,6 +269,24 @@ withItem id f ( Core.Control items state handler ) =
         state
         handler
 
+
+withItemAt
+     : comparable
+    -> (item -> item)
+    -> NestControl ( comparable, item ) value a
+    -> NestControl ( comparable, item ) value a
+withItemAt label f (( Core.Control items state handler ) as control) =
+    Core.Control
+        ( case find label control of
+            Just ( id, item ) ->
+                items
+                |> Array.set id (label, f item)
+            Nothing -> items
+        )
+        state
+        handler
+
+
 getPage : Core.Control setup { r | page : PageNum } a -> PageNum
 getPage (Core.Control _ { page } _) = page
 

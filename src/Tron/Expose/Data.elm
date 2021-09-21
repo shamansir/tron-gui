@@ -2,7 +2,7 @@ module Tron.Expose.Data exposing
     ( Property, Update
     , ClientId, Value
     , Ack, In, Out, DeduceIn
-    , noValue, noClientId, noInUpdate
+    , nothingGoesIn, noAck, nothingGoesOut
     )
 
 {-| The types which are used to communicate b/w Tron and ports (and so JS and WebSockets and `dat.gui`).
@@ -49,6 +49,7 @@ type alias Value =
 {-| Value update with the control `Value`, already converted from JSON. -}
 type alias Update =
     { path : List Int
+    , labelPath : List String
     , value : Control.Value
     }
 
@@ -100,14 +101,19 @@ noValue =
 
 
 {-| -}
-noInUpdate : In
-noInUpdate =
+nothingGoesIn : In
+nothingGoesIn =
     { path = []
     , value = E.null
     , type_ = ""
     }
 
 
+nothingGoesOut : Out
+nothingGoesOut =
+    Out E.null noValue
+
+
 {-| -}
-noClientId : Ack
-noClientId = Ack <| E.null
+noAck : Ack
+noAck = Ack E.null E.null
