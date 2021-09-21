@@ -1,8 +1,5 @@
 module WithTron.ToJs exposing
-    ( byJson, BackedByJson
-    , byStrings, BackedByStrings
-    , byProxy, BackedByProxy
-    , byProxyApp, AppBackedByProxy
+    ( toJs, toJsApp
     )
 
 
@@ -47,7 +44,8 @@ import WithTron exposing (..)
 import WithTron.ValueAt exposing (ValueAt)
 
 import Tron.Path as Path exposing (Path)
-import Tron.Option exposing (..)
+import Tron.Option.RenderTarget exposing (..)
+import Tron.Option.Communication exposing (..)
 import Tron.Expose as Exp
 import Tron.Expose.Convert as Exp
 import Tron.Expose.Data as Exp
@@ -56,31 +54,15 @@ import Tron.Control.Value exposing (Value)
 
 
 {-| Path-to-value storage, to transmit values to the JS side. -}
-type alias ValueStorage = Dict (List String) Value
+type alias ValueStorage = Dict LabelPath Value
 
 
-type alias ValueUpdate = (List String, Value)
+type alias ValueUpdate = (List Int, LabelPath, Value)
 
 
 {-| Program, backed with the path-to-value storage. -}
-type alias ProgramWithJs flags model msg = ProgramWithTron flags ( model, ValueStorage ) ( msg, ValueUpdate )
-
-
-
-type alias ProxyBackedStorage = Dict ( List Int, List String ) Value
-
-
-type alias ProxyBackedMsg = Maybe ( List Int, List String, Value )
-
-
-{-| Program, backed with the proxy value storage. -}
-type alias AppBackedByProxy flags model msg =
-    ProgramWithTron flags ( ProxyBackedStorage, model ) ( ProxyBackedMsg, msg )
-
-
-{-| -}
-type alias BackedByProxy =
-    AppBackedByProxy () () ()
+type alias ProgramWithJsCommunication flags model msg
+    = ProgramWithTron flags ( model, ValueStorage ) ( msg, ValueUpdate )
 
 
 
@@ -88,7 +70,7 @@ type alias BackedByProxy =
 
 See `WithTron.ValueAt` for more information and `example/ForTiler` as the example.
 -}
-byProxy
+toJs
     :  RenderTarget
     ->
         ( Exp.Property -> Cmd msg
@@ -97,8 +79,8 @@ byProxy
         )
     -> (ValueAt -> Tron ())
     -> BackedByProxy
-byProxy renderTarget ( ack, transmit, apply ) for =
-    byProxyApp
+toJs renderTarget ( ack, transmit, apply ) for =
+    toJsApp
         renderTarget
         ( ack >> Cmd.map (always ())
         , transmit >> Cmd.map (always ())
@@ -120,7 +102,7 @@ This is for the case when, indeed, you have some simple `Model`, don't want to b
 See `WithTron.ValueAt` for more information and `example/ForTiler` as the example.
 -}
 
-byProxyApp
+toJsApp
     :  RenderTarget
     ->
         ( Exp.Property -> Cmd msg
@@ -133,30 +115,23 @@ byProxyApp
         , view : ValueAt -> model -> Html msg
         , update : msg -> ValueAt -> model -> ( model, Cmd msg )
         }
-    -> AppBackedByProxy flags model msg
-byProxyApp renderTarget ( ack, transmit, apply ) def =
+    -> ProgramWithJsCommunication flags model msg
+toJsApp renderTarget ( ack, transmit, apply ) def =
     let
 
         valueAt dict =
             \path -> Dict.get path dict
 
-        toValueAt : ProxyBackedStorage -> ValueAt
+        toValueAt : ValueStorage -> ValueAt
         toValueAt storage =
-            storage
-                |> Dict.mapKeys Tuple.second
-                |> valueAt
-
-        dictByPath : ProxyBackedStorage -> Dict (List Int) Value
-        dictByPath =
-            Dict.mapKeys Tuple.first
-
+            storage |> valueAt
 
         repair ( ( path, labelPath ), ( proxy, userMsg ) ) =
             ( Just ( Path.toList path, labelPath, proxy ), userMsg )
 
-        for_ : ( ProxyBackedStorage, model ) -> Def.Tron ( ProxyBackedMsg, msg )
-        for_ ( dict, model ) =
-            def.for (toValueAt dict) model
+        for_ : ( model, ValueStorage ) -> Def.Tron ( msg, ValueUpdate )
+        for_ ( model, storage ) =
+            def.for (toValueAt storage) model
                 |> Exp.loadValues ( dictByPath dict )
                 |> Property.addPaths
                 |> Tron.map
@@ -165,22 +140,22 @@ byProxyApp renderTarget ( ack, transmit, apply ) def =
                             Just ( Just ( Path.toList path, labelPath, proxy ), userMsg )
                     )
 
-        init_ : flags -> ( ( ProxyBackedStorage, model ), Cmd ( ProxyBackedMsg, msg ) )
+        init_ : flags -> ( ( model, ValueStorage ), Cmd ( msg, ValueUpdate ) )
         init_ flags =
             let
                 storage = Dict.empty
                 ( userModel, userEff ) =
                     def.init flags (toValueAt storage)
             in
-                ( ( storage, userModel )
+                ( ( userModel, storage )
                 , userEff
                     |> Cmd.map (Tuple.pair Nothing)
                 )
 
         update_
-            :  ( ProxyBackedMsg, msg )
-            -> ( ProxyBackedStorage, model )
-            -> ( ( ProxyBackedStorage, model ), Cmd ( ProxyBackedMsg, msg ) )
+            :  ( msg, ValueUpdate )
+            -> ( model, ValueStorage )
+            -> ( ( model, ValueStorage ), Cmd ( msg, ValueUpdate ) )
         update_ ( storageUpdate, userMsg ) ( storage, userModel ) =
             let
                 nextStorage =
@@ -199,13 +174,13 @@ byProxyApp renderTarget ( ack, transmit, apply ) def =
                     |> Cmd.map (Tuple.pair Nothing)
                 )
 
-        view_ : ( ProxyBackedStorage, model ) -> Html ( ProxyBackedMsg, msg )
+        view_ : ( model, ValueStorage ) -> Html ( msg, ValueUpdate )
         view_ ( storage, model ) =
             def.view (toValueAt storage) model
                 |> Html.map (Tuple.pair Nothing)
 
 
-        subscriptions_ : ( ProxyBackedStorage, model ) -> Sub ( ProxyBackedMsg, msg )
+        subscriptions_ : ( model, ValueStorage ) -> Sub ( msg, ValueUpdate )
         subscriptions_ ( storage, model ) =
             def.subscriptions (toValueAt storage) model
                 |> Sub.map (Tuple.pair Nothing)
