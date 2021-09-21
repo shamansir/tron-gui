@@ -1,26 +1,18 @@
-module Tron.Option exposing
-    ( RenderTarget(..), PortCommunication(..) --FIXME: don't expose values
+module Tron.Option.Communication exposing
+    ( Communication, Ports, map
     , noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
-    , hidden, toHtml, toDebug, toVr
+    , connect, connect_
     )
 
 
-{-| The configuration of the Tron interface.
+{-| The communication of the Tron interface.
 
-# Rendering
-
-@docs RenderTarget, hidden, toHtml, toVr, toDebug
-
-# Port communication
-
-@docs PortCommunication, noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
+@docs Communication, map, noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
 -}
 
 
 import Url exposing (Url)
 
-import Tron.Style.Theme as Theme exposing (Theme(..))
-import Tron.Style.Dock as Dock exposing (Dock(..))
 import Tron.Expose.Data as Exp
 import Tron.Detach as Detach
 import Tron.Msg exposing (Msg_)
@@ -28,18 +20,12 @@ import Tron.Path exposing (Path)
 import Tron.Msg exposing (Msg_(..))
 
 
-{-| Where to render the GUI:
-
-- Nowhere, the GUI is hidden;
-- To HTML, with given Dock and Theme;
-- To AFrame (VR), with given Theme (experimental);
-
--}
-type RenderTarget
-    = Html Dock Theme
-    | Aframe Theme
-    | Debug Dock Theme
-    | Nowhere
+type alias Ports msg =
+    { ack : Maybe (Exp.Ack -> Cmd msg)
+    , transmit : Maybe (Exp.Out -> Cmd msg)
+    , apply : Maybe (Sub (List Exp.DeduceIn))
+    , receive : Maybe (Sub Exp.In)
+    }
 
 
 {-| If the GUI communicates with outside world using ports
@@ -50,39 +36,26 @@ type RenderTarget
 - It is _detachable_, so part of the GUI may be moved to another tab/browser/device and they communicate using WebSocket server using given ports: see `example/Detachable` for details, ensure to run `example/start-server.sh` before running `start-example Detachable`;
 - It communicates with `dat.gui` using given ports: see `example/DatGui`for details;
 -}
-type PortCommunication msg
-    = NoCommunication
-    | Communicate
-        { ack : Maybe (Exp.Ack -> Cmd msg)
-        , transmit : Maybe (Exp.Out -> Cmd msg)
-        , apply : Maybe (Sub (List Exp.DeduceIn))
-        , receive : Maybe (Sub Exp.In)
-        }
+type Communication msg
+    = DontCommunicate
+    | Communicate (Ports msg)
 
 
-{- mapPorts : (msgA -> msgB) -> PortCommunication msgA -> PortCommunication msgB
-mapPorts f ports =
-    case ports of
-        NoCommunication -> NoCommunication
-        SendJson { ack, transmit } ->
-            SendJson
-                { ack = ack >> Cmd.map f
-                , transmit = transmit >> Cmd.map f
-                }
-        SendStrings { transmit } ->
-            SendStrings
-                { transmit = transmit >> Cmd.map f
-                }
-        Detachable d ->
-            Detachable
-                { ack = d.ack >> Cmd.map f
-                , transmit = d.transmit >> Cmd.map f
-                , receive = (d.receive << Sub.map f)
-                , toUrl = d.toUrl
-                }
-        DatGui d ->
-            DatGui d -}
+mapPorts : (msgA -> msgB) -> Ports msgA -> Ports msgB
+mapPorts f p =
+    { ack = Maybe.map (\ack -> ack >> Cmd.map f) p.ack
+    , transmit = Maybe.map (\transmit -> transmit >> Cmd.map f) p.transmit
+    , receive = p.receive
+    , apply = p.apply
+    }
 
+
+{-| -}
+map : (msgA -> msgB) -> Communication msgA -> Communication msgB
+map f communication =
+    case communication of
+        DontCommunicate -> DontCommunicate
+        Communicate ports -> Communicate <| mapPorts f ports
 
 
 {- This is the only function you need to make your `GUI` _detachable*_. However, this function requires some ports to be present as an argument, so you'll need a pair of ports as well. And a WebSocket server. But that's it!
@@ -94,8 +67,8 @@ mapPorts f ports =
 
 
 {-| No communication with JS -}
-noCommunication : PortCommunication msg
-noCommunication = NoCommunication
+noCommunication : Communication msg
+noCommunication = DontCommunicate
 
 
 {-| Send JSON values using given ports:
@@ -108,8 +81,14 @@ sendJson
         { ack : Exp.Property -> Cmd msg
         , transmit : Exp.Out -> Cmd msg
         }
-    -> PortCommunication msg
-sendJson = SendJson
+    -> Communication msg
+sendJson { ack, transmit } =
+    Communicate
+        { ack = Just <| .tree >> ack
+        , transmit = Just transmit
+        , receive = Nothing
+        , apply = Nothing
+        }
 
 
 {-| Send JSON values and receive updates using given ports:
@@ -125,8 +104,14 @@ sendReceiveJson
         , transmit : Exp.Out -> Cmd msg
         , apply : Sub (List Exp.DeduceIn)
         }
-    -> PortCommunication msg
-sendReceiveJson = SendReceiveJson
+    -> Communication msg
+sendReceiveJson { ack, transmit, apply } =
+    Communicate
+        { ack = Just <| .tree >> ack
+        , transmit = Just transmit
+        , receive = Nothing
+        , apply = Just apply
+        }
 
 
 {-| Send values as strings using given ports:
@@ -137,8 +122,16 @@ sendStrings
     :
         { transmit : ( List String, String ) -> Cmd msg
         }
-    -> PortCommunication msg
-sendStrings = SendStrings
+    -> Communication msg
+sendStrings { transmit } =
+    Communicate
+        { ack = Nothing
+        , transmit = Just
+            <| \{ update } ->
+                transmit ( update.labelPath, update.stringValue )
+        , receive = Nothing
+        , apply = Nothing
+        }
 
 
 {-| Send information to WebSocket server and receive it from the server.
@@ -192,12 +185,18 @@ See `example/Detachable` for details.
  -}
 detachable
     :
-        { ack : Exp.Ack -> Cmd msg
+        { ack : Exp.ClientId -> Cmd msg
         , transmit : Exp.Out -> Cmd msg
         , receive : Sub Exp.In
         }
-    -> PortCommunication msg
-detachable = Detachable
+    -> Communication msg
+detachable { ack, transmit, receive } =
+    Communicate
+        { ack = Just <| .client >> ack
+        , transmit = Just transmit
+        , receive = Just receive
+        , apply = Nothing
+        }
 
 
 {-| Connect with `dat.gui` using given ports:
@@ -215,33 +214,33 @@ withDatGui
         --, receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
         , receive : Sub Exp.In
         }
-    -> PortCommunication msg
-withDatGui = DatGui
+    -> Communication msg
+withDatGui { ack, receive } =
+    Communicate
+        { ack = Just <| .tree >> ack
+        , transmit = Nothing
+        , receive = Just receive
+        , apply = Nothing
+        }
 
 
-{-| GUI is hidden. For example, for the case of `dat.gui`, where your interface is on the JS side, but uses Tron definition in Elm.
-
-See `example/DatGui` for details.
--}
-hidden : RenderTarget
-hidden = Nowhere
-
-
-{-| Render to HTML using given theme (dark/light) and docked at the requested side (see `Tron.Style.Dock`). Most used option!
--}
-toHtml : Dock -> Theme -> RenderTarget
-toHtml = Html
-
-
-{-| Render to Debug mode where all the controls are represented as text boxes with information.
--}
-toDebug : Dock -> Theme -> RenderTarget
-toDebug = Debug
+{-| Use all the communication you can imagine. -}
+connect :
+    { ack : Exp.Ack -> Cmd msg
+    , transmit : Exp.Out -> Cmd msg
+    , apply : Sub (List Exp.DeduceIn)
+    , receive : Sub Exp.In
+    } -> Communication msg
+connect spec =
+    Communicate
+        { ack = Just spec.ack
+        , transmit = Just spec.transmit
+        , apply = Just spec.apply
+        , receive = Just spec.receive
+        }
 
 
-{-| Render to Virtual Reality using given theme (dark/light); Experimental. Uses `a-frame` library for render, so it should be included in your HTML;
 
-See `example/AFrame` for details.
--}
-toVr : Theme -> RenderTarget
-toVr = Aframe
+{-| Use some of the communication you can imagine. -}
+connect_ : Ports msg -> Communication msg
+connect_ = Communicate
