@@ -73,6 +73,7 @@ type alias In =
 {-| Acknowledge package, which lets the server know the current Client ID. -}
 type alias Ack =
     { client : ClientId
+    , tree : Property
     }
 
 

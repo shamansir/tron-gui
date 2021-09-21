@@ -5,7 +5,7 @@ if [ "$1" ]; then
 
     cp ./Example/Goose/JetBrainsMono-Regular.woff ./JetBrainsMono-Regular.woff
     cp ./Example/Goose/JetBrainsMono-Regular.woff2 ./JetBrainsMono-Regular.woff2
-    elm-live ./$1/Main.elm --port=8100 --open --dir=. --start-page=./$1/index.html -- --output=./app.js
+    elm-live ./$1/Main.elm --port=8101 --open --dir=. --start-page=./$1/index.html -- --output=./app.js
 else
     echo "specify which example to run, such as:"
     echo ""

@@ -52,26 +52,11 @@ type RenderTarget
 -}
 type PortCommunication msg
     = NoCommunication
-    | SendJson
-        { ack : Exp.Property -> Cmd msg
-        , transmit : Exp.Out -> Cmd msg
-        }
-    | SendReceiveJson
-        { ack : Exp.Property -> Cmd msg
-        , transmit : Exp.Out -> Cmd msg
-        , apply : Sub (List Exp.DeduceIn)
-        }
-    | SendStrings
-        { transmit : ( List String, String ) -> Cmd msg
-        }
-    | Detachable
-        { ack : Exp.Ack -> Cmd msg
-        , transmit : Exp.Out -> Cmd msg
-        , receive : Sub Exp.In
-        }
-    | DatGui
-        { ack : Exp.Property -> Cmd msg
-        , receive : Sub Exp.In
+    | Communicate
+        { ack : Maybe (Exp.Ack -> Cmd msg)
+        , transmit : Maybe (Exp.Out -> Cmd msg)
+        , apply : Maybe (Sub (List Exp.DeduceIn))
+        , receive : Maybe (Sub Exp.In)
         }
 
 

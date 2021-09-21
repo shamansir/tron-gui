@@ -1,0 +1,143 @@
+module WithTron.Temp._elm exposing (..)
+
+byStrings
+    :  RenderTarget
+    -> (( List String, String ) -> Cmd msg)
+    -> Tron ()
+    -> BackedByStrings
+byStrings renderTarget transmit tree =
+    let
+
+
+
+
+        tree_ : Tron StringBackedMsg
+        tree_ = tree |> Exp.toStrExposed |> Property.map Tuple.first
+
+        tree_ : Tron BackedMsg
+        tree_ = tree |> Exp.toExposed |> Property.map Tuple.first
+
+        for_ : BackedStorage -> Def.Tron BackedMsg
+        for_ dict = tree_ |> Exp.loadJsonValues dict |> Exp.toDeferredRaw
+
+        for_ : StringBackedStorage -> Def.Tron StringBackedMsg
+        for_ dict = tree_
+            |> Exp.loadStringValues dict
+            |> Exp.toDeferredRaw
+            |> Def.map (\rawValue -> ( rawValue.labelPath, rawValue.stringValue ))
+
+        for_ : ( ProxyBackedStorage, model ) -> Def.Tron ( ProxyBackedMsg, msg )
+        for_ ( dict, model ) =
+            def.for (toValueAt dict) model
+                |> Exp.loadValues ( dictByPath dict )
+                |> Property.addPaths
+                |> Tron.map
+                    (\((path, labelPath), userMsg) ->
+                        \proxy ->
+                            Just ( Just ( Path.toList path, labelPath, proxy ), userMsg )
+                    )
+
+
+        init_ : () -> ( BackedStorage, Cmd BackedMsg )
+        init_ _ = ( Dict.empty, Cmd.none )
+
+        init_ : () -> ( StringBackedStorage, Cmd StringBackedMsg )
+        init_ _ = ( Dict.empty, Cmd.none )
+
+        init_ : flags -> ( ( ProxyBackedStorage, model ), Cmd ( ProxyBackedMsg, msg ) )
+        init_ flags =
+            let
+                storage = Dict.empty
+                ( userModel, userEff ) =
+                    def.init flags (toValueAt storage)
+            in
+                ( ( storage, userModel )
+                , userEff
+                    |> Cmd.map (Tuple.pair Nothing)
+                )
+
+
+        update_
+            :  BackedMsg
+            -> BackedStorage
+            -> ( BackedStorage, Cmd BackedMsg )
+        update_ rawUpdate dict =
+            ( dict
+                |> Dict.insert rawUpdate.path rawUpdate
+            , Cmd.none
+            )
+
+        update_
+            :  StringBackedMsg
+            -> StringBackedStorage
+            -> ( StringBackedStorage, Cmd StringBackedMsg )
+        update_ (path, val) dict = ( dict |> Dict.insert path val, Cmd.none )
+
+
+        update_
+            :  ( ProxyBackedMsg, msg )
+            -> ( ProxyBackedStorage, model )
+            -> ( ( ProxyBackedStorage, model ), Cmd ( ProxyBackedMsg, msg ) )
+        update_ ( storageUpdate, userMsg ) ( storage, userModel ) =
+            let
+                nextStorage =
+                    case storageUpdate of
+                        Just ( rawPath, labelPath, proxy )
+                            -> storage
+                                    |> Dict.insert
+                                        ( rawPath, labelPath )
+                                        proxy
+                        Nothing -> storage
+                ( nextUserModel, nextUserEffects )
+                    = def.update userMsg (toValueAt nextStorage) userModel
+            in
+                ( ( nextStorage, nextUserModel )
+                , nextUserEffects
+                    |> Cmd.map (Tuple.pair Nothing)
+                )
+
+
+
+        view_ : BackedStorage -> Html BackedMsg
+        view_ _ = Html.div [] []
+
+
+        view_ : StringBackedStorage -> Html StringBackedMsg
+        view_ _ = Html.div [] []
+
+
+        view_ : ( ProxyBackedStorage, model ) -> Html ( ProxyBackedMsg, msg )
+        view_ ( storage, model ) =
+            def.view (toValueAt storage) model
+                |> Html.map (Tuple.pair Nothing)
+
+
+        subscriptions_ : BackedStorage -> Sub BackedMsg
+        subscriptions_ _ = Sub.none
+
+
+        subscriptions_ : StringBackedStorage -> Sub StringBackedMsg
+        subscriptions_ _ = Sub.none
+
+        subscriptions_ : ( ProxyBackedStorage, model ) -> Sub ( ProxyBackedMsg, msg )
+        subscriptions_ ( storage, model ) =
+            def.subscriptions (toValueAt storage) model
+                |> Sub.map (Tuple.pair Nothing)
+
+
+
+
+
+    in
+    element
+        renderTarget
+        (SendStrings
+            { transmit = transmit >> Cmd.map (always ([], ""))
+            }
+        )
+        { for = for_
+        , init = init_
+        , update = update_
+        , view = view_
+        , subscriptions = subscriptions_
+        }
