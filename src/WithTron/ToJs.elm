@@ -1,4 +1,4 @@
-module WithTron.Backed exposing
+module WithTron.ToJs exposing
     ( byJson, BackedByJson
     , byStrings, BackedByStrings
     , byProxy, BackedByProxy
@@ -55,195 +55,16 @@ import Tron.Property as Property exposing (LabelPath)
 import Tron.Control.Value exposing (Value)
 
 
-{-| Path-to-value storage, to transmit them to the JS side. -}
-type alias BackedStorage = Dict (List Int) Exp.Value
+{-| Path-to-value storage, to transmit values to the JS side. -}
+type alias ValueStorage = Dict (List String) Value
 
 
-type alias BackedMsg = Exp.Value
-
-
-{-| Program, backed with the path-to-value storage. -}
-type alias BackedByJson = ProgramWithTron () BackedStorage BackedMsg
-
-
-{-| Special helper, that just asks you for the `Unit`-based interface and some port where to send value updates as JSON packages.
-
-See `Tron.Builder.Unit` for the functions that will help you define the interface that only operates `()` values and so doesn't need any messages.
-
-    import WithTron.Backed exposing (BackedByJson)
-    import Tron exposing (Tron)
-    import Tron.Builder.Unit exposing (..)
-    import Tron.Expose.Data as Exp
-
-    gui : Tron ()
-    gui =
-        Builder.root
-            [
-                ( "amount"
-                , Builder.float
-                    { min = 0, max = 1, step = 0.01 }
-                    0
-                )
-            ]
-
-    port transmit : Exp.RawOutUpdate -> Cmd msg
-    port ack : Exp.RawProperty -> Cmd msg
-
-    main : BackedByJson
-    main =
-        WithTron.Backed.byJson
-            (Option.toHtml Dock.middleRight Theme.dark)
-            ( ack, transmit )
-            gui
-
-
-See `example/ReportToJsBacked` for more details.
-
-*NB*: Notice that using the GUI that changes its tree structure while running may lead to problems since the ID-based paths then correspond to other controls. In this case, please either prefer  `stringBacked` over `backed` (it uses label-path as a key) or always define currently-invisible controls/nestings with `Builder.none` — it creates the so-called ghost control which has it's own ID but completely hidden from the GUI;
-
- -}
-byJson
-    :  RenderTarget
-    ->
-        ( Exp.Property -> Cmd msg
-        , Exp.Out -> Cmd msg
-        )
-    -> Tron ()
-    -> BackedByJson
-byJson renderTarget ( ack, transmit ) tree =
-    let
-
-        tree_ : Tron BackedMsg
-        tree_ = tree |> Exp.toExposed |> Property.map Tuple.first
-
-        for_ : BackedStorage -> Def.Tron BackedMsg
-        for_ dict = tree_ |> Exp.loadJsonValues dict |> Exp.toDeferredRaw
-
-        init_ : () -> ( BackedStorage, Cmd BackedMsg )
-        init_ _ = ( Dict.empty, Cmd.none )
-
-        update_
-            :  BackedMsg
-            -> BackedStorage
-            -> ( BackedStorage, Cmd BackedMsg )
-        update_ rawUpdate dict =
-            ( dict
-                |> Dict.insert rawUpdate.path rawUpdate
-            , Cmd.none
-            )
-
-        view_ : BackedStorage -> Html BackedMsg
-        view_ _ = Html.div [] []
-
-
-        subscriptions_ : BackedStorage -> Sub BackedMsg
-        subscriptions_ _ = Sub.none
-
-    in
-    element
-        renderTarget
-        ( SendJson
-            { ack = ack >> Cmd.map (always Exp.noValue)
-            , transmit = transmit >> Cmd.map (always Exp.noValue)
-            }
-        )
-        { for = for_
-        , init = init_
-        , update = update_
-        , view = view_
-        , subscriptions = subscriptions_
-        }
-
-
-{-| Path-to-value storage, to transmit them to the JS side. -}
-type alias StringBackedStorage = Dict LabelPath String
-
-
-type alias StringBackedMsg = ( LabelPath, String ) -- message is just key & value to put in the dict
+type alias ValueUpdate = (List String, Value)
 
 
 {-| Program, backed with the path-to-value storage. -}
-type alias BackedByStrings = ProgramWithTron () StringBackedStorage StringBackedMsg
+type alias ProgramWithJs flags model msg = ProgramWithTron flags ( model, ValueStorage ) ( msg, ValueUpdate )
 
-
-{-| Special helper, that just asks you for the `Unit`-based interface and some port where to send value updates as `(String, String) pairs, which are labeled path and the stringified value.
-
-See `Tron.Builder.Unit` for the functions that will help you define the interface that only operates `()` values and so doesn't need any messages.
-
-    import WithTron.Backed exposing (BackedByStrings)
-    import Tron exposing (Tron)
-    import Tron.Builder.Unit exposing (..)
-
-    gui : Tron ()
-    gui =
-        Builder.root
-            [
-                ( "amount"
-                , Builder.float
-                    { min = 0, max = 1, step = 0.01 }
-                    0
-                )
-            ]
-
-    port sendUpdate : ( String, String ) -> Cmd msg
-
-    main : BackedByStringsWithTron
-    main =
-        WtihTron.Backed.byStrings
-            (Option.toHtml Dock.middleRight Theme.dark)
-            sendUpdate
-            gui
-
-
-See `example/ReportToJsStringBacked` for more details.
-
- -}
-byStrings
-    :  RenderTarget
-    -> (( List String, String ) -> Cmd msg)
-    -> Tron ()
-    -> BackedByStrings
-byStrings renderTarget transmit tree =
-    let
-
-        tree_ : Tron StringBackedMsg
-        tree_ = tree |> Exp.toStrExposed |> Property.map Tuple.first
-
-        for_ : StringBackedStorage -> Def.Tron StringBackedMsg
-        for_ dict = tree_
-            |> Exp.loadStringValues dict
-            |> Exp.toDeferredRaw
-            |> Def.map (\rawValue -> ( rawValue.labelPath, rawValue.stringValue ))
-
-        init_ : () -> ( StringBackedStorage, Cmd StringBackedMsg )
-        init_ _ = ( Dict.empty, Cmd.none )
-
-        update_
-            :  StringBackedMsg
-            -> StringBackedStorage
-            -> ( StringBackedStorage, Cmd StringBackedMsg )
-        update_ (path, val) dict = ( dict |> Dict.insert path val, Cmd.none )
-
-        view_ : StringBackedStorage -> Html StringBackedMsg
-        view_ _ = Html.div [] []
-
-
-        subscriptions_ : StringBackedStorage -> Sub StringBackedMsg
-        subscriptions_ _ = Sub.none
-
-    in
-    element
-        renderTarget
-        (SendStrings
-            { transmit = transmit >> Cmd.map (always ([], ""))
-            }
-        )
-        { for = for_
-        , init = init_
-        , update = update_
-        , view = view_
-        , subscriptions = subscriptions_
-        }
 
 
 type alias ProxyBackedStorage = Dict ( List Int, List String ) Value
