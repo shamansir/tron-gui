@@ -36,6 +36,8 @@
     * Detachable;
     * Sending updates from/to JS;
     * ...
+* Bug: Use labeled paths to communicate with JS, index-based IDs can change if some controls were added/removed, label paths have higher chance to be unique; The safest way is UIDs though;
+* Store a value even in `Nil` `Property`, so that property would always have some value, no `Maybe`s, it is easier to `map` the `Property` and always have some value inside; Rename `Nil` to `Ghost`; on the other hand `Ghost`s do not need paths or produce messages.... maybe... maybe `Tron msg` could be `Property (Maybe msg)`;
 * Bug: sending value from JS to the choice is not switching it to the corresponding page;
 * Store pages inside nesting controls, do not redistribute every time;
 * Max cols / Max rows should not be needed (replace by enabling/disabling paging);

@@ -33,7 +33,7 @@ To build your interface, use the helpers from the `Tron.Builder` module or any o
 `Tron.Builder.Proxy`, `Tron.Builder.Unit` or `Tron.Builder.String`
 -}
 type alias Tron a =
-    Property a
+    Property (Maybe a)
 
 
 {-| `Set msg` is just the list of controls' definitions together with their labels.
