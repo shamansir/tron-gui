@@ -366,10 +366,9 @@ getPathsMap =
     let
         dict = Dict.empty
         storePaths prop dict_ =
-            case get prop |> Maybe.map Tuple.first of
-                Just ( path, labelPath ) ->
+            case get prop |> Tuple.first of
+                ( path, labelPath ) ->
                     dict_ |> Dict.insert (Path.toList path) labelPath
-                Nothing -> dict_
     in
         addPaths
             >> fold (always storePaths) dict
@@ -380,10 +379,9 @@ getInvPathsMap =
     let
         dict = Dict.empty
         storePaths prop dict_ =
-            case get prop |> Maybe.map Tuple.first of
-                Just ( path, labelPath ) ->
+            case get prop |> Tuple.first of
+                ( path, labelPath ) ->
                     dict_ |> Dict.insert labelPath (Path.toList path)
-                Nothing -> dict_
     in
         addPaths
             >> fold (always storePaths) dict
@@ -523,26 +521,27 @@ executeAt path root =
         Nothing -> []
 
 
-transferTransientState : Property a -> Property b -> Property b
-transferTransientState propA propB =
+transferTransientState : b -> Property a -> Property b -> Property b
+transferTransientState def propA propB =
     let
-        f propA_ propB_ =
-            case ( propA_, propB_ ) of
-                ( Choice focusA _ controlA, Choice _ shapeB controlB ) ->
+        f maybePropA maybePropB =
+            case ( maybePropA, maybePropB ) of
+                ( Just (Choice focusA _ controlA), Just (Choice _ shapeB controlB) ) ->
                     Choice focusA shapeB
                         (Nest.getTransientState controlA
                             |> Nest.restoreTransientState controlB)
-                ( Group focusA _ controlA, Group _ shapeB controlB ) ->
+                ( Just (Group focusA _ controlA), Just (Group _ shapeB controlB) ) ->
                     Group focusA shapeB
                         (Nest.getTransientState controlA
                             |> Nest.restoreTransientState controlB)
-                ( Text controlA, Text controlB ) ->
+                ( Just (Text controlA), Just (Text controlB) ) ->
                     Text
                         (Text.getTransientState controlA
                             |> Text.restoreTransientState controlB)
-                ( Live innerPropA, Live innerPropB ) ->
-                    Live <| transferTransientState innerPropA innerPropB
-                _ -> propB_
+                ( Just (Live innerPropA), Just (Live innerPropB) ) ->
+                    Live <| transferTransientState def innerPropA innerPropB
+                ( _, Just propB_ ) -> propB_
+                _ -> Nil def
     in move f propA propB
 
 
