@@ -45,7 +45,7 @@ type alias LabelPath = List String
 
 
 type Property a
-    = Nil
+    = Nil a
     | Number (Number.Control a)
     | Coordinate (XY.Control a)
     | Text (Text.Control a)
@@ -141,7 +141,7 @@ findAll path root =
 map : (a -> b) -> Property a -> Property b
 map f prop =
     case prop of
-        Nil -> Nil
+        Nil a -> Nil <| f a
         Number control -> Number <| Control.map f control
         Coordinate control -> Coordinate <| Control.map f control
         Text control -> Text <| Control.map f control
@@ -214,9 +214,7 @@ unfold =
 
 
 andThen : (a -> Property b) -> Property a -> Property b
--- FIXME: should be changed to `andThen` with getting rid of function in Control
-andThen f =
-    fold1 f >> Maybe.withDefault Nil
+andThen = fold1
 
 
 with : (a -> Property a -> Property b) -> Property a -> Property b
@@ -707,7 +705,7 @@ reshape shape prop =
 isGhost : Property a -> Bool
 isGhost prop =
     case prop of
-        Nil -> True
+        Nil _ -> True
         _ -> False
 
 
@@ -718,7 +716,7 @@ noGhosts = List.filter (not << isGhost)
 run : Property msg -> Cmd msg
 run prop =
     case prop of
-        Nil -> Cmd.none
+        Nil msg -> Task.succeed msg |> Task.perform identity
         Number control -> control |> Control.run
         Coordinate control -> control |> Control.run
         Text control -> control |> Control.run
@@ -730,18 +728,18 @@ run prop =
         Live innerProp -> run innerProp
 
 
-get : Property a -> Maybe a
+get : Property a -> a
 get prop =
     case prop of
-        Nil -> Nothing
-        Number control -> control |> Control.get |> Just
-        Coordinate control -> control |> Control.get |> Just
-        Text control -> control |> Control.get |> Just
-        Color control -> control |> Control.get |> Just
-        Toggle control -> control |> Control.get |> Just
-        Action control -> control |> Control.get |> Just
-        Choice _ _ control -> control |> Control.get |> Just
-        Group _ _ control -> control |> Control.get |> Just
+        Nil a -> a
+        Number control -> control |> Control.get
+        Coordinate control -> control |> Control.get
+        Text control -> control |> Control.get
+        Color control -> control |> Control.get
+        Toggle control -> control |> Control.get
+        Action control -> control |> Control.get
+        Choice _ _ control -> control |> Control.get
+        Group _ _ control -> control |> Control.get
         Live innerProp -> get innerProp
 
 
@@ -888,7 +886,7 @@ togglePagination = updatePanelShape PS.togglePagination
 compareValues : Property a -> Property b -> Bool
 compareValues propA propB =
     case (propA, propB) of
-        (Nil, Nil) -> True
+        (Nil _, Nil _) -> True
         (Number controlA, Number controlB) ->
             Tuple.second (Control.getValue controlA) == Tuple.second (Control.getValue controlB)
         (Coordinate controlA, Coordinate controlB) ->
@@ -907,18 +905,18 @@ compareValues propA propB =
         (_, _) -> False
 
 
-fold1 : (a -> x) -> Property a -> Maybe x
+fold1 : (a -> x) -> Property a -> x
 fold1 f prop =
     case prop of
-        Nil -> Nothing
-        Number control -> control |> Control.fold f |> Just
-        Coordinate control -> control |> Control.fold f |> Just
-        Text control -> control |> Control.fold f |> Just
-        Color control -> control |> Control.fold f |> Just
-        Toggle control -> control |> Control.fold f |> Just
-        Action control -> control |> Control.fold f |> Just
-        Choice _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well?
-        Group _ _ control -> control |> Control.fold f |> Just -- FIXME: fold through items as well?
+        Nil a -> f a
+        Number control -> control |> Control.fold f
+        Coordinate control -> control |> Control.fold f
+        Text control -> control |> Control.fold f
+        Color control -> control |> Control.fold f
+        Toggle control -> control |> Control.fold f
+        Action control -> control |> Control.fold f
+        Choice _ _ control -> control |> Control.fold f -- FIXME: fold through items as well?
+        Group _ _ control -> control |> Control.fold f -- FIXME: fold through items as well?
         Live innerProp -> fold1 f innerProp
 
 
@@ -931,8 +929,8 @@ fold2 f =
     fold2_
         (\(pA, pB) ->
             f
-                ( (pA |> Maybe.andThen get)
-                , (pB |> Maybe.andThen get)
+                ( (pA |> Maybe.map get)
+                , (pB |> Maybe.map get)
                 )
         )
 
@@ -1019,8 +1017,12 @@ fold3 f from root =
         helper ( Path.start, [] ) root from
 
 
-move : (Property a -> Property b -> Property c) -> Property a -> Property b -> Property c
-move f propA propB =
+{- zip : (Maybe a -> Maybe b -> c) -> c -> Property a -> Property b -> c
+zip -}
+
+{-
+move : (Property a -> Property b -> Property b) -> Property a -> Property b -> Property b
+move f =
     let
         merge ( maybeA, maybeB ) =
             case ( maybeA, maybeB ) of
@@ -1053,10 +1055,51 @@ move f propA propB =
                 Group focus shape control ->
                     Group focus shape <| Nest.setItems (zipItems controlA controlB) <| control
                 otherProp -> otherProp
+        _ -> f propA propB -}
+
+
+move : (Property (Maybe a) -> Property (Maybe b) -> Property (Maybe c)) -> Property a -> Property b -> Property (Maybe c)
+move f propA propB = moveHelper f (propA |> map Just) (propB |> map Just)
+
+
+moveHelper : (Property (Maybe a) -> Property (Maybe b) -> Property (Maybe c)) -> Property (Maybe a) -> Property (Maybe b) -> Property (Maybe c)
+moveHelper f propA propB =
+    let
+        merge ( maybeA, maybeB ) =
+            case ( maybeA, maybeB ) of
+                ( Just (labelA, propA_), Just (labelB, propB_) ) ->
+                    (labelB, moveHelper f propA_ propB_)
+                    --Just (labelB, move f propA_ propB_)
+                ( Nothing, Just (labelB, propB_) ) ->
+                    (labelB, moveHelper f (Nil Nothing) propB_)
+                    --Just (labelB, move f Nil propB_)
+                ( Just (labelA, propA_), Nothing ) ->
+                    --Nothing
+                    (labelA, moveHelper f propA_ (Nil Nothing))
+                ( Nothing, Nothing ) ->
+                    --Nothing
+                    ("?", moveHelper f (Nil Nothing) (Nil Nothing))
+        zipItems controlA controlB =
+            Util.zipArrays
+                (Nest.getItems controlA)
+                (Nest.getItems controlB)
+                |> Array.map merge
+    in
+    case ( propA, propB ) of
+        ( Choice _ _ controlA, Choice _ _ controlB ) ->
+            case f propA propB of
+                Choice focus shape control ->
+                    Choice focus shape <| Nest.setItems (zipItems controlA controlB) <| control
+                otherProp -> otherProp
+        ( Group _ _ controlA, Group _ _ controlB ) ->
+            case f propA propB of
+                Group focus shape control ->
+                    Group focus shape <| Nest.setItems (zipItems controlA controlB) <| control
+                otherProp -> otherProp
         _ -> f propA propB
 
 
-setValueTo : Property a -> Property b -> Property b -- FIXME: return `Maybe`
+setValueTo : Property a -> Property a -> Property a -- FIXME: return `Maybe`
 setValueTo from to =
     case ( from, to ) of
         (Number controlA, Number controlB) ->
@@ -1083,10 +1126,9 @@ setValueTo from to =
 -- map2 use `move` for that
 
 
-insideOut : Property ( a, b ) -> Maybe ( a, Property b )
+insideOut : Property ( a, b ) -> ( a, Property b )
 insideOut prop =
-    get prop
-        |> Maybe.map (\val -> ( val |> Tuple.first, prop |> map Tuple.second ))
+    ( get prop |> Tuple.first, prop |> map Tuple.second )
 
 
 changesBetween : Property a -> Property b -> List ( Path, Property b )
@@ -1108,10 +1150,9 @@ changesBetween prev next =
         (next |> addPath)
         []
     |> List.map insideOut
-    |> List.filterMap identity
 
 
-loadValues : Property a -> Property b -> Property b
+loadValues : Property a -> Property a -> Property a
 loadValues = move setValueTo
 
 
