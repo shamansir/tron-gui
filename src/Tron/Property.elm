@@ -1017,86 +1017,62 @@ fold3 f from root =
         helper ( Path.start, [] ) root from
 
 
-{- zip : (Maybe a -> Maybe b -> c) -> c -> Property a -> Property b -> c
-zip -}
-
-{-
-move : (Property a -> Property b -> Property b) -> Property a -> Property b -> Property b
-move f =
+zip : Property a -> Property b -> Property (Maybe a, Maybe b)
+zip =
     let
-        merge ( maybeA, maybeB ) =
-            case ( maybeA, maybeB ) of
+       join maybePropA maybePropB =
+            case ( maybePropA, maybePropB ) of
+                ( Just propA_, Just propB_ ) -> propB_ |> map (\b -> ( Just <| get propA_, Just b ) )
+                ( Just propA_, Nothing )     -> propA_ |> map (\a -> ( Just a, Nothing ) )
+                ( Nothing    , Just propB_ ) -> propB_ |> map (\b -> ( Nothing, Just b ) )
+                ( Nothing    , Nothing     ) -> Nil (Nothing, Nothing)
+    in move join
+
+
+move : (Maybe (Property a) -> Maybe (Property b) -> Property c) -> Property a -> Property b -> Property c
+move f propA propB = moveHelper f (Just propA) (Just propB)
+
+
+moveHelper : (Maybe (Property a) -> Maybe (Property b) -> Property c) -> Maybe (Property a) -> Maybe (Property b) -> Property c
+moveHelper f maybePropA maybePropB =
+    let
+        merge : ( Maybe ( Label, Property a ), Maybe ( Label, Property b ) ) -> ( Label, Property c )
+        merge ( maybePropA_, maybePropB_ ) =
+            case ( maybePropA_, maybePropB_ ) of
                 ( Just (labelA, propA_), Just (labelB, propB_) ) ->
-                    (labelB, move f propA_ propB_)
+                    (labelB, moveHelper f (Just propA_) (Just propB_))
                     --Just (labelB, move f propA_ propB_)
                 ( Nothing, Just (labelB, propB_) ) ->
-                    (labelB, move f Nil propB_)
+                    (labelB, moveHelper f Nothing (Just propB_))
                     --Just (labelB, move f Nil propB_)
                 ( Just (labelA, propA_), Nothing ) ->
                     --Nothing
-                    (labelA, move f propA Nil)
+                    (labelA, moveHelper f (Just propA_) Nothing)
                 ( Nothing, Nothing ) ->
                     --Nothing
-                    ("nil", move f Nil Nil)
+                    ("?", moveHelper f Nothing Nothing)
+        zipItems
+             : NestControl (Label, Property a) value a
+            -> NestControl (Label, Property b) value b
+            -> Array ( Label, Property c )
         zipItems controlA controlB =
             Util.zipArrays
                 (Nest.getItems controlA)
                 (Nest.getItems controlB)
                 |> Array.map merge
     in
-    case ( propA, propB ) of
-        ( Choice _ _ controlA, Choice _ _ controlB ) ->
-            case f propA propB of
+    case ( maybePropA, maybePropB ) of
+        ( Just (Choice _ _ controlA), Just (Choice _ _ controlB) ) ->
+            case f maybePropA maybePropB of
                 Choice focus shape control ->
                     Choice focus shape <| Nest.setItems (zipItems controlA controlB) <| control
                 otherProp -> otherProp
-        ( Group _ _ controlA, Group _ _ controlB ) ->
-            case f propA propB of
+        ( Just (Group _ _ controlA), Just (Group _ _ controlB) ) ->
+            case f maybePropA maybePropB of
                 Group focus shape control ->
                     Group focus shape <| Nest.setItems (zipItems controlA controlB) <| control
                 otherProp -> otherProp
-        _ -> f propA propB -}
-
-
-move : (Property (Maybe a) -> Property (Maybe b) -> Property (Maybe c)) -> Property a -> Property b -> Property (Maybe c)
-move f propA propB = moveHelper f (propA |> map Just) (propB |> map Just)
-
-
-moveHelper : (Property (Maybe a) -> Property (Maybe b) -> Property (Maybe c)) -> Property (Maybe a) -> Property (Maybe b) -> Property (Maybe c)
-moveHelper f propA propB =
-    let
-        merge ( maybeA, maybeB ) =
-            case ( maybeA, maybeB ) of
-                ( Just (labelA, propA_), Just (labelB, propB_) ) ->
-                    (labelB, moveHelper f propA_ propB_)
-                    --Just (labelB, move f propA_ propB_)
-                ( Nothing, Just (labelB, propB_) ) ->
-                    (labelB, moveHelper f (Nil Nothing) propB_)
-                    --Just (labelB, move f Nil propB_)
-                ( Just (labelA, propA_), Nothing ) ->
-                    --Nothing
-                    (labelA, moveHelper f propA_ (Nil Nothing))
-                ( Nothing, Nothing ) ->
-                    --Nothing
-                    ("?", moveHelper f (Nil Nothing) (Nil Nothing))
-        zipItems controlA controlB =
-            Util.zipArrays
-                (Nest.getItems controlA)
-                (Nest.getItems controlB)
-                |> Array.map merge
-    in
-    case ( propA, propB ) of
-        ( Choice _ _ controlA, Choice _ _ controlB ) ->
-            case f propA propB of
-                Choice focus shape control ->
-                    Choice focus shape <| Nest.setItems (zipItems controlA controlB) <| control
-                otherProp -> otherProp
-        ( Group _ _ controlA, Group _ _ controlB ) ->
-            case f propA propB of
-                Group focus shape control ->
-                    Group focus shape <| Nest.setItems (zipItems controlA controlB) <| control
-                otherProp -> otherProp
-        _ -> f propA propB
+        _ -> f maybePropA maybePropB
 
 
 setValueTo : Property a -> Property a -> Property a -- FIXME: return `Maybe`
@@ -1152,8 +1128,16 @@ changesBetween prev next =
     |> List.map insideOut
 
 
-loadValues : Property a -> Property a -> Property a
-loadValues = move setValueTo
+-- map2 : (a -> b -> c) -> Property a -> Property b -> Property c
+
+
+loadValues : a -> Property a -> Property a -> Property a
+loadValues v =
+    move
+        (\maybeA maybeB ->
+            Maybe.map2 setValueTo maybeA maybeB
+                |> Maybe.withDefault (Nil v)
+        )
 
 
 loadChangedValues : Property a -> Property b -> Property b -> Property b
