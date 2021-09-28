@@ -9,6 +9,7 @@ import Json.Decode as D
 import Json.Encode as E
 import Color.Convert as Color
 import Maybe.Extra as Maybe
+import Task
 
 
 import Tron.Control as Control exposing (..)
@@ -31,8 +32,9 @@ import Tron.Style.CellShape as CS
 runProperty : Value -> Property msg -> Cmd msg
 runProperty value property =
     case ( property, value ) of
-        ( Nil, _ ) ->
+        ( Nil msg, _ ) ->
             Cmd.none
+            -- Task.succeed msg |> Task.perform identity
 
         ( Number control, FromSlider f ) ->
             control |> Control.update ( Tuple.mapSecond <| always f ) |> Control.run
@@ -70,7 +72,7 @@ runProperty value property =
 
 
 run : Exp.Update -> Property msg -> Cmd msg
-run { path, value } prop =
+run { path, value, labelPath } prop =
     case path of
         [] ->
             runProperty value prop
@@ -81,7 +83,13 @@ run { path, value } prop =
                     case control |> Nest.get id of
                         Just ( _, innerProp ) ->
                             innerProp
-                                |> run { path = next, value = value }
+                                |> run
+                                    { path = next
+                                    , labelPath =
+                                        List.tail labelPath
+                                            |> Maybe.withDefault []
+                                    , value = value
+                                    }
 
                         Nothing ->
                             Cmd.none
@@ -93,7 +101,7 @@ run { path, value } prop =
 applyProperty : Value -> Property a -> Property a
 applyProperty value prop =
     case ( prop, value ) of
-        ( Nil, _ ) ->
+        ( Nil _, _ ) ->
             prop
 
         ( Number control, FromSlider f ) ->
@@ -162,15 +170,16 @@ apply { path, labelPath, value } prop =
                     prop
 
 
-loadValues : Dict (List Int) Value -> Property a -> Property a
+loadValues : Dict (List Int, LabelPath) Value -> Property a -> Property a
 loadValues dict prop =
     dict
         |> Dict.toList
         |> List.foldl
-            (\ ( path, value ) root ->
-                apply { path = path, value = value } root
+            (\ ( ( path, labelPath ), value ) root ->
+                apply { path = path, value = value, labelPath = labelPath } root
             )
             prop
+
 
 loadStringValues : Dict LabelPath String -> Property a -> Property a
 loadStringValues dict prop =
@@ -212,13 +221,13 @@ applyStringValue str prop =
                 |> Maybe.andThen maybeFn
     in
     case prop of
-        Nil ->
+        Nil a ->
             helper
                 "ghost"
                 (\v ->
                     case v of
                         Other ->
-                            Just Nil
+                            Just <| Nil a
 
                         _ ->
                             Nothing
@@ -373,7 +382,7 @@ decode =
     |> D.andThen
         (\typeStr ->
             case typeStr of
-                "ghost" -> D.succeed Nil
+                "ghost" -> D.succeed <| Nil ()
                 "slider" ->
                     D.map4
                         (\min max step current ->
@@ -506,7 +515,7 @@ decode =
                             (D.maybe <| D.field "face" decodeFace)
 
 
-                _ -> D.succeed Nil -- or fail?
+                _ -> D.succeed <| Nil () -- or fail?
         )
 
 
@@ -523,7 +532,7 @@ encodePath =
 encodePropertyAt : List Int -> Property a -> Exp.Property
 encodePropertyAt path property =
     case property of
-        Nil ->
+        Nil _ ->
             E.object
                 [ ( "type", E.string "ghost" )
                 , ( "path", encodeRawPath path )
@@ -989,6 +998,7 @@ fromPort portUpdate =
 swap : Exp.Out -> Exp.In
 swap { update } =
     { path = update.path
+    , labelPath = update.labelPath
     , value = update.value
     , type_ = update.type_
     }
@@ -997,6 +1007,7 @@ swap { update } =
 loadValue : Exp.Value -> Exp.In
 loadValue update =
     { path = update.path
+    , labelPath = update.labelPath
     , value = update.value
     , type_ = update.type_
     }
@@ -1005,6 +1016,7 @@ loadValue update =
 fromPort : Exp.In -> Exp.Update
 fromPort portUpdate =
     { path = portUpdate.path
+    , labelPath = portUpdate.labelPath
     , value =
         D.decodeValue (valueDecoder portUpdate.type_) portUpdate.value
             |> Result.withDefault Other
@@ -1116,7 +1128,6 @@ freshRun =
 execute : Property (Maybe msg) -> Cmd msg
 execute =
     Property.get
-    >> Maybe.andThen identity
     >> Maybe.toCommand
 
 
