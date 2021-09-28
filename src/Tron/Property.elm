@@ -522,27 +522,29 @@ executeAt path root =
         Nothing -> []
 
 
-transferTransientState : b -> Property a -> Property b -> Property b
-transferTransientState def propA propB =
+transferTransientState : Property a -> Property a -> Property a
+transferTransientState propA propB =
     let
-        f maybePropA maybePropB =
-            case ( maybePropA, maybePropB ) of
-                ( Just (Choice focusA _ controlA), Just (Choice _ shapeB controlB) ) ->
+        f zipper =
+            case zipper of
+                -- FIXME: add `Control.hasTransientState` or smth like that
+                Z.Both (Choice focusA _ controlA) (Choice _ shapeB controlB) ->
                     Choice focusA shapeB
                         (Nest.getTransientState controlA
                             |> Nest.restoreTransientState controlB)
-                ( Just (Group focusA _ controlA), Just (Group _ shapeB controlB) ) ->
+                Z.Both (Group focusA _ controlA) (Group _ shapeB controlB) ->
                     Group focusA shapeB
                         (Nest.getTransientState controlA
                             |> Nest.restoreTransientState controlB)
-                ( Just (Text controlA), Just (Text controlB) ) ->
+                Z.Both (Text controlA) (Text controlB) ->
                     Text
                         (Text.getTransientState controlA
                             |> Text.restoreTransientState controlB)
-                ( Just (Live innerPropA), Just (Live innerPropB) ) ->
-                    Live <| transferTransientState def innerPropA innerPropB
-                ( _, Just propB_ ) -> propB_
-                _ -> Nil def
+                Z.Both (Live innerPropA) (Live innerPropB) ->
+                    Live <| transferTransientState innerPropA innerPropB
+                Z.Both _ propB_ -> propB_
+                Z.Left propB_ -> propB_
+                Z.Right propA_ -> propA_ -- FIXME: `Nil`?
     in move f propA propB
 
 
@@ -883,8 +885,8 @@ togglePagination : Property a -> Property a
 togglePagination = updatePanelShape PS.togglePagination
 
 
-compareValues : Property a -> Property b -> Bool
-compareValues propA propB =
+valuesAreEqual : Property a -> Property b -> Bool
+valuesAreEqual propA propB =
     case (propA, propB) of
         (Nil _, Nil _) -> True
         (Number controlA, Number controlB) ->
@@ -901,7 +903,7 @@ compareValues propA propB =
         (Choice _ _ controlA, Choice _ _ controlB) ->
             Nest.whichSelected controlA == Nest.whichSelected controlB
         (Group _ _ _, Group _ _ _) -> True
-        (Live innerPropA, Live innerPropB) -> compareValues innerPropA innerPropB
+        (Live innerPropA, Live innerPropB) -> valuesAreEqual innerPropA innerPropB
         (_, _) -> False
 
 
@@ -1097,14 +1099,9 @@ insideOut prop =
 changesBetween : Property a -> Property b -> List ( Path, Property b )
 changesBetween prev next =
     fold2_
-        (\(maybePropA, maybePropB) changes ->
-            if Maybe.map2
-                compareValues
-                maybePropA
-                maybePropB
-                |> Maybe.withDefault True
-                |> not then
-                maybePropB
+        (\zipper changes ->
+            if not <| Z.run (always False) (always False) valuesAreEqual <| zipper then
+                Z.getB zipper
                     |> Maybe.map (\prop -> prop :: changes)
                     |> Maybe.withDefault changes
             else changes

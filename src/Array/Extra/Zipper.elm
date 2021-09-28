@@ -81,3 +81,15 @@ run fA fB fBoth z =
         Left a -> fA a
         Right b -> fB b
         Both a b -> fBoth a b
+
+
+run_ : (a -> x) -> (a -> a -> x) -> Zipper a a -> x
+run_ f = run f f
+
+
+getA : Zipper a b -> Maybe a
+getA = toTuple >> Tuple.first
+
+
+getB : Zipper a b -> Maybe b
+getB = toTuple >> Tuple.second
