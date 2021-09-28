@@ -66,6 +66,7 @@ type alias Out =
 from the incoming ports by Tron. -}
 type alias In =
     { path : List Int
+    , labelPath : List String
     , value : E.Value
     , type_ : String
     }
@@ -104,6 +105,7 @@ noValue =
 nothingGoesIn : In
 nothingGoesIn =
     { path = []
+    , labelPath = []
     , value = E.null
     , type_ = ""
     }
