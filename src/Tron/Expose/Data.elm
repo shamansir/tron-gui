@@ -23,6 +23,7 @@ module Tron.Expose.Data exposing
 import Json.Encode as E
 
 import Tron.Control.Value as Control exposing (Value(..))
+import Tron.Path exposing (Index, Label)
 
 
 
@@ -38,18 +39,16 @@ type alias ClientId =
 
 {-| The JSON-friendly representation of any value. -}
 type alias Value =
-    { path : List Int
+    { path : List ( Index, Label )
     , value : E.Value
     , stringValue : String
-    , labelPath : List String
     , type_ : String
     }
 
 
 {-| Value update with the control `Value`, already converted from JSON. -}
 type alias Update =
-    { path : List Int
-    , labelPath : List String
+    { path : List ( Index, Label )
     , value : Control.Value
     }
 
@@ -65,8 +64,7 @@ type alias Out =
 {-| The JSON-friendly structure of updates which is received
 from the incoming ports by Tron. -}
 type alias In =
-    { path : List Int
-    , labelPath : List String
+    { path : List ( Index, Label )
     , value : E.Value
     , type_ : String
     }
@@ -85,7 +83,7 @@ so the ID-path will be deduced from labelPath,
 as well as the `type` of the value will be deduced from
 current tree condition. -}
 type alias DeduceIn =
-    { path : List String
+    { path : List ( Index, Label )
     , value : E.Value
     }
 
@@ -96,7 +94,6 @@ noValue =
     { path = []
     , value = E.null
     , stringValue = ""
-    , labelPath = []
     , type_ = ""
     }
 
@@ -105,7 +102,6 @@ noValue =
 nothingGoesIn : In
 nothingGoesIn =
     { path = []
-    , labelPath = []
     , value = E.null
     , type_ = ""
     }

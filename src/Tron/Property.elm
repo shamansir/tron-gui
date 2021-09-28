@@ -75,13 +75,14 @@ find path =
         >> Maybe.map Tuple.second
 
 
+{- FIXME: finds by index, should use labels? -}
 find1 : Path -> Property a -> Maybe (Label, Property a)
 find1 path root = -- TODO: reuse `fildAll` + `tail`?
     let
         helper ipath ( label, prop ) =
             case ipath of
                 [] -> Just ( label, prop )
-                index::pathTail ->
+                (index, _)::pathTail ->
                     case prop of
                         Choice _ _ control ->
                             control
@@ -114,13 +115,14 @@ findWithParent1 path root =
             (allArray |> Array.get (Array.length allArray - 1))
 
 
+{- FIXME: finds by index, should use labels? -}
 findAll : Path -> Property a -> List (Label, Property a)
 findAll path root =
     let
         helper ipath ( label, prop ) =
             ( label, prop ) :: case ipath of
                 [] -> []
-                index::pathTail ->
+                (index, _)::pathTail ->
                     case prop of
                         Choice _ _ control ->
                             control
@@ -184,11 +186,10 @@ fold f from root =
         foldItems : Path -> Array ( Label, Property a ) -> b -> b
         foldItems curPath items val =
             items
-                |> Array.map Tuple.second
                 |> Array.indexedMap Tuple.pair
                 |> Array.foldl
-                    (\(index, innerItem) prev ->
-                        helper (curPath |> Path.advance index) innerItem prev
+                    (\(index, (label, innerItem)) prev ->
+                        helper (curPath |> Path.advance (index, label)) innerItem prev
                     )
                     val
 
@@ -230,56 +231,29 @@ replace : (Path -> Property a -> Property a) -> Property a -> Property a
 replace = replaceMap <| always identity
 
 
-replaceWithLabeledPath
-    : (LabelPath -> Property a -> Property a) -> Property a -> Property a
-replaceWithLabeledPath =
-    replaceWithLabeledPathMap <| always identity
-
-
--- aren't `...Map` functions are compositions like `replace << map`?
 replaceMap
     :  (Path -> a -> b)
     -> (Path -> Property b -> Property b)
     -> Property a
     -> Property b
-replaceMap aMap f =
-    replaceWithPathsMap (Tuple.first >> aMap) (Tuple.first >> f)
-
-
-replaceWithLabeledPathMap
-    :  (LabelPath -> a -> b)
-    -> (LabelPath -> Property b -> Property b)
-    -> Property a
-    -> Property b
-replaceWithLabeledPathMap aMap f =
-    replaceWithPathsMap (Tuple.second >> aMap) (Tuple.second >> f)
-
-
-replaceWithPathsMap
-    :  (( Path, LabelPath ) -> a -> b)
-    -> (( Path, LabelPath ) -> Property b -> Property b)
-    -> Property a
-    -> Property b
-replaceWithPathsMap aMap f root =
+replaceMap aMap f root =
     -- FIXME: should be just another `fold` actually?
 
     let
 
         replaceItem
-            :  ( Path, LabelPath )
+            :  Path
             -> Int
             -> ( Label, Property a )
             -> ( Label, Property b )
-        replaceItem ( parentPath, parentLabelPath ) index ( label, innerItem ) =
+        replaceItem parentPath index ( label, innerItem ) =
             ( label
             , helper
-                ( parentPath |> Path.advance index
-                , parentLabelPath ++ [ label ]
-                )
+                ( parentPath |> Path.advance ( index, label ) )
                 innerItem
             )
 
-        helper : ( Path, LabelPath ) -> Property a -> Property b
+        helper : Path -> Property a -> Property b
         helper curPath item =
             case item of
                 Choice focus shape control ->
@@ -303,7 +277,7 @@ replaceWithPathsMap aMap f root =
                 _ -> f curPath <| map (aMap curPath) <| item
 
     in
-        helper ( Path.start, [] )  root
+        helper Path.start root
 
 
 addPathFrom : Path -> Property a -> Property ( Path, a )
@@ -313,7 +287,7 @@ addPathFrom from root =
         replaceItem : Path -> Int -> ( Label, Property a ) -> ( Label, Property (Path, a) )
         replaceItem parentPath index ( label, innerItem ) =
             ( label
-            , helper (parentPath |> Path.advance index) innerItem
+            , helper (parentPath |> Path.advance ( index, label )) innerItem
             )
 
         helper : Path -> Property a -> Property ( Path, a )
@@ -352,50 +326,40 @@ addPath =
     replaceMap (Tuple.pair) (always identity)
 
 
-addLabeledPath : Property a -> Property ( LabelPath, a )
-addLabeledPath =
-    replaceWithLabeledPathMap (Tuple.pair) (always identity)
+getPathsMappingByIndex : Property a -> Dict (List Path.Index) (List Path.Label)
+getPathsMappingByIndex =
+    getPathsMappingByIndex_ >> Dict.map (always Path.toLabelPath)
 
-
-addPaths : Property a -> Property ( ( Path, LabelPath ), a )
-addPaths =
-    replaceWithPathsMap (Tuple.pair) (always identity)
-
-
-getPathsMap : Property a -> Dict (List Int) LabelPath
-getPathsMap =
+getPathsMappingByIndex_ : Property a -> Dict (List Path.Index) Path
+getPathsMappingByIndex_ =
     let
-        dict = Dict.empty
-        storePaths prop dict_ =
-            case get prop |> Tuple.first of
-                ( path, labelPath ) ->
-                    dict_ |> Dict.insert (Path.toList path) labelPath
+        storePath path _ =
+            Dict.insert (Path.toIndexPath path) path
     in
-        addPaths
-            >> fold (always storePaths) dict
+        fold storePath Dict.empty
 
 
-getInvPathsMap : Property a -> Dict LabelPath (List Int)
-getInvPathsMap =
+getPathsMappingByLabels : Property a -> Dict (List Path.Label) (List Path.Index)
+getPathsMappingByLabels =
+    getPathsMappingByLabels_ >> Dict.map (always Path.toIndexPath)
+
+
+getPathsMappingByLabels_ : Property a -> Dict (List Path.Label) Path
+getPathsMappingByLabels_ =
     let
-        dict = Dict.empty
-        storePaths prop dict_ =
-            case get prop |> Tuple.first of
-                ( path, labelPath ) ->
-                    dict_ |> Dict.insert labelPath (Path.toList path)
+        storePath path _ =
+            Dict.insert (Path.toLabelPath path) path
     in
-        addPaths
-            >> fold (always storePaths) dict
+        fold storePath Dict.empty
 
 
-findPath : List String -> Property a -> Maybe Path
+findPath : List Path.Label -> Property a -> Maybe Path
 findPath labelPath =
-    getInvPathsMap -- FIXME: use `replace/fold`?
+    getPathsMappingByLabels_ -- FIXME: use `replace/fold`?
         >> Dict.get labelPath
-        >> Maybe.map Path.fromList
 
 
-findByLabelPath : List String -> Property a -> Maybe (Property a)
+findByLabelPath : List Path.Label -> Property a -> Maybe (Property a)
 findByLabelPath labelPath tree =
     findPath labelPath tree
         |> Maybe.andThen (\path -> find path tree)
@@ -406,7 +370,7 @@ changeLabel path newLabel  =
     let
         inNest curPath control =
             case Path.pop curPath of
-                Just ( before, idx ) ->
+                Just ( before, ( idx, _) ) -> -- FIXME: search not by index but by label
                     if Path.howDeep curPath == 1 then
                         Nest.withItem idx (\(_, prop) -> (newLabel, prop))
                         <| control
@@ -497,9 +461,9 @@ executeAt path root =
                 ( Choice focus shape control, Action _ ) ->
 
                     case Path.pop path of
-                        Just ( toParent, selectedIndex ) ->
+                        Just ( toParent, ( selectedIndex, selectedLabel ) ) ->
                             let
-                                newParent =
+                                newParent = -- FIXME: find not by index but by label?
                                     select selectedIndex control
                             in
                                 case execute item of
@@ -976,27 +940,25 @@ fold2Helper f zipper def =
         ( _, _ ) -> f zipper def
 
 
-fold3 : ((Path, LabelPath) -> Property a -> b -> b) -> b -> Property a -> b
+fold3 : (Path -> Property a -> b -> b) -> b -> Property a -> b
 fold3 f from root =
     -- FIXME: use this one as `fold`, just omit `LabelPath`
     let
 
-        foldItems : (Path, LabelPath) -> Array ( Label, Property a ) -> b -> b
-        foldItems ( curPath, curLabelPath ) items val =
+        foldItems : Path -> Array ( Label, Property a ) -> b -> b
+        foldItems curPath items val =
             items
                 --|> Array.map Tuple.second
                 |> Array.indexedMap Tuple.pair
                 |> Array.foldl
                     (\(index, (label, innerItem)) prev ->
                         helper
-                            ( curPath |> Path.advance index
-                            , curLabelPath ++ [ label ]
-                            )
+                            ( curPath |> Path.advance ( index, label ) )
                             innerItem prev
                     )
                     val
 
-        helper : (Path, LabelPath) -> Property a -> b -> b
+        helper : Path -> Property a -> b -> b
         helper curPath prop val =
             case prop of
                 Choice _ _ control ->
@@ -1010,7 +972,7 @@ fold3 f from root =
                 _ -> f curPath prop val
 
     in
-        helper ( Path.start, [] ) root from
+        helper Path.start root from
 
 
 zip : Property a -> Property b -> Property (Z.Zipper a b)
