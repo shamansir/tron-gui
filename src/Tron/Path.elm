@@ -1,22 +1,28 @@
 module Tron.Path exposing (..)
 
 
-type Path = Path (List Int)
+type alias Label = String
+
+
+type alias Index = Int
+
+
+type Path = Path (List (Index, Label))
 
 
 start : Path
 start = Path []
 
 
-toList : Path -> List Int
+toList : Path -> List (Index, Label)
 toList (Path l) = l
 
 
-fromList : List Int -> Path
+fromList : List (Index, Label) -> Path
 fromList = Path
 
 
-advance : Int -> Path -> Path
+advance : ( Index, Label ) -> Path -> Path
 advance n (Path l) = Path <| l ++ [ n ]
 
 
@@ -44,7 +50,7 @@ equal (Path p1) (Path p2) = p1 == p2
 --         |> List.head
 
 
-pop : Path -> Maybe ( Path, Int )
+pop : Path -> Maybe ( Path, ( Index, Label ) )
 pop (Path l) =
     case List.reverse l of
         [] ->
@@ -59,7 +65,7 @@ reverse : Path -> Path
 reverse (Path l) = Path <| List.reverse l
 
 
-last : Path -> Maybe Int
+last : Path -> Maybe ( Index, Label )
 last =
     pop >> Maybe.map Tuple.second
 
@@ -67,7 +73,7 @@ last =
 toString : Path -> String
 toString (Path list) =
     list
-        |> List.map String.fromInt
+        |> List.map (\(idx, label) -> String.fromInt idx ++ ":" ++ label)
         |> String.join "/"
 
 
@@ -96,3 +102,11 @@ sub (Path w) (Path f) =
                     else from
     in
         Path <| helper w f
+
+
+toIndexPath : Path -> List Index
+toIndexPath (Path list) = list |> List.map Tuple.first
+
+
+toLabelPath : Path -> List Label
+toLabelPath (Path list) = list |> List.map Tuple.second
