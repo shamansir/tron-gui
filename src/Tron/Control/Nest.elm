@@ -2,6 +2,7 @@ module Tron.Control.Nest exposing (..)
 
 
 import Array exposing (Array)
+import Array.Extra as Array
 
 import Tron.Control as Core exposing (Control)
 import Tron.Control.Button as Button
@@ -91,7 +92,7 @@ find : comparable -> NestControl (comparable, item) value a -> Maybe ( ItemId, i
 find what =
     getItems
         >> Array.indexedMap Tuple.pair
-        >> Util.findMapInArray
+        >> Array.findMap
             (\(index, (label, item)) ->
                 if label == what
                     then Just (index, item)

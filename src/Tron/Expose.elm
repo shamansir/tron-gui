@@ -8,6 +8,7 @@ import Dict exposing (Dict)
 import Json.Decode as D
 import Json.Encode as E
 import Color.Convert as Color
+import Maybe.Extra as Maybe
 
 
 import Tron.Control as Control exposing (..)
@@ -24,7 +25,6 @@ import Tron.Expose.Convert as Exp
 import Tron.Style.Theme as Theme
 import Tron.Style.PanelShape as PS
 import Tron.Style.CellShape as CS
-import Tron.Util as Util
 
 
 
@@ -1110,14 +1110,14 @@ freshRun : Property (Value -> Maybe msg) -> Cmd msg
 freshRun =
     Exp.evaluate
     -- >> Property.run
-    >> runMaybe
+    >> execute
 
 
-runMaybe : Property (Maybe msg) -> Cmd msg
-runMaybe =
+execute : Property (Maybe msg) -> Cmd msg
+execute =
     Property.get
     >> Maybe.andThen identity
-    >> Util.runMaybe
+    >> Maybe.toCommand
 
 
 {-runExposed : Property Exp.Update -> Cmd Exp.Out
