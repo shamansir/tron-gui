@@ -7,6 +7,7 @@ import Dict exposing (Dict)
 import Task
 
 import Color exposing (Color)
+import Array.Extra.Zipper as Z exposing (zip, Zipper(..))
 
 import Tron.Path exposing (Path)
 import Tron.Path as Path
@@ -919,32 +920,26 @@ fold1 f prop =
         Live innerProp -> fold1 f innerProp
 
 
-fold2_ : ((Maybe (Property a), Maybe (Property b)) -> c -> c) -> Property a -> Property b -> c -> c
-fold2_ f propA propB = fold2Helper f ( Just propA, Just propB )
+fold2_ : (Z.Zipper (Property a) (Property b) -> c -> c) -> Property a -> Property b -> c -> c
+fold2_ f propA propB = fold2Helper f <| Both propA propB
 
 
-fold2 : ((Maybe a, Maybe b) -> c -> c) -> Property a -> Property b -> c -> c
+fold2 : (Z.Zipper a b -> c -> c) -> Property a -> Property b -> c -> c
 fold2 f =
-    fold2_
-        (\(pA, pB) ->
-            f
-                ( (pA |> Maybe.map get)
-                , (pB |> Maybe.map get)
-                )
-        )
+    fold2_ (f << Z.mapAB get get)
 
 
-fold2Helper : ((Maybe (Property a), Maybe (Property b)) -> c -> c) -> ( Maybe (Property a), Maybe (Property b) ) -> c -> c
-fold2Helper f ( maybePropA, maybePropB ) def =
+fold2Helper : (Z.Zipper (Property a) (Property b) -> c -> c) -> Z.Zipper (Property a) (Property b) -> c -> c
+fold2Helper f zipper def =
     let
         foldNestItems itemsA itemsB =
-            Util.zipArrays
+            Z.zip
                 (itemsA |> Array.map Tuple.second)
                 (itemsB |> Array.map Tuple.second)
                 |> Array.foldl (fold2Helper f) def
-                |> f ( maybePropA, maybePropB )
+                |> f zipper
 
-    in case ( maybePropA, maybePropB ) of
+    in case Z.toTuple zipper of
 
         ( Just (Group _ _ groupControlA), Just (Group _ _ groupControlB) ) ->
             foldNestItems
@@ -976,7 +971,7 @@ fold2Helper f ( maybePropA, maybePropB ) def =
                 Array.empty
                 (Nest.getItems choiceControlB)
 
-        ( _, _ ) -> f ( maybePropA, maybePropB ) def
+        ( _, _ ) -> f zipper def
 
 
 fold3 : ((Path, LabelPath) -> Property a -> b -> b) -> b -> Property a -> b
@@ -1016,62 +1011,55 @@ fold3 f from root =
         helper ( Path.start, [] ) root from
 
 
-zip : Property a -> Property b -> Property (Maybe a, Maybe b)
+zip : Property a -> Property b -> Property (Z.Zipper a b)
 zip =
     let
-       join maybePropA maybePropB =
-            case ( maybePropA, maybePropB ) of
-                ( Just propA_, Just propB_ ) -> propB_ |> map (\b -> ( Just <| get propA_, Just b ) )
-                ( Just propA_, Nothing )     -> propA_ |> map (\a -> ( Just a, Nothing ) )
-                ( Nothing    , Just propB_ ) -> propB_ |> map (\b -> ( Nothing, Just b ) )
-                ( Nothing    , Nothing     ) -> Nil (Nothing, Nothing)
+       join zipper =
+            case zipper of
+                Z.Both propA_ propB_ -> propB_ |> map (Z.Both <| get propA_)
+                Z.Right propA_ -> propA_ |> map Z.Right
+                Z.Left propB_ -> propB_ |> map Z.Left
     in move join
 
 
-move : (Maybe (Property a) -> Maybe (Property b) -> Property c) -> Property a -> Property b -> Property c
-move f propA propB = moveHelper f (Just propA) (Just propB)
+move : (Z.Zipper (Property a) (Property b) -> Property c) -> Property a -> Property b -> Property c
+move f propA propB = moveHelper f <| Z.Both propA propB
 
 
-moveHelper : (Maybe (Property a) -> Maybe (Property b) -> Property c) -> Maybe (Property a) -> Maybe (Property b) -> Property c
-moveHelper f maybePropA maybePropB =
+moveHelper : (Z.Zipper (Property a) (Property b) -> Property c) -> Z.Zipper (Property a) (Property b) -> Property c
+moveHelper f zipper =
     let
-        merge : ( Maybe ( Label, Property a ), Maybe ( Label, Property b ) ) -> ( Label, Property c )
-        merge ( maybePropA_, maybePropB_ ) =
-            case ( maybePropA_, maybePropB_ ) of
-                ( Just (labelA, propA_), Just (labelB, propB_) ) ->
-                    (labelB, moveHelper f (Just propA_) (Just propB_))
-                    --Just (labelB, move f propA_ propB_)
-                ( Nothing, Just (labelB, propB_) ) ->
-                    (labelB, moveHelper f Nothing (Just propB_))
-                    --Just (labelB, move f Nil propB_)
-                ( Just (labelA, propA_), Nothing ) ->
-                    --Nothing
-                    (labelA, moveHelper f (Just propA_) Nothing)
-                ( Nothing, Nothing ) ->
-                    --Nothing
-                    ("?", moveHelper f Nothing Nothing)
+        merge : Z.Zipper ( Label, Property a ) ( Label, Property b ) -> ( Label, Property c )
+        merge zipperCursor =
+            case zipperCursor of
+                Z.Both (labelA, propA_) (labelB, propB_) ->
+                    (labelB, moveHelper f <| Both propA_ propB_)
+                Z.Left (labelA, propA_) ->
+                    (labelA, moveHelper f <| Z.Left propA_)
+                Z.Right (labelB, propB_) ->
+                    (labelB, moveHelper f <| Z.Right propB_)
         zipItems
              : NestControl (Label, Property a) value a
             -> NestControl (Label, Property b) value b
             -> Array ( Label, Property c )
         zipItems controlA controlB =
-            Util.zipArrays
+            Z.zip
                 (Nest.getItems controlA)
                 (Nest.getItems controlB)
                 |> Array.map merge
     in
-    case ( maybePropA, maybePropB ) of
-        ( Just (Choice _ _ controlA), Just (Choice _ _ controlB) ) ->
-            case f maybePropA maybePropB of
+    case zipper of
+        Z.Both (Choice _ _ controlA) (Choice _ _ controlB) ->
+            case f zipper of
                 Choice focus shape control ->
                     Choice focus shape <| Nest.setItems (zipItems controlA controlB) <| control
                 otherProp -> otherProp
-        ( Just (Group _ _ controlA), Just (Group _ _ controlB) ) ->
-            case f maybePropA maybePropB of
+        Z.Both (Group _ _ controlA) (Group _ _ controlB) ->
+            case f zipper of
                 Group focus shape control ->
                     Group focus shape <| Nest.setItems (zipItems controlA controlB) <| control
                 otherProp -> otherProp
-        _ -> f maybePropA maybePropB
+        _ -> f zipper
 
 
 setValueTo : Property a -> Property a -> Property a -- FIXME: return `Maybe`
@@ -1130,12 +1118,13 @@ changesBetween prev next =
 -- map2 : (a -> b -> c) -> Property a -> Property b -> Property c
 
 
-loadValues : a -> Property a -> Property a -> Property a
-loadValues v =
+loadValues : Property a -> Property a -> Property a
+loadValues =
     move
-        (\maybeA maybeB ->
-            Maybe.map2 setValueTo maybeA maybeB
-                |> Maybe.withDefault (Nil v)
+        (Z.run
+            identity -- FIXME: right should set `prop` to `Nil`?
+            identity
+            setValueTo
         )
 
 
