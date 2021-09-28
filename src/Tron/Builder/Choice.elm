@@ -2,7 +2,8 @@ module Tron.Builder.Choice exposing (..)
 
 
 import Array
-
+import Array.Extra as Array
+import Maybe.Extra as Maybe
 
 import Tron.OfValue as Def
 import Tron.Property as Property exposing (..)
@@ -11,7 +12,6 @@ import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
 import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Nest exposing (Form(..), ChoiceMode(..))
-import Tron.Util exposing (findMap)
 import Tron.Control.Value as Value exposing (Value(..))
 import Json.Decode exposing (index)
 
@@ -63,8 +63,8 @@ helper ( panelShape, cellShape ) options current compare =
         currentIndex =
             values
                 |> Array.indexedMap Tuple.pair
-                |> Tron.Util.filterMapArray Tron.Util.flipMaybe
-                |> Tron.Util.findMapInArray
+                |> Array.filterMap Maybe.inject
+                |> Array.findMap
                     (\(index, option) ->
                         if compare option current
                             then Just index
@@ -134,8 +134,8 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
         currentIndex =
             values
                 |> Array.indexedMap Tuple.pair
-                |> Tron.Util.filterMapArray Tron.Util.flipMaybe
-                |> Tron.Util.findMapInArray
+                |> Array.filterMap Maybe.inject
+                |> Array.findMap
                     (\(index, option) ->
                         if compare option current
                             then Just index
@@ -214,8 +214,8 @@ helperProxy ( panelShape, cellShape ) options current compare =
         currentIndex =
             values
                 |> Array.indexedMap Tuple.pair
-                |> Tron.Util.filterMapArray Tron.Util.flipMaybe
-                |> Tron.Util.findMapInArray
+                |> Array.filterMap Maybe.inject
+                |> Array.findMap
                     (\(index, option) ->
                         if compare option current
                             then Just index
