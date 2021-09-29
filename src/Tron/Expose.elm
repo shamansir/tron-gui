@@ -72,12 +72,12 @@ runProperty value property =
 
 
 run : Exp.Update -> Property msg -> Cmd msg
-run { path, value, labelPath } prop =
+run { path, value } prop =
     case path of
         [] ->
             runProperty value prop
 
-        id :: next ->
+        ( id, label ) :: next ->
             case prop of
                 Group _ _ control ->
                     case control |> Nest.get id of
@@ -85,9 +85,6 @@ run { path, value, labelPath } prop =
                             innerProp
                                 |> run
                                     { path = next
-                                    , labelPath =
-                                        List.tail labelPath
-                                            |> Maybe.withDefault []
                                     , value = value
                                     }
 
@@ -133,12 +130,12 @@ applyProperty value prop =
 
 
 apply : Exp.Update -> Property a -> Property a
-apply { path, labelPath, value } prop =
-    case labelPath of
+apply { path, value } prop =
+    case path of
         [] ->
             applyProperty value prop
 
-        label :: next -> -- id :: next
+        ( id, label ) :: next -> -- id :: next
             case prop of
                 Group focus shape control ->
                     control
@@ -146,8 +143,7 @@ apply { path, labelPath, value } prop =
                             (Tuple.mapSecond <| apply { path = next, labelPath = labelPath, value = value }) -}
                         |> Nest.withItemAt label
                             (apply
-                                { path = List.tail path |> Maybe.withDefault []
-                                , labelPath = next
+                                { path = next
                                 , value = value
                                 }
                             )
@@ -159,8 +155,7 @@ apply { path, labelPath, value } prop =
                             (Tuple.mapSecond <| apply { path = next, value = value }) -}
                         |> Nest.withItemAt label
                             (apply
-                                { path = List.tail path |> Maybe.withDefault []
-                                , labelPath = next
+                                { path = next
                                 , value = value
                                 }
                             )
@@ -170,26 +165,26 @@ apply { path, labelPath, value } prop =
                     prop
 
 
-loadValues : Dict (List Int, LabelPath) Value -> Property a -> Property a
+loadValues : Dict Path Value -> Property a -> Property a
 loadValues dict prop =
     dict
         |> Dict.toList
         |> List.foldl
-            (\ ( ( path, labelPath ), value ) root ->
-                apply { path = path, value = value, labelPath = labelPath } root
+            (\ ( path, value ) root ->
+                apply { path = Path.toList path, value = value } root
             )
             prop
 
 
 loadStringValues : Dict LabelPath String -> Property a -> Property a
-loadStringValues dict prop =
-    Property.replaceWithLabeledPath
-        (\labelPath innerProp ->
-            Dict.get labelPath dict
+loadStringValues dict =
+    Property.replace
+        (\path innerProp ->
+            dict
+                |> Dict.get (Path.toLabelPath path)
                 |> Maybe.andThen (\strValue -> applyStringValue strValue innerProp)
                 |> Maybe.withDefault innerProp
         )
-        prop
 
 
 loadJsonValues : Dict (List Int) Exp.Value -> Property a -> Property a
@@ -223,10 +218,10 @@ applyStringValue str prop =
     case prop of
         Nil a ->
             helper
-                "ghost"
+                "none"
                 (\v ->
                     case v of
-                        Other ->
+                        None ->
                             Just <| Nil a
 
                         _ ->
@@ -382,7 +377,7 @@ decode =
     |> D.andThen
         (\typeStr ->
             case typeStr of
-                "ghost" -> D.succeed <| Nil ()
+                "none" -> D.succeed <| Nil ()
                 "slider" ->
                     D.map4
                         (\min max step current ->
@@ -519,9 +514,9 @@ decode =
         )
 
 
-encodeRawPath : List Int -> E.Value
+encodeRawPath : List ( Path.Index, Path.Label ) -> E.Value
 encodeRawPath =
-    E.list E.int
+    E.list <| \(idx, label) -> E.object [ ( "id", E.int idx ), ( "label", E.string label ) ]
 
 
 encodePath : Path -> E.Value
@@ -529,19 +524,19 @@ encodePath =
     Path.toList >> encodeRawPath
 
 
-encodePropertyAt : List Int -> Property a -> Exp.Property
+encodePropertyAt : Path -> Property a -> Exp.Property
 encodePropertyAt path property =
     case property of
         Nil _ ->
             E.object
-                [ ( "type", E.string "ghost" )
-                , ( "path", encodeRawPath path )
+                [ ( "type", E.string "none" )
+                , ( "path", encodePath path )
                 ]
 
         Number (Control { min, max, step } ( _, val ) _) ->
             E.object
                 [ ( "type", E.string "slider" )
-                , ( "path", encodeRawPath path )
+                , ( "path", encodePath path )
                 , ( "current", E.float val )
                 , ( "min", E.float min )
                 , ( "max", E.float max )
@@ -551,7 +546,7 @@ encodePropertyAt path property =
         Coordinate (Control ( xSpec, ySpec ) ( _, ( x, y ) ) _) ->
             E.object
                 [ ( "type", E.string "xy" )
-                , ( "path", encodeRawPath path )
+                , ( "path", encodePath path )
                 , ( "current"
                   , E.object
                         [ ( "x", E.float x )
@@ -569,14 +564,14 @@ encodePropertyAt path property =
         Text (Control _ ( _, val ) _) ->
             E.object
                 [ ( "type", E.string "text" )
-                , ( "path", encodeRawPath path )
+                , ( "path", encodePath path )
                 , ( "current", E.string val )
                 ]
 
         Color (Control _ ( _, val ) _) ->
             E.object
                 [ ( "type", E.string "color" )
-                , ( "path", encodeRawPath path )
+                , ( "path", encodePath path )
                 , ( "current", encodeColor val )
                 , ( "currentRgba", encodeRgba val )
                 ]
@@ -584,7 +579,7 @@ encodePropertyAt path property =
         Toggle (Control _ val _) ->
             E.object
                 [ ( "type", E.string "toggle" )
-                , ( "path", encodeRawPath path )
+                , ( "path", encodePath path )
                 , ( "current"
                   , E.string <|
                         case val of
@@ -599,14 +594,14 @@ encodePropertyAt path property =
         Action (Control face _ _) ->
             E.object
                 [ ( "type", E.string "button" )
-                , ( "path", encodeRawPath path )
+                , ( "path", encodePath path )
                 , ( "face", encodeFace face )
                 ]
 
         Choice _ shape (Control items { face, form, selected, mode } _) ->
             E.object
                 [ ( "type", E.string "choice" )
-                , ( "path", encodeRawPath path )
+                , ( "path", encodePath path )
                 , ( "current"
                   , E.int selected
                   )
@@ -643,7 +638,7 @@ encodePropertyAt path property =
         Group _ shape (Control items { face, form } _) ->
             E.object
                 [ ( "type", E.string "nest" )
-                , ( "path", encodeRawPath path )
+                , ( "path", encodePath path )
                 , ( "expanded"
                   , E.bool <|
                         case form of
@@ -677,7 +672,7 @@ encodePropertyAt path property =
             encodePropertyAt path innerProp
 
 
-encodeNested : List Int -> Array ( Label, Property a ) -> Exp.Property
+encodeNested : Path -> Array ( Path.Label, Property a ) -> Exp.Property
 encodeNested path items =
     E.list
         (\( id, ( label, property ) ) ->
@@ -686,7 +681,7 @@ encodeNested path items =
                 , ( "label", E.string label )
                 , ( "property"
                   , encodePropertyAt
-                        (path ++ [ id ])
+                        (path |> Path.advance ( id, label ))
                         property
                   )
                 ]
@@ -698,7 +693,7 @@ encodeNested path items =
 
 encode : Property msg -> Exp.Property
 encode =
-    encodePropertyAt []
+    encodePropertyAt Path.start
 
 
 {-
@@ -708,7 +703,7 @@ encode =
            ( type_, value ) =
                case prop of
                    Nil ->
-                       ( "ghost", E.null )
+                       ( "none", E.null )
                    Number ( Control _ val _ ) ->
                        ( "slider", E.float val )
                    Coordinate ( Control _ ( x, y ) _ ) ->
@@ -895,8 +890,11 @@ valueDecoder :
     -> D.Decoder Value -- FIXME: move to Value
 valueDecoder type_ =
     case type_ of
-        "ghost" ->
-            D.succeed Other
+        "none" ->
+            D.succeed None
+
+        "ghost" -> -- backward compatibility
+            D.succeed None
 
         "slider" ->
             D.float |> D.map FromSlider
@@ -923,7 +921,7 @@ valueDecoder type_ =
             D.succeed FromGroup
 
         _ ->
-            D.succeed Other
+            D.succeed None
 
 
 fromString
@@ -932,8 +930,11 @@ fromString
     -> Result String Value -- FIXME: move to Value
 fromString type_ str =
     case type_ of
-        "ghost" ->
-            Ok Other
+        "none" ->
+            Ok None
+
+        "ghost" -> -- backward compatible
+            Ok None
 
         "slider" ->
             str
@@ -998,7 +999,6 @@ fromPort portUpdate =
 swap : Exp.Out -> Exp.In
 swap { update } =
     { path = update.path
-    , labelPath = update.labelPath
     , value = update.value
     , type_ = update.type_
     }
@@ -1007,7 +1007,6 @@ swap { update } =
 loadValue : Exp.Value -> Exp.In
 loadValue update =
     { path = update.path
-    , labelPath = update.labelPath
     , value = update.value
     , type_ = update.type_
     }
@@ -1016,10 +1015,11 @@ loadValue update =
 fromPort : Exp.In -> Exp.Update
 fromPort portUpdate =
     { path = portUpdate.path
-    , labelPath = portUpdate.labelPath
     , value =
-        D.decodeValue (valueDecoder portUpdate.type_) portUpdate.value
-            |> Result.withDefault Other
+        D.decodeValue
+            (valueDecoder portUpdate.type_)
+            portUpdate.value
+            |> Result.withDefault None
     }
 
 

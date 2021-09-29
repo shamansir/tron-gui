@@ -53,7 +53,7 @@ type Value
     | FromButton
     | FromSwitch Int -- ( Int, String )
     | FromGroup
-    | Other
+    | None
 
 
 
@@ -83,7 +83,7 @@ encode v =
         FromButton -> E.string ""
         FromGroup -> E.string ""
         FromSwitch i -> E.int i
-        Other -> E.null
+        None -> E.null
 
 
 {-| Encode value to string (regardless of the type). -}
@@ -108,7 +108,7 @@ toString v =
             ""
         FromSwitch i ->
             String.fromInt i
-        Other ->
+        None ->
             ""
 
 
@@ -118,8 +118,8 @@ getTypeString :
     -> String
 getTypeString value =
     case value of
-        Other ->
-            "ghost"
+        None ->
+            "none"
 
         FromSlider _ ->
             "slider"
@@ -230,7 +230,7 @@ fromColor proxy =
 get : Property a -> Value
 get prop =
     case prop of
-        Nil -> Other
+        Nil _ -> None
         Number control -> control |> Control.getValue |> Tuple.second |> FromSlider
         Coordinate control -> control |> Control.getValue |> Tuple.second |> FromXY
         Text control -> control |> Control.getValue |> Tuple.second |> FromInput
