@@ -754,7 +754,7 @@ collapse = Property.collapse
 {-| Add the path representing the label-based way to reach the
 particular control in the GUI tree.
 -}
-addPath : Tron msg -> Tron ( List Int, msg )
+addPath : Tron msg -> Tron ( List Path.Index, msg )
 addPath =
     Property.addPath
         >> Property.map
@@ -766,7 +766,7 @@ addPath =
 {-| Add the path representing the label-based way to reach the
 particular control in the GUI tree.
 -}
-addLabeledPath : Tron msg -> Tron ( List String, msg )
+addLabeledPath : Tron msg -> Tron ( List Path.Label, msg )
 addLabeledPath =
     Property.addLabeledPath
         >> Property.map

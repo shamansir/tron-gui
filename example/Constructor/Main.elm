@@ -83,7 +83,7 @@ types =
 
 type alias Model =
     { current : Maybe ( (Path, LabelPath) , Tron Type )
-    , expands : Dict (List Int) Bool
+    , expands : Dict (List Path.Index) Bool
     , tree : Tron ()
     }
 
@@ -480,7 +480,7 @@ typeOf =
         >> Maybe.withDefault None
 
 
-preview : Dict (List Int) Bool -> Path -> Tron Type -> Html Msg
+preview : Dict (List Path.Index) Bool -> Path -> Tron Type -> Html Msg
 preview expands current root =
     let
         helper prop =

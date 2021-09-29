@@ -33,7 +33,7 @@ propToLines : Tron () -> List String
 propToLines prop =
     case prop of
 
-        Nil -> [ "Tron.none" ]
+        Nil _ -> [ "Tron.none" ]
 
         Number (Control { min, max, step } ( _, value ) _) ->
             [

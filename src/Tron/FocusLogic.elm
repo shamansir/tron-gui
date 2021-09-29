@@ -52,20 +52,20 @@ on root path =
                 )
 
     in
-        case ( Path.toList path, root ) of
+        case ( Path.toList path, root ) of -- TODO: navigate using labels?
             ( [], _ ) -> root
-            ( x::xs, Group curFocus shape control ) ->
+            ( (idx, label)::xs, Group curFocus shape control ) ->
                 if control |> Nest.is Expanded then
-                    case goDeeper (control |> Nest.getItems) x xs of
+                    case goDeeper (control |> Nest.getItems) idx xs of
                         ( nextItems, nextFocus ) ->
                             Group
                                 (Just nextFocus)
                                 shape
                                 <| Nest.setItems nextItems <| control
                 else Group curFocus shape control
-            ( x::xs, Choice curFocus shape control ) ->
+            ( (idx, label)::xs, Choice curFocus shape control ) ->
                 if control |> Nest.is Expanded then
-                    case goDeeper (control |> Nest.getItems) x xs of
+                    case goDeeper (control |> Nest.getItems) idx xs of
                         ( nextItems, nextFocus ) ->
                             Choice
                                 (Just nextFocus)
@@ -78,7 +78,7 @@ on root path =
 find : Property msg -> Path
 find root =
     let
-        findDeeper : Maybe FocusAt -> Array ( a, Property msg ) -> List Int
+        findDeeper : Maybe FocusAt -> Array ( Path.Label, Property msg ) -> List ( Path.Index, Path.Label )
         findDeeper focus items =
             focus
                 |> Maybe.andThen
@@ -88,8 +88,8 @@ find root =
                             |> Maybe.map (Tuple.pair theFocus)
                     )
                 |> Maybe.map
-                    (\( theFocus, ( _, focusedItem ) ) ->
-                        theFocus :: helper focusedItem
+                    (\( theFocus, ( label, focusedItem ) ) ->
+                        ( theFocus, label ) :: helper focusedItem
                     )
                 |> Maybe.withDefault []
         helper prop =
@@ -147,14 +147,14 @@ focused root path =
                     if flevel < 0
                         then NotFocused
                         else FocusedBy flevel
-                ( x::xs, Group (Just (FocusAt focus)) _ control ) ->
-                    if focus == x then
+                ( (idx, _)::xs, Group (Just (FocusAt focus)) _ control ) ->
+                    if focus == idx then
                         case control |> Nest.get focus  of
                             Just ( _, item ) -> helper xs (flevel + 1) item
                             Nothing -> NotFocused
                     else NotFocused
-                ( x::xs, Choice (Just (FocusAt focus)) _ control ) ->
-                    if focus == x then
+                ( (idx, _)::xs, Choice (Just (FocusAt focus)) _ control ) ->
+                    if focus == idx then
                         case control |> Nest.get focus of
                             Just ( _, item ) -> helper xs (flevel + 1) item
                             Nothing -> NotFocused

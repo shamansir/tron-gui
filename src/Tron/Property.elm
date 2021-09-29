@@ -39,12 +39,6 @@ type alias Shape = ( Float, Float )
 type alias NestShape = ( PanelShape, CellShape )
 
 
-type alias Label = String
-
-
-type alias LabelPath = List String
-
-
 type Property a
     = Nil a
     | Number (Number.Control a)
@@ -53,8 +47,8 @@ type Property a
     | Color (Color.Control a)
     | Toggle (Toggle.Control a)
     | Action (Button.Control a)
-    | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Label, Property a ) a)
-    | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Label, Property a ) a)
+    | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Path.Label, Property a ) a)
+    | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Path.Label, Property a ) a)
     | Live (Property a)
 
 
@@ -76,7 +70,7 @@ find path =
 
 
 {- FIXME: finds by index, should use labels? -}
-find1 : Path -> Property a -> Maybe (Label, Property a)
+find1 : Path -> Property a -> Maybe (Path.Label, Property a)
 find1 path root = -- TODO: reuse `fildAll` + `tail`?
     let
         helper ipath ( label, prop ) =
@@ -104,7 +98,7 @@ findWithParent path =
     findWithParent1 path >> Maybe.map (Tuple.mapBoth Tuple.second Tuple.second)
 
 
-findWithParent1 : Path -> Property a -> Maybe ( (Label, Property a), (Label, Property a) )
+findWithParent1 : Path -> Property a -> Maybe ( (Path.Label, Property a), (Path.Label, Property a) )
 findWithParent1 path root =
     let
         allArray = findAll path root |> Array.fromList
@@ -116,7 +110,7 @@ findWithParent1 path root =
 
 
 {- FIXME: finds by index, should use labels? -}
-findAll : Path -> Property a -> List (Label, Property a)
+findAll : Path -> Property a -> List (Path.Label, Property a)
 findAll path root =
     let
         helper ipath ( label, prop ) =
@@ -183,7 +177,7 @@ fold : (Path -> Property a -> b -> b) -> b -> Property a -> b
 fold f from root =
     let
 
-        foldItems : Path -> Array ( Label, Property a ) -> b -> b
+        foldItems : Path -> Array ( Path.Label, Property a ) -> b -> b
         foldItems curPath items val =
             items
                 |> Array.indexedMap Tuple.pair
@@ -244,8 +238,8 @@ replaceMap aMap f root =
         replaceItem
             :  Path
             -> Int
-            -> ( Label, Property a )
-            -> ( Label, Property b )
+            -> ( Path.Label, Property a )
+            -> ( Path.Label, Property b )
         replaceItem parentPath index ( label, innerItem ) =
             ( label
             , helper
@@ -284,7 +278,7 @@ addPathFrom : Path -> Property a -> Property ( Path, a )
 addPathFrom from root =
     -- FIXME: should be just another `fold` actually?
     let
-        replaceItem : Path -> Int -> ( Label, Property a ) -> ( Label, Property (Path, a) )
+        replaceItem : Path -> Int -> ( Path.Label, Property a ) -> ( Path.Label, Property (Path, a) )
         replaceItem parentPath index ( label, innerItem ) =
             ( label
             , helper (parentPath |> Path.advance ( index, label )) innerItem
@@ -733,7 +727,7 @@ getPageNum prop =
         _ -> Nothing
 
 
-getSelected : Property a -> Maybe ( Label, Property a )
+getSelected : Property a -> Maybe ( Path.Label, Property a )
 getSelected prop =
     case prop of
         Choice _ _ control ->
@@ -945,7 +939,7 @@ fold3 f from root =
     -- FIXME: use this one as `fold`, just omit `LabelPath`
     let
 
-        foldItems : Path -> Array ( Label, Property a ) -> b -> b
+        foldItems : Path -> Array ( Path.Label, Property a ) -> b -> b
         foldItems curPath items val =
             items
                 --|> Array.map Tuple.second
@@ -993,7 +987,9 @@ move f propA propB = moveHelper f <| Z.Both propA propB
 moveHelper : (Z.Zipper (Property a) (Property b) -> Property c) -> Z.Zipper (Property a) (Property b) -> Property c
 moveHelper f zipper =
     let
-        merge : Z.Zipper ( Label, Property a ) ( Label, Property b ) -> ( Label, Property c )
+        merge
+             : Z.Zipper ( Path.Label, Property a ) ( Path.Label, Property b )
+            -> ( Path.Label, Property c )
         merge zipperCursor =
             case zipperCursor of
                 Z.Both (labelA, propA_) (labelB, propB_) ->
@@ -1003,9 +999,9 @@ moveHelper f zipper =
                 Z.Right (labelB, propB_) ->
                     (labelB, moveHelper f <| Z.Right propB_)
         zipItems
-             : NestControl (Label, Property a) value a
-            -> NestControl (Label, Property b) value b
-            -> Array ( Label, Property c )
+             : NestControl (Path.Label, Property a) value a
+            -> NestControl (Path.Label, Property b) value b
+            -> Array (Path.Label, Property c)
         zipItems controlA controlB =
             Z.zip
                 (Nest.getItems controlA)
@@ -1096,7 +1092,7 @@ loadChangedValues prev next =
 -- loadLiveValues = move
 
 
-append : ( Label, Property a ) -> Property a -> Property a
+append : ( Path.Label, Property a ) -> Property a -> Property a
 append ( label, prop ) toProp =
     case toProp of
         Choice focus shape control ->

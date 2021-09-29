@@ -24,7 +24,7 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 -}
 
 import Tron.Property as Property exposing (Property)
-import Tron.Control.Value exposing (Value)
+import Tron.Path as Path
 
 
 {-| `Tron a` is the tree of your controls or, recursively, any control in such tree.
@@ -39,19 +39,24 @@ type alias Tron a =
 {-| `Set msg` is just the list of controls' definitions together with their labels.
 -}
 type alias Set a =
-    List ( Property.Label, Tron a )
+    List ( Path.Label, Tron a )
 
 
 {-| The usual `map` function which allows you to substitute the messages sent through the components.
 -}
 map : (a -> b) -> Tron a -> Tron b
-map = Property.map
+map = Property.map << Maybe.map
 
 
 {-| The usual `andThen` function which allows you to change the message type
 -}
 andThen : (a -> Tron b) -> Tron a -> Tron b
-andThen = Property.andThen
+andThen f prop =
+    prop |> Property.andThen
+        ( Maybe.map f
+            >> Maybe.withDefault
+                (prop |> Property.map (always Nothing))
+        )
 
 
 {-| Same as `andThen`, but also gets current component as argument, it gets useful in mapping `Sets` or lists of controls:
@@ -68,7 +73,7 @@ andThen = Property.andThen
     |> Tron.shape (rows 3)
 -}
 with : (a -> Tron a -> Tron a) -> Tron a -> Tron a
-with = Property.with
+with f prop = andThen (\a -> f a prop) prop
 
 
 {-| The usual `map` function which allows you to substitute the messages sent through the components in a `Set`. For example, implementation of `Tron.Builder.palette`:
