@@ -176,7 +176,7 @@ controls deep =
     let
         labelFor prop =
             case prop of
-                Nil -> "ghost"
+                Nil _ -> "ghost"
                 Number _ -> "num"
                 Coordinate _ -> "coord"
                 Text _ -> "text"
