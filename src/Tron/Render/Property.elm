@@ -49,9 +49,9 @@ view
     -> State
     -> Path
     -> BoundsF
-    -> Maybe ( Label, Property msg )
+    -> Maybe ( Path.Label, Property msg )
     -> CellShape
-    -> ( Label, Property msg )
+    -> ( Path.Label, Property msg )
     -> Svg Msg_
 view theme state path bounds maybeSelectedInside cellShape ( label, prop ) =
     Svg.g
@@ -89,7 +89,7 @@ viewLabel
     -> State
     -> CellShape
     -> BoundsF
-    -> Label
+    -> Path.Label
     -> Svg msg
 viewLabel theme state cellShape bounds label =
     if CS.isSquare cellShape
@@ -109,9 +109,9 @@ viewProperty
     -> State
     -> Path
     -> BoundsF
-    -> Maybe ( Label, Property msg )
+    -> Maybe ( Path.Label, Property msg )
     -> CellShape
-    -> ( Label, Property msg )
+    -> ( Path.Label, Property msg )
     -> Svg Msg_
 viewProperty
     theme
@@ -491,7 +491,7 @@ toggle theme _ tstate bounds =
 
 
 
-button : Theme -> State -> Face -> CellShape -> Label -> BoundsF -> Svg msg
+button : Theme -> State -> Face -> CellShape -> Path.Label -> BoundsF -> Svg msg
 button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
     let
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
@@ -635,7 +635,7 @@ makeClass shape prop =
     let
         propTypeId prop_ =
             case prop_ of
-                Nil -> "ghost"
+                Nil _ -> "ghost"
                 Number _ -> "number"
                 Coordinate _ -> "coord"
                 Text _ -> "text"

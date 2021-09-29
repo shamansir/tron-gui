@@ -283,7 +283,7 @@ collapse = B.collapse
 
 
 {-| -}
-addPath : Tron -> B.Tron ( List Int, () )
+addPath : Tron -> B.Tron ( List Path.Index, () )
 addPath = B.addPath
 
 

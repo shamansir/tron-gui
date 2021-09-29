@@ -270,7 +270,7 @@ packItemsAtRoot dock size_ rp shape items =
                 )
 
         packGroupControl
-            :  List Int
+            :  List Path.Index
             -> ( PanelShape, CellShape )
             -> Position
             -> SmartPack (Cell_ Path)

@@ -16,7 +16,7 @@ import Url exposing (Url)
 import Tron.Expose.Data as Exp
 import Tron.Detach as Detach
 import Tron.Msg exposing (Msg_)
-import Tron.Path exposing (Path)
+import Tron.Path as Path
 import Tron.Msg exposing (Msg_(..))
 
 
@@ -120,7 +120,7 @@ sendReceiveJson { ack, transmit, apply } =
  -}
 sendStrings
     :
-        { transmit : ( List String, String ) -> Cmd msg
+        { transmit : ( List Path.Label, String ) -> Cmd msg
         }
     -> Communication msg
 sendStrings { transmit } =

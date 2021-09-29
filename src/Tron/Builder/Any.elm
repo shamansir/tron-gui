@@ -293,7 +293,7 @@ collapse : Tron a -> Tron a
 collapse = Property.collapse
 
 
-addPath : Tron a -> Tron ( List Int, a )
+addPath : Tron a -> Tron ( List Path.Index, a )
 addPath = Property.addPath >> Tron.map (Tuple.mapFirst Path.toList)
 
 

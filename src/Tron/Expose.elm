@@ -176,7 +176,7 @@ loadValues dict prop =
             prop
 
 
-loadStringValues : Dict LabelPath String -> Property a -> Property a
+loadStringValues : Dict (List Path.Label) String -> Property a -> Property a
 loadStringValues dict =
     Property.replace
         (\path innerProp ->
@@ -187,7 +187,7 @@ loadStringValues dict =
         )
 
 
-loadJsonValues : Dict (List Int) Exp.Value -> Property a -> Property a
+loadJsonValues : Dict (List Path.Index) Exp.Value -> Property a -> Property a
 loadJsonValues dict prop =
     dict
         |> Dict.toList

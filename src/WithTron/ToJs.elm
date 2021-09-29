@@ -57,7 +57,7 @@ import Tron.Control.Value exposing (Value)
 type alias ValueStorage = Dict LabelPath Value
 
 
-type alias ValueUpdate = (List Int, LabelPath, Value)
+type alias ValueUpdate = (List Path.Index, LabelPath, Value)
 
 
 {-| Program, backed with the path-to-value storage. -}
