@@ -5,7 +5,7 @@ module Tron.Builder exposing
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
     , live, toChoice, toSet, handleWith, toSwitch, toKnob
     , expand, collapse, shape, cells
-    , addPath, addLabeledPath, addLabels
+    , addPath, addLabels
     )
 
 
@@ -151,6 +151,7 @@ import Url.Builder as Url
 import Dict
 
 import Tron.OfValue as Def exposing (Tron)
+import Tron.Path exposing (Path)
 import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Control.Value as Value exposing (..)
@@ -189,7 +190,7 @@ type alias Tron msg = Def.Tron msg
 
 See also: `Builder.map`.
 -}
-type alias Set msg = List ( Label, Tron msg )
+type alias Set msg = List ( Path.Label, Tron msg )
 
 
 {-| Similar to `Cmd.none`, `Sub.none` etc., makes it easier to use expressions in the definition.
@@ -203,7 +204,7 @@ For example:
 
 -}
 none : Tron msg
-none = Nil
+none = Nil <| always Nothing
 
 
 {-| Use the root only once, to mark the first visible row of your UI, and put anything else inside.
@@ -602,7 +603,7 @@ strings options current toMsg =
 Requires a message that is a fallback for a case when comparison failed.
 -}
 labels
-     : ( a -> Label )
+     : ( a -> Path.Label )
     -> List a
     -> a
     -> msg
@@ -639,7 +640,7 @@ labels toLabel options current fallback toMsg =
         RepaintIceCream
 -}
 palette
-     : List ( Label, Color )
+     : List ( Path.Label, Color )
     -> Color
     -> (Color -> msg)
     -> Tron msg
@@ -695,13 +696,12 @@ buttons =
 
 {-| Convert a list of components to a set by adding labels.
 -}
-toSet : (a -> Label) -> List (Tron a) -> Set a
+toSet : (a -> Path.Label) -> List (Tron a) -> Set a
 toSet toLabel =
     List.map
         (\prop ->
             Property.get prop
-                |> Maybe.map
-                    (\handler ->
+                |> (\handler ->
                         (
                             Value.get prop
                                 |> handler
@@ -711,14 +711,13 @@ toSet toLabel =
                         )
                     )
         )
-    >> List.filterMap identity
 
 
 {-| Convert a list of components to a set by adding labels.
 
 Same as `Builder.toSet`
 -}
-addLabels : (a -> Label) -> List (Tron a) -> Set a
+addLabels : (a -> Path.Label) -> List (Tron a) -> Set a
 addLabels =
     toSet
 
@@ -751,24 +750,12 @@ collapse = Property.collapse
 -- setIcon icon = Property.collapse
 
 
-{-| Add the path representing the label-based way to reach the
-particular control in the GUI tree.
+{-| Add the path representing the way to reach particular control
+in the GUI tree.
 -}
-addPath : Tron msg -> Tron ( List Path.Index, msg )
+addPath : Tron msg -> Tron ( Path, msg )
 addPath =
     Property.addPath
-        >> Property.map
-            (\(path, handler) ->
-                handler >> Maybe.map (Tuple.pair <| Path.toList path)
-            )
-
-
-{-| Add the path representing the label-based way to reach the
-particular control in the GUI tree.
--}
-addLabeledPath : Tron msg -> Tron ( List Path.Label, msg )
-addLabeledPath =
-    Property.addLabeledPath
         >> Property.map
             (\(path, handler) ->
                 handler >> Maybe.map (Tuple.pair path)

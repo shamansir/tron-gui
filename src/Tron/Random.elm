@@ -25,9 +25,9 @@ import Tron.Control.Button as Button exposing (Face(..), Icon(..))
 import Tron.Control.Number as Number
 import Tron.Control.XY as XY
 import Tron.Control.Color as Color
+import Tron.Path as Path
 
 import Tron.Property  exposing (Property(..))
-import Tron.Property as Gui exposing ( Label )
 import Tron.Style.PanelShape exposing (PanelShape, cols)
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS exposing (..)
@@ -171,7 +171,7 @@ button =
         |> Random.map (\icon -> Control icon () ())
 
 
-controls : DeepLevel -> Random.Generator ( Array ( Label, Tron () ) )
+controls : DeepLevel -> Random.Generator ( Array ( Path.Label, Tron () ) )
 controls deep =
     let
         labelFor prop =
@@ -186,7 +186,7 @@ controls deep =
                 Choice _ _ _ -> "choice"
                 Group _ _ _ -> "group"
                 Live innerProp -> labelFor innerProp
-        addLabel : Tron () -> Random.Generator ( Label, Tron () )
+        addLabel : Tron () -> Random.Generator ( Path.Label, Tron () )
         addLabel prop =
             Random.int 0 10000
                 |> Random.map String.fromInt
@@ -202,7 +202,7 @@ controls deep =
                 )
 
 
-choice : DeepLevel -> Random.Generator ( ChoiceControl (Label, Tron ()) () )
+choice : DeepLevel -> Random.Generator ( ChoiceControl (Path.Label, Tron ()) () )
 choice deep =
     controls deep
         |> Random.andThen
@@ -232,7 +232,7 @@ choice deep =
             )
 
 
-group : DeepLevel -> Random.Generator ( GroupControl ( Label, Tron () ) () )
+group : DeepLevel -> Random.Generator ( GroupControl ( Path.Label, Tron () ) () )
 group deep =
     controls deep
         |> Random.andThen
@@ -276,7 +276,7 @@ switch =
 
 
 shapeFor
-     : Control (Array ( Label, Tron () )) val msg
+     : Control (Array ( Path.Label, Tron () )) val msg
     -> Random.Generator ( PanelShape, CS.CellShape )
 shapeFor cs =
     Random.map2
@@ -292,7 +292,7 @@ shape toFit =
 
 
 group_
-     : GroupControl (Label, Tron ()) ()
+     : GroupControl (Path.Label, Tron ()) ()
     -> Random.Generator (Tron ())
 group_ control =
     Random.map
@@ -301,7 +301,7 @@ group_ control =
 
 
 choice_
-     : ChoiceControl (Label, Tron ()) ()
+     : ChoiceControl (Path.Label, Tron ()) ()
     -> Random.Generator (Tron ())
 choice_ control =
     Random.map

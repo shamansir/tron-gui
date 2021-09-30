@@ -74,7 +74,7 @@ formLocalUrl client path =
             else
                 path
                 |> Path.toList
-                |> List.map String.fromInt
+                |> List.map (Tuple.first >> String.fromInt)
                 |> String.join "-"
             )
         ]

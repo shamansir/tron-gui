@@ -218,16 +218,11 @@ applyDeduced toDeduce tree =
 
 tryDeduce : Tron a -> Exp.DeduceIn -> Maybe Exp.In
 tryDeduce tree { path, value } =
-    tree |> findPath path
-        |> Maybe.andThen
-            (\idPath ->
-                tree
-                    |> Property.find idPath
-                    |> Maybe.map (Tuple.pair idPath)
-            )
+    tree
+        |> Property.find (Path.fromList path)
         |> Maybe.map
-            (\(idPath, prop) ->
-                { path = Path.toList idPath
+            (\prop ->
+                { path = path
                 , value =
 
                     case prop of
@@ -636,7 +631,7 @@ toProxied_ =
 toExposed_ : State -> Def.Tron a -> Def.Tron ( Exp.Out, a )
 toExposed_ state =
     toProxied_
-        >> Property.addPaths
+        >> Property.addPath
         >> Property.map
             (\(path, f) ->
                 \proxy ->
@@ -644,9 +639,8 @@ toExposed_ state =
             )
         -- FIXME: `Expose.encodeUpdate` does the same as above
         >> Def.map
-            (\( ( path, labelPath ), ( proxyVal, msg ) ) ->
+            (\( path, ( proxyVal, msg ) ) ->
                 ( { path = Path.toList path
-                  , labelPath = labelPath
                   , type_ = Value.getTypeString proxyVal
                   , value = Value.encode proxyVal
                   , stringValue = Value.toString proxyVal
