@@ -122,7 +122,7 @@ view theme gui =
             :: renderedCells
 
 
-viewProperty : Bounds -> Path -> Gui.Property msg -> Html Msg_
+viewProperty : Bounds -> Path -> Gui.Property a -> Html Msg_
 viewProperty bounds path prop =
     case prop of
         Gui.Number (Gui.Control cfg val _) ->

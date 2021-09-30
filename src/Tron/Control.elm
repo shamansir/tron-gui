@@ -73,19 +73,19 @@ update f (Control state current a) =
 
 
 -- call control with its current value
-call : (v -> msg) -> Control s v a -> Cmd msg
+call : (v -> x) -> Control s v a -> Cmd x
 call handler =
     execute__ (Tuple.first >> handler)
 
 
 -- call control with its current content
-execute : (a -> msg) -> Control s v a -> Cmd msg
+execute : (a -> x) -> Control s v a -> Cmd x
 execute handler =
     execute__ (Tuple.second >> handler)
 
 
 -- call control handler with the associated object
-execute__ : ((v, a) -> msg) -> Control s v a -> Cmd msg
+execute__ : ((v, a) -> x) -> Control s v a -> Cmd x
 execute__ handler (Control _ value a) =
     Task.succeed (value, a)
         |> Task.perform handler
@@ -109,7 +109,7 @@ getValue (Control _ v _) = v
 
 
 {-| TODO: ensure it is only used internally -}
-setValue : v -> Control s v msg -> Control s v msg
+setValue : v -> Control s v a -> Control s v a
 setValue v = update <| always v
 
 

@@ -49,9 +49,9 @@ view
     -> State
     -> Path
     -> BoundsF
-    -> Maybe ( Path.Label, Property msg )
+    -> Maybe ( Path.Label, Property a )
     -> CellShape
-    -> ( Path.Label, Property msg )
+    -> ( Path.Label, Property a )
     -> Svg Msg_
 view theme state path bounds maybeSelectedInside cellShape ( label, prop ) =
     Svg.g
@@ -109,9 +109,9 @@ viewProperty
     -> State
     -> Path
     -> BoundsF
-    -> Maybe ( Path.Label, Property msg )
+    -> Maybe ( Path.Label, Property a )
     -> CellShape
-    -> ( Path.Label, Property msg )
+    -> ( Path.Label, Property a )
     -> Svg Msg_
 viewProperty
     theme
@@ -630,7 +630,7 @@ arrow theme state form bounds =
         ]
 
 
-makeClass : CellShape -> Property msg -> String
+makeClass : CellShape -> Property a -> String
 makeClass shape prop =
     let
         propTypeId prop_ =

@@ -14,6 +14,10 @@ start : Path
 start = Path []
 
 
+length : Path -> Int
+length (Path l) = List.length l
+
+
 toList : Path -> List (Index, Label)
 toList (Path l) = l
 
@@ -78,7 +82,7 @@ toString (Path list) =
 
 
 howDeep : Path -> Int
-howDeep (Path list) = List.length list
+howDeep = length
 
 
 isRoot : Path -> Bool
@@ -110,3 +114,11 @@ toIndexPath (Path list) = list |> List.map Tuple.first
 
 toLabelPath : Path -> List Label
 toLabelPath (Path list) = list |> List.map Tuple.second
+
+
+walk : (Int -> (Index, Label) -> a) -> Path -> List a
+walk f (Path l) = List.indexedMap f l
+
+
+update : (Int -> (Index, Label) -> (Index, Label)) -> Path -> Path
+update f = Path << walk f

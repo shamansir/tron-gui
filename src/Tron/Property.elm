@@ -324,6 +324,7 @@ getPathsMappingByIndex : Property a -> Dict (List Path.Index) (List Path.Label)
 getPathsMappingByIndex =
     getPathsMappingByIndex_ >> Dict.map (always Path.toLabelPath)
 
+
 getPathsMappingByIndex_ : Property a -> Dict (List Path.Index) Path
 getPathsMappingByIndex_ =
     let
@@ -673,7 +674,7 @@ noGhosts : List (Property a) -> List (Property a)
 noGhosts = List.filter (not << isGhost)
 
 
-run : Property msg -> Cmd msg
+run : Property x -> Cmd x
 run prop =
     case prop of
         Nil msg -> Task.succeed msg |> Task.perform identity
@@ -724,6 +725,18 @@ getPageNum prop =
             Just <| Nest.getPage control
         Live innerProp ->
             getPageNum innerProp
+        _ -> Nothing
+
+
+getItems : Property a -> Maybe (Array (Path.Label, Property a))
+getItems prop =
+    case prop of
+        Choice _ _ control ->
+            Just <| Nest.getItems control
+        Group _ _ control ->
+            Just <| Nest.getItems control
+        Live innerProp ->
+            getItems innerProp
         _ -> Nothing
 
 
@@ -980,11 +993,18 @@ zip =
     in move join
 
 
-move : (Z.Zipper (Property a) (Property b) -> Property c) -> Property a -> Property b -> Property c
+move
+     : (Z.Zipper (Property a) (Property b) -> Property c)
+    -> Property a
+    -> Property b
+    -> Property c
 move f propA propB = moveHelper f <| Z.Both propA propB
 
 
-moveHelper : (Z.Zipper (Property a) (Property b) -> Property c) -> Z.Zipper (Property a) (Property b) -> Property c
+moveHelper
+     : (Z.Zipper (Property a) (Property b) -> Property c)
+    -> Z.Zipper (Property a) (Property b)
+    -> Property c
 moveHelper f zipper =
     let
         merge
