@@ -12,9 +12,10 @@ import Tron.Property exposing (..)
 import Tron.Control.Toggle exposing (..)
 import Tron.Control.Nest exposing (..)
 import Tron.Render.Util exposing (..)
+import Tron.Path as Path
 
 
-boundsDebug : BoundsF -> Svg msg
+boundsDebug : BoundsF -> Svg a
 boundsDebug b =
     Svg.g []
         [ textAt 5 5 <| "(" ++ String.fromFloat b.x ++ "," ++ String.fromFloat b.y ++ ")"
@@ -22,10 +23,10 @@ boundsDebug b =
         ]
 
 
-propertyDebug : ( Label, Property msg ) -> Svg msg
+propertyDebug : ( Path.Label, Property a ) -> Svg a
 propertyDebug ( label, prop )  =
     case prop of
-        Nil ->
+        Nil _ ->
             Svg.g []
                 [ textAt 5 5 <| label ++ " ghost" ]
         Number (Control { min, step, max } ( maybeFrom, val ) _) ->

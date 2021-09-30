@@ -10,7 +10,7 @@ import Array
 import Array exposing (Array)
 
 
-clear : Property msg -> Property msg
+clear : Property a -> Property a
 clear =
     replace
         (\_ prop ->
@@ -23,7 +23,7 @@ clear =
         )
 
 
-on : Property msg -> Path -> Property msg
+on : Property a -> Path -> Property a
 on root path =
     let
 
@@ -54,7 +54,7 @@ on root path =
     in
         case ( Path.toList path, root ) of -- TODO: navigate using labels?
             ( [], _ ) -> root
-            ( (idx, label)::xs, Group curFocus shape control ) ->
+            ( (idx, _)::xs, Group curFocus shape control ) ->
                 if control |> Nest.is Expanded then
                     case goDeeper (control |> Nest.getItems) idx xs of
                         ( nextItems, nextFocus ) ->
@@ -63,7 +63,7 @@ on root path =
                                 shape
                                 <| Nest.setItems nextItems <| control
                 else Group curFocus shape control
-            ( (idx, label)::xs, Choice curFocus shape control ) ->
+            ( (idx, _)::xs, Choice curFocus shape control ) ->
                 if control |> Nest.is Expanded then
                     case goDeeper (control |> Nest.getItems) idx xs of
                         ( nextItems, nextFocus ) ->
@@ -75,10 +75,10 @@ on root path =
             ( _, _ ) -> root
 
 
-find : Property msg -> Path
+find : Property a -> Path
 find root =
     let
-        findDeeper : Maybe FocusAt -> Array ( Path.Label, Property msg ) -> List ( Path.Index, Path.Label )
+        findDeeper : Maybe FocusAt -> Array ( Path.Label, Property a ) -> List ( Path.Index, Path.Label )
         findDeeper focus items =
             focus
                 |> Maybe.andThen
@@ -102,43 +102,67 @@ find root =
     in Path.fromList <| helper root
 
 
-shift : Direction -> Property msg -> Property msg
+shift : Direction -> Property a -> Property a
 shift direction root =
     let
+        currentFocus : Path
         currentFocus = find root
-        curFocusArr = currentFocus |> Path.toList |> Array.fromList
-        indexOfLast = Array.length curFocusArr - 1
-        focusedOnSmth = Array.length curFocusArr > 0
-        -- FIXME: consider pages (move page when focus changed)
+        maybeFocusedProp =
+            root
+                |> Tron.Property.find currentFocus
+        nextItems =
+            root
+                |> Tron.Property.find currentFocus
+                |> Maybe.andThen Tron.Property.getItems
+                |> Maybe.withDefault Array.empty
+        --curFocusArr = currentFocus |> Path.toList |> Array.fromList
+        indexOfLast = Path.length currentFocus
+        focusedOnSmth = Path.length currentFocus > 0
+        -- FIXME: consider pages (move page when focus was changed)
+        moveLastTo nextIndex =
+            \idx (focusIdx, label) ->
+                if idx /= indexOfLast
+                    then (focusIdx, label)
+                    else
+                        case nextItems |> Array.get (nextIndex idx) of
+                            Just (newLabel, _) ->
+                                (nextIndex idx, newLabel)
+                            Nothing -> (focusIdx, label)
         nextFocus =
-            Path.fromList <| Array.toList <| -- FIXME: causes a lot of conversions
-                case direction of
-                    Up ->
-                        curFocusArr |> Array.push 0
-                    Down ->
-                        curFocusArr |> Array.slice 0 -1
-                    Left ->
-                        if focusedOnSmth then
-                            curFocusArr
-                                |> Array.indexedMap
-                                    (\idx item ->
-                                        if idx /= indexOfLast then item
-                                        else item - 1
-                                    )
-                        else Array.fromList [ 0 ] -- FIXME: causes a lot of conversions
-                    Right ->
-                        if focusedOnSmth then
-                            curFocusArr
-                                |> Array.indexedMap
-                                    (\idx item ->
-                                        if idx /= indexOfLast then item
-                                        else item + 1
-                                    )
-                        else Array.fromList [ 0 ] -- FIXME: causes a lot of conversions
+            case direction of
+                Up ->
+                    case Array.get 0 nextItems of
+                        Just ( label, _ ) ->
+                            currentFocus |> Path.advance ( 0, label )
+                        Nothing ->
+                            currentFocus
+                Down ->
+                    currentFocus
+                        |> Path.pop
+                        |> Maybe.map Tuple.first
+                        |> Maybe.withDefault currentFocus
+                Left ->
+                    if focusedOnSmth then
+                        currentFocus
+                            |> Path.update
+                                (moveLastTo <| \idx -> idx - 1)
+                    else
+                        case nextItems |> Array.get 0  of
+                            Just ( label, _ ) -> Path.start |> Path.advance ( 0, label )
+                            Nothing -> Path.start
+                Right ->
+                    if focusedOnSmth then
+                        currentFocus
+                            |> Path.update
+                                (moveLastTo <| \idx -> idx + 1)
+                    else
+                        case nextItems |> Array.get 0  of
+                            Just ( label, _ ) -> Path.start |> Path.advance ( 0, label )
+                            Nothing -> Path.start
     in on (clear root) nextFocus
 
 
-focused : Property msg -> Path -> Focused
+focused : Property a -> Path -> Focused
 focused root path =
     let
         helper iPath flevel prop =

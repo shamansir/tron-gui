@@ -29,10 +29,10 @@ import Tron.Style.CellShape as CS
 
 
 
-runProperty : Value -> Property msg -> Cmd msg
+runProperty : Value -> Property x -> Cmd x
 runProperty value property =
     case ( property, value ) of
-        ( Nil msg, _ ) ->
+        ( Nil _, _ ) ->
             Cmd.none
             -- Task.succeed msg |> Task.perform identity
 
@@ -71,13 +71,13 @@ runProperty value property =
             Cmd.none
 
 
-run : Exp.Update -> Property msg -> Cmd msg
+run : Exp.Update -> Property x -> Cmd x
 run { path, value } prop =
     case path of
         [] ->
             runProperty value prop
 
-        ( id, label ) :: next ->
+        ( id, _ ) :: next ->
             case prop of
                 Group _ _ control ->
                     case control |> Nest.get id of
@@ -135,7 +135,7 @@ apply { path, value } prop =
         [] ->
             applyProperty value prop
 
-        ( id, label ) :: next -> -- id :: next
+        ( _, label ) :: next -> -- id :: next
             case prop of
                 Group focus shape control ->
                     control
@@ -691,13 +691,13 @@ encodeNested path items =
             items
 
 
-encode : Property msg -> Exp.Property
+encode : Property a -> Exp.Property
 encode =
     encodePropertyAt Path.start
 
 
 {-
-   encodeUpdate : Maybe HashId -> Path -> Property msg -> RawUpdate
+   encodeUpdate : Maybe HashId -> Path -> Property a -> RawUpdate
    encodeUpdate maybeClient path prop =
        let
            ( type_, value ) =

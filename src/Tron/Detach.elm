@@ -136,7 +136,7 @@ ack (Detach d) =
     d.ack <| Exp.encodeAck d.client
 
 
-send : Detach msg -> Path -> Property msg -> Cmd msg
+send : Detach msg -> Path -> Property a -> Cmd a
 send (Detach d) path =
     d.send << Exp.encodeUpdate d.client path
 
@@ -191,4 +191,3 @@ stateToMaybe state =
     case state of
         Detached -> Nothing
         AttachedAt path -> Just path
-
