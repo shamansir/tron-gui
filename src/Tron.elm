@@ -33,7 +33,8 @@ To build your interface, use the helpers from the `Tron.Builder` module or any o
 `Tron.Builder.Proxy`, `Tron.Builder.Unit` or `Tron.Builder.String`
 -}
 type alias Tron a =
-    Property (Maybe a)
+    Property a
+    -- Property (Maybe a)
 
 
 {-| `Set msg` is just the list of controls' definitions together with their labels.
@@ -45,18 +46,23 @@ type alias Set a =
 {-| The usual `map` function which allows you to substitute the messages sent through the components.
 -}
 map : (a -> b) -> Tron a -> Tron b
-map = Property.map << Maybe.map
+map = Property.map
+-- map = Property.map << Maybe.map
 
 
 {-| The usual `andThen` function which allows you to change the message type
 -}
 andThen : (a -> Tron b) -> Tron a -> Tron b
+andThen = Property.andThen
+{-
 andThen f prop =
     prop |> Property.andThen
         ( Maybe.map f
             >> Maybe.withDefault
                 (prop |> Property.map (always Nothing))
         )
+
+-}
 
 
 {-| Same as `andThen`, but also gets current component as argument, it gets useful in mapping `Sets` or lists of controls:

@@ -25,6 +25,7 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 import Tron as T
 import Tron.Property as Property exposing (Property)
 import Tron.Control.Value as Value exposing (Value)
+import Tron.Path as Path
 
 
 {-| `Tron a` is the tree of your controls or, recursively, any control in such tree.
@@ -33,13 +34,13 @@ To build your interface, use the helpers from the `Tron.Builder` module or any o
 `Tron.Builder.Proxy`, `Tron.Builder.Unit` or `Tron.Builder.String`
 -}
 type alias Tron a =
-    T.Tron (Value -> Maybe a)
+    T.Tron (Value -> Maybe a) -- FIXME: just store `Maybe a` and use converters with the current value
 
 
 {-| `Set a` is just the list of controls' definitions together with their labels.
 -}
 type alias Set a =
-    List ( Property.Label, Tron a )
+    List ( Path.Label, Tron a )
 
 
 {-| The usual `map` function which allows you to change the contained value to a new one.
@@ -56,7 +57,7 @@ andThen f prop =
         (\pF ->
             case pF <| Value.get prop of
                 Just v -> f v
-                Nothing -> Property.Nil
+                Nothing -> prop |> Property.map (always <| always Nothing)
         )
         prop
 
