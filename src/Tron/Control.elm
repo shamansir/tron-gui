@@ -100,8 +100,8 @@ get (Control _ _ a) = a
 
 
 {-| TODO: ensure it is only used internally -}
-set : a -> Control s v a -> Control s v a
-set a (Control setup value _) = Control setup value a
+set : b -> Control s v a -> Control s v b
+set b (Control setup value _) = Control setup value b
 
 
 getValue : Control s v a -> v

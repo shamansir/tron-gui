@@ -164,6 +164,10 @@ toStrExposed =
             )
 
 
+proxy : Property a -> Property Value
+proxy = Property.proxy
+
+
 {-| Extract the value from the control and put it along with a subject of the functor.
 -}
 reflect : Property a -> Property ( Value, a )

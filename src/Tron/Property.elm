@@ -1158,3 +1158,23 @@ backward item inProp =
             Group focus shape
                 (control |> Nest.backward item)
         _ -> inProp
+
+
+map2 : (a -> b -> c) -> Property a -> Property b -> Property c
+map2 f =
+    map << get << map f
+
+
+map3 : (a -> b -> c -> d) -> Property a -> Property b -> Property c -> Property d
+map3 f =
+    map2 << get << map f
+
+
+map4 : (a -> b -> c -> d -> e) -> Property a -> Property b -> Property c -> Property d -> Property e
+map4 f =
+    map3 << get << map f
+
+
+map5 : (a -> b -> c -> d -> e -> f) -> Property a -> Property b -> Property c -> Property d -> Property e -> Property f
+map5 f =
+    map4 << get << map f
