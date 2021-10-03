@@ -1,6 +1,6 @@
 module Tron.Expose.Convert
     exposing
-    ( toUnit, toExposed, toProxied, toStrExposed
+    ( toUnit, toExposed
     , reflect, lift, evaluate
     , toDeferredRaw, encodeAck
     )
@@ -29,6 +29,7 @@ import Tron exposing (Tron)
 import Tron.OfValue as Def
 import Tron.Control as Control
 import Tron.Control.Nest as Nest
+import Tron.Expose as Exp
 import Tron.Expose.Data as Exp
 import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
@@ -39,71 +40,6 @@ import Tron.Control.Value as Value exposing (Value(..))
 -}
 toUnit : Tron a -> Tron ()
 toUnit = Tron.toUnit
-
-
-{-| Store a `Value` together with message, which mirrors a value
-as a data type to make it easier to connect with other APIs, where message is not
-important, such as `dat.gui`, or send it to ports along with sending it to user.
-
-Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
--}
-toProxied : Tron a -> Tron ( Value, a )
-toProxied prop =
-    let
-        convertWith f =
-            Control.reflect
-                >> Control.map (Tuple.mapFirst f)
-    in
-    case prop of
-        Nil ->
-            Nil
-
-        Number control ->
-            control
-                |> convertWith (Tuple.second >> FromSlider)
-                |> Number
-
-        Coordinate control ->
-            control
-                |> convertWith (Tuple.second >> FromXY)
-                |> Coordinate
-
-        Text control ->
-            control
-                |> convertWith (Tuple.second >> FromInput)
-                |> Text
-
-        Color control ->
-            control
-                |> convertWith (Tuple.second >> FromColor)
-                |> Color
-
-        Toggle control ->
-            control
-                |> convertWith FromToggle
-                |> Toggle
-
-        Action control ->
-            control
-                |> convertWith (always FromButton)
-                |> Action
-
-        Choice focus shape control ->
-            control
-                |> Nest.mapItems (Tuple.mapSecond toProxied)
-                |> convertWith (.selected >> FromChoice)
-                |> Choice focus shape
-
-        Group focus shape control ->
-            control
-                |> Nest.mapItems (Tuple.mapSecond toProxied)
-                |> convertWith (always FromGroup)
-                -- TODO: notify expanded/collapsed/detached?
-                |> Group focus shape
-
-        Live innerProp ->
-            Live <| toProxied innerProp
-
 
 
 -- FIXME: make it: Tron msg -> Tron RawOutUpdate and use `Property.map2` to join
@@ -119,16 +55,14 @@ the required information about the value, such as:
 
 Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
-toExposed : Tron a -> Tron ( Exp.Value, a )
+toExposed : Tron a -> Tron Exp.Value
 toExposed =
-    toProxied
-        >> Property.addPaths
+    reflect
+        >> Property.addPath
         -- FIXME: `Expose.encodeUpdate` does the same as above
-        >> Property.map
+        >> Tron.map
             (\( path, ( proxyVal, msg ) ) ->
-                ( proxyVal |> proxyToRaw path
-                , msg
-                )
+                proxyVal |> proxyToRaw path
             )
 
 
@@ -164,85 +98,10 @@ toStrExposed =
             )
 
 
-proxy : Property a -> Property Value
-proxy = Property.proxy
-
-
 {-| Extract the value from the control and put it along with a subject of the functor.
 -}
-reflect : Property a -> Property ( Value, a )
-reflect prop =
-    case prop of
-        Nil -> Nil
-        Number control ->
-            Number
-                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromSlider)
-                <| Control.reflect
-                <| control
-        Coordinate control ->
-            Coordinate
-                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromXY)
-                <| Control.reflect
-                <| control
-        Text control ->
-            Text
-                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromInput)
-                <| Control.reflect
-                <| control
-        Color control ->
-            Color
-                <| Control.map (Tuple.mapFirst Tuple.second >> Tuple.mapFirst FromColor)
-                <| Control.reflect
-                <| control
-        Toggle control ->
-            Toggle
-                <| Control.map (Tuple.mapFirst FromToggle)
-                <| Control.reflect
-                <| control
-        Action control ->
-            Action
-                <| Control.map (Tuple.mapFirst <| always FromButton)
-                <| Control.reflect
-                <| control
-        Choice focus shape control ->
-            Choice focus shape
-                <| Nest.mapItems (Tuple.mapSecond reflect)
-                <| Control.map (Tuple.mapFirst <| .selected >> FromChoice)
-                <| Control.reflect
-                <| control
-        Group focus shape control ->
-            Group focus shape
-                <| Nest.mapItems (Tuple.mapSecond reflect)
-                <| Control.map (Tuple.mapFirst <| always FromGroup)
-                <| Control.reflect
-                <| control
-        Live innerProp ->
-            Live
-                <| reflect innerProp
-
-
-{-| Create proxied property. Notice that It will return the `a` disregardless of what `Value` is. -}
-lift : Property a -> Property (Value -> Maybe a)
-lift =
-    Property.map (always << Just)
-
-
-
-{-| Use current value of the control and apply it to the handler. -}
-evaluate : Property (Value -> Maybe a) -> Property (Maybe a)
-evaluate =
-    reflect
-    >> Property.map (\(v, handler) -> handler v)
-
-
-{-| -}
-toDeferredRaw : Property a -> Property (Value -> Maybe Exp.Value)
-toDeferredRaw =
-    Property.addPaths
-        >> Property.map
-            (\(path, _) ->
-                Just << proxyToRaw path
-            )
+reflect : Tron a -> Tron Value
+reflect = Exp.reflect >> Property.map Just
 
 
 -- {-| -}
