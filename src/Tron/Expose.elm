@@ -1138,3 +1138,52 @@ runExposed prop =
             Task.succeed rawUpdate
                 |> Task.perform identity
         Nothing -> Cmd.none -}
+
+
+proxy : Property a -> Property Value
+proxy prop =
+    case prop of
+        Nil _ -> Nil None
+        Number control ->
+            control
+                |> Control.move
+                |> Control.map (Tuple.second >> FromSlider)
+                |> Number
+        Coordinate control ->
+            control
+                |> Control.move
+                |> Control.map (Tuple.second >> FromXY)
+                |> Coordinate
+        Text control ->
+            control
+                |> Control.move
+                |> Control.map (Tuple.second >> FromInput)
+                |> Text
+        Color control ->
+            control
+                |> Control.move
+                |> Control.map (Tuple.second >> FromColor)
+                |> Color
+        Toggle control ->
+            control
+                |> Control.move
+                |> Control.map FromToggle
+                |> Toggle
+        Action control ->
+            control
+                |> Control.set FromButton
+                |> Action
+        Choice focus shape control ->
+            control
+                |> Control.move
+                |> Control.map (.selected >> FromSwitch)
+                |> Nest.mapItems (Tuple.mapSecond proxy)
+                |> Choice focus shape
+        Group focus shape control ->
+            control
+                |> Control.set FromGroup
+                |> Nest.mapItems (Tuple.mapSecond proxy)
+                |> Group focus shape
+        Live innerProp ->
+            proxy innerProp
+                |> Live
