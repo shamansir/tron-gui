@@ -22,7 +22,7 @@ import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
 import Tron.Control.Value as Value exposing (Value(..))
 import Tron.Expose.Data as Exp
-import Tron.Expose.Convert as Exp
+-- import Tron.Expose.Convert as Exp
 import Tron.Style.Theme as Theme
 import Tron.Style.PanelShape as PS
 import Tron.Style.CellShape as CS
@@ -178,7 +178,7 @@ loadValues dict prop =
 
 loadStringValues : Dict (List Path.Label) String -> Property a -> Property a
 loadStringValues dict =
-    Property.replace
+    Property.foldProperty
         (\path innerProp ->
             dict
                 |> Dict.get (Path.toLabelPath path)
@@ -1118,13 +1118,6 @@ decodeToggle =
         ]
 
 
-freshRun : Property (Value -> Maybe msg) -> Cmd msg
-freshRun =
-    Exp.evaluate
-    -- >> Property.run
-    >> execute
-
-
 execute : Property (Maybe msg) -> Cmd msg
 execute =
     Property.get
@@ -1140,8 +1133,8 @@ runExposed prop =
         Nothing -> Cmd.none -}
 
 
-proxy : Property a -> Property Value
-proxy prop =
+reflect : Property a -> Property Value
+reflect prop =
     case prop of
         Nil _ -> Nil None
         Number control ->
@@ -1177,13 +1170,13 @@ proxy prop =
             control
                 |> Control.move
                 |> Control.map (.selected >> FromSwitch)
-                |> Nest.mapItems (Tuple.mapSecond proxy)
+                |> Nest.mapItems (Tuple.mapSecond reflect)
                 |> Choice focus shape
         Group focus shape control ->
             control
                 |> Control.set FromGroup
-                |> Nest.mapItems (Tuple.mapSecond proxy)
+                |> Nest.mapItems (Tuple.mapSecond reflect)
                 |> Group focus shape
         Live innerProp ->
-            proxy innerProp
+            reflect innerProp
                 |> Live

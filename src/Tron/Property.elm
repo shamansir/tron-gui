@@ -59,7 +59,6 @@ defaultNestShape : NestShape
 defaultNestShape = ( PS.auto, CS.single )
 
 
-
 -- Recursively try to find the control in the tree, following the given path.
 -- When found and the path is valid, respond with the inner control.
 -- When the path is invalid (no controls located following these indices), return `Nothing`.
@@ -163,14 +162,52 @@ map f prop =
             Live <| map f innerProp
 
 
-{- zip
-    : (Maybe a -> Maybe b -> c)
+mapWithPath
+    :  (Path -> a -> b)
     -> Property a
     -> Property b
-    -> Property c
-zip f propA propB =
-    move ()
--}
+mapWithPath f root =
+    -- FIXME: should be just another `fold` actually?
+
+    let
+
+        mapItemWithPath
+            :  Path
+            -> Int
+            -> ( Path.Label, Property a )
+            -> ( Path.Label, Property b )
+        mapItemWithPath parentPath index ( label, innerItem ) =
+            ( label
+            , helper
+                ( parentPath |> Path.advance ( index, label ) )
+                innerItem
+            )
+
+        helper : Path -> Property a -> Property b
+        helper curPath item =
+            case item of
+                Choice focus shape control ->
+                    Choice
+                        focus
+                        shape
+                        (control
+                            |> Nest.indexedMapItems (mapItemWithPath curPath)
+                            |> Control.map (f curPath)
+                        )
+                Group focus shape control ->
+                    Group
+                        focus
+                        shape
+                        (control
+                            |> Nest.indexedMapItems (mapItemWithPath curPath)
+                            |> Control.map (f curPath)
+                        )
+                Live innerProp ->
+                    Live <| helper curPath innerProp
+                _ -> map (f curPath) item
+
+    in
+        helper Path.start root
 
 
 fold : (Path -> Property a -> b -> b) -> b -> Property a -> b
@@ -204,6 +241,39 @@ fold f from root =
         helper Path.start root from
 
 
+foldProperty : (Path -> Property a -> Property a) -> Property a -> Property a
+foldProperty f root =
+    let
+
+        foldItem : Path -> Int -> ( Path.Label, Property a ) -> ( Path.Label, Property a )
+        foldItem parentPath index ( label, item ) =
+            ( label, helper (parentPath |> Path.advance (index, label)) item )
+
+        helper : Path -> Property a -> Property a
+        helper curPath prop =
+            case prop of
+                Choice focus shape control ->
+                    f curPath
+                        <| Choice
+                            focus
+                            shape
+                        <| (control
+                                |> Nest.indexedMapItems (foldItem curPath))
+                Group focus shape control ->
+                    f curPath
+                        <| Group
+                            focus
+                            shape
+                        <| (control
+                                |> Nest.indexedMapItems (foldItem curPath))
+                -- Live innerProp ->
+                --     helper curPath innerProp val
+                _ -> f curPath prop
+
+    in
+        helper Path.start root
+
+
 unfold : Property a -> List (Path, Property a)
 unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
@@ -211,9 +281,10 @@ unfold =
 
 andThen : (a -> Property b) -> Property a -> Property b
 andThen = fold1
+--andThen f = foldProperty <| always (get >> f)
 
 
-with : (a -> Property a -> Property b) -> Property a -> Property b
+{-with : (a -> Property a -> Property b) -> Property a -> Property b
 -- FIXME: should be changed to `andThen` with getting rid of function in Control
 with f prop =
     andThen (\v -> f v prop) prop
@@ -221,65 +292,21 @@ with f prop =
 
 
 -- `replace` -- find better name
-replace : (Path -> Property a -> Property a) -> Property a -> Property a
-replace = replaceMap <| always identity
+andThenWithPath : (Path -> Property a -> Property b) -> Property a -> Property b
+andThenWithPath f prop =
+    prop
+        |> map2
+            Tuple.pair
+            (addPath prop)
+        |> andThen -}
 
 
-replaceMap
-    :  (Path -> a -> b)
-    -> (Path -> Property b -> Property b)
-    -> Property a
-    -> Property b
-replaceMap aMap f root =
-    -- FIXME: should be just another `fold` actually?
-
-    let
-
-        replaceItem
-            :  Path
-            -> Int
-            -> ( Path.Label, Property a )
-            -> ( Path.Label, Property b )
-        replaceItem parentPath index ( label, innerItem ) =
-            ( label
-            , helper
-                ( parentPath |> Path.advance ( index, label ) )
-                innerItem
-            )
-
-        helper : Path -> Property a -> Property b
-        helper curPath item =
-            case item of
-                Choice focus shape control ->
-                    f curPath
-                        <| Choice
-                            focus
-                            shape
-                        <| (control
-                                |> Nest.indexedMapItems (replaceItem curPath)
-                                |> Control.map (aMap curPath))
-                Group focus shape control ->
-                    f curPath
-                        <| Group
-                            focus
-                            shape
-                        <| (control
-                                |> Nest.indexedMapItems (replaceItem curPath)
-                                |> Control.map (aMap curPath))
-                Live innerProp ->
-                    Live <| helper curPath innerProp
-                _ -> f curPath <| map (aMap curPath) <| item
-
-    in
-        helper Path.start root
-
-
-addPathFrom : Path -> Property a -> Property ( Path, a )
-addPathFrom from root =
+pathifyFrom : Path -> Property a -> Property Path
+pathifyFrom from root =
     -- FIXME: should be just another `fold` actually?
     let
-        replaceItem : Path -> Int -> ( Path.Label, Property a ) -> ( Path.Label, Property (Path, a) )
-        replaceItem parentPath index ( label, innerItem ) =
+        pathifyItem : Path -> Int -> ( Path.Label, Property a ) -> ( Path.Label, Property (Path, a) )
+        pathifyItem parentPath index ( label, innerItem ) =
             ( label
             , helper (parentPath |> Path.advance ( index, label )) innerItem
             )
@@ -293,7 +320,7 @@ addPathFrom from root =
                         focus
                         shape
                         (control
-                            |> Nest.indexedMapItems (replaceItem curPath)
+                            |> Nest.indexedMapItems (pathifyItem curPath)
                             |> Control.map (Tuple.pair curPath)
                         )
 
@@ -302,7 +329,7 @@ addPathFrom from root =
                         focus
                         shape
                         (control
-                            |> Nest.indexedMapItems (replaceItem curPath)
+                            |> Nest.indexedMapItems (pathifyItem curPath)
                             |> Control.map (Tuple.pair curPath)
                         )
 
@@ -312,12 +339,20 @@ addPathFrom from root =
                 prop -> map (Tuple.pair curPath) prop
 
     in
-        helper from root
+        helper from root |> map Tuple.first
 
 
-addPath : Property a -> Property ( Path, a )
-addPath =
-    replaceMap (Tuple.pair) (always identity)
+pathify : Property a -> Property Path
+pathify =
+    pathifyFrom Path.start
+
+
+pathifyWithValue : Property a -> Property ( Path, a )
+pathifyWithValue prop =
+    map2
+        Tuple.pair
+        (pathify prop)
+        prop
 
 
 getPathsMappingByIndex : Property a -> Dict (List Path.Index) (List Path.Label)
@@ -390,7 +425,7 @@ changeLabel path newLabel  =
 
 updateAt : Path -> (Property a -> Property a) -> Property a -> Property a
 updateAt path f =
-    replace
+    foldProperty
         <| \otherPath item ->
             if Path.equal otherPath path then f item else item
 
@@ -606,7 +641,7 @@ switchPageAt path pageNum =
 
 detachAll : Property a -> Property a
 detachAll =
-    replace <| always detach
+    foldProperty <| always detach
 
 
 toggle : Property a -> Property a
@@ -1042,8 +1077,8 @@ moveHelper f zipper =
         _ -> f zipper
 
 
-setValueTo : Property a -> Property a -> Property a -- FIXME: return `Maybe`
-setValueTo from to =
+loadValueFrom : Property a -> Property a -> Property a -- FIXME: return `Maybe`
+loadValueFrom from to =
     case ( from, to ) of
         (Number controlA, Number controlB) ->
             Number <| Control.setValue (Control.getValue controlA) <| controlB
@@ -1084,8 +1119,8 @@ changesBetween prev next =
                     |> Maybe.withDefault changes
             else changes
         )
-        (prev |> addPath)
-        (next |> addPath)
+        (prev |> pathifyWithValue)
+        (next |> pathifyWithValue)
         []
     |> List.map insideOut
 
@@ -1099,7 +1134,7 @@ loadValues =
         (Z.run
             identity -- FIXME: right should set `prop` to `Nil`?
             identity
-            setValueTo
+            loadValueFrom
         )
 
 
