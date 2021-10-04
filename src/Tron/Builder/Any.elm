@@ -31,7 +31,7 @@ import Tron.Builder.Choice as Choice
 
 
 none : Tron a
-none = Nil
+none = Nil Nothing
 
 
 root : Set a -> a -> Tron a
@@ -47,7 +47,7 @@ float : Axis -> Float -> a -> Tron a
 float axis value a =
     Number
         <| Control axis ( Nothing, value )
-        a
+        <| Just a
 
 
 
@@ -67,7 +67,7 @@ xy : ( Axis, Axis ) -> ( Float, Float ) -> a -> Tron a
 xy axes value a =
     Coordinate
         <| Control axes ( Nothing, value )
-        <| a
+        <| Just a
 
 
 coord : ( Axis, Axis ) -> ( Float, Float ) -> a -> Tron a
@@ -80,7 +80,7 @@ input toString value a = -- FIXME: accept just `String` and `value`
         <| Control
             ()
             ( Ready, toString value )
-            a
+        <| Just a
 
 
 text : String -> a -> Tron a
@@ -89,7 +89,7 @@ text value a =
         <| Control
             ()
             ( Ready, value )
-            a
+        <| Just a
 
 
 color : Color -> a -> Tron a
@@ -98,7 +98,7 @@ color value a =
         <| Control
             ()
             ( Nothing, value )
-            a
+        <| Just a
 
 
 button : a -> Tron a
@@ -138,7 +138,7 @@ buttonByFace face_ a =
         <| Control
             face_
             ()
-            a
+        <| Just a
 
 
 toggle : Bool -> a -> Tron a
@@ -147,7 +147,7 @@ toggle value a =
         <| Control
             ()
             (boolToToggle value)
-            a
+        <| Just a
 
 
 bool : Bool -> a -> Tron a
@@ -166,7 +166,7 @@ nest items a =
             , face = Nothing
             , page = 0
             }
-            a
+            <| Just a
 
 
 useColor : Color -> Face
@@ -181,8 +181,10 @@ choice set current =
     Choice.helper
         Property.defaultNestShape
         set
-        current
+        (Just current)
         (==)
+    |> Property.map
+        (\(n, maybeVal) -> maybeVal |> Maybe.map (Tuple.pair n))
 
 
 choiceBy
@@ -194,14 +196,18 @@ choiceBy set current compare =
     Choice.helper
         Property.defaultNestShape
         set
-        current
-        compare
+        (Just current)
+        (\maybeA maybeB ->
+             Maybe.map2 compare maybeA maybeB |> Maybe.withDefault False
+        )
+    |> Property.map
+        (\(n, maybeVal) -> maybeVal |> Maybe.map (Tuple.pair n))
 
 
 strings
-     : List Label
-    -> Label
-    -> Tron (Int, Label)
+     : List Path.Label
+    -> Path.Label
+    -> Tron (Int, Path.Label)
 strings options current =
     choice
         (options
@@ -214,10 +220,10 @@ strings options current =
 
 
 labels
-     : ( a -> Label )
+     : ( a -> Path.Label )
     -> List a
     -> a
-    -> Tron ( Int, Label )
+    -> Tron ( Int, Path.Label )
 labels toLabel options current =
     {- let
         labelToValue =
@@ -237,7 +243,7 @@ labels toLabel options current =
 
 
 palette
-     : List ( Label, Color )
+     : List ( Path.Label, Color )
     -> Color
     -> Tron ( Int, Color )
 palette options current =
@@ -265,7 +271,7 @@ buttons =
     List.map button
 
 
-toSet : (a -> Label) -> List (Tron a) -> Set a
+toSet : (a -> Path.Label) -> List (Tron a) -> Set a
 toSet toLabel =
     List.map
         (\prop ->
@@ -280,7 +286,7 @@ toSet toLabel =
     >> List.filterMap identity
 
 
-addLabels : (a -> Label) -> List (Tron a) -> Set a
+addLabels : (a -> Path.Label) -> List (Tron a) -> Set a
 addLabels =
     toSet
 
@@ -291,14 +297,6 @@ expand = Property.expand
 
 collapse : Tron a -> Tron a
 collapse = Property.collapse
-
-
-addPath : Tron a -> Tron ( List Path.Index, a )
-addPath = Property.addPath >> Tron.map (Tuple.mapFirst Path.toList)
-
-
-addLabeledPath : Tron a -> Tron ( List String, a )
-addLabeledPath = Property.addLabeledPath
 
 
 toChoice : Tron a -> Tron a

@@ -5,7 +5,6 @@ module Tron.Builder exposing
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
     , live, toChoice, toSet, handleWith, toSwitch, toKnob
     , expand, collapse, shape, cells
-    , addPath, addLabels
     )
 
 
@@ -150,7 +149,8 @@ import Axis exposing (Axis)
 import Url.Builder as Url
 import Dict
 
-import Tron.OfValue as Def exposing (Tron)
+import Tron exposing (Tron, Set)
+import Tron as Tron
 import Tron.Path exposing (Path)
 import Tron.Path as Path
 import Tron.Control exposing (..)
@@ -174,25 +174,6 @@ import Tron.Builder.Any as B
 import Tron.Builder.Choice as Choice
 
 
-{-|
-See also: `Builder.Set`.
--}
-type alias Tron msg = Def.Tron msg
-
-
-{-| `Set msg` is just the list of components' definitions together with their labels. It is what
-`Builder.root` and `Builder.nest` get as an argument. `Set msg` is exposed as a separate type to help you in the cases where you build your GUI from several modules, but want to join them in a single panel rather than nesting every module separately.
-
-    Builder.nest
-        <| (ModuleOne.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleOne))
-            ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleTwo))
-            ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleThree))
-
-See also: `Builder.map`.
--}
-type alias Set msg = List ( Path.Label, Tron msg )
-
-
 {-| Similar to `Cmd.none`, `Sub.none` etc., makes it easier to use expressions in the definition.
 
 For example:
@@ -204,7 +185,7 @@ For example:
 
 -}
 none : Tron msg
-none = Nil <| always Nothing
+none = Nil Nothing
 
 
 {-| Use the root only once, to mark the first visible row of your UI, and put anything else inside.
@@ -269,7 +250,7 @@ root props =
 -}
 float : Axis -> Float -> ( Float -> msg ) -> Tron msg
 float axis value toMsg =
-    B.float axis value <| Value.fromNumber >> Maybe.map toMsg
+    B.float axis value <| toMsg value
 
 
 {-| `int` creates a control over an integer number value, with a minimum, maximum and a step.
@@ -278,10 +259,10 @@ float axis value toMsg =
 
 -}
 int : { min: Int, max : Int, step : Int } -> Int -> ( Int -> msg ) -> Tron msg
-int { min, max, step } default toMsg =
+int { min, max, step } value toMsg =
     float
         { min = toFloat min, max = toFloat max, step = toFloat step } -- RoundBy 0
-        (toFloat default)
+        (toFloat value)
         (round >> toMsg)
 
 
@@ -305,7 +286,7 @@ number = float
 -}
 xy : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Tron msg
 xy axes value toMsg =
-    B.xy axes value <| Value.fromXY >> Maybe.map toMsg
+    B.xy axes value <| toMsg value
 
 
 {-| `coord` is the alias for `Builder.xy`
@@ -323,19 +304,12 @@ coord = xy
                 Green -> "green"
                 Blue -> "blue"
         )
-        (\val ->
-            case val of
-                "red" -> Just Red
-                "green" -> Just Green
-                "blue" -> Just Blue
-                _ -> Nothing
-        )
         model.selectedColor
         ChangeColor
 -}
-input : ( a -> String ) -> ( String -> Maybe a ) -> a -> ( a -> msg ) -> Tron msg
-input toString fromString value toMsg =
-    B.text (toString value) <| Value.fromText >> Maybe.andThen fromString >> Maybe.map toMsg
+input : ( a -> String ) -> a -> ( a -> msg ) -> Tron msg
+input toString value toMsg =
+    B.text (toString value) <| toMsg value
 
 
 {-| `text` creates a control over a `String` value.
@@ -344,7 +318,7 @@ input toString fromString value toMsg =
 -}
 text : String -> (String -> msg) -> Tron msg
 text value toMsg =
-    B.text value <| Value.fromText >> Maybe.map toMsg
+    B.text value <| toMsg value
 
 
 {-| `color` creates a control over a color, for the moment it is Hue/Saturation in 2D space, same as `xy`, but with different representation, but we may improve it later. Or you may change it to `choice` with your own palette.
@@ -355,7 +329,7 @@ The `Color` type here is from `avh4/elm-color` module.
 -}
 color : Color -> (Color -> msg) -> Tron msg
 color value toMsg =
-    B.color value <| Value.fromColor >> Maybe.map toMsg
+    B.color value <| toMsg value
 
 
 {-| `button` creates a control over a _unit_ `()` value. Type science aside, when you receive the unit value `()` in the handler, it just means that this button was pushed.
@@ -449,7 +423,7 @@ makeUrl = Button.makeUrl
 -- not exposed
 buttonByFace : Face -> (() -> msg) -> Tron msg
 buttonByFace face_ toMsg =
-    B.buttonByFace face_ <| Value.fromAction >> Maybe.map toMsg
+    B.buttonByFace face_ <| toMsg ()
 
 
 {-| `toggle` creates a control over a boolean value.
@@ -458,7 +432,7 @@ buttonByFace face_ toMsg =
 -}
 toggle : Bool -> (Bool -> msg) -> Tron msg
 toggle value toMsg =
-    B.toggle value <| Value.fromToggle >> Maybe.map Value.toggleToBool >> Maybe.map toMsg
+    B.toggle value <| toMsg value
 
 
 {-| `bool` is the alias for `Builder.toggle`
@@ -500,7 +474,7 @@ nest items =
             , face = Nothing
             , page = 0
             }
-            <| always Nothing
+            Nothing
 
 
 {-| Create a button face representing a color:
@@ -543,7 +517,7 @@ choice set current toMsg =
         set
         current
         (==)
-        <| always toMsg
+        <| toMsg current
 
 
 {-| `choiceBy` is identical to `choice`, but asks user for a custom comparison function instead of requiring `comparable` values.
@@ -648,9 +622,9 @@ palette options current toMsg =
     choiceBy
         (options
             |> buttons
-            |> List.map (Def.with (face << useColor << Tuple.second))
+            |> List.map (Tron.with (face << useColor << Tuple.second))
             |> addLabels Tuple.first
-            |> Def.mapSet Tuple.second
+            |> Tron.mapSet Tuple.second
         )
         current
         (\cv1 cv2 ->
@@ -700,16 +674,9 @@ toSet : (a -> Path.Label) -> List (Tron a) -> Set a
 toSet toLabel =
     List.map
         (\prop ->
-            Property.get prop
-                |> (\handler ->
-                        (
-                            Value.get prop
-                                |> handler
-                                |> Maybe.map toLabel
-                                |> Maybe.withDefault "--"
-                        , prop
-                        )
-                    )
+            ( prop |> Property.get |> Maybe.map toLabel |> Maybe.withDefault "--"
+            , prop
+            )
         )
 
 
@@ -740,28 +707,6 @@ collapse : Tron msg -> Tron msg
 collapse = Property.collapse
 
 
-{- Set the icon to the control that can have it:
-
-    Builder.nest ... |> Builder.setIcon (Builder.icon ...)
-    Builder.button ... |> Builder.setIcon (Builder.icon ...)
--}
--- TODO
--- setIcon : Icon -> Tron msg -> Tron msg
--- setIcon icon = Property.collapse
-
-
-{-| Add the path representing the way to reach particular control
-in the GUI tree.
--}
-addPath : Tron msg -> Tron ( Path, msg )
-addPath =
-    Property.addPath
-        >> Property.map
-            (\(path, handler) ->
-                handler >> Maybe.map (Tuple.pair path)
-            )
-
-
 {-| Convert a `nest` control to `choice` control. It can be done
 easily by specifying a handler:
 
@@ -775,9 +720,10 @@ easily by specifying a handler:
 -}
 toChoice : (ItemId -> msg) -> Tron msg -> Tron msg
 toChoice f =
-    B.toChoice
-        >> Property.map
-            (always <| Value.fromChoice >> Maybe.map f)
+    Property.toChoice
+        >> Tron.map (always <| f 0)
+        -- >> Property.map
+        --     (always <| Value.fromChoice >> Maybe.map f)
 
 
 {-| Convert choice control to a switch by click form:
@@ -819,7 +765,7 @@ live =
 Alias for `Tron.mapSet`
 -}
 handleWith : (a -> msg) -> Set a -> Set msg
-handleWith = Def.mapSet
+handleWith = Tron.mapSet
 
 
 {-| Changes panel shape for `nest` and `choice` panels:
