@@ -1,8 +1,7 @@
 module Tron.Expose.Convert
     exposing
     ( toUnit, toExposed
-    , reflect, lift, evaluate
-    , toDeferredRaw, encodeAck
+    , reflect
     )
 
 
@@ -26,7 +25,6 @@ import Dict exposing (Dict)
 import HashId exposing (HashId)
 
 import Tron exposing (Tron)
-import Tron.OfValue as Def
 import Tron.Control as Control
 import Tron.Control.Nest as Nest
 import Tron.Expose as Exp
@@ -57,45 +55,21 @@ Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
 toExposed : Tron a -> Tron Exp.Value
 toExposed =
-    reflect
-        >> Property.addPath
+    Exp.reflectWithPath
         -- FIXME: `Expose.encodeUpdate` does the same as above
-        >> Tron.map
-            (\( path, ( proxyVal, msg ) ) ->
-                proxyVal |> proxyToRaw path
+        >> Property.map
+            (\( path, proxyVal ) ->
+                Just <| proxyToRaw path proxyVal
             )
 
 
-proxyToRaw : ( Path, LabelPath ) -> Value -> Exp.Value
-proxyToRaw (path, labelPath) proxyVal =
+proxyToRaw : Path -> Value -> Exp.Value
+proxyToRaw path proxyVal =
     { path = Path.toList path
-    , labelPath = labelPath
     , type_ = Value.getTypeString proxyVal
     , value = Value.encode proxyVal
     , stringValue = Value.toString proxyVal
     }
-
-
-
--- FIXME: make it: Tron msg -> Tron ( LabelPath, String ) and use `Tron.map2` to join
-
-{-| Store a labeled path (such as `honk/color`) to the property and its stringified value,
-together with message.
-
-Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
--}
-toStrExposed : Tron msg -> Tron ( ( LabelPath, String ), msg )
-toStrExposed =
-    toProxied
-        >> Property.addLabeledPath
-        >> Property.map
-            (\( path, ( proxyVal, msg ) ) ->
-                ( ( path
-                  , Value.toString proxyVal
-                  )
-                , msg
-                )
-            )
 
 
 {-| Extract the value from the control and put it along with a subject of the functor.
@@ -111,7 +85,10 @@ reflect = Exp.reflect >> Property.map Just
 
 
 {-| -}
+
+{-
 encodeAck : HashId -> Exp.Ack
 encodeAck =
     -- encodeClientId
     Exp.Ack << (HashId.toString >> E.string)
+    -}
