@@ -284,21 +284,10 @@ andThen = fold1
 --andThen f = foldProperty <| always (get >> f)
 
 
-{-with : (a -> Property a -> Property b) -> Property a -> Property b
+with : (a -> Property a -> Property b) -> Property a -> Property b
 -- FIXME: should be changed to `andThen` with getting rid of function in Control
 with f prop =
     andThen (\v -> f v prop) prop
-
-
-
--- `replace` -- find better name
-andThenWithPath : (Path -> Property a -> Property b) -> Property a -> Property b
-andThenWithPath f prop =
-    prop
-        |> map2
-            Tuple.pair
-            (addPath prop)
-        |> andThen -}
 
 
 pathifyFrom : Path -> Property a -> Property Path

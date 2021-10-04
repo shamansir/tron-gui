@@ -12,7 +12,7 @@ import Array exposing (Array)
 
 clear : Property a -> Property a
 clear =
-    replace
+    foldProperty
         (\_ prop ->
             case prop of
                 Group focus shape control ->

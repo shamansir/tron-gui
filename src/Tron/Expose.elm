@@ -1180,3 +1180,17 @@ reflect prop =
         Live innerProp ->
             reflect innerProp
                 |> Live
+
+
+reflectWithPath : Property a -> Property ( Path, Value )
+reflectWithPath =
+    reflect
+        >> Property.pathifyWithValue
+    {- Property.map2
+        Tuple.pair
+        (pathify prop)
+        (reflect prop)
+    -}
+
+
+-- reflect >> pathifyWithValue
