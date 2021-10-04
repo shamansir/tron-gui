@@ -4,6 +4,7 @@ module Tron exposing
     , mapSet
     , andThen, with
     , toUnit
+    , run
     )
 
 {-| This is the `Tron a`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application. In this case, it represents your components.
@@ -24,6 +25,8 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 
 @docs map, mapSet, andThen, with, toUnit
 -}
+
+import Task
 
 import Tron.Property as Property exposing (Property)
 import Tron.Path as Path
@@ -131,3 +134,10 @@ map4 f = Property.map4 <| Maybe.map4 f
 
 map5 : (a -> b -> c -> d -> e -> f) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e -> Tron f
 map5 f = Property.map5 <| Maybe.map5 f
+
+
+run : Tron msg -> Cmd msg
+run =
+    Property.get
+        >> Maybe.map (Task.succeed >> Task.perform identity)
+        >> Maybe.withDefault Cmd.none

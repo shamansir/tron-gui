@@ -20,6 +20,7 @@ import Dict
 import Size exposing (..)
 
 import Tron exposing (Tron)
+import Tron as Tron
 import Tron.Path exposing (Path)
 import Tron.Path as Path
 import Tron.Control exposing (..)
@@ -40,7 +41,6 @@ import Tron.Detach exposing (State(..))
 import Tron.Control.Value exposing (..)
 import Tron.Control.Nest as Nest
 import Tron.Builder exposing (..)
-import Tron.OfValue as Def
 
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Style.Dock as Dock exposing (..)
@@ -113,8 +113,8 @@ run =
 update
     :  Msg
     -> State
-    -> Tron ( Control.Value -> Maybe msg )
-    -> ( State, Tron (), Cmd (Exp.Out, msg ) )
+    -> Tron msg
+    -> ( State, Tron (), Cmd (Exp.Out, msg) )
 update msg state tree  =
     case msg of
         NoOp ->
@@ -139,7 +139,7 @@ update msg state tree  =
                 ( state
                 , nextRoot |> Tron.toUnit
                 , updates
-                    |> List.map (Tuple.second >> Exp.freshRun)
+                    |> List.map (Tuple.second >> Tron.run)
                     |> Cmd.batch
                 )
 
@@ -199,16 +199,16 @@ update msg state tree  =
 
 applyRaw
      : Exp.In
-    -> Tron (Control.Value -> Maybe msg)
+    -> Tron msg
     -> Cmd msg
 applyRaw rawUpdate =
     Exp.apply (Exp.fromPort rawUpdate)
-        >> Exp.freshRun
+        >> Tron.run
 
 
 applyDeduced
     :  Exp.DeduceIn
-    -> Tron (Control.Value -> Maybe msg)
+    -> Tron msg
     -> Cmd msg
 applyDeduced toDeduce tree =
     case tryDeduce tree toDeduce of
@@ -270,7 +270,7 @@ trackMouse =
 
 
 -- FIXME: return actual updates with values, then somehow extract messages from `Tron msg` for these values?
-handleMouse : MouseAction -> State -> Tron ( Control.Value -> Maybe msg ) -> ( State, Tron (), Cmd msg )
+handleMouse : MouseAction -> State -> Tron msg -> ( State, Tron (), Cmd msg )
 handleMouse mouseAction state tree =
     let
         rootPath = getRootPath state
@@ -530,12 +530,12 @@ handleMouse mouseAction state tree =
 
                     Just ( _, prop ) ->
                         case prop of
-                            Number _ -> Exp.freshRun prop
-                            Coordinate _ -> Exp.freshRun prop
-                            Color _ -> Exp.freshRun prop
+                            Number _ -> Tron.run prop
+                            Coordinate _ -> Tron.run prop
+                            Color _ -> Tron.run prop
                             Choice _ _ (Control _ { mode } _) ->
                                 case mode of
-                                    Nest.Knob -> Exp.freshRun prop
+                                    Nest.Knob -> Tron.run prop
                                     _ -> Cmd.none
                             _ -> Cmd.none
                     Nothing -> Cmd.none
@@ -550,7 +550,7 @@ handleKeyDown
     :  Int
     -> Path
     -> State
-    -> Tron (Control.Value -> Maybe msg)
+    -> Tron msg
     -> ( State, Tron (), Cmd msg )
 handleKeyDown keyCode path state tree =
     let
@@ -563,7 +563,7 @@ handleKeyDown keyCode path state tree =
                 ( state
                 , nextRoot |> Tron.toUnit
                 , updates
-                    |> List.map (Tuple.second >> Exp.freshRun)
+                    |> List.map (Tuple.second >> Tron.run)
                     |> Cmd.batch
                     --|> Cmd.map (Tuple.pair path)
                 )
@@ -600,7 +600,7 @@ handleKeyDown keyCode path state tree =
                                 |> setAt path nextProp
                                 |> Tron.toUnit
                         -- FIXME: inside, we check if it is a text prop again
-                        , Exp.freshRun nextProp
+                        , Tron.run nextProp
                             --|> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()
@@ -608,52 +608,21 @@ handleKeyDown keyCode path state tree =
         _ -> ( state, tree |> Tron.toUnit, Cmd.none )
 
 
-toExposed : State -> Tron a -> Tron ( Exp.Out, a )
+toExposed : State -> Tron a -> Tron Exp.Out
 toExposed state =
     Exp.toExposed
-        >> Property.map
-            ( Tuple.mapFirst (\val ->
+        >> Tron.map
+            ( (\val ->
                 { update = val
                 , client =  Detach.encodeClientId <| Tuple.first <| state.detach
                 }
             ) )
 
 
-toProxied_ : Def.Tron msg -> Def.Tron ( Control.Value, msg )
-toProxied_ =
-    Property.map
-        (\f ->
-            \proxy ->
-                f proxy |> Maybe.map (Tuple.pair proxy)
-        )
-
-
-toExposed_ : State -> Def.Tron a -> Def.Tron ( Exp.Out, a )
-toExposed_ state =
-    toProxied_
-        >> Property.addPath
-        >> Property.map
-            (\(path, f) ->
-                \proxy ->
-                    f proxy |> Maybe.map (Tuple.pair path)
-            )
-        -- FIXME: `Expose.encodeUpdate` does the same as above
-        >> Def.map
-            (\( path, ( proxyVal, msg ) ) ->
-                ( { path = Path.toList path
-                  , type_ = Value.getTypeString proxyVal
-                  , value = Value.encode proxyVal
-                  , stringValue = Value.toString proxyVal
-                  }
-                , msg
-                )
-            )
-        >> Def.map
-            ( Tuple.mapFirst (\val ->
-                { update = val
-                , client =  Detach.encodeClientId <| Tuple.first <| state.detach
-                }
-            ) )
+toExposed_ : State -> Tron a -> Tron ( Exp.Out, a )
+toExposed_ state tree =
+    tree
+        |> Tron.map2 Tuple.pair (tree |> toExposed state)
 
 
 focus : msg -> Cmd msg
