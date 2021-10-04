@@ -71,7 +71,7 @@ runProperty value property =
             Cmd.none
 
 
-run : Exp.Update -> Property x -> Cmd x
+run : Exp.Update -> Property x -> Cmd x -- FIXME: looks close to `apply`
 run { path, value } prop =
     case path of
         [] ->

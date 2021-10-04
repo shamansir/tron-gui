@@ -23,6 +23,7 @@ or just get rid of messages at all:
 import Json.Encode as E
 import Dict exposing (Dict)
 import HashId exposing (HashId)
+import Task
 
 import Tron exposing (Tron)
 import Tron.Control as Control
@@ -84,11 +85,9 @@ reflect = Exp.reflect >> Property.map Just
 --     HashId.toString >> E.string
 
 
-{-| -}
+-- {-| -}
 
-{-
-encodeAck : HashId -> Exp.Ack
-encodeAck =
-    -- encodeClientId
-    Exp.Ack << (HashId.toString >> E.string)
-    -}
+-- encodeAck : HashId -> Exp.Ack
+-- encodeAck =
+--     -- encodeClientId
+--     Exp.Ack << (HashId.toString >> E.string)
