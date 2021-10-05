@@ -29,7 +29,7 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 import Task
 
 import Tron.Property as Property exposing (Property)
-import Tron.Path as Path
+import Tron.Path as Path exposing (Path)
 import Tron.Control.Value as Value exposing (Value)
 --import Tron.Expose as Property exposing (proxy)
 
@@ -163,3 +163,23 @@ perform prop =
                     Just msg -> Task.succeed msg |> Task.perform identity
                     Nothing -> Cmd.none
             )
+
+
+{-| Add the path representing the label-based way to reach the
+particular control in the GUI tree.
+
+Tip: to get `Tron (Path, msg)`, use:
+
+```
+pathifyWithValue : Tron msg -> Tron (Path, msg)
+pathifyWithValue tron =
+    Tron.map2
+        Tuple.pair
+        (Tron.pathify tron)
+        tron
+```
+-}
+pathify : Tron msg -> Tron Path
+pathify =
+    Property.pathify
+        >> Property.map (always << Just)
