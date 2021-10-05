@@ -1,19 +1,18 @@
 module Tron.Property exposing (..)
 
 
+import Task
 import Array exposing (Array)
 import Dict exposing (Dict)
-
-import Task
-
 import Color exposing (Color)
+import Size exposing (..)
+
 import Array.Extra.Zipper as Z exposing (zip, Zipper(..))
 
 import Tron.Path exposing (Path)
 import Tron.Path as Path
-import Tron.Control as Control exposing (..)
-import Tron.Control as Core exposing (Control)
 
+import Tron.Control as Control exposing (..)
 import Tron.Control.Button as Button exposing (..)
 import Tron.Control.Number as Number exposing (..)
 import Tron.Control.XY as XY exposing (..)
@@ -21,10 +20,8 @@ import Tron.Control.Text as Text exposing (..)
 import Tron.Control.Color as Color exposing (..)
 import Tron.Control.Toggle as Toggle exposing (..)
 import Tron.Control.Nest as Nest exposing (..)
-import Tron.Util as Util
 
-import Tron.Pages as Pages exposing (Pages)
-import Size exposing (..)
+import Tron.Pages as Pages
 
 import Tron.Style.CellShape as CS exposing (CellShape)
 import Tron.Style.PanelShape as PS exposing (PanelShape)
