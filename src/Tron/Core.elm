@@ -40,7 +40,7 @@ import Tron.Detach as Detach exposing (ClientId)
 import Tron.Detach exposing (State(..))
 import Tron.Control.Value exposing (..)
 import Tron.Control.Nest as Nest
-import Tron.Builder exposing (..)
+import Tron.Build exposing (..)
 
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Style.Dock as Dock exposing (..)

@@ -1,4 +1,4 @@
-module Tron.Builder.Choice exposing (..)
+module Tron.Property.Build.Choice exposing (..)
 
 
 import Array
@@ -13,6 +13,7 @@ import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
 import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Nest exposing (Form(..), ChoiceMode(..))
+
 import Tron.Control.Value as Value exposing (Value(..))
 import Json.Decode exposing (index)
 
@@ -54,7 +55,7 @@ helper ( panelShape, cellShape ) options current compare =
                         )
                     )
 
-        values : Array.Array ( Maybe a )
+        values : Array.Array a
         values =
             options
                 |> Array.fromList
@@ -64,7 +65,6 @@ helper ( panelShape, cellShape ) options current compare =
         currentIndex =
             values
                 |> Array.indexedMap Tuple.pair
-                |> Array.filterMap Maybe.inject
                 |> Array.findMap
                     (\(index, option) ->
                         if compare option current
@@ -93,15 +93,15 @@ helper ( panelShape, cellShape ) options current compare =
 
 helperDef
      : ( PanelShape, CellShape )
-    -> List ( Path.Label, Property (Maybe msg) )
+    -> List ( Path.Label, Property ( Value -> Maybe a ) )
     -> a
     -> ( a -> a -> Bool )
     -> ( Int -> a -> msg )
-    -> Property (Maybe msg)
+    -> Property (Value -> Maybe msg)
 helperDef ( panelShape, cellShape ) options current compare toMsg =
     let
 
-        optionsArray : Array.Array ( Path.Label, Property ( Int, Maybe msg ))
+        optionsArray : Array.Array ( Path.Label, Property ( Int, ( Value -> Maybe a ) ))
         optionsArray =
             options
                 |> Array.fromList
@@ -113,7 +113,7 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
                         )
                     )
 
-        properties : Array.Array ( Path.Label, Property (Maybe msg) )
+        properties : Array.Array ( Path.Label, Property ( Value -> Maybe msg ) )
         properties =
             optionsArray
                 |> Array.indexedMap
@@ -128,7 +128,7 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
                 |> Array.map
                     (\prop ->
                         Property.get prop
-                            |> Maybe.andThen (\handler_ -> handler_ <| Value.get prop)
+                            |> (\handler_ -> handler_ <| Value.get prop)
                     )
 
         currentIndex : Int
@@ -173,7 +173,7 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
 
 helperProxy
      : ( PanelShape, CellShape )
-    -> List ( Path.Label, Property (Maybe a) )
+    -> List ( Path.Label, Property ( Value -> Maybe a ) )
     -> a
     -> ( a -> a -> Bool )
     -> Property (Value -> Maybe Value)
@@ -208,7 +208,7 @@ helperProxy ( panelShape, cellShape ) options current compare =
                 |> Array.map
                     (\prop ->
                         Property.get prop
-                            |> Maybe.andThen (\handler_ -> handler_ <| Value.get prop)
+                            |> (\handler_ -> handler_ <| Value.get prop)
                     )
 
         currentIndex : Int

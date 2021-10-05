@@ -1,18 +1,15 @@
-module Tron.Builder.Any exposing ( .. )
+module Tron.Property.Build exposing (..)
 
 
 import Array
 import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
-import Url.Builder as Url
-import Dict
 
-import Tron exposing (Tron, Set)
 import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
-import Tron.Property as Property exposing (expand, collapse)
+import Tron.Property as Property
 import Tron.Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
@@ -23,18 +20,25 @@ import Tron.Style.Theme exposing (Theme)
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Text exposing (TextState(..))
 import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
-import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
-import Tron.Control.Nest as Nest exposing (Form(..), ItemId)
+import Tron.Control.Toggle exposing (boolToToggle)
+import Tron.Control.Nest exposing (Form(..))
 
-import Tron.Builder.Choice as Choice
-
-
-
-none : Tron a
-none = Nil Nothing
+import Tron.Property.Build.Choice as Choice
 
 
-root : Set a -> a -> Tron a
+type alias Set a = List (Path.Label, Property a)
+
+
+mapSet : (a -> b) -> Set a -> Set b
+mapSet =
+    List.map << Tuple.mapSecond << Property.map
+
+
+none : a -> Property a
+none = Nil
+
+
+root : Set a -> a -> Property a
 root props a =
     nest
         props
@@ -43,15 +47,15 @@ root props a =
         |> shape (rows 1)
 
 
-float : Axis -> Float -> a -> Tron a
+float : Axis -> Float -> a -> Property a
 float axis value a =
     Number
         <| Control axis ( Nothing, value )
-        <| Just a
+        <| a
 
 
 
-int : { min: Int, max : Int, step : Int } -> Int -> a -> Tron a
+int : { min: Int, max : Int, step : Int } -> Int -> a -> Property a
 int { min, max, step } default a =
     float
         { min = toFloat min, max = toFloat max, step = toFloat step } -- RoundBy 0
@@ -59,54 +63,54 @@ int { min, max, step } default a =
         a
 
 
-number : Axis -> Float -> a -> Tron a
+number : Axis -> Float -> a -> Property a
 number = float
 
 
-xy : ( Axis, Axis ) -> ( Float, Float ) -> a -> Tron a
+xy : ( Axis, Axis ) -> ( Float, Float ) -> a -> Property a
 xy axes value a =
     Coordinate
         <| Control axes ( Nothing, value )
-        <| Just a
+        <| a
 
 
-coord : ( Axis, Axis ) -> ( Float, Float ) -> a -> Tron a
+coord : ( Axis, Axis ) -> ( Float, Float ) -> a -> Property a
 coord = xy
 
 
-input : ( x -> String ) -> x -> a -> Tron a
+input : ( x -> String ) -> x -> a -> Property a
 input toString value a = -- FIXME: accept just `String` and `value`
     Text
         <| Control
             ()
             ( Ready, toString value )
-        <| Just a
+        <| a
 
 
-text : String -> a -> Tron a
+text : String -> a -> Property a
 text value a =
     Text
         <| Control
             ()
             ( Ready, value )
-        <| Just a
+        <| a
 
 
-color : Color -> a -> Tron a
+color : Color -> a -> Property a
 color value a =
     Color
         <| Control
             ()
             ( Nothing, value )
-        <| Just a
+        <| a
 
 
-button : a -> Tron a
+button : a -> Property a
 button =
     buttonByFace Default
 
 
-face : Face -> Tron a -> Tron a
+face : Face -> Property a -> Property a
 face =
     Property.setFace
 
@@ -132,29 +136,29 @@ makeUrl = Button.makeUrl
 
 
 -- not exposed
-buttonByFace : Face -> a -> Tron a
+buttonByFace : Face -> a -> Property a
 buttonByFace face_ a =
     Action
         <| Control
             face_
             ()
-        <| Just a
+        <| a
 
 
-toggle : Bool -> a -> Tron a
+toggle : Bool -> a -> Property a
 toggle value a =
     Toggle
         <| Control
             ()
             (boolToToggle value)
-        <| Just a
+        <| a
 
 
-bool : Bool -> a -> Tron a
+bool : Bool -> a -> Property a
 bool = toggle
 
 
-nest : Set a -> a -> Tron a
+nest : Set a -> a -> Property a
 nest items a =
     Group
         Nothing
@@ -166,7 +170,7 @@ nest items a =
             , face = Nothing
             , page = 0
             }
-            <| Just a
+            <| a
 
 
 useColor : Color -> Face
@@ -176,38 +180,32 @@ useColor = WithColor
 choice
      : Set comparable
     -> comparable
-    -> Tron (Int, comparable)
+    -> Property (Int, comparable)
 choice set current =
     Choice.helper
         Property.defaultNestShape
         set
-        (Just current)
+        current
         (==)
-    |> Property.map
-        (\(n, maybeVal) -> maybeVal |> Maybe.map (Tuple.pair n))
 
 
 choiceBy
      : Set a
     -> a
     -> ( a -> a -> Bool )
-    -> Tron (Int, a)
+    -> Property (Int, a)
 choiceBy set current compare =
     Choice.helper
         Property.defaultNestShape
         set
-        (Just current)
-        (\maybeA maybeB ->
-             Maybe.map2 compare maybeA maybeB |> Maybe.withDefault False
-        )
-    |> Property.map
-        (\(n, maybeVal) -> maybeVal |> Maybe.map (Tuple.pair n))
+        current
+        compare
 
 
 strings
      : List Path.Label
     -> Path.Label
-    -> Tron (Int, Path.Label)
+    -> Property (Int, Path.Label)
 strings options current =
     choice
         (options
@@ -223,7 +221,7 @@ labels
      : ( a -> Path.Label )
     -> List a
     -> a
-    -> Tron ( Int, Path.Label )
+    -> Property ( Int, Path.Label )
 labels toLabel options current =
     {- let
         labelToValue =
@@ -245,14 +243,14 @@ labels toLabel options current =
 palette
      : List ( Path.Label, Color )
     -> Color
-    -> Tron ( Int, Color )
+    -> Property ( Int, Color )
 palette options current =
     choiceBy
         (options
             |> buttons
-            |> List.map (Tron.with (face << useColor << Tuple.second))
+            |> List.map (Property.with (face << useColor << Tuple.second))
             |> addLabels Tuple.first
-            |> Tron.mapSet Tuple.second
+            |> mapSet Tuple.second
         )
         current
         (\cv1 cv2 ->
@@ -266,40 +264,34 @@ palette options current =
     |> cells CS.half
 
 
-buttons : List a -> List (Tron a)
+buttons : List a -> List (Property a)
 buttons =
     List.map button
 
 
-toSet : (a -> Path.Label) -> List (Tron a) -> Set a
+toSet : (a -> Path.Label) -> List (Property a) -> Set a
 toSet toLabel =
     List.map
         (\prop ->
-            Tron.Property.get prop
-                |> Maybe.map
-                    (\v ->
-                        ( toLabel v
-                        , prop
-                        )
-                    )
+            ( toLabel <| Tron.Property.get prop
+            , prop )
         )
-    >> List.filterMap identity
 
 
-addLabels : (a -> Path.Label) -> List (Tron a) -> Set a
+addLabels : (a -> Path.Label) -> List (Property a) -> Set a
 addLabels =
     toSet
 
 
-expand : Tron a -> Tron a
+expand : Property a -> Property a
 expand = Property.expand
 
 
-collapse : Tron a -> Tron a
+collapse : Property a -> Property a
 collapse = Property.collapse
 
 
-toChoice : Tron a -> Tron a
+toChoice : Property a -> Property a
 toChoice =
     Property.toChoice
 
@@ -312,7 +304,7 @@ toChoice =
 
     Builder.choice ... |> Buidler.shape (by 2 3)
 -}
-shape : PanelShape -> Tron a -> Tron a
+shape : PanelShape -> Property a -> Property a
 shape = Property.setPanelShape
 
 
@@ -324,5 +316,5 @@ shape = Property.setPanelShape
 
     Builder.choice ... |> Buidler.shape halfByHalf
 -}
-cells : CellShape -> Tron a -> Tron a
+cells : CellShape -> Property a -> Property a
 cells = Property.setCellShape
