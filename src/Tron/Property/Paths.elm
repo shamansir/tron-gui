@@ -4,8 +4,9 @@ module Tron.Property.Paths exposing (..)
 import Dict as Dict exposing (Dict)
 import Array as Array
 
-import Tron.Property exposing (Property(..), map, map2, fold)
+import Tron.Property exposing (Property(..), map, map2, fold, proxify)
 import Tron.Path as Path exposing (Path)
+import Tron.Property.ExposeData as Exp
 
 import Tron.Control.Nest as Nest
 import Tron.Control as Control
@@ -209,3 +210,26 @@ findByLabelPath : List Path.Label -> Property a -> Maybe (Property a)
 findByLabelPath labelPath tree =
     findPath labelPath tree
         |> Maybe.andThen (\path -> find path tree)
+
+
+{-| Store a `RawOutUpdate` together with message, which is a package that stores all
+the required information about the value, such as:
+
+- the path to it in the Tree, both with labels and integer IDs;
+- the value in JSON;
+- the value as a string;
+- the type of the value, as a string;
+- client ID, for the communication with WebSockets; (will be removed in future versions)
+
+Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
+-}
+expose : Property a -> Property Exp.Value
+expose prop =
+    map2
+        Tuple.pair
+        (pathify prop)
+        (proxify prop)
+    |> map
+        (\( path, proxyVal ) ->
+            Exp.toRaw path proxyVal
+        )

@@ -3,7 +3,7 @@ module Tron exposing
     , map, map2, map3, map4, map5
     , mapSet
     , andThen, with
-    , toUnit, pathify, proxify
+    , toUnit, pathify, proxify, expose
     , perform
     )
 
@@ -29,9 +29,10 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 import Task
 
 import Tron.Property as Property exposing (Property)
+import Tron.Property.Paths as Property
 import Tron.Path as Path exposing (Path)
 import Tron.Control.Value as Value exposing (Value)
---import Tron.Expose as Property exposing (proxy)
+import Tron.Property.ExposeData as Exp
 
 
 {-| `Tron a` is the tree of your controls or, recursively, any control in such tree.
@@ -61,7 +62,7 @@ andThen : (a -> Tron b) -> Tron a -> Tron b
 andThen f prop =
     Property.andThen
         (\pF ->
-            case pF <| Value.get prop of
+            case pF <| Property.getValue prop of
                 Just v -> f v
                 Nothing -> Property.Nil <| always Nothing
         )
@@ -159,7 +160,7 @@ perform : Tron msg -> Cmd msg
 perform prop =
     Property.get prop
         |> (\handler ->
-                case handler <| Value.get prop of
+                case handler <| Property.getValue prop of
                     Just msg -> Task.succeed msg |> Task.perform identity
                     Nothing -> Cmd.none
             )
@@ -191,12 +192,18 @@ pathify2 tron =
 ```
 
 -}
-pathify : Tron msg -> Tron Path
+pathify : Tron a -> Tron Path
 pathify =
     Property.pathify
         >> Property.map (always << Just)
 
 
-proxify : Tron msg -> Tron Value
+proxify : Tron a -> Tron Value
 proxify =
     Property.map <| always Just
+
+
+expose : Tron a -> Tron Exp.Value
+expose tron =
+    Property.pathify tron
+        |> Property.map (\path val -> Just <| Exp.toRaw path val)

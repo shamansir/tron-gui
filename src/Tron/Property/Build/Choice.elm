@@ -128,7 +128,7 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
                 |> Array.map
                     (\prop ->
                         Property.get prop
-                            |> (\handler_ -> handler_ <| Value.get prop)
+                            |> (\handler_ -> handler_ <| Property.getValue prop)
                     )
 
         currentIndex : Int
@@ -208,7 +208,7 @@ helperProxy ( panelShape, cellShape ) options current compare =
                 |> Array.map
                     (\prop ->
                         Property.get prop
-                            |> (\handler_ -> handler_ <| Value.get prop)
+                            |> (\handler_ -> handler_ <| Property.getValue prop)
                     )
 
         currentIndex : Int

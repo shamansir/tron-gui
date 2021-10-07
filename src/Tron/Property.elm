@@ -1,9 +1,11 @@
 module Tron.Property exposing
-    ( Property(..), Shape, NestShape, get, move
+    ( Property(..), FocusAt(..), Shape, NestShape
+    , get, set, move, getValue
     , map, map2, map3, map4, map5, mapWithPath
     , andThen, with
+    , toUnit, proxify, lift
     , zip
-    , fold, foldProperty, fold1, fold2, fold2_, fold3, unfold
+    , fold, foldP, foldFix, foldZip, foldZipP, unfold
     , updateAt, updateMany
     , perform
     , setAt, insideOut
@@ -29,8 +31,7 @@ import Tron.Control.Text as Text exposing (..)
 import Tron.Control.Color as Color exposing (..)
 import Tron.Control.Toggle as Toggle exposing (..)
 import Tron.Control.Nest as Nest exposing (..)
-
-import Tron.Pages as Pages
+import Tron.Control.Value exposing (Value(..))
 
 import Tron.Style.CellShape as CS exposing (CellShape)
 import Tron.Style.PanelShape as PS exposing (PanelShape)
@@ -137,9 +138,29 @@ mapWithPath f root =
         helper Path.start root
 
 
+map2 : (a -> b -> c) -> Property a -> Property b -> Property c
+map2 f =
+    map << get << map f
+
+
+map3 : (a -> b -> c -> d) -> Property a -> Property b -> Property c -> Property d
+map3 f =
+    map2 << get << map f
+
+
+map4 : (a -> b -> c -> d -> e) -> Property a -> Property b -> Property c -> Property d -> Property e
+map4 f =
+    map3 << get << map f
+
+
+map5 : (a -> b -> c -> d -> e -> f) -> Property a -> Property b -> Property c -> Property d -> Property e -> Property f
+map5 f =
+    map4 << get << map f
+
+
 andThen : (a -> Property b) -> Property a -> Property b
-andThen = fold1
---andThen f = foldProperty <| always (get >> f)
+andThen = foldFix
+--andThen f = foldP <| always (get >> f)
 
 
 with : (a -> Property a -> Property b) -> Property a -> Property b
@@ -179,8 +200,8 @@ fold f from root =
         helper Path.start root from
 
 
-foldProperty : (Path -> Property a -> Property a) -> Property a -> Property a
-foldProperty f root =
+foldP : (Path -> Property a -> Property a) -> Property a -> Property a
+foldP f root =
     let
 
         foldItem : Path -> Int -> ( Path.Label, Property a ) -> ( Path.Label, Property a )
@@ -217,8 +238,8 @@ unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
-fold1 : (a -> x) -> Property a -> x
-fold1 f prop =
+foldFix : (a -> x) -> Property a -> x
+foldFix f prop =
     case prop of
         Nil a -> f a
         Number control -> control |> Control.fold f
@@ -229,16 +250,16 @@ fold1 f prop =
         Action control -> control |> Control.fold f
         Choice _ _ control -> control |> Control.fold f -- FIXME: fold through items as well?
         Group _ _ control -> control |> Control.fold f -- FIXME: fold through items as well?
-        Live innerProp -> fold1 f innerProp
+        Live innerProp -> foldFix f innerProp
 
 
-fold2_ : (Z.Zipper (Property a) (Property b) -> c -> c) -> Property a -> Property b -> c -> c
-fold2_ f propA propB = fold2Helper f <| Both propA propB
+foldZipP : (Z.Zipper (Property a) (Property b) -> c -> c) -> Property a -> Property b -> c -> c
+foldZipP f propA propB = fold2Helper f <| Both propA propB
 
 
-fold2 : (Z.Zipper a b -> c -> c) -> Property a -> Property b -> c -> c
-fold2 f =
-    fold2_ (f << Z.mapAB get get)
+foldZip : (Z.Zipper a b -> c -> c) -> Property a -> Property b -> c -> c
+foldZip f =
+    foldZipP (f << Z.mapAB get get)
 
 
 fold2Helper : (Z.Zipper (Property a) (Property b) -> c -> c) -> Z.Zipper (Property a) (Property b) -> c -> c
@@ -286,7 +307,7 @@ fold2Helper f zipper def =
         ( _, _ ) -> f zipper def
 
 
-fold3 : (Path -> Property a -> b -> b) -> b -> Property a -> b
+{- fold3 : (Path -> Property a -> b -> b) -> b -> Property a -> b
 fold3 f from root =
     -- FIXME: use this one as `fold`, just omit `LabelPath`
     let
@@ -318,12 +339,12 @@ fold3 f from root =
                 _ -> f curPath prop val
 
     in
-        helper Path.start root from
+        helper Path.start root from -}
 
 
 updateAt : Path -> (Property a -> Property a) -> Property a -> Property a
 updateAt path f =
-    foldProperty
+    foldP
         <| \otherPath item ->
             if Path.equal otherPath path then f item else item
 
@@ -373,7 +394,8 @@ get prop =
         Live innerProp -> get innerProp
 
 
-
+set : a -> Property x -> Property a
+set = map << always
 
 
 zip : Property a -> Property b -> Property (Z.Zipper a b)
@@ -441,24 +463,33 @@ insideOut prop =
     ( get prop |> Tuple.first, prop |> map Tuple.second )
 
 
--- map2 : (a -> b -> c) -> Property a -> Property b -> Property c
+{-| Replace the `()` value everywhere within Tron GUI tree, it is useful for truly a lot of cases when you don't care about what are the associated values.
+-}
+toUnit : Property a -> Property ()
+toUnit = set ()
 
 
-map2 : (a -> b -> c) -> Property a -> Property b -> Property c
-map2 f =
-    map << get << map f
+proxify : Property a -> Property Value
+proxify prop = set (getValue prop) prop
 
 
-map3 : (a -> b -> c -> d) -> Property a -> Property b -> Property c -> Property d
-map3 f =
-    map2 << get << map f
+{-| convert usual `Tron a` to `Tron.OfValue a`. Please prefer the one from the `Tron.OfValue` module. -}
+lift : Property a -> Property (Value -> Maybe a)
+lift =
+    map (always << Just)
 
 
-map4 : (a -> b -> c -> d -> e) -> Property a -> Property b -> Property c -> Property d -> Property e
-map4 f =
-    map3 << get << map f
-
-
-map5 : (a -> b -> c -> d -> e -> f) -> Property a -> Property b -> Property c -> Property d -> Property e -> Property f
-map5 f =
-    map4 << get << map f
+{-| get proxied value from `Tron` -}
+getValue : Property a -> Value
+getValue prop =
+    case prop of
+        Nil _ -> None
+        Number control -> control |> Control.getValue |> Tuple.second |> FromSlider
+        Coordinate control -> control |> Control.getValue |> Tuple.second |> FromXY
+        Text control -> control |> Control.getValue |> Tuple.second |> FromInput
+        Color control -> control |> Control.getValue |> Tuple.second |> FromColor
+        Toggle control -> control |> Control.getValue |> FromToggle
+        Action _ -> FromButton
+        Choice _ _ control -> control |> Control.getValue |> .selected |> FromChoice
+        Group _ _ _ -> FromGroup
+        Live innerProp -> getValue innerProp
