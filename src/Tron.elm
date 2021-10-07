@@ -3,7 +3,7 @@ module Tron exposing
     , map, map2, map3, map4, map5
     , mapSet
     , andThen, with
-    , toUnit
+    , toUnit, pathify, proxify
     , perform
     )
 
@@ -168,18 +168,35 @@ perform prop =
 {-| Add the path representing the label-based way to reach the
 particular control in the GUI tree.
 
-Tip: to get `Tron (Path, msg)`, use:
+Tip: to get `Tron (Path, a)`, use:
 
 ```
-pathifyWithValue : Tron msg -> Tron (Path, msg)
-pathifyWithValue tron =
+pathify1 : Tron a -> Tron (Path, a)
+pathify1 tron =
     Tron.map2
         Tuple.pair
         (Tron.pathify tron)
         tron
 ```
+
+To get `Tron (Path, Value)`, use:
+
+```
+pathify2 : Tron a -> Tron (Path, Value)
+pathify2 tron =
+    Tron.map2
+        Tuple.pair
+        (Tron.pathify tron)
+        (Tron.proxify tron)
+```
+
 -}
 pathify : Tron msg -> Tron Path
 pathify =
     Property.pathify
         >> Property.map (always << Just)
+
+
+proxify : Tron msg -> Tron Value
+proxify =
+    Property.map <| always Just

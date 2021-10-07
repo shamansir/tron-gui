@@ -530,12 +530,12 @@ handleMouse mouseAction state tree =
 
                     Just ( _, prop ) ->
                         case prop of
-                            Number _ -> Tron.run prop
-                            Coordinate _ -> Tron.run prop
-                            Color _ -> Tron.run prop
+                            Number _ -> Tron.perform prop
+                            Coordinate _ -> Tron.perform prop
+                            Color _ -> Tron.perform prop
                             Choice _ _ (Control _ { mode } _) ->
                                 case mode of
-                                    Nest.Knob -> Tron.run prop
+                                    Nest.Knob -> Tron.perform prop
                                     _ -> Cmd.none
                             _ -> Cmd.none
                     Nothing -> Cmd.none
