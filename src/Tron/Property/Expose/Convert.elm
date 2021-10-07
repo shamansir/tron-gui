@@ -1,4 +1,4 @@
-module Tron.Expose.Convert
+module Tron.Property.Expose.Convert
     exposing
     ( toUnit, toExposed
     , reflect
@@ -28,7 +28,7 @@ import Task
 import Tron exposing (Tron)
 import Tron.Control as Control
 import Tron.Control.Nest as Nest
-import Tron.Expose as Exp
+importTron.Property.Expose.DataExp
 import Tron.Expose.Data as Exp
 import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)

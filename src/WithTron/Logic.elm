@@ -6,7 +6,8 @@ import Tron exposing (Tron)
 import Tron.Expose as Exp
 import Tron.Expose.Convert as Exp
 import Tron.Expose.Data as Exp
-import Tron.Option exposing (..)
+import Tron.Option.Communication as Comm
+import Tron.Option.RenderTarget as Render
 import Tron.Core as Core exposing (State)
 import Tron.Detach as Detach
 import Tron.Render.Layout as L
