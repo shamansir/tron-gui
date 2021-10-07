@@ -59,9 +59,6 @@ type Property a
     | Live (Property a)
 
 
-knobDistance = 90
-
-
 map : (a -> b) -> Property a -> Property b
 map f prop =
     case prop of
