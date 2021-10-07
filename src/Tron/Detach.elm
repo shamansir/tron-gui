@@ -8,8 +8,8 @@ import Dict
 import HashId exposing (HashId)
 import Json.Encode as E
 
-import Tron.Path as Path exposing (Path, toList)
-import Tron.Expose.Data as Exp
+import Tron.Path as Path exposing (Path)
+import Tron.Property.ExposeData as Exp
 import Tron.Property exposing (Property)
 import Tron.Msg exposing (Msg_(..))
 

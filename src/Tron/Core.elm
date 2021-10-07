@@ -43,6 +43,7 @@ import Tron.Detach exposing (State(..))
 import Tron.Control.Value exposing (..)
 import Tron.Control.Nest as Nest
 import Tron.Build exposing (..)
+import Tron.Expose as Exp
 
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Style.Dock as Dock exposing (..)
@@ -122,13 +123,13 @@ update msg state tree  =
 
         ApplyMouse mouseAction ->
             tree
-                |> toExposed_ state
+                |> expose_ state
                 |> handleMouse mouseAction state
 
         Click path ->
             let
                 expTree =
-                    tree |> toExposed_ state
+                    tree |> expose_ state
                 updates =
                     expTree
                         |> Property.executeAt path
@@ -137,15 +138,15 @@ update msg state tree  =
                     expTree |> Property.updateMany updates
             in
                 ( state
-                , nextRoot |> Tron.toUnit
+                , nextRoot |> Property.toUnit
                 , updates
-                    |> List.map (Tuple.second >> Tron.run)
+                    |> List.map (Tuple.second >> Tron.perform)
                     |> Cmd.batch
                 )
 
         MouseDown path ->
             ( state
-            , Focus.on tree path |> Tron.toUnit
+            , Focus.on tree path |> Property.toUnit
             , Cmd.none
             )
 
@@ -154,7 +155,7 @@ update msg state tree  =
                 curFocus = Focus.find tree
             in
                 tree
-                    |> toExposed_ state
+                    |> expose_ state
                     |> handleKeyDown keyCode curFocus state
 
         ViewportChanged ( w, h ) ->
@@ -162,7 +163,7 @@ update msg state tree  =
                 { state
                 | viewport = Size (w, h)
                 }
-            , tree |> Tron.toUnit
+            , tree |> Property.toUnit
             , Cmd.none
             )
 
@@ -173,7 +174,7 @@ update msg state tree  =
                         |> Property.updateTextAt path val
             in
                 ( state
-                , nextRoot |> Tron.toUnit
+                , nextRoot |> Property.toUnit
                 , Cmd.none
                 )
 
@@ -182,7 +183,7 @@ update msg state tree  =
                 nextRoot = Property.detachAt path tree
             in
                 ( state
-                , nextRoot |> Tron.toUnit
+                , nextRoot |> Property.toUnit
                 , Cmd.none -- FIXME: Detach.sendTree gui.detach nextRoot
                 )
 
@@ -191,7 +192,7 @@ update msg state tree  =
                 nextRoot = Property.switchPageAt path pageNum tree
             in
                 ( state
-                , nextRoot |> Tron.toUnit
+                , nextRoot |> Property.toUnit
                 , Cmd.none
                 )
 
@@ -203,7 +204,7 @@ applyRaw
     -> Cmd msg
 applyRaw rawUpdate =
     Exp.apply (Exp.fromPort rawUpdate)
-        >> Tron.run
+        >> Tron.perform
 
 
 applyDeduced
@@ -269,12 +270,15 @@ trackMouse =
     |> Sub.map ApplyMouse
 
 
+knobDistance = 90 -- FIXME: move to `Control.Knob`
+
+
 -- FIXME: return actual updates with values, then somehow extract messages from `Tron msg` for these values?
-handleMouse : MouseAction -> State -> Tron msg -> ( State, Tron (), Cmd msg )
+handleMouse : MouseAction -> State -> Tron msg -> ( State, Property (), Cmd msg )
 handleMouse mouseAction state tree =
     let
         rootPath = getRootPath state
-        unitTree = tree |> Tron.toUnit
+        unitTree = tree |> Property.toUnit
         curMouseState =
             state.mouse
         nextMouseState =
@@ -520,7 +524,7 @@ handleMouse mouseAction state tree =
 
                 else refocusedTree
 
-        ) |> Tron.toUnit
+        ) |> Property.toUnit
 
         , if finishedDragging
             then
@@ -551,7 +555,7 @@ handleKeyDown
     -> Path
     -> State
     -> Tron msg
-    -> ( State, Tron (), Cmd msg )
+    -> ( State, Property (), Cmd msg )
 handleKeyDown keyCode path state tree =
     let
 
@@ -561,29 +565,29 @@ handleKeyDown keyCode path state tree =
                 nextRoot = tree |> Property.updateMany updates
             in
                 ( state
-                , nextRoot |> Tron.toUnit
+                , nextRoot |> Property.toUnit
                 , updates
-                    |> List.map (Tuple.second >> Tron.run)
+                    |> List.map (Tuple.second >> Tron.perform)
                     |> Cmd.batch
                     --|> Cmd.map (Tuple.pair path)
                 )
 
     in case keyCode of
         -- left arrow
-        37 -> ( state, tree |> Focus.shift Focus.Left |> Tron.toUnit, Cmd.none )
+        37 -> ( state, tree |> Focus.shift Focus.Left  |> Property.toUnit, Cmd.none )
         -- right arrow
-        39 -> ( state, tree |> Focus.shift Focus.Right |> Tron.toUnit, Cmd.none )
+        39 -> ( state, tree |> Focus.shift Focus.Right |> Property.toUnit, Cmd.none )
         -- up arrow
-        38 -> ( state, tree |> Focus.shift Focus.Up |> Tron.toUnit, Cmd.none )
+        38 -> ( state, tree |> Focus.shift Focus.Up    |> Property.toUnit, Cmd.none )
         -- down arrow
-        40 -> ( state, tree |> Focus.shift Focus.Down |> Tron.toUnit, Cmd.none )
+        40 -> ( state, tree |> Focus.shift Focus.Down  |> Property.toUnit, Cmd.none )
         -- space
         32 ->
             (
                 { state
                 | hidden = not state.hidden
                 }
-            , tree |> Tron.toUnit
+            , tree |> Property.toUnit
             , Cmd.none
             )
             -- executeByPath ()
@@ -598,14 +602,14 @@ handleKeyDown keyCode path state tree =
                             -- FIXME: second time search for a path
                             tree
                                 |> Property.setAt path nextProp
-                                |> Tron.toUnit
+                                |> Property.toUnit
                         -- FIXME: inside, we check if it is a text prop again
-                        , Tron.run nextProp
+                        , Tron.perform nextProp
                             --|> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()
         -- else
-        _ -> ( state, tree |> Tron.toUnit, Cmd.none )
+        _ -> ( state, tree |> Property.toUnit, Cmd.none )
 
 
 expose : State -> Property a -> Property Exp.Out
@@ -691,7 +695,7 @@ getSizeInCells state tree =
                 |> sizeFromViewport tree
 
 
-layout : State -> Tron a -> ( Tron a, Layout )
+layout : State -> Property a -> ( Property a, Layout )
 layout state tree =
     let
         ( Size cellsSize ) = getSizeInCells state tree

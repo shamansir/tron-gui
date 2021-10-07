@@ -20,8 +20,10 @@ import Tron.Control.Button as Button
 import Tron.Control.XY as XY
 import Tron.Path as Path exposing (Path)
 import Tron.Property as Property exposing (..)
+import Tron.Property.Controls as Property
+import Tron.Property.Paths as Property
+import Tron.Property.ExposeData as Exp
 import Tron.Control.Value as Value exposing (Value(..))
-import Tron.Expose.Data as Exp
 -- import Tron.Expose.Convert as Exp
 import Tron.Style.Theme as Theme
 import Tron.Style.PanelShape as PS
@@ -482,7 +484,7 @@ decode =
                         )
                         |> D.map
                             (\items -> Nest.createGroup items ())
-                        |> D.map (Group Nothing defaultNestShape)
+                        |> D.map (Group Nothing Property.defaultNestShape)
                         |> D.map3 faceAndShape
                             (D.maybe <| D.field "shape" decodeShape)
                             (D.maybe <| D.field "face" decodeFace)
@@ -504,7 +506,7 @@ decode =
                                     Nothing -> control
                             )
                             (D.maybe <| D.field "mode" decodeChoiceMode)
-                        |> D.map (Choice Nothing defaultNestShape)
+                        |> D.map (Choice Nothing Property.defaultNestShape)
                         |> D.map3 faceAndShape
                             (D.maybe <| D.field "shape" decodeShape)
                             (D.maybe <| D.field "face" decodeFace)
