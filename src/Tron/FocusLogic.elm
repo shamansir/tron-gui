@@ -3,6 +3,8 @@ module Tron.FocusLogic exposing (..)
 
 import Tron.Path as Path exposing (Path)
 import Tron.Property exposing (..)
+import Tron.Property.Paths as Property
+import Tron.Property.Controls as Property
 import Tron.Focus exposing (Focused(..), Level, Direction(..)) -- FIXME: better to have one module
 import Tron.Control.Nest as Nest exposing (..)
 
@@ -12,7 +14,7 @@ import Array exposing (Array)
 
 clear : Property a -> Property a
 clear =
-    foldProperty
+    foldP
         (\_ prop ->
             case prop of
                 Group focus shape control ->
@@ -109,11 +111,11 @@ shift direction root =
         currentFocus = find root
         maybeFocusedProp =
             root
-                |> Tron.Property.find currentFocus
+                |> Property.find currentFocus
         nextItems =
             root
-                |> Tron.Property.find currentFocus
-                |> Maybe.andThen Tron.Property.getItems
+                |> Property.find currentFocus
+                |> Maybe.andThen Property.getItems
                 |> Maybe.withDefault Array.empty
         --curFocusArr = currentFocus |> Path.toList |> Array.fromList
         indexOfLast = Path.length currentFocus

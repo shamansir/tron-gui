@@ -10,6 +10,7 @@ import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Property exposing (..)
 import Tron.Property as Property
+import Tron.Property.Controls as Property
 import Tron.Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS

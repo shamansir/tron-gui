@@ -4,7 +4,7 @@ module Tron.Property.Controls exposing (..)
 import Array exposing (Array)
 import Array.Extra.Zipper as Z exposing (zip, Zipper(..))
 
-import Tron.Property exposing (Property(..), NestShape, foldProperty, updateAt, move)
+import Tron.Property exposing (Property(..), NestShape, foldP, updateAt, move)
 import Tron.Path as Path exposing (Path)
 import Tron.Style.CellShape as CS exposing (CellShape)
 import Tron.Style.PanelShape as PS exposing (PanelShape)
@@ -149,7 +149,7 @@ switchPageAt path pageNum =
 
 detachAll : Property a -> Property a
 detachAll =
-    foldProperty <| always detach
+    foldP <| always detach
 
 
 toggle : Property a -> Property a

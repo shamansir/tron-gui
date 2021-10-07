@@ -178,7 +178,7 @@ loadValues dict prop =
 
 loadStringValues : Dict (List Path.Label) String -> Property a -> Property a
 loadStringValues dict =
-    Property.foldProperty
+    Property.foldP
         (\path innerProp ->
             dict
                 |> Dict.get (Path.toLabelPath path)

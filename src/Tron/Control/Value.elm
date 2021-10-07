@@ -1,5 +1,5 @@
 module Tron.Control.Value exposing
-    ( Value(..), get, lift
+    ( Value(..)
     , encode
     , toString, getTypeString
     , toggleToBool, toggleToString
@@ -39,7 +39,6 @@ import Tron.Control as Control
 import Tron.Control.Nest as Nest exposing (ItemId)
 import Tron.Control.Toggle as Toggle exposing (ToggleState, toggleToBool, toggleToString)
 import Tron.Control.XY as XY
-import Tron.Property as Property exposing (Property(..))
 
 
 {-| -}
@@ -224,25 +223,3 @@ fromColor proxy =
     case proxy of
         FromColor color -> Just color
         _ -> Nothing
-
-
-{-| get proxied value from `Tron` -}
-get : Property a -> Value
-get prop =
-    case prop of
-        Nil _ -> None
-        Number control -> control |> Control.getValue |> Tuple.second |> FromSlider
-        Coordinate control -> control |> Control.getValue |> Tuple.second |> FromXY
-        Text control -> control |> Control.getValue |> Tuple.second |> FromInput
-        Color control -> control |> Control.getValue |> Tuple.second |> FromColor
-        Toggle control -> control |> Control.getValue |> FromToggle
-        Action _ -> FromButton
-        Choice _ _ control -> control |> Control.getValue |> .selected |> FromChoice
-        Group _ _ _ -> FromGroup
-        Live innerProp -> get innerProp
-
-
-{-| convert usual `Tron a` to `Tron.OfValue a`. Please prefer the one from the `Tron.OfValue` module. -}
-lift : Property a -> Property (Value -> Maybe a)
-lift =
-    Property.map (always << Just)

@@ -4,7 +4,7 @@ module Tron.Property.Values exposing (..)
 import Array.Extra.Zipper as Z exposing (Zipper(..))
 
 
-import Tron.Property exposing (Property(..), fold2_, updateMany, move, insideOut)
+import Tron.Property exposing (Property(..), foldZipP, updateMany, move, insideOut)
 import Tron.Property.Paths exposing (pathifyWithValue)
 import Tron.Control as Control
 import Tron.Control.Nest as Nest exposing (..)
@@ -58,15 +58,9 @@ loadValueFrom from to =
         (_, _) -> to
 
 
--- map2 use `move` for that
-
-
-
-
-
 changesBetween : Property a -> Property b -> List ( Path, Property b )
 changesBetween prev next =
-    fold2_
+    foldZipP
         (\zipper changes ->
             if not <| Z.run (always False) (always False) valuesAreEqual <| zipper then
                 Z.getB zipper

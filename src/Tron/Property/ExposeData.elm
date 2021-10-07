@@ -1,8 +1,9 @@
-module Tron.Expose.Data exposing
+module Tron.Property.ExposeData exposing
     ( Property, Update
     , ClientId, Value
     , Ack, In, Out, DeduceIn
     , nothingGoesIn, noAck, nothingGoesOut
+    , toRaw
     )
 
 {-| The types which are used to communicate b/w Tron and ports (and so JS and WebSockets and `dat.gui`).
@@ -22,8 +23,9 @@ module Tron.Expose.Data exposing
 
 import Json.Encode as E
 
-import Tron.Control.Value as Control exposing (Value(..))
-import Tron.Path exposing (Index, Label)
+import Tron.Control.Value as Control
+import Tron.Control.Value as Value
+import Tron.Path as Path exposing (Path, Index, Label)
 
 
 
@@ -115,3 +117,12 @@ nothingGoesOut =
 {-| -}
 noAck : Ack
 noAck = Ack E.null E.null
+
+
+toRaw : Path -> Control.Value -> Value
+toRaw path proxyVal =
+    { path = Path.toList path
+    , type_ = Value.getTypeString proxyVal
+    , value = Value.encode proxyVal
+    , stringValue = Value.toString proxyVal
+    }
