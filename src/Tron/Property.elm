@@ -1,14 +1,14 @@
 module Tron.Property exposing
     ( Property(..), FocusAt(..), Shape, NestShape
-    , get, set, move, getValue
-    , map, map2, map3, map4, map5, mapWithPath
+    , get, set, setAt, setAll, move, getValue
+    , map, map2, map3, map4, map5, mapWithPath, mapWithValue
     , andThen, with
     , toUnit, proxify, lift
     , zip
     , fold, foldP, foldFix, foldZip, foldZipP, unfold
     , updateAt, updateMany
     , perform
-    , setAt, insideOut
+    , replaceAt, insideOut
     )
 
 
@@ -91,8 +91,26 @@ mapWithPath
     :  (Path -> a -> b)
     -> Property a
     -> Property b
-mapWithPath f root =
+mapWithPath f =
     -- FIXME: should be just another `fold` actually?
+    mapHelper <| \path _ a -> f path a
+
+
+
+mapWithValue
+    :  (Path -> Value -> a -> b)
+    -> Property a
+    -> Property b
+mapWithValue f =
+    -- FIXME: should be just another `fold` actually?
+    mapHelper <| \path prop a -> f path (getValue prop) a
+
+
+mapHelper
+    :  (Path -> Property a -> a -> b)
+    -> Property a
+    -> Property b
+mapHelper f root =
 
     let
 
@@ -117,7 +135,7 @@ mapWithPath f root =
                         shape
                         (control
                             |> Nest.indexedMapItems (mapItemWithPath curPath)
-                            |> Control.map (f curPath)
+                            |> Control.map (f curPath item)
                         )
                 Group focus shape control ->
                     Group
@@ -125,11 +143,11 @@ mapWithPath f root =
                         shape
                         (control
                             |> Nest.indexedMapItems (mapItemWithPath curPath)
-                            |> Control.map (f curPath)
+                            |> Control.map (f curPath item)
                         )
                 Live innerProp ->
                     Live <| helper curPath innerProp
-                _ -> map (f curPath) item
+                _ -> map (f curPath item) item
 
     in
         helper Path.start root
@@ -164,6 +182,11 @@ with : (a -> Property a -> Property b) -> Property a -> Property b
 -- FIXME: should be changed to `andThen` with getting rid of function in Control
 with f prop =
     andThen (\v -> f v prop) prop
+
+
+unfold : Property a -> List (Path, Property a)
+unfold =
+    fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
 fold : (Path -> Property a -> b -> b) -> b -> Property a -> b
@@ -228,11 +251,6 @@ foldP f root =
 
     in
         helper Path.start root
-
-
-unfold : Property a -> List (Path, Property a)
-unfold =
-    fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
 foldFix : (a -> x) -> Property a -> x
@@ -356,8 +374,8 @@ updateMany updates root =
         updates
 
 
-setAt : Path -> Property a -> Property a -> Property a
-setAt path newProperty =
+replaceAt : Path -> Property a -> Property a -> Property a
+replaceAt path newProperty =
     updateAt path <| always newProperty
 
 
@@ -390,9 +408,28 @@ get prop =
         Group _ _ control -> control |> Control.get
         Live innerProp -> get innerProp
 
+set : a -> Property a -> Property a
+set a prop =
+    case prop of
+        Nil _ -> Nil a
+        Number control -> Number <| Control.set a <| control
+        Coordinate control -> Coordinate <| Control.set a <| control
+        Text control -> Text <| Control.set a <| control
+        Color control -> Color <| Control.set a <| control
+        Toggle control -> Toggle <| Control.set a <| control
+        Action control -> Action <| Control.set a <| control
+        Choice focus shape control -> Choice focus shape <| Control.set a <| control
+        Group focus shape control -> Group focus shape <| Control.set a <| control
+        Live innerProp -> Live <| set a innerProp
 
-set : a -> Property x -> Property a
-set = map << always
+
+setAt : Path -> a -> Property a -> Property a
+setAt path =
+    updateAt path << set
+
+
+setAll : a -> Property x -> Property a
+setAll = map << always
 
 
 zip : Property a -> Property b -> Property (Z.Zipper a b)
@@ -463,11 +500,11 @@ insideOut prop =
 {-| Replace the `()` value everywhere within Tron GUI tree, it is useful for truly a lot of cases when you don't care about what are the associated values.
 -}
 toUnit : Property a -> Property ()
-toUnit = set ()
+toUnit = setAll ()
 
 
 proxify : Property a -> Property Value
-proxify prop = set (getValue prop) prop
+proxify = mapWithValue <| \_ val _ -> val
 
 
 {-| convert usual `Tron a` to `Tron.OfValue a`. Please prefer the one from the `Tron.OfValue` module. -}
