@@ -25,8 +25,10 @@ import Tron.Path exposing (Path)
 import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Control.Text as Text
-import Tron.Property exposing (..)
-import Tron.Property as Property exposing (run, find)
+import Tron.Property as Property exposing (Property(..))
+import Tron.Property.Paths as Property
+import Tron.Property.Events as Property
+import Tron.Property.Controls as Property
 import Tron.Layout exposing (Layout)
 import Tron.Layout as Layout exposing (..)
 import Tron.Msg exposing (..)
@@ -49,9 +51,7 @@ import Tron.Style.Logic as Style exposing (..)
 import Tron.Style.Logic as Dock exposing (boundsFromSize)
 import Tron.Style.Cell as Cell exposing (..)
 
-import Tron.Expose as Exp
-import Tron.Expose.Data as Exp
-import Tron.Expose.Convert as Exp
+import Tron.Property.ExposeData as Exp
 import Tron.Control.Value as Control exposing (Value)
 import Tron.Control.Value as Value
 
@@ -114,11 +114,11 @@ update
     :  Msg
     -> State
     -> Tron msg
-    -> ( State, Tron (), Cmd (Exp.Out, msg) )
+    -> ( State, Property (), Cmd (Exp.Out, msg) )
 update msg state tree  =
     case msg of
         NoOp ->
-            ( state, tree |> Tron.toUnit, Cmd.none )
+            ( state, tree |> Property.toUnit, Cmd.none )
 
         ApplyMouse mouseAction ->
             tree
@@ -131,10 +131,10 @@ update msg state tree  =
                     tree |> toExposed_ state
                 updates =
                     expTree
-                        |> executeAt path
+                        |> Property.executeAt path
                         --|> List.map (Tuple.mapSecond Exp.toExposed)
                 nextRoot =
-                    expTree |> updateMany updates
+                    expTree |> Property.updateMany updates
             in
                 ( state
                 , nextRoot |> Tron.toUnit
@@ -170,7 +170,7 @@ update msg state tree  =
             let
                 nextRoot =
                     tree
-                        |> updateTextAt path val
+                        |> Property.updateTextAt path val
             in
                 ( state
                 , nextRoot |> Tron.toUnit
@@ -179,7 +179,7 @@ update msg state tree  =
 
         Detach path ->
             let
-                nextRoot = detachAt path tree
+                nextRoot = Property.detachAt path tree
             in
                 ( state
                 , nextRoot |> Tron.toUnit
@@ -188,7 +188,7 @@ update msg state tree  =
 
         SwitchPage path pageNum ->
             let
-                nextRoot = switchPageAt path pageNum tree
+                nextRoot = Property.switchPageAt path pageNum tree
             in
                 ( state
                 , nextRoot |> Tron.toUnit
@@ -237,7 +237,7 @@ tryDeduce tree { path, value } =
                                 Err _ -> value
 
                         _ -> value
-                , type_ = prop |> Value.get |> Value.getTypeString
+                , type_ = prop |> Property.getValue |> Value.getTypeString
                 }
             )
 
@@ -296,7 +296,7 @@ handleMouse mouseAction state tree =
                 |> findPathAt
                 |> Maybe.andThen
                     (\path ->
-                        Tron.Property.find path tree
+                        Property.find path tree
                             |> Maybe.map (Tuple.pair path)
                     )
 
@@ -341,7 +341,7 @@ handleMouse mouseAction state tree =
                                 )
                                 a
                     in
-                        updateAt
+                        Property.updateAt
                             path
                             (always <| Number nextControl)
                             tree
@@ -364,7 +364,7 @@ handleMouse mouseAction state tree =
                                 )
                                 a
                     in
-                        updateAt
+                        Property.updateAt
                             path
                             (always <| Coordinate nextControl)
                             tree
@@ -404,7 +404,7 @@ handleMouse mouseAction state tree =
                                 )
                                 a
                     in
-                        updateAt
+                        Property.updateAt
                             path
                             (always <| Color nextControl)
                             tree
@@ -432,7 +432,7 @@ handleMouse mouseAction state tree =
                                         }
                                         a
                             in
-                                updateAt
+                                Property.updateAt
                                     path
                                     (always <| Choice focus_ shape_ nextControl)
                                     tree
@@ -464,7 +464,7 @@ handleMouse mouseAction state tree =
                                         )
                                         a
                             in
-                                updateAt
+                                Property.updateAt
                                     path
                                     (always <| Number nextControl)
                                     refocusedTree
@@ -479,7 +479,7 @@ handleMouse mouseAction state tree =
                                         )
                                         a
                             in
-                                updateAt
+                                Property.updateAt
                                     path
                                     (always <| Coordinate nextControl)
                                     refocusedTree
@@ -494,7 +494,7 @@ handleMouse mouseAction state tree =
                                         )
                                         a
                             in
-                                updateAt
+                                Property.updateAt
                                     path
                                     (always <| Color nextControl)
                                     refocusedTree
@@ -509,7 +509,7 @@ handleMouse mouseAction state tree =
                                                 { value | prevSelected = Just value.selected }
                                                 a
                                     in
-                                        updateAt
+                                        Property.updateAt
                                             path
                                             (always <| Choice focus_ shape_ nextControl)
                                             refocusedTree
@@ -557,8 +557,8 @@ handleKeyDown keyCode path state tree =
 
         executeByPath _ = -- uses only `gui.tree`
             let
-                updates = tree |> executeAt path
-                nextRoot = tree |> updateMany updates
+                updates = tree |> Property.executeAt path
+                nextRoot = tree |> Property.updateMany updates
             in
                 ( state
                 , nextRoot |> Tron.toUnit
@@ -597,7 +597,7 @@ handleKeyDown keyCode path state tree =
                         ,
                             -- FIXME: second time search for a path
                             tree
-                                |> setAt path nextProp
+                                |> Property.setAt path nextProp
                                 |> Tron.toUnit
                         -- FIXME: inside, we check if it is a text prop again
                         , Tron.run nextProp
@@ -608,10 +608,10 @@ handleKeyDown keyCode path state tree =
         _ -> ( state, tree |> Tron.toUnit, Cmd.none )
 
 
-toExposed : State -> Tron a -> Tron Exp.Out
-toExposed state =
-    Exp.toExposed
-        >> Tron.map
+expose : State -> Property a -> Property Exp.Out
+expose state =
+    Property.expose
+        >> Property.map
             ( (\val ->
                 { update = val
                 , client =  Detach.encodeClientId <| Tuple.first <| state.detach
@@ -619,10 +619,10 @@ toExposed state =
             ) )
 
 
-toExposed_ : State -> Tron a -> Tron ( Exp.Out, a )
-toExposed_ state tree =
+expose_ : State -> Property a -> Property ( Exp.Out, a )
+expose_ state tree =
     tree
-        |> Tron.map2 Tuple.pair (tree |> toExposed state)
+        |> Property.map2 Tuple.pair (tree |> expose state)
 
 
 focus : msg -> Cmd msg

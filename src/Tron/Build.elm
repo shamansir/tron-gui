@@ -155,7 +155,8 @@ import Tron.Path as Path exposing (Path)
 import Tron.Control exposing (..)
 import Tron.Control.Value as Value exposing (..)
 import Tron.Property exposing (..)
-import Tron.Property as Property exposing (expand, collapse)
+import Tron.Property as Property
+import Tron.Property.Controls as Property exposing (expand)
 import Tron.Control as Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
@@ -701,7 +702,7 @@ toSet toLabel =
         (\prop ->
             Property.get prop
                 |> (\handler ->
-                        ( Value.get prop
+                        ( Property.getValue prop
                                 |> handler
                                 |> Maybe.map toLabel
                                 |> Maybe.withDefault "-"
