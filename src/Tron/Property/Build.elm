@@ -204,9 +204,9 @@ choiceBy set current compare =
 
 
 strings
-     : List Path.Label
-    -> Path.Label
-    -> Property (Int, Path.Label)
+     : List String
+    -> String
+    -> Property (Int, String)
 strings options current =
     choice
         (options

@@ -13,6 +13,7 @@ import Html.Events as HE
 import Axis exposing (Axis)
 
 import Tron.Property exposing (..)
+import Tron.Property.Controls exposing (..)
 import Tron.Path as Path exposing (Path)
 import Tron.Msg exposing (Msg_(..))
 import Tron.Focus exposing (Focused(..))
