@@ -4,10 +4,9 @@ import Random
 
 import Tron exposing (Tron)
 import Tron.Expose as Exp
-import Tron.Expose.Convert as Exp
-import Tron.Expose.Data as Exp
-import Tron.Option.Communication as Comm
-import Tron.Option.RenderTarget as Render
+import Tron.Property.ExposeData as Exp
+import Tron.Option.Communication as Ports exposing (Communication(..))
+import Tron.Option.Render as Render exposing (Target(..))
 import Tron.Core as Core exposing (State)
 import Tron.Detach as Detach
 import Tron.Render.Layout as L
@@ -15,7 +14,7 @@ import Tron.Render.Layout as L
 import Html exposing (Html)
 
 
-performInitEffects : PortCommunication msg -> Tron () -> Cmd msg
+performInitEffects : Ports.Communication msg -> Tron () -> Cmd msg
 performInitEffects ports tree =
     case ports of
         SendJson { ack } ->
@@ -27,7 +26,7 @@ performInitEffects ports tree =
         _ -> Cmd.none
 
 
-tryTransmitting : PortCommunication msg -> Exp.Out -> Cmd msg
+tryTransmitting : Ports.Communication msg -> Exp.Out -> Cmd msg
 tryTransmitting ports rawUpdate =
     case ports of
         Detachable { transmit } ->
@@ -44,7 +43,7 @@ tryTransmitting ports rawUpdate =
         _ -> Cmd.none
 
 
-addInitOptions : RenderTarget -> State -> State
+addInitOptions : Render.Target -> State -> State
 addInitOptions target gui =
     case target of
         Html dock _ -> gui |> Core.dock dock
@@ -53,7 +52,7 @@ addInitOptions target gui =
         Debug dock _ -> gui |> Core.dock dock
 
 
-addSubscriptionsOptions : PortCommunication msg -> Tron () -> Sub (List Exp.In)
+addSubscriptionsOptions : Ports.Communication msg -> Tron () -> Sub (List Exp.In)
 addSubscriptionsOptions ports tree =
     case ports of
         SendReceiveJson { apply } ->
@@ -67,7 +66,7 @@ addSubscriptionsOptions ports tree =
         _ -> Sub.none
 
 
-useRenderTarget : RenderTarget -> State -> Tron () -> Html Core.Msg
+useRenderTarget : Render.Target -> State -> Tron () -> Html Core.Msg
 useRenderTarget target state tree =
     case target of
         Html dock theme -> tree |> Core.view L.Fancy theme (state |> Core.dock dock)

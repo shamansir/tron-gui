@@ -13,7 +13,7 @@ module Tron.Option.Communication exposing
 
 import Url exposing (Url)
 
-import Tron.Expose.Data as Exp
+import Tron.Property.ExposeData as Exp
 import Tron.Detach as Detach
 import Tron.Msg exposing (Msg_)
 import Tron.Path as Path
@@ -128,7 +128,10 @@ sendStrings { transmit } =
         { ack = Nothing
         , transmit = Just
             <| \{ update } ->
-                transmit ( update.labelPath, update.stringValue )
+                transmit
+                    ( update.path |> List.map Tuple.second
+                    , update.stringValue
+                    )
         , receive = Nothing
         , apply = Nothing
         }
