@@ -24,6 +24,7 @@ import Tron as Tron
 import Tron.Path exposing (Path)
 import Tron.Path as Path
 import Tron.Control exposing (..)
+import Tron.Control as Control
 import Tron.Control.Text as Text
 import Tron.Property as Property exposing (Property(..))
 import Tron.Property.Paths as Property
@@ -122,26 +123,31 @@ update msg state tree  =
             ( state, tree |> Property.toUnit, Cmd.none )
 
         ApplyMouse mouseAction ->
-            tree
-                |> expose_ state
-                |> handleMouse mouseAction state
+            let
+                ( nextState, changesTree ) =
+                    handleMouse mouseAction state (tree |> Property.toUnit)
+            in
+                ( nextState
+                , changesTree |> Property.toUnit
+                , fireChangesFrom nextState ( tree, changesTree )
+                )
 
         Click path ->
             let
-                expTree =
-                    tree |> expose_ state
+                changesTree =
+                    tree |> Property.setAll Stayed
                 updates =
-                    expTree
+                    changesTree
                         |> Property.executeAt path
-                        --|> List.map (Tuple.mapSecond Exp.toExposed)
+                        |> List.map (Tuple.mapSecond <| Property.set ChangeToFire)
                 nextRoot =
-                    expTree |> Property.updateMany updates
+                    changesTree
+                        |> Property.updateMany updates
+
             in
                 ( state
                 , nextRoot |> Property.toUnit
-                , updates
-                    |> List.map (Tuple.second >> Tron.perform)
-                    |> Cmd.batch
+                , fireChangesFrom state ( tree, changesTree )
                 )
 
         MouseDown path ->
@@ -153,10 +159,13 @@ update msg state tree  =
         KeyDown keyCode ->
            let
                 curFocus = Focus.find tree
+                ( nextState, changesTree ) =
+                    handleKeyDown keyCode curFocus state (tree |> Property.toUnit)
             in
-                tree
-                    |> expose_ state
-                    |> handleKeyDown keyCode curFocus state
+                ( nextState
+                , changesTree |> Property.toUnit
+                , fireChangesFrom nextState ( tree, changesTree )
+                )
 
         ViewportChanged ( w, h ) ->
             (
@@ -215,6 +224,10 @@ applyDeduced toDeduce tree =
     case tryDeduce tree toDeduce of
         Just rawUpdate -> tree |> applyRaw rawUpdate
         Nothing -> Cmd.none
+
+
+applyHandlers : Tron msg -> Property (Maybe msg)
+applyHandlers = Property.apply
 
 
 tryDeduce : Tron a -> Exp.DeduceIn -> Maybe Exp.In
@@ -571,62 +584,66 @@ handleKeyDown
     :  Int
     -> Path
     -> State
-    -> Property msg
+    -> Property ()
     -> ( State, Property ValueState )
 handleKeyDown keyCode path state tree =
     let
 
+        changesTree =
+            tree |> Property.setAll Stayed
+
         executeByPath _ = -- uses only `gui.tree`
             let
-                updates = tree |> Property.executeAt path
-                nextRoot = tree |> Property.updateMany updates
+                updates = changesTree |> Property.executeAt path
+                markedUpdates =
+                    updates |> List.map (Tuple.mapSecond <| Property.set ChangeToFire)
+                nextRoot = changesTree |> Property.updateMany markedUpdates
             in
                 ( state
-                , nextRoot |> Property.toUnit
-                , updates
+                , nextRoot
+                {- , markedUpdates
                     |> List.map (Tuple.second >> Tron.perform)
                     |> Cmd.batch
                     --|> Cmd.map (Tuple.pair path)
+                -}
                 )
 
     in case keyCode of
         -- left arrow
-        37 -> ( state, tree |> Focus.shift Focus.Left  |> Property.toUnit, Cmd.none )
+        37 -> ( state, changesTree |> Focus.shift Focus.Left )
         -- right arrow
-        39 -> ( state, tree |> Focus.shift Focus.Right |> Property.toUnit, Cmd.none )
+        39 -> ( state, changesTree |> Focus.shift Focus.Right )
         -- up arrow
-        38 -> ( state, tree |> Focus.shift Focus.Up    |> Property.toUnit, Cmd.none )
+        38 -> ( state, changesTree |> Focus.shift Focus.Up )
         -- down arrow
-        40 -> ( state, tree |> Focus.shift Focus.Down  |> Property.toUnit, Cmd.none )
+        40 -> ( state, changesTree |> Focus.shift Focus.Down )
         -- space
         32 ->
             (
                 { state
                 | hidden = not state.hidden
                 }
-            , tree |> Property.toUnit
-            , Cmd.none
+            , changesTree
             )
             -- executeByPath ()
         -- enter
         13 ->
-            case tree |> Property.find path of
+            case changesTree |> Property.find path of
                 Just (Text control) ->
-                    let nextProp = (Text <| Text.finishEditing control)
+                    let nextProp = (Text <| Control.set ChangeToFire <| Text.finishEditing control)
                     in
                         ( state
                         ,
                             -- FIXME: second time search for a path
-                            tree
-                                |> Property.setAt path nextProp
-                                |> Property.toUnit
+                            changesTree
+                                |> Property.replaceAt path nextProp
                         -- FIXME: inside, we check if it is a text prop again
-                        , Tron.perform nextProp
+                        -- , Tron.perform nextProp
                             --|> Cmd.map (Tuple.pair path)
                         )
                 _ -> executeByPath ()
         -- else
-        _ -> ( state, tree |> Property.toUnit, Cmd.none )
+        _ -> ( state, changesTree )
 
 
 expose : State -> Property a -> Property Exp.Out
@@ -644,6 +661,42 @@ expose_ : State -> Property a -> Property ( Exp.Out, a )
 expose_ state tree =
     tree
         |> Property.map2 Tuple.pair (tree |> expose state)
+
+
+collectChanges : State -> Property ( ValueState, Maybe msg ) -> List (Exp.Out, msg)
+collectChanges state =
+    expose_ state
+        >> Property.unfold
+        >> List.map (Tuple.second >> Property.get)
+        >> List.filterMap
+            (\(expOut, (valState, maybeMsg)) ->
+                case ( valState, maybeMsg ) of
+                    ( ChangeToFire, Just msg ) ->
+                        Just <|
+                            ( expOut
+                            , msg
+                            )
+                    _ -> Nothing
+            )
+
+
+fireChanges : List change -> Cmd change
+fireChanges =
+    List.map (Task.succeed >> Task.perform identity)
+        >> Cmd.batch
+
+
+fireChangesFrom : State -> ( Tron msg, Property ValueState ) -> Cmd (Exp.Out, msg)
+fireChangesFrom state ( tron, changesTree ) =
+    Property.map3
+        (\handler currentVal valueState ->
+            ( valueState, handler currentVal )
+        )
+        tron
+        (changesTree |> Property.proxify)
+        changesTree
+            |> collectChanges state
+            |> fireChanges
 
 
 focus : msg -> Cmd msg
