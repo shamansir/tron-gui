@@ -7,7 +7,7 @@ module Tron.Property exposing
     , zip
     , fold, foldP, foldFix, foldZip, foldZipP, unfold
     , updateAt, updateMany
-    , perform
+    , perform, apply
     , replaceAt, insideOut
     )
 
@@ -511,6 +511,11 @@ proxify = mapWithValue <| \_ val _ -> val
 lift : Property a -> Property (Value -> Maybe a)
 lift =
     map (always << Just)
+
+
+apply : Property (Value -> Maybe a) -> Property (Maybe a)
+apply = mapWithValue (\_ val handler -> handler val)
+
 
 
 {-| get proxied value from `Tron` -}
