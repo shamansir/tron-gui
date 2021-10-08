@@ -1,5 +1,5 @@
-module Tron.Option.RenderTarget exposing
-    ( RenderTarget
+module Tron.Option.Render exposing
+    ( Target(..)
     , hidden, toHtml, toDebug, toVr
     )
 
@@ -22,7 +22,7 @@ import Tron.Msg exposing (Msg_(..))
 - To AFrame (VR), with given Theme (experimental);
 
 -}
-type RenderTarget
+type Target
     = Html Dock Theme
     | Aframe Theme
     | Debug Dock Theme
@@ -32,19 +32,19 @@ type RenderTarget
 
 See `example/DatGui` for details.
 -}
-hidden : RenderTarget
+hidden : Target
 hidden = Nowhere
 
 
 {-| Render to HTML using given theme (dark/light) and docked at the requested side (see `Tron.Style.Dock`). Most used option!
 -}
-toHtml : Dock -> Theme -> RenderTarget
+toHtml : Dock -> Theme -> Target
 toHtml = Html
 
 
 {-| Render to Debug mode where all the controls are represented as text boxes with information.
 -}
-toDebug : Dock -> Theme -> RenderTarget
+toDebug : Dock -> Theme -> Target
 toDebug = Debug
 
 
@@ -52,5 +52,5 @@ toDebug = Debug
 
 See `example/AFrame` for details.
 -}
-toVr : Theme -> RenderTarget
+toVr : Theme -> Target
 toVr = Aframe

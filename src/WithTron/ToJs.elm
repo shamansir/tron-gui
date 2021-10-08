@@ -44,7 +44,7 @@ import WithTron exposing (..)
 import WithTron.ValueAt exposing (ValueAt)
 
 import Tron.Path as Path exposing (Path)
-import Tron.Option.RenderTarget exposing (..)
+import Tron.Option.Render exposing (..)
 import Tron.Option.Communication exposing (..)
 import Tron.Expose as Exp
 import Tron.Expose.Convert as Exp
