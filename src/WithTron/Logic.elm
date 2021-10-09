@@ -10,37 +10,67 @@ import Tron.Option.Render as Render exposing (Target(..))
 import Tron.Core as Core exposing (State)
 import Tron.Detach as Detach
 import Tron.Render.Layout as L
+import HashId
+
+import Json.Encode as E
 
 import Html exposing (Html)
 
 
-performInitEffects : Ports.Communication msg -> Tron () -> Cmd msg
-performInitEffects ports tree =
+{- setDetachState : ( Maybe Detach.ClientId, Detach.State ) -> State -> State
+setDetachState detachState state =
+    { state
+    | detach = detachState
+    } -}
+
+
+nextClientId : Cmd Detach.ClientId
+nextClientId =
+    Random.generate identity Detach.clientIdGenerator
+
+
+performInitEffects : Maybe Detach.ClientId -> Ports.Communication msg -> Tron () -> Cmd msg
+performInitEffects maybeClientId ports tree =
     case ports of
-        SendJson { ack } ->
-            tree |> Exp.encode |> ack
-        SendReceiveJson { ack } ->
-            tree |> Exp.encode |> ack
-        DatGui { ack } ->
-            tree |> Exp.encode |> ack
-        _ -> Cmd.none
+        DontCommunicate -> Cmd.none
+        Communicate { ack } ->
+            ack
+                |> Maybe.map
+                    ((|>)
+                        { client =
+                            maybeClientId
+                                    |> Maybe.map (HashId.toString >> E.string)
+                                    |> Maybe.withDefault E.null
+                        , tree = Exp.encode <| tree
+                        }
+                    )
+                |> Maybe.withDefault Cmd.none
 
 
 tryTransmitting : Ports.Communication msg -> Exp.Out -> Cmd msg
 tryTransmitting ports rawUpdate =
     case ports of
-        Detachable { transmit } ->
-            transmit rawUpdate
-        SendJson { transmit } ->
-            transmit rawUpdate
-        SendReceiveJson { transmit } ->
-            transmit rawUpdate
-        SendStrings { transmit } ->
+        DontCommunicate -> Cmd.none
+        Communicate { transmit } ->
             transmit
-                ( rawUpdate.update.labelPath
-                , rawUpdate.update.stringValue
-                )
-        _ -> Cmd.none
+                |> Maybe.map ((|>) rawUpdate)
+                |> Maybe.withDefault Cmd.none
+
+
+addSubscriptionsOptions : Ports.Communication msg -> Tron () -> Sub (List Exp.In)
+addSubscriptionsOptions ports tree =
+    case ports of
+        DontCommunicate -> Sub.none
+        Communicate { apply, receive } ->
+            Sub.batch
+                [ apply
+                    |> Maybe.map (Sub.map (List.map <| Core.tryDeduce tree))
+                    |> Maybe.map (Sub.map (List.filterMap identity))
+                    |> Maybe.withDefault Sub.none
+                , receive
+                    |> Maybe.map (Sub.map List.singleton)
+                    |> Maybe.withDefault Sub.none
+                ]
 
 
 addInitOptions : Render.Target -> State -> State
@@ -52,20 +82,6 @@ addInitOptions target gui =
         Debug dock _ -> gui |> Core.dock dock
 
 
-addSubscriptionsOptions : Ports.Communication msg -> Tron () -> Sub (List Exp.In)
-addSubscriptionsOptions ports tree =
-    case ports of
-        SendReceiveJson { apply } ->
-            apply
-                |> Sub.map (List.map <| Core.tryDeduce tree)
-                |> Sub.map (List.filterMap identity)
-        Detachable { receive } ->
-            receive |> Sub.map List.singleton
-        DatGui { receive } ->
-            receive |> Sub.map List.singleton
-        _ -> Sub.none
-
-
 useRenderTarget : Render.Target -> State -> Tron () -> Html Core.Msg
 useRenderTarget target state tree =
     case target of
@@ -73,15 +89,3 @@ useRenderTarget target state tree =
         Nowhere -> Html.div [] []
         Aframe _ -> Html.div [] [] -- FIXME
         Debug dock theme -> tree |> Core.view L.Debug theme (state |> Core.dock dock)
-
-
-setDetachState : ( Maybe Detach.ClientId, Detach.State ) -> State -> State
-setDetachState detachState state =
-    { state
-    | detach = detachState
-    }
-
-
-nextClientId : Cmd Detach.ClientId
-nextClientId =
-    Random.generate identity Detach.clientIdGenerator

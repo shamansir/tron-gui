@@ -1,5 +1,5 @@
 module Tron.Option.Communication exposing
-    ( Communication, Ports, map
+    ( Communication(..), Ports, map
     , noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
     , connect, connect_
     )
