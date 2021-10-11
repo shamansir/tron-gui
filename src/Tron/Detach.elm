@@ -153,6 +153,21 @@ fromUrl { fragment } =
             case str |> String.split "=" of
                 k::v::_ -> Just ( k, v )
                 _ -> Nothing
+        extractPathItem : String -> Maybe ( Path.Index, Path.Label )
+        extractPathItem =
+            String.split ":"
+                >> List.take 2
+                >> (\maybePair ->
+                        case maybePair of
+                            (a::b::_) -> Just (a, b)
+                            _ -> Nothing
+                    )
+                >> Maybe.andThen
+                    (\(maybeIdx, label) ->
+                        String.toInt maybeIdx
+                            |> Maybe.map (\idx -> (idx, label))
+                    )
+
     in case fragment of
         Just str ->
             let
@@ -172,7 +187,7 @@ fromUrl { fragment } =
                         else
                             pathStr
                                 |> String.split "-"
-                                |> List.map String.toInt
+                                |> List.map extractPathItem
                                 |> List.filterMap identity
                                 |> Path.fromList
                                 |> AttachedAt
