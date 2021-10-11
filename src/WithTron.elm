@@ -102,17 +102,17 @@ import Task
 
 import Tron.Core as Core exposing (State)
 import Tron exposing (Tron)
-import Tron.OfValue as Def
+import Tron as Def
 --import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Expose as Exp
-import Tron.Expose.Convert as Exp
-import Tron.Option exposing (..)
+import Tron.Option.Render as Option
+import Tron.Option.Communication as Option
 import Tron.Msg exposing (Msg_(..))
 import Tron.Detach as Detach
 import Tron.Property as Property exposing (LabelPath)
-import Tron.Expose.Data as Exp
+import Tron.Property.ExposeData as Exp
 
 import WithTron.Logic exposing (..)
 
