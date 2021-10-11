@@ -74,7 +74,8 @@ formLocalUrl client path =
             else
                 path
                 |> Path.toList
-                |> List.map (Tuple.first >> String.fromInt)
+                |> List.map (Tuple.mapFirst String.fromInt)
+                |> List.map (\(idxStr, label) -> idxStr ++ ":" ++ label)
                 |> String.join "-"
             )
         ]
@@ -97,6 +98,10 @@ encodeClientId maybeClientId =
             E.string <| HashId.toString id_
         Nothing ->
             E.null
+
+
+clientIdToString : ClientId -> String
+clientIdToString = HashId.toString
 
 
 {-

@@ -5,11 +5,11 @@ import Color
 import Url exposing (Url)
 import Bounds exposing (..)
 
-import Tron.Path exposing (Path)
+import Tron.Path as Path exposing (Path)
 import Tron.Msg exposing (Msg_(..))
 import Tron.Pages as Pages
 import Tron.Detach as Detach exposing (Ability(..), ClientId, localUrlToString, LocalUrl)
-import Tron.Property exposing (Label, Property)
+import Tron.Property exposing (Property)
 
 import Tron.Render.Transform exposing (rotate, scale)
 import Tron.Render.Util exposing (arrow, State)
@@ -53,7 +53,7 @@ controls
     -> Theme
     -> Path
     -> BoundsF
-    -> ( Label, Property a )
+    -> ( Path.Label, Property a )
     -> Svg Msg_
 controls detachAbility theme path bounds ( label, prop ) =
     Svg.g
