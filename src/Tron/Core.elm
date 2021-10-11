@@ -221,7 +221,7 @@ applyDeduced
     -> Tron msg
     -> Cmd msg
 applyDeduced toDeduce tree =
-    case tryDeduce tree toDeduce of
+    case tryDeduce (tree |> Property.toUnit) toDeduce of
         Just rawUpdate -> tree |> applyRaw rawUpdate
         Nothing -> Cmd.none
 
@@ -230,7 +230,7 @@ applyHandlers : Tron msg -> Property (Maybe msg)
 applyHandlers = Property.apply
 
 
-tryDeduce : Tron a -> Exp.DeduceIn -> Maybe Exp.In
+tryDeduce : Property () -> Exp.DeduceIn -> Maybe Exp.In
 tryDeduce tree { path, value } =
     tree
         |> Property.find (Path.fromList path)
@@ -795,7 +795,7 @@ subscriptions _ =
         ]
 
 
-view : Mode -> Theme -> State -> Tron a -> Html Msg
+view : Mode -> Theme -> State -> Property a -> Html Msg
 view mode theme state tree  =
     let
         cellsSize = getSizeInCells state tree

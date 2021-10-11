@@ -17,8 +17,9 @@ import Bounds as B exposing (..)
 
 import Tron.Path as Path exposing (Path)
 import Tron.Control exposing (..)
-import Tron.Property exposing (..)
-import Tron.Property as Property exposing (find)
+import Tron.Property as Property exposing (Property)
+import Tron.Property.Paths as Property
+import Tron.Property.Controls as Property
 import Tron.Msg exposing (..)
 import Tron.Layout exposing (..)
 import Tron.Layout as Layout exposing (fold)
@@ -67,9 +68,9 @@ viewProperty
     -> State
     -> Path
     -> BoundsF
-    -> Maybe ( Label, Property a )
+    -> Maybe ( Path.Label, Property a )
     -> CellShape
-    -> ( Label, Property a )
+    -> ( Path.Label, Property a )
     -> Svg Msg_
 viewProperty
     mode
@@ -127,7 +128,7 @@ viewPlateControls
     -> Theme
     -> Path
     -> BoundsF
-    -> ( Label, Property a )
+    -> ( Path.Label, Property a )
     -> Svg Msg_
 viewPlateControls detach mode theme path pixelBounds ( label, source )  =
     positionAt_ pixelBounds <|
@@ -170,18 +171,15 @@ collectPlatesAndCells -- FIXME: a complicated function, split into many
     ->
         ( List
             { path : Path
-            , label : String
             , bounds : BoundsF
             , source : Property a
             , pages : Pages.Count
             }
         , List
             { path : Path
-            , label : String
             , bounds : BoundsF
             , parent : Maybe (Property a)
             , source : Property a
-            , index : Maybe Int
             }
         )
 collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
@@ -194,14 +192,12 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
                     , case root |> Property.find1 (Path.sub rootPath cellPath) of
                         Just ( label, source ) ->
                             { path = cellPath
-                            , label = label
                             , parent = Nothing
                             , bounds =
                                 cellBounds
                                     --|> Dock.adaptBounds dock size
                                     |> B.multiplyByF Cell.width
                             , source = source
-                            , index = Nothing
                             } :: prevCells
                         Nothing -> prevCells
                     )
@@ -212,7 +208,6 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
                         Just ( label, source ) ->
                             (
                                 { path = originPath
-                                , label = label
                                 , bounds =
                                     plateBounds
                                         --|> Dock.adaptBounds dock size
@@ -230,7 +225,6 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
                                                 |> Property.find1 (Path.sub rootPath cellPath) of
                                                 Just ( cellLabel, cellSource ) ->
                                                     { path = cellPath
-                                                    , label = cellLabel
                                                     , parent = Just source
                                                     , bounds =
                                                         cellBounds
@@ -241,7 +235,6 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
                                                             --     )
                                                             |> B.multiplyByF Cell.width
                                                     , source = cellSource
-                                                    , index = Path.last cellPath
                                                     } |> Just
                                                 Nothing -> Nothing
                                         )
@@ -358,19 +351,21 @@ view mode theme dock bounds detach getDetachAbility root layout =
                             then AtRoot
                             else OnAPlate
                         , focused root cell.path
-                        , if Maybe.map2 isSelected cell.parent cell.index
+                        , if Maybe.map2 Property.isSelected cell.parent (Path.lastIndex cell.path)
                             |> Maybe.withDefault False
                             then Selected
                             else Usual
                         )
                         cell.path
                         cell.bounds
-                        (getSelected cell.source)
+                        (Property.getSelected cell.source)
                         ( cell.parent
                             |> Maybe.andThen Property.getCellShape
                             |> Maybe.withDefault CS.default
                         )
-                        ( cell.label, cell.source )
+                        ( cell.path |> Path.lastLabel |> Maybe.withDefault "?"
+                        , cell.source
+                        )
 
                 )
 
@@ -388,7 +383,9 @@ view mode theme dock bounds detach getDetachAbility root layout =
                                 theme
                                 plate.path
                                 plate.bounds
-                                ( plate.label, plate.source )
+                                ( plate.path |> Path.lastLabel |> Maybe.withDefault "?"
+                                , plate.source
+                                )
                         else Svg.none
                     )
 

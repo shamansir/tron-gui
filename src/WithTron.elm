@@ -107,12 +107,14 @@ import Tron as Def
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Expose as Exp
-import Tron.Option.Render as Option
-import Tron.Option.Communication as Option
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Comm
 import Tron.Msg exposing (Msg_(..))
 import Tron.Detach as Detach
-import Tron.Property as Property exposing (LabelPath)
+import Tron.Property as Property exposing (Property)
 import Tron.Property.ExposeData as Exp
+import Tron.Property.Controls as Property
+import Tron.Property.Values as Property
 
 import WithTron.Logic exposing (..)
 
@@ -120,7 +122,7 @@ import WithTron.Logic exposing (..)
 
 {-| Adds `Model msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
 type alias ProgramWithTron flags model msg =
-    Program flags ( model, State, Tron () ) ( WithTronMsg msg )
+    Program flags ( model, State, Property () ) ( WithTronMsg msg )
 
 
 type WithTronMsg msg
@@ -134,12 +136,12 @@ type WithTronMsg msg
 
 
 init
-    :  ( flags -> ( model, Cmd msg ), model -> Tron () )
+    :  ( flags -> ( model, Cmd msg ), model -> Property () )
     -> Maybe Url
-    -> RenderTarget
-    -> PortCommunication msg
+    -> Render.Target
+    -> Comm.Ports msg
     -> flags
-    -> ( ( model, State, Tron () ), Cmd (WithTronMsg msg) )
+    -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
 init ( userInit, userFor ) maybeUrl renderTarget ports flags =
     let
         ( initialModel, userEffect ) =
@@ -152,12 +154,16 @@ init ( userInit, userFor ) maybeUrl renderTarget ports flags =
         (
             ( initialModel
             , state |> addInitOptions renderTarget
-            , firstTree |> Tron.toUnit
+            , firstTree
             )
         , Cmd.batch
             [ userEffect |> Cmd.map ToUser
             , guiEffect |> Cmd.map ToTron
-            , performInitEffects ports (firstTree |> Tron.toUnit) |> Cmd.map ToUser
+            , performInitEffects -- FIXME: `clientId` is always `Nothing`
+                (state.detach |> Tuple.first)
+                ports
+                firstTree
+                |> Cmd.map ToUser
             , case maybeUrl of
                 Just url ->
                     Task.succeed url
@@ -169,8 +175,8 @@ init ( userInit, userFor ) maybeUrl renderTarget ports flags =
 
 view
     :  (model -> Html msg)
-    -> RenderTarget
-    -> ( model, State, Tron () )
+    -> Render.Target
+    -> ( model, State, Property () )
     -> Html (WithTronMsg msg)
 view userView renderTarget ( model, state, tree ) =
     Html.div
@@ -185,8 +191,8 @@ view userView renderTarget ( model, state, tree ) =
 
 subscriptions
     :  ( model -> Sub msg )
-    -> PortCommunication msg
-    -> ( model, State, Tron () )
+    -> Comm.Ports msg
+    -> ( model, State, Property () )
     -> Sub (WithTronMsg msg)
 subscriptions userSubscriptions ports ( model, state, tree ) =
     Sub.batch
@@ -198,10 +204,10 @@ subscriptions userSubscriptions ports ( model, state, tree ) =
 
 update
     :  ( msg -> model -> (model, Cmd msg), model -> Def.Tron msg )
-    -> PortCommunication msg
+    -> Comm.Ports msg
     -> WithTronMsg msg
-    -> ( model, State, Tron () )
-    -> ( ( model, State, Tron () ), Cmd (WithTronMsg msg) )
+    -> ( model, State, Property () )
+    -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
 update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
     case withTronMsg of
 
@@ -217,11 +223,11 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                 ( newUserModel
                 , state
                 , nextTree
+                    |> Property.toUnit
                     |> Property.transferTransientState prevTree
                     |> Property.loadValues prevTree
                     --|> Property.loadChangedValues prevTree nextTree
                     --|> Property.loadLiveValues nextGui
-                    |> Tron.toUnit
                 )
             , userEffect |> Cmd.map ToUser
             )
@@ -264,7 +270,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                     , nextRoot |> Tron.toUnit
                     )
                 , nextRoot
-                    |> Exp.freshRun
+                    |> Tron.perform
                     |> Cmd.map ToUser
                 )
 
@@ -280,9 +286,11 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                     }
                 , prevTree
                 )
-            , case ports of -- FIXME: move to WithTron.Logic
-                Detachable { ack } ->
-                    Exp.encodeAck clientId
+            , case ports.ack of -- FIXME: move to WithTron.Logic
+                Just ack ->
+                    Exp.makeAck
+                        (Detach.clientIdToString clientId)
+                        prevTree
                         |> ack
                         |> Cmd.map ToUser
                 _ -> Cmd.none
@@ -322,21 +330,22 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
 
 -- FIXME: move to WithTron.Logic
 applyUrl
-    :  PortCommunication msg
+    :  Comm.Ports msg
     -> Url.Url
     -> Cmd (WithTronMsg msg)
 applyUrl ports url =
     let
         ( maybeClientId, state ) = Detach.fromUrl url
     in
-        case ( ports, maybeClientId ) of
-            ( Detachable { ack }, Just clientId ) ->
-                Exp.encodeAck clientId
+        case ( ports.ack, maybeClientId ) of
+            ( Just ack, Just clientId ) ->
+                Exp.makeAck
+                    (Detach.clientIdToString clientId)
                     |> ack
                     |> Cmd.map ToUser
                 -- Task.succeed id
                 --     |> Task.perform SetClientId
-            ( Detachable { ack }, Nothing ) ->
+            ( Just ack, Nothing ) ->
                 nextClientId
                     |> Cmd.map SetClientId
 
@@ -366,8 +375,8 @@ For example:
 
 -}
 sandbox
-    :  RenderTarget
-    -> PortCommunication msg
+    :  Render.Target
+    -> Comm.Ports msg
     ->
         { for : model -> Def.Tron msg
         , init : model
@@ -415,8 +424,8 @@ Example from `Basic/Main.elm`
 
  -}
 element
-    :  RenderTarget
-    -> PortCommunication msg
+    :  Render.Target
+    -> Comm.Ports msg
     ->
         { for : model -> Def.Tron msg
         , init : flags -> ( model, Cmd msg )
@@ -428,7 +437,7 @@ element
 element renderTarget ports def =
     Browser.element
         { init =
-            init ( def.init, def.for >> Tron.toUnit ) Nothing renderTarget ports
+            init ( def.init, def.for >> Property.toUnit ) Nothing renderTarget ports
         , update =
             update ( def.update, def.for ) ports
         , view =
@@ -471,8 +480,8 @@ For example:
 
  -}
 document
-    :  RenderTarget
-    -> PortCommunication msg
+    :  Render.Target
+    -> Comm.Ports msg
     ->
         { for : model -> Def.Tron msg
         , init : flags -> ( model, Cmd msg )
@@ -485,7 +494,7 @@ document renderTarget ports def =
     Browser.document
         { init =
             \flags ->
-                init ( def.init, def.for >> Tron.toUnit) Nothing renderTarget ports flags
+                init ( def.init, def.for >> Property.toUnit) Nothing renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =
@@ -552,8 +561,8 @@ Example from `Detachable/Main.elm`:
 
  -}
 application
-    :  RenderTarget
-    -> PortCommunication msg
+    :  Render.Target
+    -> Comm.Ports msg
     ->
         { for : model -> Def.Tron msg
         , init : flags -> ( model, Cmd msg )
@@ -568,7 +577,7 @@ application renderTarget ports def =
     Browser.application
         { init =
             \flags url _ ->
-                init ( def.init, def.for >> Tron.toUnit ) (Just url) renderTarget ports flags
+                init ( def.init, def.for >> Property.toUnit ) (Just url) renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =

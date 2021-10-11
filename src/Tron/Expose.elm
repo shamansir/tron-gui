@@ -19,6 +19,7 @@ import Tron.Control.Toggle exposing (ToggleState(..))
 import Tron.Control.Button as Button
 import Tron.Control.XY as XY
 import Tron.Path as Path exposing (Path)
+-- import Tron.Detach as Detach
 import Tron.Property as Property exposing (..)
 import Tron.Property.Controls as Property
 import Tron.Property.Paths as Property
@@ -1030,6 +1031,29 @@ toProxy outUpdate =
     fromPort
         (swap outUpdate)
         |> .value
+
+
+encodeAck : Exp.Ack -> E.Value
+encodeAck { client, tree } =
+    E.object
+        [ ( "client", client )
+        , ( "tree", tree )
+        ]
+
+
+{- encodeAck_ : Detach.ClientId -> Property a -> E.Value
+encodeAck_ clientId tree =
+    encodeAck
+        { client = Detach.encodeClientId <| Just clientId
+        , tree = encode tree
+        } -}
+
+
+makeAck : String -> Property () -> Exp.Ack
+makeAck clientId tree =
+    { client = E.string clientId
+    , tree = encode tree
+    }
 
 
 -- TODO: move all below to corresponding controls

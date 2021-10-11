@@ -74,6 +74,14 @@ last =
     pop >> Maybe.map Tuple.second
 
 
+lastIndex : Path -> Maybe Index
+lastIndex = last >> Maybe.map Tuple.first
+
+
+lastLabel : Path -> Maybe Label
+lastLabel = last >> Maybe.map Tuple.second
+
+
 toString : Path -> String
 toString (Path list) =
     list
