@@ -1,7 +1,7 @@
 module Tron.Option.Communication exposing
-    ( Communication(..), Ports, map
+    ( Ports, map
     , noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
-    , connect, connect_
+    , connect
     )
 
 
@@ -10,22 +10,9 @@ module Tron.Option.Communication exposing
 @docs Communication, map, noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
 -}
 
-
-import Url exposing (Url)
-
 import Tron.Property.ExposeData as Exp
-import Tron.Detach as Detach
-import Tron.Msg exposing (Msg_)
 import Tron.Path as Path
 import Tron.Msg exposing (Msg_(..))
-
-
-type alias Ports msg =
-    { ack : Maybe (Exp.Ack -> Cmd msg)
-    , transmit : Maybe (Exp.Out -> Cmd msg)
-    , apply : Maybe (Sub (List Exp.DeduceIn))
-    , receive : Maybe (Sub Exp.In)
-    }
 
 
 {-| If the GUI communicates with outside world using ports
@@ -36,26 +23,21 @@ type alias Ports msg =
 - It is _detachable_, so part of the GUI may be moved to another tab/browser/device and they communicate using WebSocket server using given ports: see `example/Detachable` for details, ensure to run `example/start-server.sh` before running `start-example Detachable`;
 - It communicates with `dat.gui` using given ports: see `example/DatGui`for details;
 -}
-type Communication msg
-    = DontCommunicate
-    | Communicate (Ports msg)
+type alias Ports msg =
+    { ack : Maybe (Exp.Ack -> Cmd msg)
+    , transmit : Maybe (Exp.Out -> Cmd msg)
+    , apply : Maybe (Sub (List Exp.DeduceIn))
+    , receive : Maybe (Sub Exp.In)
+    }
 
 
-mapPorts : (msgA -> msgB) -> Ports msgA -> Ports msgB
-mapPorts f p =
+map : (msgA -> msgB) -> Ports msgA -> Ports msgB
+map f p =
     { ack = Maybe.map (\ack -> ack >> Cmd.map f) p.ack
     , transmit = Maybe.map (\transmit -> transmit >> Cmd.map f) p.transmit
     , receive = p.receive
     , apply = p.apply
     }
-
-
-{-| -}
-map : (msgA -> msgB) -> Communication msgA -> Communication msgB
-map f communication =
-    case communication of
-        DontCommunicate -> DontCommunicate
-        Communicate ports -> Communicate <| mapPorts f ports
 
 
 {- This is the only function you need to make your `GUI` _detachable*_. However, this function requires some ports to be present as an argument, so you'll need a pair of ports as well. And a WebSocket server. But that's it!
@@ -67,8 +49,13 @@ map f communication =
 
 
 {-| No communication with JS -}
-noCommunication : Communication msg
-noCommunication = DontCommunicate
+noCommunication : Ports msg
+noCommunication =
+    { ack = Nothing
+    , transmit = Nothing
+    , apply = Nothing
+    , receive = Nothing
+    }
 
 
 {-| Send JSON values using given ports:
@@ -81,14 +68,13 @@ sendJson
         { ack : Exp.Property -> Cmd msg
         , transmit : Exp.Out -> Cmd msg
         }
-    -> Communication msg
+    -> Ports msg
 sendJson { ack, transmit } =
-    Communicate
-        { ack = Just <| .tree >> ack
-        , transmit = Just transmit
-        , receive = Nothing
-        , apply = Nothing
-        }
+    { ack = Just <| .tree >> ack
+    , transmit = Just transmit
+    , receive = Nothing
+    , apply = Nothing
+    }
 
 
 {-| Send JSON values and receive updates using given ports:
@@ -104,14 +90,13 @@ sendReceiveJson
         , transmit : Exp.Out -> Cmd msg
         , apply : Sub (List Exp.DeduceIn)
         }
-    -> Communication msg
+    -> Ports msg
 sendReceiveJson { ack, transmit, apply } =
-    Communicate
-        { ack = Just <| .tree >> ack
-        , transmit = Just transmit
-        , receive = Nothing
-        , apply = Just apply
-        }
+    { ack = Just <| .tree >> ack
+    , transmit = Just transmit
+    , receive = Nothing
+    , apply = Just apply
+    }
 
 
 {-| Send values as strings using given ports:
@@ -122,19 +107,18 @@ sendStrings
     :
         { transmit : ( List Path.Label, String ) -> Cmd msg
         }
-    -> Communication msg
+    -> Ports msg
 sendStrings { transmit } =
-    Communicate
-        { ack = Nothing
-        , transmit = Just
-            <| \{ update } ->
-                transmit
-                    ( update.path |> List.map Tuple.second
-                    , update.stringValue
-                    )
-        , receive = Nothing
-        , apply = Nothing
-        }
+    { ack = Nothing
+    , transmit = Just
+        <| \{ update } ->
+            transmit
+                ( update.path |> List.map Tuple.second
+                , update.stringValue
+                )
+    , receive = Nothing
+    , apply = Nothing
+    }
 
 
 {-| Send information to WebSocket server and receive it from the server.
@@ -192,14 +176,13 @@ detachable
         , transmit : Exp.Out -> Cmd msg
         , receive : Sub Exp.In
         }
-    -> Communication msg
+    -> Ports msg
 detachable { ack, transmit, receive } =
-    Communicate
-        { ack = Just <| .client >> ack
-        , transmit = Just transmit
-        , receive = Just receive
-        , apply = Nothing
-        }
+    { ack = Just <| .client >> ack
+    , transmit = Just transmit
+    , receive = Just receive
+    , apply = Nothing
+    }
 
 
 {-| Connect with `dat.gui` using given ports:
@@ -217,14 +200,13 @@ withDatGui
         --, receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
         , receive : Sub Exp.In
         }
-    -> Communication msg
+    -> Ports msg
 withDatGui { ack, receive } =
-    Communicate
-        { ack = Just <| .tree >> ack
-        , transmit = Nothing
-        , receive = Just receive
-        , apply = Nothing
-        }
+    { ack = Just <| .tree >> ack
+    , transmit = Nothing
+    , receive = Just receive
+    , apply = Nothing
+    }
 
 
 {-| Use all the communication you can imagine. -}
@@ -233,17 +215,10 @@ connect :
     , transmit : Exp.Out -> Cmd msg
     , apply : Sub (List Exp.DeduceIn)
     , receive : Sub Exp.In
-    } -> Communication msg
+    } -> Ports msg
 connect spec =
-    Communicate
-        { ack = Just spec.ack
-        , transmit = Just spec.transmit
-        , apply = Just spec.apply
-        , receive = Just spec.receive
-        }
-
-
-
-{-| Use some of the communication you can imagine. -}
-connect_ : Ports msg -> Communication msg
-connect_ = Communicate
+    { ack = Just spec.ack
+    , transmit = Just spec.transmit
+    , apply = Just spec.apply
+    , receive = Just spec.receive
+    }

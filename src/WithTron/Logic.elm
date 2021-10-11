@@ -5,7 +5,7 @@ import Random
 import Tron exposing (Tron)
 import Tron.Expose as Exp
 import Tron.Property.ExposeData as Exp
-import Tron.Option.Communication as Ports exposing (Communication(..))
+import Tron.Option.Communication as Ports exposing (Ports)
 import Tron.Option.Render as Render exposing (Target(..))
 import Tron.Core as Core exposing (State)
 import Tron.Detach as Detach
@@ -29,48 +29,39 @@ nextClientId =
     Random.generate identity Detach.clientIdGenerator
 
 
-performInitEffects : Maybe Detach.ClientId -> Ports.Communication msg -> Tron () -> Cmd msg
-performInitEffects maybeClientId ports tree =
-    case ports of
-        DontCommunicate -> Cmd.none
-        Communicate { ack } ->
-            ack
-                |> Maybe.map
-                    ((|>)
-                        { client =
-                            maybeClientId
-                                    |> Maybe.map (HashId.toString >> E.string)
-                                    |> Maybe.withDefault E.null
-                        , tree = Exp.encode <| tree
-                        }
-                    )
-                |> Maybe.withDefault Cmd.none
+performInitEffects : Maybe Detach.ClientId -> Ports msg -> Tron () -> Cmd msg
+performInitEffects maybeClientId { ack } tree =
+    ack
+        |> Maybe.map
+            ((|>)
+                { client =
+                    maybeClientId
+                            |> Maybe.map (HashId.toString >> E.string)
+                            |> Maybe.withDefault E.null
+                , tree = Exp.encode <| tree
+                }
+            )
+        |> Maybe.withDefault Cmd.none
 
 
-tryTransmitting : Ports.Communication msg -> Exp.Out -> Cmd msg
-tryTransmitting ports rawUpdate =
-    case ports of
-        DontCommunicate -> Cmd.none
-        Communicate { transmit } ->
-            transmit
-                |> Maybe.map ((|>) rawUpdate)
-                |> Maybe.withDefault Cmd.none
+tryTransmitting : Ports msg -> Exp.Out -> Cmd msg
+tryTransmitting { transmit } rawUpdate =
+    transmit
+        |> Maybe.map ((|>) rawUpdate)
+        |> Maybe.withDefault Cmd.none
 
 
-addSubscriptionsOptions : Ports.Communication msg -> Tron () -> Sub (List Exp.In)
-addSubscriptionsOptions ports tree =
-    case ports of
-        DontCommunicate -> Sub.none
-        Communicate { apply, receive } ->
-            Sub.batch
-                [ apply
-                    |> Maybe.map (Sub.map (List.map <| Core.tryDeduce tree))
-                    |> Maybe.map (Sub.map (List.filterMap identity))
-                    |> Maybe.withDefault Sub.none
-                , receive
-                    |> Maybe.map (Sub.map List.singleton)
-                    |> Maybe.withDefault Sub.none
-                ]
+addSubscriptionsOptions : Ports msg -> Tron () -> Sub (List Exp.In)
+addSubscriptionsOptions { apply, receive } tree =
+    Sub.batch
+        [ apply
+            |> Maybe.map (Sub.map (List.map <| Core.tryDeduce tree))
+            |> Maybe.map (Sub.map (List.filterMap identity))
+            |> Maybe.withDefault Sub.none
+        , receive
+            |> Maybe.map (Sub.map List.singleton)
+            |> Maybe.withDefault Sub.none
+        ]
 
 
 addInitOptions : Render.Target -> State -> State
