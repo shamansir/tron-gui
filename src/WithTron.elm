@@ -233,13 +233,19 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
             )
 
         ToTron guiMsg ->
-            case {- prevTree
+            let
+                tree = userFor model
+                unitTree = tree |> Property.toUnit
+            in case {- prevTree
                     |> Exp.lift -}
-                 userFor model
-                    |> Property.transferTransientState prevTree
-                    |> Property.loadValues prevTree
-                    --|> Property.loadLiveValues nextGui
-                    |> Core.update guiMsg state of
+                Core.update guiMsg state
+                    <| (
+                            unitTree
+                                |> Property.transferTransientState prevTree
+                                |> Property.loadValues prevTree
+                                |> Property.map2 (\handler _ -> handler) tree
+                       --|> Property.loadLiveValues nextGui
+                       )  of
                 ( nextState, nextTree, guiEffect ) ->
                     (
                         ( model
@@ -256,20 +262,23 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
 
         ReceiveRaw rawUpdates ->
             let
-                prevRoot =
-                    userFor model
+                tree = userFor model
+                unitRoot =
+                    tree
+                        |> Property.toUnit
                         |> Property.transferTransientState prevTree
                 nextRoot =
                     rawUpdates
-                        |> List.foldl (Exp.apply << Exp.fromPort) prevRoot
+                        |> List.foldl (Exp.apply << Exp.fromPort) unitRoot
                         --|> Exp.apply (Exp.fromPort rawUpdate)
             in
                 (
                     ( model
                     , state
-                    , nextRoot |> Tron.toUnit
+                    , nextRoot
                     )
                 , nextRoot
+                    |> Property.map2 (\handler _ -> handler) tree
                     |> Tron.perform
                     |> Cmd.map ToUser
                 )
@@ -306,7 +315,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
         UrlChange maybeUserMsg url ->
             let
                 detachState = Detach.fromUrl url
-                urlEffects = applyUrl ports url
+                urlEffects = applyUrl ports prevTree url
             in
                 (
                     ( model
@@ -331,9 +340,10 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
 -- FIXME: move to WithTron.Logic
 applyUrl
     :  Comm.Ports msg
+    -> Property ()
     -> Url.Url
     -> Cmd (WithTronMsg msg)
-applyUrl ports url =
+applyUrl ports tree url =
     let
         ( maybeClientId, state ) = Detach.fromUrl url
     in
@@ -341,6 +351,7 @@ applyUrl ports url =
             ( Just ack, Just clientId ) ->
                 Exp.makeAck
                     (Detach.clientIdToString clientId)
+                    tree
                     |> ack
                     |> Cmd.map ToUser
                 -- Task.succeed id
