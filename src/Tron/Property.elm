@@ -1,7 +1,10 @@
 module Tron.Property exposing
     ( Property(..), FocusAt(..), Shape, NestShape
     , get, set, setAt, setAll, move, getValue
-    , map, map2, map3, map4, map5, mapWithPath, mapWithValue
+    , map, mapWithPath, mapWithValue
+    , zmap2, zmap3, zmap4, zmap5
+    , zjmap2, zjmap3, zjmap4, zjmap5
+    , wmap2, wmap3, wmap4, wmap5
     , andThen, with
     , toUnit, proxify, lift
     , zip
@@ -151,28 +154,6 @@ mapHelper f root =
 
     in
         helper Path.start root
-
-
--- TODO: may be all the `map`s below should be called differently since they don't preserve the structure:
--- the additional data, like controls' values is always taken from the right side
-map2 : (a -> b -> c) -> Property a -> Property b -> Property c
-map2 f =
-    map << get << map f
-
-
-map3 : (a -> b -> c -> d) -> Property a -> Property b -> Property c -> Property d
-map3 f =
-    map2 << get << map f
-
-
-map4 : (a -> b -> c -> d -> e) -> Property a -> Property b -> Property c -> Property d -> Property e
-map4 f =
-    map3 << get << map f
-
-
-map5 : (a -> b -> c -> d -> e -> f) -> Property a -> Property b -> Property c -> Property d -> Property e -> Property f
-map5 f =
-    map4 << get << map f
 
 
 andThen : (a -> Property b) -> Property a -> Property b
@@ -443,6 +424,139 @@ zip =
                 Z.Right propA_ -> propA_ |> map Z.Right
                 Z.Left propB_ -> propB_ |> map Z.Left
     in move join
+
+
+
+{- `zmap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
+become `Nothing` -}
+zmap2 : (Maybe a -> Maybe b -> c) -> Property a -> Property b -> Property c
+zmap2 f propA propB =
+    zip propA propB
+        |> map (Z.fold f)
+
+
+{- `zjmap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
+of the resulting prop becomes `Nothing` -}
+zjmap2 : (a -> b -> c) -> Property a -> Property b -> Property (Maybe c)
+zjmap2 = zmap2 << Maybe.map2
+
+
+{- `wmap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping,
+the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
+wmap2 : (a -> b -> c) -> Property a -> Property b -> Property c
+wmap2 f propA propB =
+    zmap2
+        (\maybeA maybeB ->
+            f
+                (maybeA |> Maybe.withDefault (get propA))
+                (maybeB |> Maybe.withDefault (get propB))
+        )
+        propA propB
+
+
+zmapHelper : (Maybe a -> b) -> Maybe (Maybe a -> b) -> Maybe a -> b
+zmapHelper nf maybeFn maybeLastVal =
+    case ( maybeFn, maybeLastVal ) of
+        ( Just fn, Just lastVal ) -> fn <| Just lastVal
+        ( Just fn, Nothing ) -> fn Nothing
+        ( Nothing, Just lastVal ) -> nf <| Just lastVal
+        ( Nothing, Nothing ) -> nf Nothing
+
+
+{- `zmap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
+become `Nothing` -}
+zmap3 : (Maybe a -> Maybe b -> Maybe c -> d) -> Property a -> Property b -> Property c -> Property d
+zmap3 f propA propB propC =
+    zip
+       (zmap2 f propA propB)
+       propC
+       |> map
+            (Z.fold <| zmapHelper <| f Nothing Nothing)
+
+
+{- `zjmap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
+of the resulting prop becomes `Nothing` -}
+zjmap3 : (a -> b -> c -> d) -> Property a -> Property b -> Property c -> Property (Maybe d)
+zjmap3 = zmap3 << Maybe.map3
+
+
+{- `wmap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping,
+the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
+wmap3 : (a -> b -> c -> d) -> Property a -> Property b -> Property c -> Property d
+wmap3 f propA propB propC =
+    zmap3
+        (\maybeA maybeB maybeC ->
+            f
+                (maybeA |> Maybe.withDefault (get propA))
+                (maybeB |> Maybe.withDefault (get propB))
+                (maybeC |> Maybe.withDefault (get propC))
+        )
+        propA propB propC
+
+
+{- `zmap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
+become `Nothing` -}
+zmap4 : (Maybe a -> Maybe b -> Maybe c -> Maybe d -> e) -> Property a -> Property b -> Property c -> Property d -> Property e
+zmap4 f propA propB propC propD =
+    zip
+       (zmap3 f propA propB propC)
+       propD
+       |> map
+            (Z.fold <| zmapHelper <| f Nothing Nothing Nothing)
+
+
+{- `zjmap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
+of the resulting prop becomes `Nothing` -}
+zjmap4 : (a -> b -> c -> d -> e) -> Property a -> Property b -> Property c -> Property d -> Property (Maybe e)
+zjmap4 = zmap4 << Maybe.map4
+
+
+{- `wmap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping,
+the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
+wmap4 : (a -> b -> c -> d -> e) -> Property a -> Property b -> Property c -> Property d -> Property e
+wmap4 f propA propB propC propD =
+    zmap4
+        (\maybeA maybeB maybeC maybeD ->
+            f
+                (maybeA |> Maybe.withDefault (get propA))
+                (maybeB |> Maybe.withDefault (get propB))
+                (maybeC |> Maybe.withDefault (get propC))
+                (maybeD |> Maybe.withDefault (get propD))
+        )
+        propA propB propC propD
+
+
+{- `zmap5` maps five properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
+become `Nothing` -}
+zmap5 : (Maybe a -> Maybe b -> Maybe c -> Maybe d -> Maybe e -> f) -> Property a -> Property b -> Property c -> Property d -> Property e -> Property f
+zmap5 f propA propB propC propD propE =
+    zip
+       (zmap4 f propA propB propC propD)
+       propE
+       |> map
+            (Z.fold <| zmapHelper <| f Nothing Nothing Nothing Nothing)
+
+
+{- `zjmap5` maps five properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
+of the resulting prop becomes `Nothing` -}
+zjmap5 : (a -> b -> c -> d -> e -> f) -> Property a -> Property b -> Property c -> Property d -> Property e -> Property (Maybe f)
+zjmap5 = zmap5 << Maybe.map5
+
+
+{- `wmap5` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping,
+the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
+wmap5 : (a -> b -> c -> d -> e -> f) -> Property a -> Property b -> Property c -> Property d -> Property e -> Property f
+wmap5 f propA propB propC propD propE =
+    zmap5
+        (\maybeA maybeB maybeC maybeD maybeE ->
+            f
+                (maybeA |> Maybe.withDefault (get propA))
+                (maybeB |> Maybe.withDefault (get propB))
+                (maybeC |> Maybe.withDefault (get propC))
+                (maybeD |> Maybe.withDefault (get propD))
+                (maybeE |> Maybe.withDefault (get propE))
+        )
+        propA propB propC propD propE
 
 
 move

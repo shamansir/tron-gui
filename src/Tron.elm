@@ -125,35 +125,66 @@ toUnit =
 
 map2 : (a -> b -> c) -> Tron a -> Tron b -> Tron c
 map2 f =
-    Property.map2
-        (\fToA fToB val ->
-            Maybe.map2 f (fToA val) (fToB val)
+    Property.zmap2
+        (\maybeFToA maybeFToB val ->
+            Maybe.map2
+                (\fToA fToB -> Maybe.map2 f (fToA val) (fToB val))
+                maybeFToA maybeFToB
+            |> Maybe.andThen identity
         )
+    -- Property.map2
+    --     (\fToA fToB val ->
+    --         Maybe.map2 f (fToA val) (fToB val)
+    --     )
 
 
 map3 : (a -> b -> c -> d) -> Tron a -> Tron b -> Tron c -> Tron d
 map3 f =
-    Property.map3
-        (\fToA fToB fToC val ->
-            Maybe.map3 f (fToA val) (fToB val) (fToC val)
+    Property.zmap3
+        (\maybeFToA maybeFToB maybeFToC val ->
+            Maybe.map3
+                (\fToA fToB fToC -> Maybe.map3 f (fToA val) (fToB val) (fToC val))
+                maybeFToA maybeFToB maybeFToC
+            |> Maybe.andThen identity
         )
+    -- Property.map3
+    --     (\fToA fToB fToC val ->
+    --         Maybe.map3 f (fToA val) (fToB val) (fToC val)
+    --     )
 
 
 map4 : (a -> b -> c -> d -> e) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e
 map4 f =
-    Property.map4
-        (\fToA fToB fToC fToD val ->
-            Maybe.map4 f (fToA val) (fToB val) (fToC val) (fToD val)
+    Property.zmap4
+        (\maybeFToA maybeFToB maybeFToC maybeFToD val ->
+            Maybe.map4
+                (\fToA fToB fToC fToD ->
+                    Maybe.map4 f (fToA val) (fToB val) (fToC val) (fToD val)
+                )
+                maybeFToA maybeFToB maybeFToC maybeFToD
+            |> Maybe.andThen identity
         )
+    -- Property.map4
+    --     (\fToA fToB fToC fToD val ->
+    --         Maybe.map4 f (fToA val) (fToB val) (fToC val) (fToD val)
+    --     )
 
 
 map5 : (a -> b -> c -> d -> e -> f) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e -> Tron f
 map5 f =
-    Property.map5
-        (\fToA fToB fToC fToD fToE val ->
-            Maybe.map5 f (fToA val) (fToB val) (fToC val) (fToD val) (fToE val)
+    Property.zmap5
+        (\maybeFToA maybeFToB maybeFToC maybeFToD maybeFToE val ->
+            Maybe.map5
+                (\fToA fToB fToC fToD fToE ->
+                    Maybe.map5 f (fToA val) (fToB val) (fToC val) (fToD val) (fToE val)
+                )
+                maybeFToA maybeFToB maybeFToC maybeFToD maybeFToE
+            |> Maybe.andThen identity
         )
-
+    -- Property.map5
+    --     (\fToA fToB fToC fToD fToE val ->
+    --         Maybe.map5 f (fToA val) (fToB val) (fToC val) (fToD val) (fToE val)
+    --     )
 
 
 perform : Tron msg -> Cmd msg

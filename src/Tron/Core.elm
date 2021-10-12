@@ -660,7 +660,7 @@ expose state =
 expose_ : State -> Property a -> Property ( Exp.Out, a )
 expose_ state tree =
     tree
-        |> Property.map2 Tuple.pair (tree |> expose state)
+        |> Property.wmap2 Tuple.pair (tree |> expose state)
 
 
 collectChanges : State -> Property ( ValueState, Maybe msg ) -> List (Exp.Out, msg)
@@ -688,7 +688,7 @@ fireChanges =
 
 fireChangesFrom : State -> ( Tron msg, Property ValueState ) -> Cmd (Exp.Out, msg)
 fireChangesFrom state ( tron, changesTree ) =
-    Property.map3
+    Property.wmap3
         (\handler currentVal valueState ->
             ( valueState, handler currentVal )
         )

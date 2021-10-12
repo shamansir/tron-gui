@@ -243,7 +243,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                             unitTree
                                 |> Property.transferTransientState prevTree
                                 |> Property.loadValues prevTree
-                                |> Property.map2 (\handler _ -> handler) tree
+                                |> Property.wmap2 (\handler _ -> handler) tree
                        --|> Property.loadLiveValues nextGui
                        )  of
                 ( nextState, nextTree, guiEffect ) ->
@@ -278,7 +278,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                     , nextRoot
                     )
                 , nextRoot
-                    |> Property.map2 (\handler _ -> handler) tree
+                    |> Property.wmap2 (\handler _ -> handler) tree
                     |> Tron.perform
                     |> Cmd.map ToUser
                 )

@@ -4,7 +4,7 @@ module Tron.Property.Paths exposing (..)
 import Dict as Dict exposing (Dict)
 import Array as Array
 
-import Tron.Property exposing (Property(..), map, map2, fold, proxify)
+import Tron.Property exposing (Property(..), map, wmap2, fold, proxify)
 import Tron.Path as Path exposing (Path)
 import Tron.Property.ExposeData as Exp
 
@@ -135,7 +135,7 @@ pathify =
 
 pathifyWithValue : Property a -> Property ( Path, a )
 pathifyWithValue prop =
-    map2
+    wmap2
         Tuple.pair
         (pathify prop)
         prop
@@ -225,7 +225,7 @@ Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
 expose : Property a -> Property Exp.Value
 expose prop =
-    map2
+    wmap2
         Tuple.pair
         (pathify prop)
         (proxify prop)
