@@ -3,10 +3,11 @@ module OneKnob.Main exposing (main)
 
 import Html exposing (Html)
 
-import Tron.OfValue exposing (Tron)
+import Tron exposing (Tron)
 import WithTron exposing (ProgramWithTron)
-import Tron.Option as Option
-import Tron.Builder as Builder
+import Tron.Option.Render as Option
+import Tron.Option.Communication as Option
+import Tron.Build as Builder
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
 
