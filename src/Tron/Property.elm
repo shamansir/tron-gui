@@ -153,6 +153,8 @@ mapHelper f root =
         helper Path.start root
 
 
+-- TODO: may be all the `map`s below should be called differently since they don't preserve the structure:
+-- the additional data, like controls' values is always taken from the right side
 map2 : (a -> b -> c) -> Property a -> Property b -> Property c
 map2 f =
     map << get << map f
@@ -497,7 +499,7 @@ insideOut prop =
     ( get prop |> Tuple.first, prop |> map Tuple.second )
 
 
-{-| Replace the `()` value everywhere within Tron GUI tree, it is useful for truly a lot of cases when you don't care about what are the associated values.
+{-| Replace the `()` subject everywhere within Tron GUI tree, it is useful for truly a lot of cases when you don't care about what are the associated values.
 -}
 toUnit : Property a -> Property ()
 toUnit = setAll ()
