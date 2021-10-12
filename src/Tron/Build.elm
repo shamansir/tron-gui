@@ -165,10 +165,10 @@ import Tron.Style.PanelShape exposing (rows, cols)
 import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
-import Tron.Control.Text exposing (TextState(..))
-import Tron.Control.Button as Button exposing (Face(..), Icon(..), Url(..))
-import Tron.Control.Toggle exposing (boolToToggle, toggleToBool)
-import Tron.Control.Nest as Nest exposing (Form(..), ItemId)
+import Tron.Control.Impl.Text exposing (TextState(..))
+import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..), Url(..))
+import Tron.Control.Impl.Toggle exposing (boolToToggle, toggleToBool)
+import Tron.Control.Impl.Nest as Nest exposing (Form(..), ItemId)
 
 import Tron.Property.Build as B
 import Tron.Property.Build.Choice as Choice

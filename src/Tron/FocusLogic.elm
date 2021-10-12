@@ -6,7 +6,7 @@ import Tron.Property exposing (..)
 import Tron.Property.Paths as Property
 import Tron.Property.Controls as Property
 import Tron.Focus exposing (Focused(..), Level, Direction(..)) -- FIXME: better to have one module
-import Tron.Control.Nest as Nest exposing (..)
+import Tron.Control.Impl.Nest as Nest exposing (..)
 
 import Array
 import Array exposing (Array)

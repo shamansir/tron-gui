@@ -8,7 +8,7 @@ import Tron.Style.Theme exposing (Theme(..))
 import Tron.Focus exposing (Focused(..))
 import Tron.Style.Placement exposing (Placement(..))
 import Tron.Style.Selected exposing (Selected(..))
-import Tron.Control.Nest as Nest
+import Tron.Control.Impl.Nest as Nest
 
 
 transparent = Color.rgba 0.0 0.0 0.0 0.0

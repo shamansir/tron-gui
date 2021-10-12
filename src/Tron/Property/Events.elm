@@ -5,9 +5,9 @@ import Tron.Path as Path exposing (Path)
 import Tron.Property exposing (Property(..))
 import Tron.Property.Paths exposing (findWithParent)
 
-import Tron.Control.Text as Text exposing (..)
-import Tron.Control.Toggle as Toggle exposing (..)
-import Tron.Control.Nest as Nest exposing (..)
+import Tron.Control.Impl.Text as Text exposing (..)
+import Tron.Control.Impl.Toggle as Toggle exposing (..)
+import Tron.Control.Impl.Nest as Nest exposing (..)
 
 
 -- for mouse click or enter key handling, does not change the tree

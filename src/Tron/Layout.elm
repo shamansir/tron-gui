@@ -24,8 +24,8 @@ import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape as PS exposing (PanelShape)
 import Tron.Pages as Pages exposing (Pages, PageNum)
 
-import Tron.Control.Nest exposing (Form(..))
-import Tron.Control.Nest as Nest exposing (getItems)
+import Tron.Control.Impl.Nest exposing (Form(..))
+import Tron.Control.Impl.Nest as Nest exposing (getItems)
 
 
 

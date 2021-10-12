@@ -12,18 +12,18 @@ See also: `Tron.OfValue`, `WithTron.for`, `Tron.OfValue.lift`
 
 import Random
 import Array exposing (Array)
-import Color exposing (..)
+importTron.Control.Impl.Color.)
 import Axis exposing (Axis)
 import Url.Builder as Url
 
 import Tron exposing (Tron)
 import Tron.Control as Core exposing (Control(..))
-import Tron.Control.Nest as Nest exposing (ChoiceControl, GroupControl, Form(..), ItemId, expand, getItems)
-import Tron.Control.Toggle as Toggle exposing (ToggleState(..))
-import Tron.Control.Text as Text exposing (TextState(..))
-import Tron.Control.Button as Button exposing (Face(..), Icon(..))
-import Tron.Control.Number as Number
-import Tron.Control.XY as XY
+import Tron.Control.Impl.Nest as Nest exposing (ChoiceControl, GroupControl, Form(..), ItemId, expand, getItems)
+import Tron.Control.Impl.Toggle as Toggle exposing (ToggleState(..))
+import Tron.Control.Impl.Text as Text exposing (TextState(..))
+import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..))
+import Tron.Control.Impl.Number as Number
+import Tron.Control.Impl.XY as XY
 import Tron.Control.Color as Color
 import Tron.Path as Path
 

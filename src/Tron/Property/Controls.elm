@@ -11,13 +11,13 @@ import Tron.Style.PanelShape as PS exposing (PanelShape)
 
 import Tron.Pages as Pages
 
-import Tron.Control.Button as Button exposing (..)
-import Tron.Control.Number as Number exposing (..)
-import Tron.Control.XY as XY exposing (..)
-import Tron.Control.Text as Text exposing (..)
-import Tron.Control.Color as Color exposing (..)
-import Tron.Control.Toggle as Toggle exposing (..)
-import Tron.Control.Nest as Nest exposing (..)
+import Tron.Control.Impl.Button as Button exposing (..)
+import Tron.Control.Impl.Number as Number exposing (..)
+import Tron.Control.Impl.XY as XY exposing (..)
+import Tron.Control.Impl.Text as Text exposing (..)
+import Tron.Control.Impl.Color as Color exposing (..)
+import Tron.Control.Impl.Toggle as Toggle exposing (..)
+import Tron.Control.Impl.Nest as Nest exposing (..)
 
 
 defaultNestShape : NestShape

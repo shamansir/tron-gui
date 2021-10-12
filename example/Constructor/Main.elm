@@ -19,9 +19,9 @@ import Tron.Path as Path exposing (Path)
 import Tron.Core as Tron
 import Tron.Property as Property exposing (LabelPath)
 import Tron.Control as Core
-import Tron.Control.Nest as Nest
+import Tron.Control.Impl.Nest as Nest
 import Tron.Control.Value as V exposing (Value)
-import Tron.Control.Button as Button
+import Tron.Control.Impl.Button as Button
 import Tron.Expose.Convert as Property
 import WithTron.ValueAt as V
 import Tron.Expose.Data as Exp

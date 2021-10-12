@@ -1,11 +1,11 @@
-module Tron.Control.Nest exposing (..)
+module Tron.Control.Impl.Nest exposing (..)
 
 
 import Array exposing (Array)
 import Array.Extra as Array
 
 import Tron.Control as Core exposing (Control)
-import Tron.Control.Button as Button
+import Tron.Control.Impl.Button as Button
 import Tron.Pages exposing (PageNum)
 import Tron.Util as Util
 

@@ -9,8 +9,8 @@ import Tron exposing (Tron)
 import Tron.Property exposing (..)
 import Tron.Control exposing (..)
 import Tron.Control.Value as V
-import Tron.Control.Button as Button
-import Tron.Control.Nest as Nest
+import Tron.Control.Impl.Button as Button
+import Tron.Control.Impl.Nest as Nest
 import Tron.Style.Theme as Theme
 import Tron.Style.PanelShape as PS
 import Tron.Style.CellShape as CS

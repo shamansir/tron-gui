@@ -13,11 +13,11 @@ import Task
 
 
 import Tron.Control as Control exposing (..)
-import Tron.Control.Nest as Nest exposing (Form(..))
-import Tron.Control.Text as Text exposing (TextState(..))
-import Tron.Control.Toggle exposing (ToggleState(..))
-import Tron.Control.Button as Button
-import Tron.Control.XY as XY
+import Tron.Control.Impl.Nest as Nest exposing (Form(..))
+import Tron.Control.Impl.Text as Text exposing (TextState(..))
+import Tron.Control.Impl.Toggle exposing (ToggleState(..))
+import Tron.Control.Impl.Button as Button
+import Tron.Control.Impl.XY as XY
 import Tron.Path as Path exposing (Path)
 -- import Tron.Detach as Detach
 import Tron.Property as Property exposing (..)

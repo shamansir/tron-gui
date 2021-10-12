@@ -1,4 +1,4 @@
-module Tron.Control.Text exposing (..)
+module Tron.Control.Impl.Text exposing (..)
 
 
 import Tron.Control as Core exposing (Control)

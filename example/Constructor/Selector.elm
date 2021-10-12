@@ -5,7 +5,7 @@ import Html exposing (Html)
 import Html.Attributes as Html
 import Html.Events as Html
 
-import Tron.Control.Button as Button
+import Tron.Control.Impl.Button as Button
 import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape as PS
 

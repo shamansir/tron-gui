@@ -25,7 +25,7 @@ import Tron.Path exposing (Path)
 import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Control as Control
-import Tron.Control.Text as Text
+import Tron.Control.Impl.Text as Text
 import Tron.Property as Property exposing (Property(..))
 import Tron.Property.Paths as Property
 import Tron.Property.Events as Property
@@ -42,7 +42,7 @@ import Tron.Focus as Focus exposing (..)
 import Tron.Detach as Detach exposing (ClientId)
 import Tron.Detach exposing (State(..))
 import Tron.Control.Value exposing (..)
-import Tron.Control.Nest as Nest
+import Tron.Control.Impl.Nest as Nest
 import Tron.Build exposing (..)
 import Tron.Expose as Exp
 

@@ -3,7 +3,7 @@ module Tron.Pages exposing (..)
 
 import Array exposing (Array)
 
---import Tron.Control.Nest as Nest exposing (..)
+--import Tron.Control.Impl.Nest as Nest exposing (..)
 
 import Size exposing (..)
 

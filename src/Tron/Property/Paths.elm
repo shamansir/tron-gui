@@ -8,7 +8,7 @@ import Tron.Property exposing (Property(..), map, map2, fold, proxify)
 import Tron.Path as Path exposing (Path)
 import Tron.Property.ExposeData as Exp
 
-import Tron.Control.Nest as Nest
+import Tron.Control.Impl.Nest as Nest
 import Tron.Control as Control
 
 

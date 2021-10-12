@@ -35,8 +35,8 @@ Actually, the way to get your value as a common type.
 -}
 
 import Color exposing (Color)
-import Tron.Control.Nest exposing (ItemId)
-import Tron.Control.Toggle exposing (ToggleState)
+import Tron.Control.Impl.Nest exposing (ItemId)
+import Tron.Control.Impl.Toggle exposing (ToggleState)
 import Tron.Control.Value as Proxy exposing (Value)
 import Tron.Path as Path exposing (Path)
 

@@ -1,4 +1,4 @@
-module Tron.Control.Color exposing (..)
+module Tron.Control.Impl.Color exposing (..)
 
 
 import Color exposing (Color)

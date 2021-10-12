@@ -1,4 +1,4 @@
-module Tron.Control.Button exposing (..)
+module Tron.Control.Impl.Button exposing (..)
 
 
 import Color exposing (Color)

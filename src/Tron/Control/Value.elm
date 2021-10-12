@@ -36,9 +36,9 @@ import Json.Encode as E
 
 --import Tron exposing (Tron)
 import Tron.Control as Control
-import Tron.Control.Nest as Nest exposing (ItemId)
-import Tron.Control.Toggle as Toggle exposing (ToggleState, toggleToBool, toggleToString)
-import Tron.Control.XY as XY
+import Tron.Control.Impl.Nest as Nest exposing (ItemId)
+import Tron.Control.Impl.Toggle as Toggle exposing (ToggleState, toggleToBool, toggleToString)
+import Tron.Control.Impl.XY as XY
 
 
 {-| -}

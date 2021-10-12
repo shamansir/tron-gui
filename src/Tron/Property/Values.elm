@@ -7,7 +7,7 @@ import Array.Extra.Zipper as Z exposing (Zipper(..))
 import Tron.Property exposing (Property(..), foldZipP, updateMany, move, insideOut)
 import Tron.Property.Paths exposing (pathifyWithValue)
 import Tron.Control as Control
-import Tron.Control.Nest as Nest exposing (..)
+import Tron.Control.Impl.Nest as Nest exposing (..)
 import Tron.Path exposing (Path)
 
 

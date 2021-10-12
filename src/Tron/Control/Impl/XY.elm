@@ -1,4 +1,4 @@
-module Tron.Control.XY exposing (..)
+module Tron.Control.Impl.XY exposing (..)
 
 
 import Axis exposing (Axis)
@@ -29,4 +29,3 @@ xyFromString str =
         xStr::yStr::_ ->
             Maybe.map2 Tuple.pair (String.toFloat xStr) (String.toFloat yStr)
         _ -> Nothing
-

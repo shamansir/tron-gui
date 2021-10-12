@@ -1,4 +1,4 @@
-module Tron.Control.Toggle exposing (..)
+module Tron.Control.Impl.Toggle exposing (..)
 
 
 import Tron.Control as Core exposing (Control)

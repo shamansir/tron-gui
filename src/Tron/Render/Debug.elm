@@ -9,8 +9,8 @@ import Array
 
 import Tron.Control exposing (Control(..))
 import Tron.Property exposing (..)
-import Tron.Control.Toggle exposing (..)
-import Tron.Control.Nest exposing (..)
+import Tron.Control.Impl.Toggle exposing (..)
+import Tron.Control.Impl.Nest exposing (..)
 import Tron.Render.Util exposing (..)
 import Tron.Path as Path
 
