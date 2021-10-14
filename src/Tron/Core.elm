@@ -297,7 +297,7 @@ type ValueState
 handleMouse : MouseAction -> State -> Property () -> ( State, Property ValueState )
 handleMouse mouseAction state tree =
     let
-        rootPath = getRootPath state
+        --rootPath = getRootPath state
         changesTree =
             tree |> Property.setAll Stayed
         curMouseState =
@@ -316,15 +316,6 @@ handleMouse mouseAction state tree =
                 |> Style.toGridCoords bounds
                 |> Layout.find theLayout
 
-        findCellAt pos =
-            pos
-                |> findPathAt
-                |> Maybe.andThen
-                    (\path ->
-                        Property.find path changesTree
-                            |> Maybe.map (Tuple.pair path)
-                    )
-
         keepsDragging = curMouseState.down
 
         startedDragging =
@@ -341,83 +332,51 @@ handleMouse mouseAction state tree =
                     && not nextMouseState.down
                 _ -> False
 
-        treeAfterCheckIfDraggingInProcess : Property ValueState
-        treeAfterCheckIfDraggingInProcess =
-            if keepsDragging then
+        ( dX, dY ) = distanceXY knobDistance nextMouseState
 
-                case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
+        mouseActions
+            = if startedDragging && keepsDragging then
+                [ A.DragStart, A.Dragging { dx = dX, dy = dY } ]
+              else if keepsDragging && finishedDragging then
+                [ A.Dragging { dx = dX, dy = dY }, A.DragFinish ]
+              else if startedDragging then
+                [ A.DragStart ]
+              else if keepsDragging then
+                [ A.Dragging { dx = dX, dy = dY } ]
+              else if finishedDragging then
+                [ A.DragFinish ]
+              else []
 
-                    Just ( path, property ) ->
-                        let
-                            ( dX, dY ) = distanceXY knobDistance nextMouseState
-                            ( nextProperty, change ) =
-                                property
-                                    |> Property.update ( A.Dragging { dx = dX, dy = dY } )
-                        in
-                        Property.updateAt
-                            path
-                            (always
-                                (nextProperty |> Property.set ChangeToFire)
+        maybePathAtCursor =
+            if startedDragging || keepsDragging then
+                nextMouseState.dragFrom |> Maybe.andThen findPathAt
+            else if finishedDragging then
+                curMouseState.dragFrom |> Maybe.andThen findPathAt
+            else Nothing
+
+        nextTree =
+            case maybePathAtCursor of
+                Just path ->
+                    Property.updateAt
+                        path
+                        (\property ->
+                            let
+                                ( nextProperty, _ ) =
+                                    List.foldl
+                                        (\action ( p, _ ) ->
+                                            p |> Property.update action
+                                        )
+                                        ( property, A.None )
+                                        mouseActions
+                            in nextProperty |> Property.set ChangeToFire
+                        )
+                        changesTree
+                        |> (\t ->
+                                if startedDragging then
+                                    Focus.on t path
+                                else t
                             )
-                            changesTree
-
-                    _ -> changesTree
-
-            else
-
-                let
-                    refocusedTree
-                        = nextMouseState.dragFrom
-                            |> Maybe.andThen findPathAt
-                            |> Maybe.map (Focus.on changesTree)
-                            |> Maybe.withDefault changesTree
-                in
-                    if startedDragging then
-
-                        case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
-
-                            Just ( path, property ) ->
-                                let
-                                    ( nextProperty, change ) =
-                                        property
-                                            |> Property.update A.DragStart
-                                in
-                                Property.updateAt
-                                    path
-                                    (always
-                                        (nextProperty |> Property.set SilentChange)
-                                    )
-                                    changesTree
-
-                            _ -> refocusedTree
-
-                    else refocusedTree
-
-        treeAfterCheckIfDraggingFinished : Property ValueState
-        treeAfterCheckIfDraggingFinished =
-            if finishedDragging
-            then
-
-                case curMouseState.dragFrom |> Maybe.andThen findCellAt of
-                -- TODO: do we need a path returned from `findCellAt`?
-
-                    Just ( path, property ) ->
-                        let
-                            ( nextProperty, change ) =
-                                property
-                                    |> Property.update A.DragFinish
-                        in
-                        Property.updateAt
-                            path
-                            (always
-                                (nextProperty |> Property.set SilentChange)
-                            )
-                            changesTree
-
-                    _ -> treeAfterCheckIfDraggingInProcess
-
-
-            else treeAfterCheckIfDraggingInProcess
+                Nothing -> changesTree
 
     in
 
@@ -425,7 +384,7 @@ handleMouse mouseAction state tree =
             { state
             | mouse = nextMouseState
             }
-        , treeAfterCheckIfDraggingFinished
+        , nextTree
         )
 
 
