@@ -72,6 +72,8 @@ update f (Control state current a) =
     Control state (f current) a
 
 
+-- FIXME: too many different things named very same: `call`, `execute`, `run` etc.
+
 -- call control with its current value
 call : (v -> x) -> Control s v a -> Cmd x
 call handler =
@@ -89,6 +91,13 @@ execute__ : ((v, a) -> x) -> Control s v a -> Cmd x
 execute__ handler (Control _ value a) =
     Task.succeed (value, a)
         |> Task.perform handler
+
+
+runValue : Control s v a -> Cmd v
+runValue =
+    getValue
+        >> Task.succeed
+        >> Task.perform identity
 
 
 run : Control s v msg -> Cmd msg

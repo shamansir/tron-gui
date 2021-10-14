@@ -6,6 +6,7 @@ import Array.Extra as Array
 
 import Tron.Control as Core exposing (Control)
 import Tron.Control.Impl.Button as Button
+import Tron.Control.Action as A
 import Tron.Pages exposing (PageNum)
 import Tron.Util as Util
 
@@ -82,6 +83,41 @@ createChoice items =
         , page = 0
         , mode = Pages
         }
+
+
+updateGroup : A.Action -> GroupControl item a -> ( GroupControl item a, A.Change )
+updateGroup action control =
+    case action of
+        A.Execute ->
+            ( toggle control, A.Fire )
+        _ ->
+            ( control, A.None )
+
+
+updateChoice : A.Action -> ChoiceControl item a -> ( ChoiceControl item a, A.Change )
+updateChoice action control =
+    case action of
+        A.Execute ->
+            ( case getChoiceMode control of
+                Pages ->
+                    toggle control
+                Knob ->
+                    toNext control
+                SwitchThrough ->
+                    toNext control
+            , A.Fire
+            )
+        A.Select n ->
+            ( select n control
+            , A.Fire
+            )
+        -- TODO: dragging
+        _ ->
+            ( control, A.None )
+
+
+-- updateChoiceItem : A.Action -> ( ChoiceControl item a, Index ) -> ( ChoiceControl item a, A.Change )
+-- updateChoiceItem
 
 
 get : ItemId -> NestControl item value a -> Maybe item
