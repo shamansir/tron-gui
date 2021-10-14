@@ -56,6 +56,7 @@ import Tron.Style.Cell as Cell exposing (..)
 import Tron.Property.ExposeData as Exp
 import Tron.Control.Value as Control exposing (Value)
 import Tron.Control.Value as Value
+import Tron.Control.Action as A
 
 
 type alias State =
@@ -346,120 +347,21 @@ handleMouse mouseAction state tree =
 
                 case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
 
-                    Just ( path, Number ( Control axis ( maybeFrom, curValue ) _ ) ) ->
+                    Just ( path, property ) ->
                         let
-                            valueToAlter = maybeFrom |> Maybe.withDefault curValue
-                            dY = distanceY knobDistance nextMouseState
-                            nextVal = alter axis dY valueToAlter
-                            nextControl =
-                                Control
-                                    axis
-                                    ( if finishedDragging
-                                        then Nothing
-                                        else maybeFrom
-                                    , nextVal
-                                    )
-                                    SilentChange
-                        in
-                            Property.updateAt
-                                path
-                                (always <| Number nextControl)
-                                changesTree
-
-                    Just ( path, Coordinate ( Control ( xAxis, yAxis ) ( maybeFrom, ( curX, curY ) ) _ ) ) ->
-                        let
-                            ( xToAlter, yToAlter ) = maybeFrom |> Maybe.withDefault ( curX, curY )
                             ( dX, dY ) = distanceXY knobDistance nextMouseState
-                            ( nextX, nextY ) =
-                                ( alter xAxis dX xToAlter
-                                , alter yAxis dY yToAlter
-                                )
-                            nextControl =
-                                Control
-                                    ( xAxis, yAxis )
-                                    ( if finishedDragging
-                                        then Nothing
-                                        else maybeFrom
-                                    , ( nextX, nextY )
-                                    )
-                                    SilentChange
+                            ( nextProperty, change ) =
+                                property
+                                    |> Property.update ( A.Dragging { dx = dX, dy = dY } )
                         in
-                            Property.updateAt
-                                path
-                                (always <| Coordinate nextControl)
-                                changesTree
+                        Property.updateAt
+                            path
+                            (always
+                                (nextProperty |> Property.set ChangeToFire)
+                            )
+                            changesTree
 
-                    Just ( path, Color ( Control state_ ( maybeFromColor, curColor ) a ) ) ->
-                        let
-                            hueAxis = { min = 0, max = 1, step = 0.01 }
-                            lgtAxis = { min = 0, max = 1, step = 0.01 }
-                            curHsla = Color.toHsla curColor
-                            ( hueToAlter, lightnessToAlter ) =
-                                case maybeFromColor of
-                                    Just fromColor ->
-                                        case Color.toHsla fromColor of
-                                            hsla -> ( hsla.hue, hsla.lightness )
-                                    Nothing -> ( curHsla.hue, curHsla.lightness )
-                            ( dX, dY ) = distanceXY knobDistance nextMouseState
-                            ( nextHue, nextLightness ) =
-                                ( alter hueAxis dX hueToAlter
-                                , alter lgtAxis dY lightnessToAlter
-                                )
-                            nextColor =
-                                Color.hsla
-                                    nextHue
-                                    (if curHsla.saturation > 0.25 then
-                                        -- && curHsla.saturation < 0.75 then
-                                            curHsla.saturation
-                                    else 0.5)
-                                    nextLightness -- curHsla.lightness
-                                    curHsla.alpha
-                            nextControl =
-                                Control
-                                    state_
-                                    ( if finishedDragging
-                                        then Nothing
-                                        else maybeFromColor
-                                    , nextColor
-                                    )
-                                    SilentChange
-                        in
-                            Property.updateAt
-                                path
-                                (always <| Color nextControl)
-                                changesTree
-
-                    Just ( path, Choice focus_ shape_ ( Control items value _ ) ) ->
-                        case value.mode of
-                            Nest.Knob ->
-                                let
-                                    valueToAlter = value.prevSelected |> Maybe.withDefault value.selected
-                                    dY = distanceY knobDistance nextMouseState
-                                    nextVal =
-                                        alter
-                                            { min = 0, max = toFloat <| Array.length items - 1, step = 1 }
-                                            dY
-                                            (toFloat valueToAlter)
-                                    nextControl =
-                                        Control
-                                            items
-                                            { value
-                                            | selected = floor nextVal
-                                            , prevSelected =
-                                                if finishedDragging
-                                                then Nothing
-                                                else value.prevSelected
-                                            }
-                                            SilentChange
-                                in
-                                    Property.updateAt
-                                        path
-                                        (always <| Choice focus_ shape_ nextControl)
-                                        changesTree
-                            _ -> changesTree
-
-                    _ ->
-                        changesTree
+                    _ -> changesTree
 
             else
 
@@ -474,69 +376,20 @@ handleMouse mouseAction state tree =
 
                         case nextMouseState.dragFrom |> Maybe.andThen findCellAt of
 
-                            Just ( path, Number ( Control axis ( _, curValue ) _ ) ) ->
+                            Just ( path, property ) ->
                                 let
-                                    nextControl =
-                                        Control
-                                            axis
-                                            ( Just curValue
-                                            , curValue
-                                            )
-                                            SilentChange
+                                    ( nextProperty, change ) =
+                                        property
+                                            |> Property.update A.DragStart
                                 in
-                                    Property.updateAt
-                                        path
-                                        (always <| Number nextControl)
-                                        refocusedTree
-
-                            Just ( path, Coordinate ( Control axes ( _, curValue ) _ ) ) ->
-                                let
-                                    nextControl =
-                                        Control
-                                            axes
-                                            ( Just curValue
-                                            , curValue
-                                            )
-                                            SilentChange
-                                in
-                                    Property.updateAt
-                                        path
-                                        (always <| Coordinate nextControl)
-                                        refocusedTree
-
-                            Just ( path, Color ( Control state_ ( _, curColor ) _ ) ) ->
-                                let
-                                    nextControl =
-                                        Control
-                                            state_
-                                            ( Just curColor
-                                            , curColor
-                                            )
-                                            SilentChange
-                                in
-                                    Property.updateAt
-                                        path
-                                        (always <| Color nextControl)
-                                        refocusedTree
-
-                            Just ( path, Choice focus_ shape_ ( Control state_ value _ ) ) ->
-                                case value.mode of
-                                    Nest.Knob ->
-                                        let
-                                            nextControl =
-                                                Control
-                                                    state_
-                                                    { value | prevSelected = Just value.selected }
-                                                    SilentChange
-                                        in
-                                            Property.updateAt
-                                                path
-                                                (always <| Choice focus_ shape_ nextControl)
-                                                refocusedTree
-                                    _ -> refocusedTree
+                                Property.updateAt
+                                    path
+                                    (always
+                                        (nextProperty |> Property.set SilentChange)
+                                    )
+                                    changesTree
 
                             _ -> refocusedTree
-
 
                     else refocusedTree
 
@@ -548,25 +401,21 @@ handleMouse mouseAction state tree =
                 case curMouseState.dragFrom |> Maybe.andThen findCellAt of
                 -- TODO: do we need a path returned from `findCellAt`?
 
-                    Just ( path, prop ) ->
-                        case prop of
-                            Number _ ->
-                                treeAfterCheckIfDraggingInProcess
-                                    |> Property.setAt path ChangeToFire
-                            Coordinate _ ->
-                                treeAfterCheckIfDraggingInProcess
-                                    |> Property.setAt path ChangeToFire
-                            Color _ ->
-                                treeAfterCheckIfDraggingInProcess
-                                    |> Property.setAt path ChangeToFire
-                            Choice _ _ (Control _ { mode } _) ->
-                                case mode of
-                                    Nest.Knob ->
-                                        treeAfterCheckIfDraggingInProcess
-                                            |> Property.setAt path ChangeToFire
-                                    _ -> treeAfterCheckIfDraggingInProcess
-                            _ -> treeAfterCheckIfDraggingInProcess
-                    Nothing -> treeAfterCheckIfDraggingInProcess
+                    Just ( path, property ) ->
+                        let
+                            ( nextProperty, change ) =
+                                property
+                                    |> Property.update A.DragFinish
+                        in
+                        Property.updateAt
+                            path
+                            (always
+                                (nextProperty |> Property.set SilentChange)
+                            )
+                            changesTree
+
+                    _ -> treeAfterCheckIfDraggingInProcess
+
 
             else treeAfterCheckIfDraggingInProcess
 

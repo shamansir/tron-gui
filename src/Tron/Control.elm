@@ -93,8 +93,8 @@ execute__ handler (Control _ value a) =
         |> Task.perform handler
 
 
-runValue : Control s v a -> Cmd v
-runValue =
+fire : Control s v a -> Cmd v
+fire =
     getValue
         >> Task.succeed
         >> Task.perform identity
