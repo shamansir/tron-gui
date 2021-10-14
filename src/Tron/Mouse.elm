@@ -123,11 +123,10 @@ distanceXY howFar mstate  =
                     diffY = (topY - curY) / howFar
                 in
                     ( diffX
-                    , 1 - diffY
+                    , diffY
                     )
                     {- ( align diffX
                     , align (1 - diffY)
                     ) -}
             else ( 0.5, 0.5 )
         _ -> ( 0.5, 0.5 )
-
