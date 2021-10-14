@@ -48,5 +48,5 @@ update action ( Core.Control axis ( maybeFrom, curValue ) a) =
         A.DragStart -> A.Silent
         A.Dragging _ -> A.Silent
         A.DragFinish -> A.Fire
-        _ -> A.None
+        _ -> A.Stay
     )

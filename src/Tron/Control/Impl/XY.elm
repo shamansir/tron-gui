@@ -50,7 +50,7 @@ update action ( Core.Control ( xAxis, yAxis ) ( maybeFrom, ( curX, curY ) ) a) =
         A.DragStart -> A.Silent
         A.Dragging _ -> A.Silent
         A.DragFinish -> A.Fire
-        _ -> A.None
+        _ -> A.Stay
     )
 
 
