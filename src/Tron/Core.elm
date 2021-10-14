@@ -320,32 +320,36 @@ handleMouse mouseAction state tree =
                 _ -> False
 
         finishedDragging =
-            case mouseAction of
+            (case mouseAction of
                 Mouse.Up _ ->
                     curMouseState.down
                     && not nextMouseState.down
                 _ -> False
+            )
 
         ( dX, dY ) = distanceXY knobDistance nextMouseState
 
         mouseActions
-            = if startedDragging && keepsDragging then
-                [ A.DragStart, A.Dragging { dx = dX, dy = dY } ]
-              else if keepsDragging && finishedDragging then
-                [ A.Dragging { dx = dX, dy = dY }, A.DragFinish ]
-              else if startedDragging then
-                [ A.DragStart ]
-              else if keepsDragging then
-                [ A.Dragging { dx = dX, dy = dY } ]
-              else if finishedDragging then
-                [ A.DragFinish ]
-              else []
+            = case ( startedDragging, keepsDragging, finishedDragging ) of
+                ( True, True, _ ) ->
+                    [ A.DragStart, A.Dragging { dx = dX, dy = dY } ]
+                    -- [ A.DragStart ] -- FIXME: it seems it is ok to fold just to one action here
+                ( True, _, _ ) ->
+                    [ A.DragStart ]
+                ( False, True, False ) ->
+                    [ A.Dragging { dx = dX, dy = dY } ]
+                ( False, True, True ) ->
+                    [ A.DragFinish ]
+                ( _, _, True ) ->
+                    [ A.DragFinish ]
+                _ ->
+                    []
 
         maybePathAtCursor =
-            if startedDragging || keepsDragging then
-                nextMouseState.dragFrom |> Maybe.andThen findPathAt
-            else if finishedDragging then
+            if finishedDragging  then
                 curMouseState.dragFrom |> Maybe.andThen findPathAt
+            else if startedDragging || keepsDragging then
+                nextMouseState.dragFrom |> Maybe.andThen findPathAt
             else Nothing
 
         nextTree =

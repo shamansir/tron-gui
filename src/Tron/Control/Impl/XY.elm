@@ -35,7 +35,7 @@ update action ( Core.Control ( xAxis, yAxis ) ( maybeFrom, ( curX, curY ) ) a) =
                             maybeFrom |> Maybe.withDefault ( curX, curY )
                         ( nextX, nextY ) =
                             ( U.alter xAxis dx xToAlter
-                            , U.alter yAxis dy yToAlter
+                            , U.alter yAxis -dy yToAlter
                             )
                     in
                         ( maybeFrom, ( nextX, nextY ) )
