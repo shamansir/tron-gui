@@ -26,7 +26,7 @@ update action ( Core.Control axis ( maybeFromColor, curColor ) a) =
         (
             case action of
 
-                A.DragStart _ ->
+                A.DragStart ->
                     ( Just curColor
                     , curColor
                     )
@@ -52,33 +52,17 @@ update action ( Core.Control axis ( maybeFromColor, curColor ) a) =
                                 curHsla.alpha
                     )
 
-                A.DragFinish { dx, dy } ->
+                A.DragFinish ->
                     ( Nothing
-                    ,
-                        let
-                            ( hueToAlter, lightnessToAlter ) =
-                                case maybeFromColor of
-                                    Just fromColor ->
-                                        case Color.toHsla fromColor of
-                                            hsla -> ( hsla.hue, hsla.lightness )
-                                    Nothing -> ( curHsla.hue, curHsla.lightness )
-                        in
-                            Color.hsla
-                                (U.alter hueAxis dx hueToAlter)
-                                (if curHsla.saturation > 0.25 then
-                                    -- && curHsla.saturation < 0.75 then
-                                        curHsla.saturation
-                                else 0.5)
-                                (U.alter lgtAxis dy lightnessToAlter)
-                                curHsla.alpha
+                    , curColor
                     )
 
                 _ -> ( maybeFromColor, curColor )
         )
         a
     , case action of
-        A.DragStart _ -> A.Silent
+        A.DragStart -> A.Silent
         A.Dragging _ -> A.Silent
-        A.DragFinish _ -> A.Fire
+        A.DragFinish -> A.Fire
         _ -> A.None
     )

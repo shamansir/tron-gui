@@ -24,7 +24,7 @@ update action ( Core.Control axis ( maybeFrom, curValue ) a) =
         (
             case action of
 
-                A.DragStart _ ->
+                A.DragStart ->
                     ( Just curValue
                     , curValue
                     )
@@ -36,19 +36,17 @@ update action ( Core.Control axis ( maybeFrom, curValue ) a) =
                         |> U.alter axis dy
                     )
 
-                A.DragFinish { dy } ->
+                A.DragFinish ->
                     ( Nothing
-                    , maybeFrom
-                        |> Maybe.withDefault curValue
-                        |> U.alter axis dy
+                    , curValue
                     )
 
                 _ -> ( maybeFrom, curValue )
         )
         a
     , case action of
-        A.DragStart _ -> A.Silent
+        A.DragStart -> A.Silent
         A.Dragging _ -> A.Silent
-        A.DragFinish _ -> A.Fire
+        A.DragFinish -> A.Fire
         _ -> A.None
     )

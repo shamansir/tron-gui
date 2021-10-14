@@ -9,9 +9,9 @@ type Action
     = Execute -- i.e. Click / Press Enter
     | Exit
     | Focus
-    | DragStart { x : Float, y : Float }
+    | DragStart
     | Dragging { dx : Float, dy : Float }
-    | DragFinish { dx : Float, dy : Float }
+    | DragFinish
     | KeyDown Int
     | Select Int
     | TextInput String

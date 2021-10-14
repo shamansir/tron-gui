@@ -24,14 +24,15 @@ update action ( Core.Control ( xAxis, yAxis ) ( maybeFrom, ( curX, curY ) ) a) =
         (
             case action of
 
-                A.DragStart _ ->
+                A.DragStart ->
                     ( Just ( curX, curY )
                     , ( curX, curY )
                     )
 
                 A.Dragging { dx, dy } ->
                     let
-                        ( xToAlter, yToAlter ) = maybeFrom |> Maybe.withDefault ( curX, curY )
+                        ( xToAlter, yToAlter ) =
+                            maybeFrom |> Maybe.withDefault ( curX, curY )
                         ( nextX, nextY ) =
                             ( U.alter xAxis dx xToAlter
                             , U.alter yAxis dy yToAlter
@@ -39,23 +40,16 @@ update action ( Core.Control ( xAxis, yAxis ) ( maybeFrom, ( curX, curY ) ) a) =
                     in
                         ( maybeFrom, ( nextX, nextY ) )
 
-                A.DragFinish { dx, dy } ->
-                    let
-                        ( xToAlter, yToAlter ) = maybeFrom |> Maybe.withDefault ( curX, curY )
-                        ( nextX, nextY ) =
-                            ( U.alter xAxis dx xToAlter
-                            , U.alter yAxis dy yToAlter
-                            )
-                    in
-                        ( Nothing, ( nextX, nextY ) )
+                A.DragFinish ->
+                    ( Nothing, ( curX, curY ) )
 
                 _ -> ( maybeFrom, ( curX, curY ) )
         )
         a
     , case action of
-        A.DragStart _ -> A.Silent
+        A.DragStart -> A.Silent
         A.Dragging _ -> A.Silent
-        A.DragFinish _ -> A.Fire
+        A.DragFinish -> A.Fire
         _ -> A.None
     )
 
