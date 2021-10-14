@@ -22,7 +22,7 @@ update action control =
         A.Execute ->
             ( toggle control, A.Fire )
         _ ->
-            ( control, A.None )
+            ( control, A.Stay )
 
 
 toggle : Control a -> Control a
