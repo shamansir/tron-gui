@@ -8,7 +8,7 @@ import Tron.Control as Core exposing (Control)
 import Tron.Control.Impl.Button as Button
 import Tron.Control.Action as A
 import Tron.Pages exposing (PageNum)
-import Tron.Util as Util
+import Tron.Util as U
 
 
 type Form
@@ -111,7 +111,42 @@ updateChoice action control =
             ( select n control
             , A.Fire
             )
-        -- TODO: dragging
+        A.DragStart ->
+            let value = Core.getValue control
+            in case value.mode of
+                Knob ->
+
+                    ( control
+                        |> Core.update
+                            (\value_ -> { value_ | prevSelected = Just value.selected })
+                    , A.Silent
+                    )
+                _ -> ( control, A.None )
+        A.Dragging { dy } ->
+            let value = Core.getValue control
+            in case value.mode of
+                Knob ->
+                    let
+                        items = getItems control
+                        valueToAlter = value.prevSelected |> Maybe.withDefault value.selected
+                        --dY = distanceY knobDistance nextMouseState
+                        nextVal =
+                            U.alter
+                                { min = 0, max = toFloat <| Array.length items - 1, step = 1 }
+                                dy
+                                (toFloat valueToAlter)
+                    in ( control
+                        |> Core.update
+                            (\value_ -> { value_ | selected = floor nextVal })
+                        , A.Silent
+                        )
+                _ -> ( control, A.None )
+        A.DragFinish ->
+            ( Core.update
+                (\value -> { value | prevSelected = Nothing })
+                control
+            , A.Fire
+            )
         _ ->
             ( control, A.None )
 
