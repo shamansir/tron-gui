@@ -3,6 +3,7 @@ module Tron.Control.Impl.Text exposing (..)
 
 import Tron.Control as Core exposing (Control)
 import Tron.Control as Control exposing (..)
+import Tron.Control.Action as A
 
 
 type TextState
@@ -17,6 +18,17 @@ type alias Transient =
     TextState
 
 
+update : A.Action -> Control a -> ( Control a, A.Change )
+update action control =
+    case action of
+        A.Execute ->
+            ( ensureEditing control, A.Fire )
+        A.Exit ->
+            ( finishEditing control, A.None )
+        _ ->
+            ( control, A.None )
+
+
 ensureEditing : Control a -> Control a
 ensureEditing =
     Control.update <| \(_, v) -> ( Editing, v )
@@ -29,7 +41,7 @@ finishEditing =
 
 updateText : String -> Control a -> Control a
 updateText newValue =
-    update
+    Core.update
         <| \(s, _) -> ( s, newValue )
 
 

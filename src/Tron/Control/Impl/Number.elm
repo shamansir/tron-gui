@@ -7,8 +7,48 @@ import Color
 import Svg exposing (Svg)
 import Svg.Attributes as SA exposing (..)
 
+import Tron.Mouse as Mouse
+import Tron.Util as U
 import Tron.Control as Core exposing (Control)
+import Tron.Control.Action as A
 
 -- if the slider is being dragged now, we need to know its first value it had when user started dragging,
 -- so it is the first `Maybe` in the pair
 type alias Control a = Core.Control Axis ( Maybe Float, Float ) a
+
+
+update : A.Action -> Control a -> ( Control a, A.Change )
+update action ( Core.Control axis ( maybeFrom, curValue ) a) =
+    ( Core.Control
+        axis
+        (
+            case action of
+
+                A.DragStart _ ->
+                    ( Just curValue
+                    , curValue
+                    )
+
+                A.Dragging { dy } ->
+                    ( maybeFrom
+                    , maybeFrom
+                        |> Maybe.withDefault curValue
+                        |> U.alter axis dy
+                    )
+
+                A.DragFinish { dy } ->
+                    ( Nothing
+                    , maybeFrom
+                        |> Maybe.withDefault curValue
+                        |> U.alter axis dy
+                    )
+
+                _ -> ( maybeFrom, curValue )
+        )
+        a
+    , case action of
+        A.DragStart _ -> A.Silent
+        A.Dragging _ -> A.Silent
+        A.DragFinish _ -> A.Fire
+        _ -> A.None
+    )

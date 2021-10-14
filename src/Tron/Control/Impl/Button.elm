@@ -6,6 +6,7 @@ import Tron.Style.Theme exposing (Theme)
 import Url.Builder as Url
 
 import Tron.Control as Core exposing (Control)
+import Tron.Control.Action as A
 
 
 type Url = Url String
@@ -21,6 +22,15 @@ type Face
 
 
 type alias Control a = Core.Control Face () a
+
+
+update : A.Action -> Control a -> ( Control a, A.Change )
+update action control =
+    case action of
+        A.Execute ->
+            ( control, A.Fire )
+        _ ->
+            ( control, A.None )
 
 
 withIcon : Icon -> Face

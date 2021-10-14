@@ -1,8 +1,11 @@
 module Tron.Control.Impl.Toggle exposing (..)
 
 
+import Task
+
 import Tron.Control as Core exposing (Control)
 import Tron.Control as Control exposing (..)
+import Tron.Control.Action as A
 
 
 type ToggleState
@@ -11,6 +14,15 @@ type ToggleState
 
 
 type alias Control a = Core.Control () ToggleState a
+
+
+update : A.Action -> Control a -> ( Control a, A.Change )
+update action control =
+    case action of
+        A.Execute ->
+            ( toggle control, A.Fire )
+        _ ->
+            ( control, A.None )
 
 
 toggle : Control a -> Control a
