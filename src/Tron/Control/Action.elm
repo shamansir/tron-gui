@@ -21,4 +21,4 @@ type Action
 type Change
     = Silent
     | Fire
-    | None
+    | Stay

@@ -91,12 +91,13 @@ updateGroup action control =
         A.Execute ->
             ( toggle control, A.Fire )
         _ ->
-            ( control, A.None )
+            ( control, A.Stay )
 
 
 updateChoice : A.Action -> ChoiceControl item a -> ( ChoiceControl item a, A.Change )
 updateChoice action control =
     case action of
+
         A.Execute ->
             ( case getChoiceMode control of
                 Pages ->
@@ -107,10 +108,12 @@ updateChoice action control =
                     toNext control
             , A.Fire
             )
+
         A.Select n ->
             ( select n control
             , A.Fire
             )
+
         A.DragStart ->
             let value = Core.getValue control
             in case value.mode of
@@ -121,7 +124,8 @@ updateChoice action control =
                             (\value_ -> { value_ | prevSelected = Just value.selected })
                     , A.Silent
                     )
-                _ -> ( control, A.None )
+                _ -> ( control, A.Stay )
+
         A.Dragging { dy } ->
             let value = Core.getValue control
             in case value.mode of
@@ -140,7 +144,8 @@ updateChoice action control =
                             (\value_ -> { value_ | selected = floor nextVal })
                         , A.Silent
                         )
-                _ -> ( control, A.None )
+                _ -> ( control, A.Stay )
+
         A.DragFinish ->
             ( Core.update
                 (\value -> { value | prevSelected = Nothing })
@@ -148,7 +153,7 @@ updateChoice action control =
             , A.Fire
             )
         _ ->
-            ( control, A.None )
+            ( control, A.Stay )
 
 
 -- updateChoiceItem : A.Action -> ( ChoiceControl item a, Index ) -> ( ChoiceControl item a, A.Change )

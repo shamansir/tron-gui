@@ -24,9 +24,9 @@ update action control =
         A.Execute ->
             ( ensureEditing control, A.Fire )
         A.Exit ->
-            ( finishEditing control, A.None )
+            ( finishEditing control, A.Fire )
         _ ->
-            ( control, A.None )
+            ( control, A.Stay )
 
 
 ensureEditing : Control a -> Control a

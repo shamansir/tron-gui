@@ -136,11 +136,11 @@ update msg state tree  =
         Click path ->
             let
                 changesTree =
-                    tree |> Property.setAll Stayed
+                    tree |> Property.setAll A.Stay
                 updates =
                     changesTree
                         |> Property.executeAt path
-                        |> List.map (Tuple.mapSecond <| Property.set ChangeToFire)
+                        |> List.map (Tuple.mapSecond <| Property.set A.Fire)
                 nextRoot =
                     changesTree
                         |> Property.updateMany updates
@@ -177,7 +177,7 @@ update msg state tree  =
             , Cmd.none
             )
 
-        TextInput path val ->
+        TextInput path val -> -- FIXME: To control `Action`
             let
                 nextRoot =
                     tree
@@ -288,18 +288,12 @@ knobDistance = 90 -- FIXME: move to `Control.Knob`
 
 
 
-type ValueState
-    = Stayed
-    | SilentChange
-    | ChangeToFire
-
-
-handleMouse : MouseAction -> State -> Property () -> ( State, Property ValueState )
+handleMouse : MouseAction -> State -> Property () -> ( State, Property A.Change )
 handleMouse mouseAction state tree =
     let
         --rootPath = getRootPath state
         changesTree =
-            tree |> Property.setAll Stayed
+            tree |> Property.setAll A.Stay
         curMouseState =
             state.mouse
         nextMouseState =
@@ -361,21 +355,16 @@ handleMouse mouseAction state tree =
                         path
                         (\property ->
                             let
-                                ( nextProperty, _ ) =
+                                ( nextProperty, change ) =
                                     List.foldl
                                         (\action ( p, _ ) ->
                                             p |> Property.update action
                                         )
-                                        ( property, A.None )
+                                        ( property, A.Stay )
                                         mouseActions
-                            in nextProperty |> Property.set ChangeToFire
+                            in nextProperty |> Property.set change
                         )
                         changesTree
-                        |> (\t ->
-                                if startedDragging then
-                                    Focus.on t path
-                                else t
-                            )
                 Nothing -> changesTree
 
     in
@@ -384,7 +373,13 @@ handleMouse mouseAction state tree =
             { state
             | mouse = nextMouseState
             }
-        , nextTree
+        ,
+            if startedDragging then
+                maybePathAtCursor
+                    |> Maybe.map (Focus.on nextTree)
+                    |> Maybe.withDefault nextTree
+            else nextTree
+
         )
 
 
@@ -393,18 +388,18 @@ handleKeyDown
     -> Path
     -> State
     -> Property ()
-    -> ( State, Property ValueState )
+    -> ( State, Property A.Change )
 handleKeyDown keyCode path state tree =
     let
 
         changesTree =
-            tree |> Property.setAll Stayed
+            tree |> Property.setAll A.Stay
 
         executeByPath _ = -- uses only `gui.tree`
             let
                 updates = changesTree |> Property.executeAt path
                 markedUpdates =
-                    updates |> List.map (Tuple.mapSecond <| Property.set ChangeToFire)
+                    updates |> List.map (Tuple.mapSecond <| Property.set A.Fire)
                 nextRoot = changesTree |> Property.updateMany markedUpdates
             in
                 ( state
@@ -437,8 +432,10 @@ handleKeyDown keyCode path state tree =
         -- enter
         13 ->
             case changesTree |> Property.find path of
-                Just (Text control) ->
-                    let nextProp = (Text <| Control.set ChangeToFire <| Text.finishEditing control)
+                Just prop ->
+                    let
+                        ( nextProp, _ ) =
+                            prop |> Property.update A.Exit -- FIXME: exit?? no enter??
                     in
                         ( state
                         ,
@@ -471,7 +468,7 @@ expose_ state tree =
         |> Property.wmap2 Tuple.pair (tree |> expose state)
 
 
-collectChanges : State -> Property ( ValueState, Maybe msg ) -> List (Exp.Out, msg)
+collectChanges : State -> Property ( A.Change, Maybe msg ) -> List (Exp.Out, msg)
 collectChanges state =
     expose_ state
         >> Property.unfold
@@ -479,7 +476,7 @@ collectChanges state =
         >> List.filterMap
             (\(expOut, (valState, maybeMsg)) ->
                 case ( valState, maybeMsg ) of
-                    ( ChangeToFire, Just msg ) ->
+                    ( A.Fire, Just msg ) ->
                         Just <|
                             ( expOut
                             , msg
@@ -494,7 +491,7 @@ fireChanges =
         >> Cmd.batch
 
 
-fireChangesFrom : State -> ( Tron msg, Property ValueState ) -> Cmd (Exp.Out, msg)
+fireChangesFrom : State -> ( Tron msg, Property A.Change ) -> Cmd (Exp.Out, msg)
 fireChangesFrom state ( tron, changesTree ) =
     Property.wmap3
         (\handler currentVal valueState ->
