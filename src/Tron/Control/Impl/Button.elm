@@ -30,7 +30,7 @@ update action control =
         A.Execute ->
             ( control, A.Fire )
         _ ->
-            ( control, A.None )
+            ( control, A.Stay )
 
 
 withIcon : Icon -> Face

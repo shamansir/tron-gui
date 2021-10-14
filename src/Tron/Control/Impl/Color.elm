@@ -64,5 +64,5 @@ update action ( Core.Control axis ( maybeFromColor, curColor ) a) =
         A.DragStart -> A.Silent
         A.Dragging _ -> A.Silent
         A.DragFinish -> A.Fire
-        _ -> A.None
+        _ -> A.Stay
     )

@@ -614,6 +614,11 @@ insideOut prop =
     ( get prop |> Tuple.first, prop |> map Tuple.second )
 
 
+{- outsideIn : ( a, Property b ) -> Property ( a, b )
+outsideIn ( a, prop ) =
+    ( get prop |> Tuple.first, prop |> map Tuple.second ) -}
+
+
 {-| Replace the `()` subject everywhere within Tron GUI tree, it is useful for truly a lot of cases when you don't care about what are the associated values.
 -}
 toUnit : Property a -> Property ()
@@ -654,7 +659,7 @@ getValue prop =
 update : A.Action -> Property a -> ( Property a, A.Change )
 update action prop =
     case prop of
-        Nil v -> ( Nil v, A.None )
+        Nil v -> ( Nil v, A.Stay )
         Number control -> control |> Number.update action |> Tuple.mapFirst Number
         Coordinate control -> control |> XY.update action |> Tuple.mapFirst Coordinate
         Text control -> control |> Text.update action |> Tuple.mapFirst Text
