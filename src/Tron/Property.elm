@@ -10,7 +10,7 @@ module Tron.Property exposing
     , zip
     , fold, foldP, foldFix, foldZip, foldZipP, unfold
     , updateAt, updateMany
-    , perform, apply
+    , perform, apply, update
     , replaceAt, insideOut
     )
 
@@ -35,6 +35,7 @@ import Tron.Control.Impl.Color as Color exposing (..)
 import Tron.Control.Impl.Toggle as Toggle exposing (..)
 import Tron.Control.Impl.Nest as Nest exposing (..)
 import Tron.Control.Value exposing (Value(..))
+import Tron.Control.Action as A
 
 import Tron.Style.CellShape as CS exposing (CellShape)
 import Tron.Style.PanelShape as PS exposing (PanelShape)
@@ -648,3 +649,20 @@ getValue prop =
         Choice _ _ control -> control |> Control.getValue |> .selected |> FromChoice
         Group _ _ _ -> FromGroup
         Live innerProp -> getValue innerProp
+
+
+update : A.Action -> Property a -> ( Property a, A.Change )
+update action prop =
+    case prop of
+        Nil v -> ( Nil v, A.None )
+        Number control -> control |> Number.update action |> Tuple.mapFirst Number
+        Coordinate control -> control |> XY.update action |> Tuple.mapFirst Coordinate
+        Text control -> control |> Text.update action |> Tuple.mapFirst Text
+        Color control -> control |> Color.update action |> Tuple.mapFirst Color
+        Toggle control -> control |> Toggle.update action |> Tuple.mapFirst Toggle
+        Action control -> control |> Button.update action |> Tuple.mapFirst Action
+        Choice focus shape control ->
+            control |> Nest.updateChoice action |> Tuple.mapFirst (Choice focus shape)
+        Group focus shape control ->
+            control |> Nest.updateGroup action |> Tuple.mapFirst (Group focus shape)
+        Live innerProp -> innerProp |> update action |> Tuple.mapFirst Live
