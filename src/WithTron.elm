@@ -103,6 +103,7 @@ import Task
 import Tron.Core as Core exposing (State)
 import Tron exposing (Tron)
 import Tron as Def
+import Tron.Path as Path
 --import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))
@@ -115,8 +116,11 @@ import Tron.Property as Property exposing (Property)
 import Tron.Property.ExposeData as Exp
 import Tron.Property.Controls as Property
 import Tron.Property.Values as Property
+import Tron.Property.Paths as Property
+import Tron.Control.Value as Control
 
 import WithTron.Logic exposing (..)
+import WithTron.ValueAt exposing (ValueAt)
 
 
 
@@ -136,7 +140,7 @@ type WithTronMsg msg
 
 
 init
-    :  ( flags -> ( model, Cmd msg ), model -> Property () )
+    :  ( flags -> ( model, Cmd msg ), ValueAt -> model -> Property () )
     -> Maybe Url
     -> Render.Target
     -> Comm.Ports msg
@@ -149,7 +153,7 @@ init ( userInit, userFor ) maybeUrl renderTarget ports flags =
         ( state, guiEffect ) =
             Core.init
         firstTree =
-            userFor initialModel
+            userFor noValues initialModel
     in
         (
             ( initialModel
@@ -174,7 +178,7 @@ init ( userInit, userFor ) maybeUrl renderTarget ports flags =
 
 
 view
-    :  (model -> Html msg)
+    :  ( ValueAt -> model -> Html msg )
     -> Render.Target
     -> ( model, State, Property () )
     -> Html (WithTronMsg msg)
@@ -184,26 +188,28 @@ view userView renderTarget ( model, state, tree ) =
         [ tree
             |> useRenderTarget renderTarget state
             |> Html.map ToTron
-        , userView model
+        , userView (toValueAt tree) model
             |> Html.map ToUser
         ]
 
 
 subscriptions
-    :  ( model -> Sub msg )
+    :  ( ValueAt -> model -> Sub msg )
     -> Comm.Ports msg
     -> ( model, State, Property () )
     -> Sub (WithTronMsg msg)
 subscriptions userSubscriptions ports ( model, state, tree ) =
     Sub.batch
-        [ userSubscriptions model |> Sub.map ToUser
+        [ userSubscriptions (toValueAt tree) model |> Sub.map ToUser
         , Core.subscriptions state |> Sub.map ToTron
         , addSubscriptionsOptions ports tree |> Sub.map ReceiveRaw
         ]
 
 
 update
-    :  ( msg -> model -> (model, Cmd msg), model -> Def.Tron msg )
+    : ( msg -> ValueAt -> model -> (model, Cmd msg)
+      , ValueAt -> model -> Def.Tron msg
+      )
     -> Comm.Ports msg
     -> WithTronMsg msg
     -> ( model, State, Property () )
@@ -214,9 +220,9 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
         ToUser userMsg ->
             let
                 ( newUserModel, userEffect ) =
-                    userUpdate userMsg model
+                    userUpdate userMsg (toValueAt prevTree) model
                 nextTree =
-                    userFor newUserModel
+                    userFor (toValueAt prevTree) newUserModel
             in
 
             (
@@ -234,7 +240,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
 
         ToTron guiMsg ->
             let
-                tree = userFor model
+                tree = userFor (toValueAt prevTree) model
                 unitTree = tree |> Property.toUnit
             in case {- prevTree
                     |> Exp.lift -}
@@ -262,7 +268,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
 
         ReceiveRaw rawUpdates ->
             let
-                tree = userFor model
+                tree = userFor (toValueAt prevTree) model
                 unitRoot =
                     tree
                         |> Property.toUnit
@@ -363,6 +369,21 @@ applyUrl ports tree url =
             _ -> Cmd.none
 
 
+toValueStorage : Property a -> Dict (List Path.Label) Control.Value
+toValueStorage =
+    Property.unfold
+        >> List.map (Tuple.mapBoth Path.toLabelPath Property.getValue)
+        >> Dict.fromList
+
+
+toValueAt : Property a -> ValueAt
+toValueAt prop path = Dict.get path <| toValueStorage prop
+
+
+noValues : ValueAt
+noValues = always Nothing
+
+
 {-| Wrapper for `Program.sandbox` with `for` function and `Tron` options.
 
 For example:
@@ -399,11 +420,11 @@ sandbox renderTarget ports impl =
     element
         renderTarget
         ports
-        { for = impl.for
+        { for = always impl.for
         , init = \_ -> ( impl.init, Cmd.none )
-        , view = impl.view
-        , update = \msg model -> ( impl.update msg model, Cmd.none )
-        , subscriptions = \_ -> Sub.none
+        , view = always impl.view
+        , update = \msg _ model -> ( impl.update msg model, Cmd.none )
+        , subscriptions = \_ _ -> Sub.none
         }
 
 
@@ -438,17 +459,17 @@ element
     :  Render.Target
     -> Comm.Ports msg
     ->
-        { for : model -> Def.Tron msg
+        { for : ValueAt -> model -> Def.Tron msg
         , init : flags -> ( model, Cmd msg )
-        , subscriptions : model -> Sub msg
-        , view : model -> Html msg
-        , update : msg -> model -> ( model, Cmd msg )
+        , subscriptions : ValueAt -> model -> Sub msg
+        , view : ValueAt -> model -> Html msg
+        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
         }
     -> ProgramWithTron flags model msg
 element renderTarget ports def =
     Browser.element
         { init =
-            init ( def.init, def.for >> Property.toUnit ) Nothing renderTarget ports
+            init ( def.init, \valueAt -> def.for valueAt >> Property.toUnit ) Nothing renderTarget ports
         , update =
             update ( def.update, def.for ) ports
         , view =
@@ -494,28 +515,30 @@ document
     :  Render.Target
     -> Comm.Ports msg
     ->
-        { for : model -> Def.Tron msg
-        , init : flags -> ( model, Cmd msg )
-        , subscriptions : model -> Sub msg
-        , view : model -> Browser.Document msg
-        , update : msg -> model -> ( model, Cmd msg )
+        { init : flags -> ( model, Cmd msg )
+        , for : ValueAt -> model -> Def.Tron msg
+        , subscriptions : ValueAt -> model -> Sub msg
+        , view : ValueAt -> model -> Browser.Document msg
+        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
         }
     -> ProgramWithTron flags model msg
 document renderTarget ports def =
     Browser.document
         { init =
             \flags ->
-                init ( def.init, def.for >> Property.toUnit) Nothing renderTarget ports flags
+                init ( def.init, \valueAt -> def.for valueAt >> Property.toUnit ) Nothing renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =
             \(userModel, state, tree) ->
-                { title = (def.view userModel).title
+                let userView = def.view (toValueAt tree) userModel
+                in
+                { title = userView.title
                 , body =
                     [ view
-                        (\umodel ->
+                        (\valueAt umodel ->
                             -- FIXME: we calculate view two times, it seems
-                            Html.div [] <| (def.view umodel).body
+                            Html.div [] <| userView.body
                         )
                         renderTarget
                         (userModel, state, tree)
@@ -575,11 +598,11 @@ application
     :  Render.Target
     -> Comm.Ports msg
     ->
-        { for : model -> Def.Tron msg
-        , init : flags -> ( model, Cmd msg )
-        , subscriptions : model -> Sub msg
-        , view : model -> Browser.Document msg
-        , update : msg -> model -> ( model, Cmd msg )
+        { init : flags -> ( model, Cmd msg )
+        , for : ValueAt -> model -> Def.Tron msg
+        , subscriptions : ValueAt -> model -> Sub msg
+        , view : ValueAt -> model -> Browser.Document msg
+        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
         , onUrlChange : Url.Url -> msg
         , onUrlRequest : Browser.UrlRequest -> msg
         }
@@ -588,17 +611,17 @@ application renderTarget ports def =
     Browser.application
         { init =
             \flags url _ ->
-                init ( def.init, def.for >> Property.toUnit ) (Just url) renderTarget ports flags
+                init ( def.init, \valueAt -> def.for valueAt >> Property.toUnit ) (Just url) renderTarget ports flags
         , update =
             update ( def.update, def.for ) ports
         , view =
             \(userModel, state, tree) ->
-                let userView = def.view userModel
+                let userView = def.view (toValueAt tree) userModel
                 in
                     { title = userView.title
                     , body =
                         [ view
-                            (\umodel ->
+                            (\_ umodel ->
                                 -- FIXME: we calculate view two times, it seems
                                 Html.div [] <| userView.body
                             )

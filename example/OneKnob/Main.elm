@@ -5,6 +5,7 @@ import Html exposing (Html)
 
 import Tron exposing (Tron)
 import WithTron exposing (ProgramWithTron)
+import WithTron.ValueAt exposing (ValueAt)
 import Tron.Option.Render as Option
 import Tron.Option.Communication as Option
 import Tron.Build as Builder
@@ -22,8 +23,13 @@ type Msg
 type alias Model = Amount
 
 
-for : Model -> Tron Msg
-for amount =
+init : flags -> ( Model, Cmd Msg )
+init _ =
+    ( 0, Cmd.none )
+
+
+for : ValueAt -> Model -> Tron Msg
+for _ amount =
     Builder.root
         [
             ( "amount"
@@ -35,19 +41,14 @@ for amount =
         ]
 
 
-init : flags -> ( Model, Cmd Msg )
-init _ =
-    ( 0, Cmd.none )
-
-
-view : Model -> Html Msg
-view amount =
+view : ValueAt -> Model -> Html Msg
+view _ amount =
     Html.text
         <| String.fromFloat amount
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg curAmount =
+update : Msg -> ValueAt -> Model -> ( Model, Cmd Msg )
+update msg _ curAmount =
     case msg of
 
         AmountChanged newAmount ->
@@ -56,8 +57,8 @@ update msg curAmount =
             )
 
 
-subscriptions : Model -> Sub Msg
-subscriptions _=
+subscriptions : ValueAt -> Model -> Sub Msg
+subscriptions _ _ =
     Sub.none
 
 

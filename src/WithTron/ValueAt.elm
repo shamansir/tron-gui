@@ -57,7 +57,7 @@ And get `Maybe (Float, Float)` in response. Same works for any of the decoders b
     -- and so on...
 
 -}
-type alias ValueAt =
+type alias ValueAt = -- FIXME: Just store a Dictionary of values and name it `Values` or something like this.
     List Path.Label -> Maybe Value
 
 

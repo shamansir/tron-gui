@@ -17,7 +17,6 @@ module Tron.Property exposing
 
 import Task
 import Array exposing (Array)
-import Dict exposing (Dict)
 import Color exposing (Color)
 import Size exposing (..)
 
