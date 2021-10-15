@@ -12,7 +12,7 @@ See also: `Tron.OfValue`, `WithTron.for`, `Tron.OfValue.lift`
 
 import Random
 import Array exposing (Array)
-importTron.Control.Impl.Color.)
+import Color exposing (Color)
 import Axis exposing (Axis)
 import Url.Builder as Url
 
@@ -24,7 +24,7 @@ import Tron.Control.Impl.Text as Text exposing (TextState(..))
 import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..))
 import Tron.Control.Impl.Number as Number
 import Tron.Control.Impl.XY as XY
-import Tron.Control.Color as Color
+import Tron.Control.Impl.Color as Color
 import Tron.Path as Path
 
 import Tron.Property  exposing (Property(..))
@@ -46,20 +46,20 @@ type Icon
 
 
 {-| -}
-generator : Random.Generator (Tron ())
+generator : Random.Generator (Property ())
 generator =
     group (DeepLevel 0)
         |> Random.map expand
         |> Random.andThen group_
 
 
-property : DeepLevel -> Random.Generator (Tron ())
+property : DeepLevel -> Random.Generator (Property ())
 property (DeepLevel deep) =
     Random.int 1 9
         |> Random.andThen
             (\n ->
                 case n of
-                    0 -> Random.constant Nil
+                    0 -> Random.constant <| Nil ()
                     1 -> number |> Random.map Number
                     2 -> coordinate |> Random.map Coordinate
                     3 -> text |> Random.map Text
@@ -76,7 +76,7 @@ property (DeepLevel deep) =
                             group (DeepLevel <| deep + 1)
                                 |> Random.andThen group_
                         else button |> Random.map Action
-                    _ -> Random.constant Nil
+                    _ -> Random.constant <| Nil ()
             )
 
 
@@ -171,7 +171,7 @@ button =
         |> Random.map (\icon -> Control icon () ())
 
 
-controls : DeepLevel -> Random.Generator ( Array ( Path.Label, Tron () ) )
+controls : DeepLevel -> Random.Generator ( Array ( Path.Label, Property () ) )
 controls deep =
     let
         labelFor prop =
@@ -186,7 +186,7 @@ controls deep =
                 Choice _ _ _ -> "choice"
                 Group _ _ _ -> "group"
                 Live innerProp -> labelFor innerProp
-        addLabel : Tron () -> Random.Generator ( Path.Label, Tron () )
+        addLabel : Property () -> Random.Generator ( Path.Label, Property () )
         addLabel prop =
             Random.int 0 10000
                 |> Random.map String.fromInt
@@ -202,7 +202,7 @@ controls deep =
                 )
 
 
-choice : DeepLevel -> Random.Generator ( ChoiceControl (Path.Label, Tron ()) () )
+choice : DeepLevel -> Random.Generator ( ChoiceControl (Path.Label, Property ()) () )
 choice deep =
     controls deep
         |> Random.andThen
@@ -232,7 +232,7 @@ choice deep =
             )
 
 
-group : DeepLevel -> Random.Generator ( GroupControl ( Path.Label, Tron () ) () )
+group : DeepLevel -> Random.Generator ( GroupControl ( Path.Label, Property () ) () )
 group deep =
     controls deep
         |> Random.andThen
@@ -276,7 +276,7 @@ switch =
 
 
 shapeFor
-     : Control (Array ( Path.Label, Tron () )) val msg
+     : Control (Array ( Path.Label, Property () )) val msg
     -> Random.Generator ( PanelShape, CS.CellShape )
 shapeFor cs =
     Random.map2
@@ -292,8 +292,8 @@ shape toFit =
 
 
 group_
-     : GroupControl (Path.Label, Tron ()) ()
-    -> Random.Generator (Tron ())
+     : GroupControl (Path.Label, Property ()) ()
+    -> Random.Generator (Property ())
 group_ control =
     Random.map
         (\s -> Group Nothing s control)
@@ -301,8 +301,8 @@ group_ control =
 
 
 choice_
-     : ChoiceControl (Path.Label, Tron ()) ()
-    -> Random.Generator (Tron ())
+     : ChoiceControl (Path.Label, Property ()) ()
+    -> Random.Generator (Property ())
 choice_ control =
     Random.map
         (\s -> Choice Nothing s control)
