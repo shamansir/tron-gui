@@ -57,7 +57,9 @@ And get `Maybe (Float, Float)` in response. Same works for any of the decoders b
     -- and so on...
 
 -}
-type alias ValueAt = -- FIXME: Just store a Dictionary of values and name it `Values` or something like this.
+type alias ValueAt =
+    -- FIXME: Just store a Dictionary of values and name it `Values` or something like this.
+    -- FIXME: ...Or, pass `Tron ()` everywhere just to get the values directly from the previous state. Still leave the helpers below though.
     List Path.Label -> Maybe Value
 
 

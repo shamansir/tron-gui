@@ -1,6 +1,7 @@
 module WithTron exposing
-    ( ProgramWithTron
+    ( Program
     , sandbox, element, document, application
+    , easy, minimal, recalling
     )
 
 
@@ -93,6 +94,7 @@ See also: `WithTron.Backed`.
 
 
 import Browser exposing (UrlRequest(..))
+import Browser.Navigation as Nav
 import Url exposing (Url)
 import Html exposing (Html)
 import Random
@@ -102,7 +104,7 @@ import Task
 
 import Tron.Core as Core exposing (State)
 import Tron exposing (Tron)
-import Tron as Def
+import Tron as Tron
 import Tron.Path as Path
 --import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
@@ -125,8 +127,51 @@ import WithTron.ValueAt exposing (ValueAt)
 
 
 {-| Adds `Model msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
-type alias ProgramWithTron flags model msg =
-    Program flags ( model, State, Property () ) ( WithTronMsg msg )
+type alias Program flags model msg =
+    Platform.Program flags ( model, State, Property () ) ( WithTronMsg msg )
+
+
+type alias Def flags model msg =
+    { init : flags -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
+    , subscriptions : ( model, State, Property () ) -> Sub (WithTronMsg msg)
+    , update :
+          WithTronMsg msg
+          -> ( model, State, Property () )
+          -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
+    , view : ( model, State, Property () ) -> Html (WithTronMsg msg)
+    }
+
+
+type alias AppDef flags model msg =
+    { init :
+          flags
+          -> Url
+          -> Nav.Key
+          -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
+    , subscriptions : ( model, State, Property () ) -> Sub (WithTronMsg msg)
+    , update :
+          WithTronMsg msg
+          -> ( model, State, Property () )
+          -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
+    , view :
+          ( model, State, Property () )
+          -> { body : List (Html (WithTronMsg msg)), title : String }
+    , onUrlChange : Url -> WithTronMsg msg
+    , onUrlRequest : UrlRequest -> WithTronMsg msg
+    }
+
+
+type alias DocumentDef flags model msg =
+    { init : flags -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
+    , subscriptions : ( model, State, Property () ) -> Sub (WithTronMsg msg)
+    , update :
+          WithTronMsg msg
+          -> ( model, State, Property () )
+          -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
+    , view :
+          ( model, State, Property () )
+          -> { body : List (Html (WithTronMsg msg)), title : String }
+    }
 
 
 type WithTronMsg msg
@@ -140,16 +185,15 @@ type WithTronMsg msg
 
 
 init
-    :  ( flags -> ( model, Cmd msg ), ValueAt -> model -> Property () )
+    :  ( ( model, Cmd msg ), ValueAt -> model -> Property () )
     -> Maybe Url
     -> Render.Target
     -> Comm.Ports msg
-    -> flags
     -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
-init ( userInit, userFor ) maybeUrl renderTarget ports flags =
+init ( userInit, userFor ) maybeUrl renderTarget ports =
     let
         ( initialModel, userEffect ) =
-            userInit flags
+            userInit
         ( state, guiEffect ) =
             Core.init
         firstTree =
@@ -208,7 +252,7 @@ subscriptions userSubscriptions ports ( model, state, tree ) =
 
 update
     : ( msg -> ValueAt -> model -> (model, Cmd msg)
-      , ValueAt -> model -> Def.Tron msg
+      , ValueAt -> model -> Tron msg
       )
     -> Comm.Ports msg
     -> WithTronMsg msg
@@ -384,6 +428,160 @@ noValues : ValueAt
 noValues = always Nothing
 
 
+easy
+     : Render.Target
+    -> Comm.Ports msg
+    ->
+        { for : model -> Tron msg
+        , init : flags -> ( model, Cmd msg )
+        , subscriptions : model -> Sub msg
+        , view : model -> Html msg
+        , update : msg -> model -> ( model, Cmd msg )
+        }
+    -> Def flags model msg
+easy renderTarget ports def =
+    recalling
+        renderTarget
+        ports
+        { for = always def.for
+        , init = def.init
+        , subscriptions = always def.subscriptions
+        , view = always def.view
+        , update = \msg _ model -> def.update msg model
+        }
+
+
+recalling
+     : Render.Target
+    -> Comm.Ports msg
+    ->
+        { for : ValueAt -> model -> Tron msg
+        , init : flags -> ( model, Cmd msg )
+        , subscriptions : ValueAt -> model -> Sub msg
+        , view : ValueAt -> model -> Html msg
+        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
+        }
+    -> Def flags model msg
+recalling renderTarget ports def =
+    { init =
+        \flags -> init ( def.init flags, \valueAt -> def.for valueAt >> Property.toUnit ) Nothing renderTarget ports
+    , update =
+        update ( def.update, def.for ) ports
+    , view =
+        view def.view renderTarget
+    , subscriptions =
+        subscriptions def.subscriptions ports
+    }
+
+
+minimal
+     : Render.Target
+    -> Comm.Ports msg
+    ->
+        { for : model -> Tron msg
+        , init : model
+        , view : model -> Html msg
+        , update : msg -> model -> model
+        }
+    -> Def flags model msg
+minimal renderTarget ports def =
+    easy
+        renderTarget
+        ports
+        { for = def.for
+        , init = \_ -> ( def.init, Cmd.none )
+        , view = def.view
+        , update = \msg model -> ( def.update msg model, Cmd.none )
+        , subscriptions = \_ -> Sub.none
+        }
+
+
+toApplication
+     : Render.Target
+    -> Comm.Ports msg
+    ->
+        { init : flags -> Url.Url -> Nav.Key -> ( model, Cmd msg )
+        , for : ValueAt -> model -> Tron msg
+        , subscriptions : ValueAt -> model -> Sub msg
+        , view : ValueAt -> model -> Browser.Document msg
+        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
+        , onUrlChange : Url.Url -> msg
+        , onUrlRequest : Browser.UrlRequest -> msg
+        }
+    -> AppDef flags model msg
+toApplication renderTarget ports def =
+    { init =
+        \flags url key ->
+            init
+                ( def.init flags url key, \valueAt -> def.for valueAt >> Property.toUnit ) (Just url) renderTarget ports
+    , update =
+        update ( def.update, def.for ) ports
+    , view =
+        \(userModel, state, tree) ->
+            let userView = def.view (toValueAt tree) userModel
+            in
+                { title = userView.title
+                , body =
+                    [ view
+                        (\_ umodel ->
+                            -- FIXME: we calculate view two times, it seems
+                            Html.div [] <| userView.body
+                        )
+                        renderTarget
+                        (userModel, state, tree)
+                    ]
+                }
+    , subscriptions =
+        subscriptions def.subscriptions ports
+    , onUrlChange =
+        \url -> UrlChange (Just <| def.onUrlChange url) url
+    , onUrlRequest =
+        \req ->
+            case req of
+                Internal url ->
+                    UrlChange (Just <| def.onUrlRequest req) <| url
+                External _ ->
+                    ToUser <| def.onUrlRequest req
+    }
+
+
+toDocument
+     : Render.Target
+    -> Comm.Ports msg
+    ->
+        { init : flags -> ( model, Cmd msg )
+        , for : ValueAt -> model -> Tron msg
+        , subscriptions : ValueAt -> model -> Sub msg
+        , view : ValueAt -> model -> Browser.Document msg
+        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
+        }
+    -> DocumentDef flags model msg
+toDocument renderTarget ports def =
+    { init =
+        \flags ->
+            init ( def.init flags, \valueAt -> def.for valueAt >> Property.toUnit ) Nothing renderTarget ports
+    , update =
+        update ( def.update, def.for ) ports
+    , view =
+        \(userModel, state, tree) ->
+            let userView = def.view (toValueAt tree) userModel
+            in
+            { title = userView.title
+            , body =
+                [ view
+                    (\valueAt umodel ->
+                        -- FIXME: we calculate view two times, it seems
+                        Html.div [] <| userView.body
+                    )
+                    renderTarget
+                    (userModel, state, tree)
+                ]
+            }
+    , subscriptions =
+        subscriptions def.subscriptions ports
+    }
+
+
 {-| Wrapper for `Program.sandbox` with `for` function and `Tron` options.
 
 For example:
@@ -410,22 +608,15 @@ sandbox
     :  Render.Target
     -> Comm.Ports msg
     ->
-        { for : model -> Def.Tron msg
+        { for : model -> Tron msg
         , init : model
         , view : model -> Html msg
         , update : msg -> model -> model
         }
-    -> ProgramWithTron flags model msg
-sandbox renderTarget ports impl =
-    element
-        renderTarget
-        ports
-        { for = always impl.for
-        , init = \_ -> ( impl.init, Cmd.none )
-        , view = always impl.view
-        , update = \msg _ model -> ( impl.update msg model, Cmd.none )
-        , subscriptions = \_ _ -> Sub.none
-        }
+    -> Program flags model msg
+sandbox renderTarget ports def =
+    Browser.element
+        <| minimal renderTarget ports def
 
 
 {-| Wrapper for `Program.element` with `for` function and `Tron` options.
@@ -459,24 +650,16 @@ element
     :  Render.Target
     -> Comm.Ports msg
     ->
-        { for : ValueAt -> model -> Def.Tron msg
+        { for : ValueAt -> model -> Tron msg
         , init : flags -> ( model, Cmd msg )
         , subscriptions : ValueAt -> model -> Sub msg
         , view : ValueAt -> model -> Html msg
         , update : msg -> ValueAt -> model -> ( model, Cmd msg )
         }
-    -> ProgramWithTron flags model msg
+    -> Program flags model msg
 element renderTarget ports def =
     Browser.element
-        { init =
-            init ( def.init, \valueAt -> def.for valueAt >> Property.toUnit ) Nothing renderTarget ports
-        , update =
-            update ( def.update, def.for ) ports
-        , view =
-            view def.view renderTarget
-        , subscriptions =
-            subscriptions def.subscriptions ports
-        }
+        <| recalling renderTarget ports def
 
 
 {-| Wrapper for `Program.document` with `for` function and `Tron` options.
@@ -516,37 +699,15 @@ document
     -> Comm.Ports msg
     ->
         { init : flags -> ( model, Cmd msg )
-        , for : ValueAt -> model -> Def.Tron msg
+        , for : ValueAt -> model -> Tron msg
         , subscriptions : ValueAt -> model -> Sub msg
         , view : ValueAt -> model -> Browser.Document msg
         , update : msg -> ValueAt -> model -> ( model, Cmd msg )
         }
-    -> ProgramWithTron flags model msg
+    -> Program flags model msg
 document renderTarget ports def =
     Browser.document
-        { init =
-            \flags ->
-                init ( def.init, \valueAt -> def.for valueAt >> Property.toUnit ) Nothing renderTarget ports flags
-        , update =
-            update ( def.update, def.for ) ports
-        , view =
-            \(userModel, state, tree) ->
-                let userView = def.view (toValueAt tree) userModel
-                in
-                { title = userView.title
-                , body =
-                    [ view
-                        (\valueAt umodel ->
-                            -- FIXME: we calculate view two times, it seems
-                            Html.div [] <| userView.body
-                        )
-                        renderTarget
-                        (userModel, state, tree)
-                    ]
-                }
-        , subscriptions =
-            subscriptions def.subscriptions ports
-        }
+        <| toDocument renderTarget ports def
 
 
 {-| Wrapper for `Program.application` with `for` function and `Tron` options.
@@ -598,46 +759,15 @@ application
     :  Render.Target
     -> Comm.Ports msg
     ->
-        { init : flags -> ( model, Cmd msg )
-        , for : ValueAt -> model -> Def.Tron msg
+        { init : flags -> Url.Url -> Nav.Key -> ( model, Cmd msg )
+        , for : ValueAt -> model -> Tron msg
         , subscriptions : ValueAt -> model -> Sub msg
         , view : ValueAt -> model -> Browser.Document msg
         , update : msg -> ValueAt -> model -> ( model, Cmd msg )
         , onUrlChange : Url.Url -> msg
         , onUrlRequest : Browser.UrlRequest -> msg
         }
-    -> ProgramWithTron flags model msg
+    -> Program flags model msg
 application renderTarget ports def =
     Browser.application
-        { init =
-            \flags url _ ->
-                init ( def.init, \valueAt -> def.for valueAt >> Property.toUnit ) (Just url) renderTarget ports flags
-        , update =
-            update ( def.update, def.for ) ports
-        , view =
-            \(userModel, state, tree) ->
-                let userView = def.view (toValueAt tree) userModel
-                in
-                    { title = userView.title
-                    , body =
-                        [ view
-                            (\_ umodel ->
-                                -- FIXME: we calculate view two times, it seems
-                                Html.div [] <| userView.body
-                            )
-                            renderTarget
-                            (userModel, state, tree)
-                        ]
-                    }
-        , subscriptions =
-            subscriptions def.subscriptions ports
-        , onUrlChange =
-            \url -> UrlChange (Just <| def.onUrlChange url) url
-        , onUrlRequest =
-            \req ->
-                case req of
-                    Internal url ->
-                        UrlChange (Just <| def.onUrlRequest req) <| url
-                    External _ ->
-                        ToUser <| def.onUrlRequest req
-        }
+        <| toApplication renderTarget ports def

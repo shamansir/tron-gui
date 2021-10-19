@@ -1,5 +1,6 @@
 ## Public API
 
+* Breaking: Instead of `ValueAt`, just pass the `Tron ()` everywhere (while keeping the `ValueAt`-helpers), then it looks much more clear what actually happens;
 * Breaking: Close `ProxyValue` constructors from public;
 * Breaking: Stick to just one `WithTron.Backed`, since anyway it is possible to convert one to another using `Tron` methods;
 * Get rid of `maxRows` and `maxCols` in `PanelShape` and switch to manual pagination, do it only when user wants: ability to disable / enable pagination from builder + Move paging inside nested controls;
