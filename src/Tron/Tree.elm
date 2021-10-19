@@ -1,5 +1,6 @@
 module Tron.Tree exposing
     ( Tree(..), FocusAt(..), Shape, NestShape
+    , empty
     , get, set, setAt, setAll, move, getValue
     , map, mapWithPath, mapWithValue
     , zmap2, zmap3, zmap4, zmap5
@@ -60,6 +61,10 @@ type Tree a
     | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Path.Label, Tree a ) a)
     | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Path.Label, Tree a ) a)
     | Live (Tree a)
+
+
+empty : Tree ()
+empty = Nil ()
 
 
 map : (a -> b) -> Tree a -> Tree b

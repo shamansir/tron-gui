@@ -1,12 +1,6 @@
 module Tron.Focus exposing (..)
 
 
-import Tron.Path as Path exposing (Path)
-
-import Array
-import Array exposing (Array)
-
-
 type alias Level = Int
 
 

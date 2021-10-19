@@ -2,6 +2,7 @@ module WithTron exposing
     ( Program
     , sandbox, element, document, application
     , easy, minimal, recalling
+    , toValueAt
     )
 
 
@@ -185,7 +186,7 @@ type WithTronMsg msg
 
 
 init
-    :  ( ( model, Cmd msg ), ValueAt -> model -> Tree () )
+    :  ( ( model, Cmd msg ), Tree () -> model -> Tree () )
     -> Maybe Url
     -> Render.Target
     -> Comm.Ports msg
@@ -197,7 +198,7 @@ init ( userInit, userFor ) maybeUrl renderTarget ports =
         ( state, guiEffect ) =
             Core.init
         firstTree =
-            userFor noValues initialModel
+            userFor Tree.empty initialModel
     in
         (
             ( initialModel
@@ -222,7 +223,7 @@ init ( userInit, userFor ) maybeUrl renderTarget ports =
 
 
 view
-    :  ( ValueAt -> model -> Html msg )
+    :  ( Tree () -> model -> Html msg )
     -> Render.Target
     -> ( model, State, Tree () )
     -> Html (WithTronMsg msg)
@@ -232,27 +233,27 @@ view userView renderTarget ( model, state, tree ) =
         [ tree
             |> useRenderTarget renderTarget state
             |> Html.map ToTron
-        , userView (toValueAt tree) model
+        , userView tree model
             |> Html.map ToUser
         ]
 
 
 subscriptions
-    :  ( ValueAt -> model -> Sub msg )
+    :  ( Tree () -> model -> Sub msg )
     -> Comm.Ports msg
     -> ( model, State, Tree () )
     -> Sub (WithTronMsg msg)
 subscriptions userSubscriptions ports ( model, state, tree ) =
     Sub.batch
-        [ userSubscriptions (toValueAt tree) model |> Sub.map ToUser
+        [ userSubscriptions tree model |> Sub.map ToUser
         , Core.subscriptions state |> Sub.map ToTron
         , addSubscriptionsOptions ports tree |> Sub.map ReceiveRaw
         ]
 
 
 update
-    : ( msg -> ValueAt -> model -> (model, Cmd msg)
-      , ValueAt -> model -> Tron msg
+    : ( msg -> Tree () -> model -> (model, Cmd msg)
+      , Tree () -> model -> Tron msg
       )
     -> Comm.Ports msg
     -> WithTronMsg msg
@@ -264,9 +265,9 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
         ToUser userMsg ->
             let
                 ( newUserModel, userEffect ) =
-                    userUpdate userMsg (toValueAt prevTree) model
+                    userUpdate userMsg prevTree model
                 nextTree =
-                    userFor (toValueAt prevTree) newUserModel
+                    userFor prevTree newUserModel
             in
 
             (
@@ -284,7 +285,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
 
         ToTron guiMsg ->
             let
-                tree = userFor (toValueAt prevTree) model
+                tree = userFor prevTree model
                 unitTree = tree |> Tree.toUnit
             in case {- prevTree
                     |> Exp.lift -}
@@ -312,7 +313,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
 
         ReceiveRaw rawUpdates ->
             let
-                tree = userFor (toValueAt prevTree) model
+                tree = userFor prevTree model
                 unitRoot =
                     tree
                         |> Tree.toUnit
@@ -455,11 +456,11 @@ recalling
      : Render.Target
     -> Comm.Ports msg
     ->
-        { for : ValueAt -> model -> Tron msg
+        { for : Tree () -> model -> Tron msg
         , init : flags -> ( model, Cmd msg )
-        , subscriptions : ValueAt -> model -> Sub msg
-        , view : ValueAt -> model -> Html msg
-        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
+        , subscriptions : Tree () -> model -> Sub msg
+        , view : Tree () -> model -> Html msg
+        , update : msg -> Tree () -> model -> ( model, Cmd msg )
         }
     -> Def flags model msg
 recalling renderTarget ports def =
@@ -501,10 +502,10 @@ toApplication
     -> Comm.Ports msg
     ->
         { init : flags -> Url.Url -> Nav.Key -> ( model, Cmd msg )
-        , for : ValueAt -> model -> Tron msg
-        , subscriptions : ValueAt -> model -> Sub msg
-        , view : ValueAt -> model -> Browser.Document msg
-        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
+        , for : Tree () -> model -> Tron msg
+        , subscriptions : Tree () -> model -> Sub msg
+        , view : Tree () -> model -> Browser.Document msg
+        , update : msg -> Tree () -> model -> ( model, Cmd msg )
         , onUrlChange : Url.Url -> msg
         , onUrlRequest : Browser.UrlRequest -> msg
         }
@@ -518,7 +519,7 @@ toApplication renderTarget ports def =
         update ( def.update, def.for ) ports
     , view =
         \(userModel, state, tree) ->
-            let userView = def.view (toValueAt tree) userModel
+            let userView = def.view tree userModel
             in
                 { title = userView.title
                 , body =
@@ -550,10 +551,10 @@ toDocument
     -> Comm.Ports msg
     ->
         { init : flags -> ( model, Cmd msg )
-        , for : ValueAt -> model -> Tron msg
-        , subscriptions : ValueAt -> model -> Sub msg
-        , view : ValueAt -> model -> Browser.Document msg
-        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
+        , for : Tree () -> model -> Tron msg
+        , subscriptions : Tree () -> model -> Sub msg
+        , view : Tree () -> model -> Browser.Document msg
+        , update : msg -> Tree () -> model -> ( model, Cmd msg )
         }
     -> DocumentDef flags model msg
 toDocument renderTarget ports def =
@@ -564,7 +565,7 @@ toDocument renderTarget ports def =
         update ( def.update, def.for ) ports
     , view =
         \(userModel, state, tree) ->
-            let userView = def.view (toValueAt tree) userModel
+            let userView = def.view tree userModel
             in
             { title = userView.title
             , body =
@@ -650,11 +651,11 @@ element
     :  Render.Target
     -> Comm.Ports msg
     ->
-        { for : ValueAt -> model -> Tron msg
+        { for : Tree () -> model -> Tron msg
         , init : flags -> ( model, Cmd msg )
-        , subscriptions : ValueAt -> model -> Sub msg
-        , view : ValueAt -> model -> Html msg
-        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
+        , subscriptions : Tree () -> model -> Sub msg
+        , view : Tree () -> model -> Html msg
+        , update : msg -> Tree () -> model -> ( model, Cmd msg )
         }
     -> Program flags model msg
 element renderTarget ports def =
@@ -699,10 +700,10 @@ document
     -> Comm.Ports msg
     ->
         { init : flags -> ( model, Cmd msg )
-        , for : ValueAt -> model -> Tron msg
-        , subscriptions : ValueAt -> model -> Sub msg
-        , view : ValueAt -> model -> Browser.Document msg
-        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
+        , for : Tree () -> model -> Tron msg
+        , subscriptions : Tree () -> model -> Sub msg
+        , view : Tree () -> model -> Browser.Document msg
+        , update : msg -> Tree () -> model -> ( model, Cmd msg )
         }
     -> Program flags model msg
 document renderTarget ports def =
@@ -760,10 +761,10 @@ application
     -> Comm.Ports msg
     ->
         { init : flags -> Url.Url -> Nav.Key -> ( model, Cmd msg )
-        , for : ValueAt -> model -> Tron msg
-        , subscriptions : ValueAt -> model -> Sub msg
-        , view : ValueAt -> model -> Browser.Document msg
-        , update : msg -> ValueAt -> model -> ( model, Cmd msg )
+        , for : Tree () -> model -> Tron msg
+        , subscriptions : Tree () -> model -> Sub msg
+        , view : Tree () -> model -> Browser.Document msg
+        , update : msg -> Tree () -> model -> ( model, Cmd msg )
         , onUrlChange : Url.Url -> msg
         , onUrlRequest : Browser.UrlRequest -> msg
         }
