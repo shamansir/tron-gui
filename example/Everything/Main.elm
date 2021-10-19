@@ -29,7 +29,7 @@ import Tron.Style.Theme exposing (Theme)
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock exposing (Dock)
 import Tron.Style.Dock as Dock
-import Tron.Property as Property
+import Tron.Tree as Tree
 import Tron.Render.Layout as Mode
 
 import Example.Goose.Main as Example
@@ -248,8 +248,8 @@ update msg model =
                             then model.lastGui
                             else
                                 ExampleGui.for nextExample
-                                    |> Property.transferTransientState model.lastGui
-                                    |> Property.loadValues model.lastGui
+                                    |> Tree.transferTransientState model.lastGui
+                                    |> Tree.loadValues model.lastGui
                                     |> Tron.toUnit
                     }
                 , updateEffects |> Cmd.map ToExample
@@ -265,8 +265,8 @@ update msg model =
                                 |> Def.map (always NoOp)
                         else
                             ExampleGui.for model.example
-                                |> Property.transferTransientState model.lastGui
-                                |> Property.loadValues model.lastGui
+                                |> Tree.transferTransientState model.lastGui
+                                |> Tree.loadValues model.lastGui
                                 |> Def.map ToExample
                     ) |> Core.update guiMsg model.state
             in
@@ -450,7 +450,7 @@ exampleGui url model =
 -}
 
 
-port startDatGui : Exp.Property -> Cmd msg
+port startDatGui : Exp.Tree -> Cmd msg
 
 port updateFromDatGui : (Exp.In -> msg) -> Sub msg
 

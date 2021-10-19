@@ -40,4 +40,4 @@ main =
 
 port updateFromDatGui : (Exp.In -> msg) -> Sub msg
 
-port startDatGui : Exp.Property -> Cmd msg
+port startDatGui : Exp.Tree -> Cmd msg

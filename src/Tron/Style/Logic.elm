@@ -16,7 +16,7 @@ import Tron.Style.Dock as Dock exposing (Dock, HorzAnchor(..), VertAnchor(..))
 
 
 import Tron.Mouse exposing (Position)
-import Tron.Property as Property exposing (Property(..))
+import Tron.Tree as Tree exposing (Tree(..))
 import Tron.Path as Path exposing (Path, toString)
 import Tron.Focus exposing (Focused(..))
 

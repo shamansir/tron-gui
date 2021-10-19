@@ -17,12 +17,12 @@ import Tron.Style.Theme as Theme
 import Tron.Path as Path exposing (Path)
 
 import Tron.Core as Tron
-import Tron.Property as Property exposing (LabelPath)
+import Tron.Tree as Tree exposing (LabelPath)
 import Tron.Control as Core
 import Tron.Control.Impl.Nest as Nest
 import Tron.Control.Value as V exposing (Value)
 import Tron.Control.Impl.Button as Button
-import Tron.Expose.Convert as Property
+import Tron.Expose.Convert as Tree
 import WithTron.ValueAt as V
 import Tron.Expose.Data as Exp
 import Tron.Expose as Exp
@@ -140,7 +140,7 @@ update msg model =
             , tree = case model.current of
                 Just ( ( path, _ ), newProp ) ->
                     model.tree
-                        |> Property.replace
+                        |> Tree.replace
                             (\otherPath otherProp ->
                                 if Path.toList otherPath == Path.toList path then
                                     newProp |> Tron.toUnit
@@ -155,7 +155,7 @@ update msg model =
                 model.current
                     |> Maybe.map
                         (Tuple.mapSecond
-                        <| Property.append
+                        <| Tree.append
                             ( "stub"
                             , create "Button"
                                 |> fillTypes
@@ -167,21 +167,21 @@ update msg model =
             | current =
                 model.current
                     |> Maybe.map
-                        (Tuple.mapSecond <| Property.remove idx)
+                        (Tuple.mapSecond <| Tree.remove idx)
             }
         Forward idx ->
             { model
             | current =
                 model.current
                     |> Maybe.map
-                        (Tuple.mapSecond <| Property.forward idx)
+                        (Tuple.mapSecond <| Tree.forward idx)
             }
         Backward idx ->
             { model
             | current =
                 model.current
                     |> Maybe.map
-                        (Tuple.mapSecond <| Property.backward idx)
+                        (Tuple.mapSecond <| Tree.backward idx)
             }
         Edit propName propValue ->
             { model
@@ -193,25 +193,25 @@ update msg model =
             { model
             | current =
                 model.current
-                |> Maybe.map (Tuple.mapSecond <| Property.setCellShape newCellShape)
+                |> Maybe.map (Tuple.mapSecond <| Tree.setCellShape newCellShape)
             }
         EditPanelShape newPanelShape ->
             { model
             | current =
                 model.current
-                |> Maybe.map (Tuple.mapSecond <| Property.setPanelShape newPanelShape)
+                |> Maybe.map (Tuple.mapSecond <| Tree.setPanelShape newPanelShape)
             }
         TogglePagination ->
             { model
             | current =
                 model.current
-                |> Maybe.map (Tuple.mapSecond <| Property.togglePagination)
+                |> Maybe.map (Tuple.mapSecond <| Tree.togglePagination)
             }
         EditChoiceMode newChoiceMode ->
             { model
             | current =
                 model.current
-                    |> Maybe.map (Tuple.mapSecond <| Property.setChoiceMode newChoiceMode)
+                    |> Maybe.map (Tuple.mapSecond <| Tree.setChoiceMode newChoiceMode)
             }
         EditLabel newLabel ->
             case model.current of
@@ -221,7 +221,7 @@ update msg model =
                         Just
                             ( ( path, labelPath |> changeLastTo newLabel ), prop )
                     , tree =
-                        model.tree |> Property.changeLabel path newLabel
+                        model.tree |> Tree.changeLabel path newLabel
                     }
                 Nothing -> model
 
@@ -304,9 +304,9 @@ view model =
 
 fillTypes : Tron () -> Tron Type
 fillTypes =
-    Property.reflect
-        >> Property.map Tuple.first
-        >> Property.map valueToType
+    Tree.reflect
+        >> Tree.map Tuple.first
+        >> Tree.map valueToType
 
 
 valueToType : Value -> Type
@@ -438,10 +438,10 @@ editorFor ( path, labelPath ) prop =
         , typesDropdown <| typeOf prop
 
         , case prop of
-            Property.Action (Core.Control face _ _) ->
+            Tree.Action (Core.Control face _ _) ->
                 faceEditor <| Just face
 
-            Property.Group _ shape (Core.Control _ { face } _ as control) ->
+            Tree.Group _ shape (Core.Control _ { face } _ as control) ->
                 Html.div
                     []
                     [ faceEditor <| face
@@ -453,7 +453,7 @@ editorFor ( path, labelPath ) prop =
                     , shapeEditor shape
                     ]
 
-            Property.Choice _ shape (Core.Control _ { face } _ as control) ->
+            Tree.Choice _ shape (Core.Control _ { face } _ as control) ->
                 Html.div
                     []
                     [ faceEditor <| face
@@ -476,7 +476,7 @@ editorFor ( path, labelPath ) prop =
 
 typeOf : Tron Type -> Type
 typeOf =
-    Property.get
+    Tree.get
         >> Maybe.withDefault None
 
 
@@ -487,7 +487,7 @@ preview expands current root =
             let
                 ( path, labelPath ) =
                     prop
-                        |> Property.get
+                        |> Tree.get
                         |> Maybe.map Tuple.first
                         |> Maybe.withDefault ( Path.start, [] )
                 isExpanded =
@@ -499,7 +499,7 @@ preview expands current root =
                         (Path.equal path current)
                         isExpanded
                         ( path, labelPath )
-                        (prop |> Property.map Tuple.second)
+                        (prop |> Tree.map Tuple.second)
                 viewItems control =
                     if isExpanded then
                         Nest.getItems control
@@ -511,13 +511,13 @@ preview expands current root =
 
             in
                 case prop of
-                    Property.Group _ _ control ->
+                    Tree.Group _ _ control ->
                         Html.div
                             []
                             [ previewProp
                             , Html.ul [] <| viewItems control
                             ]
-                    Property.Choice _ _ control ->
+                    Tree.Choice _ _ control ->
                         Html.div
                             []
                             [ previewProp
@@ -526,11 +526,11 @@ preview expands current root =
                     _ ->
                         previewProp
     in
-        helper <| Property.addPaths <| root
+        helper <| Tree.addPaths <| root
 
 
     {-
-    Property.fold3 (\path cell before -> ( path, cell ) :: before) []
+    Tree.fold3 (\path cell before -> ( path, cell ) :: before) []
         >> List.reverse
         -- |> List.sortBy (Tuple.first >> Path.toList)
         >> List.map (\(path, cell) ->
@@ -704,17 +704,17 @@ edit name value prop =
         ( Group, "icon" ) ->
             prop |> editIcon value
         ( Button, "color" ) ->
-            prop |> Property.setFace (Button.WithColor <| Color.yellow)
+            prop |> Tree.setFace (Button.WithColor <| Color.yellow)
         ( Group, "color" ) ->
-            prop |> Property.setFace (Button.WithColor <| Color.yellow)
+            prop |> Tree.setFace (Button.WithColor <| Color.yellow)
         ( Choice, "color" ) ->
-            prop |> Property.setFace (Button.WithColor <| Color.yellow)
+            prop |> Tree.setFace (Button.WithColor <| Color.yellow)
         ( Button, "auto" ) ->
-            prop |> Property.clearFace
+            prop |> Tree.clearFace
         ( Group, "auto" ) ->
-            prop |> Property.clearFace
+            prop |> Tree.clearFace
         ( Choice, "auto" ) ->
-            prop |> Property.clearFace
+            prop |> Tree.clearFace
         _ -> prop
 
 
@@ -726,7 +726,7 @@ editIcon value prop =
                 if List.length iconPath > 0 then
                     prop
                         |> Tron.face (Tron.iconAt iconPath)
-                else prop |> Property.setFace Button.Default
+                else prop |> Tree.setFace Button.Default
             )
             (D.list D.string)
             value
@@ -780,10 +780,10 @@ viewCode =
 
 addGhosts : Tron () -> Tron ()
 addGhosts =
-    Property.replace
+    Tree.replace
         <| always
         -- it will skip all non-group elements
-        <| Property.append ( "_Add", Tron.none )
+        <| Tree.append ( "_Add", Tron.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -850,10 +850,10 @@ main =
 port updateCodeMirror : () -> Cmd msg
 
 
-port sendToLocalStorage : Exp.Property -> Cmd msg
+port sendToLocalStorage : Exp.Tree -> Cmd msg
 
 
 port triggerLoadFromLocalStorage : () -> Cmd msg
 
 
-port receiveFromLocalStorage : (Exp.Property -> msg) -> Sub msg
+port receiveFromLocalStorage : (Exp.Tree -> msg) -> Sub msg

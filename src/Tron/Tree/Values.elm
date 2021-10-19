@@ -1,17 +1,17 @@
-module Tron.Property.Values exposing (..)
+module Tron.Tree.Values exposing (..)
 
 
 import Array.Extra.Zipper as Z exposing (Zipper(..))
 
 
-import Tron.Property exposing (Property(..), foldZipP, updateMany, move, insideOut)
-import Tron.Property.Paths exposing (pathifyWithValue)
+import Tron.Tree exposing (Tree(..), foldZipP, updateMany, move, insideOut)
+import Tron.Tree.Paths exposing (pathifyWithValue)
 import Tron.Control as Control
 import Tron.Control.Impl.Nest as Nest exposing (..)
 import Tron.Path exposing (Path)
 
 
-valuesAreEqual : Property a -> Property b -> Bool
+valuesAreEqual : Tree a -> Tree b -> Bool
 valuesAreEqual propA propB =
     case (propA, propB) of
         (Nil _, Nil _) -> True
@@ -34,7 +34,7 @@ valuesAreEqual propA propB =
 
 
 
-loadValueFrom : Property a -> Property a -> Property a -- FIXME: return `Maybe`
+loadValueFrom : Tree a -> Tree a -> Tree a -- FIXME: return `Maybe`
 loadValueFrom from to =
     case ( from, to ) of
         (Number controlA, Number controlB) ->
@@ -58,7 +58,7 @@ loadValueFrom from to =
         (_, _) -> to
 
 
-changesBetween : Property a -> Property b -> List ( Path, Property b )
+changesBetween : Tree a -> Tree b -> List ( Path, Tree b )
 changesBetween prev next =
     foldZipP
         (\zipper changes ->
@@ -74,7 +74,7 @@ changesBetween prev next =
     |> List.map insideOut
 
 
-loadValues : Property a -> Property a -> Property a
+loadValues : Tree a -> Tree a -> Tree a
 loadValues =
     move
         (Z.run
@@ -84,7 +84,7 @@ loadValues =
         )
 
 
-loadChangedValues : Property a -> Property b -> Property b -> Property b
+loadChangedValues : Tree a -> Tree b -> Tree b -> Tree b
 loadChangedValues prev next =
     updateMany <| changesBetween prev next
 

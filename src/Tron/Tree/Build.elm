@@ -1,4 +1,4 @@
-module Tron.Property.Build exposing (..)
+module Tron.Tree.Build exposing (..)
 
 
 import Array
@@ -8,9 +8,9 @@ import Axis exposing (Axis)
 
 import Tron.Path as Path
 import Tron.Control exposing (..)
-import Tron.Property exposing (..)
-import Tron.Property as Property
-import Tron.Property.Controls as Property
+import Tron.Tree exposing (..)
+import Tron.Tree as Tree
+import Tron.Tree.Controls as Tree
 import Tron.Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
@@ -24,22 +24,22 @@ import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Impl.Toggle exposing (boolToToggle)
 import Tron.Control.Impl.Nest exposing (Form(..))
 
-import Tron.Property.Build.Choice as Choice
+import Tron.Tree.Build.Choice as Choice
 
 
-type alias Set a = List (Path.Label, Property a)
+type alias Set a = List (Path.Label, Tree a)
 
 
 mapSet : (a -> b) -> Set a -> Set b
 mapSet =
-    List.map << Tuple.mapSecond << Property.map
+    List.map << Tuple.mapSecond << Tree.map
 
 
-none : a -> Property a
+none : a -> Tree a
 none = Nil
 
 
-root : Set a -> a -> Property a
+root : Set a -> a -> Tree a
 root props a =
     nest
         props
@@ -48,7 +48,7 @@ root props a =
         |> shape (rows 1)
 
 
-float : Axis -> Float -> a -> Property a
+float : Axis -> Float -> a -> Tree a
 float axis value a =
     Number
         <| Control axis ( Nothing, value )
@@ -56,7 +56,7 @@ float axis value a =
 
 
 
-int : { min: Int, max : Int, step : Int } -> Int -> a -> Property a
+int : { min: Int, max : Int, step : Int } -> Int -> a -> Tree a
 int { min, max, step } default a =
     float
         { min = toFloat min, max = toFloat max, step = toFloat step } -- RoundBy 0
@@ -64,22 +64,22 @@ int { min, max, step } default a =
         a
 
 
-number : Axis -> Float -> a -> Property a
+number : Axis -> Float -> a -> Tree a
 number = float
 
 
-xy : ( Axis, Axis ) -> ( Float, Float ) -> a -> Property a
+xy : ( Axis, Axis ) -> ( Float, Float ) -> a -> Tree a
 xy axes value a =
     Coordinate
         <| Control axes ( Nothing, value )
         <| a
 
 
-coord : ( Axis, Axis ) -> ( Float, Float ) -> a -> Property a
+coord : ( Axis, Axis ) -> ( Float, Float ) -> a -> Tree a
 coord = xy
 
 
-input : ( x -> String ) -> x -> a -> Property a
+input : ( x -> String ) -> x -> a -> Tree a
 input toString value a = -- FIXME: accept just `String` and `value`
     Text
         <| Control
@@ -88,7 +88,7 @@ input toString value a = -- FIXME: accept just `String` and `value`
         <| a
 
 
-text : String -> a -> Property a
+text : String -> a -> Tree a
 text value a =
     Text
         <| Control
@@ -97,7 +97,7 @@ text value a =
         <| a
 
 
-color : Color -> a -> Property a
+color : Color -> a -> Tree a
 color value a =
     Color
         <| Control
@@ -106,14 +106,14 @@ color value a =
         <| a
 
 
-button : a -> Property a
+button : a -> Tree a
 button =
     buttonByFace Default
 
 
-face : Face -> Property a -> Property a
+face : Face -> Tree a -> Tree a
 face =
-    Property.setFace
+    Tree.setFace
 
 
 icon : Url -> Face
@@ -137,7 +137,7 @@ makeUrl = Button.makeUrl
 
 
 -- not exposed
-buttonByFace : Face -> a -> Property a
+buttonByFace : Face -> a -> Tree a
 buttonByFace face_ a =
     Action
         <| Control
@@ -146,7 +146,7 @@ buttonByFace face_ a =
         <| a
 
 
-toggle : Bool -> a -> Property a
+toggle : Bool -> a -> Tree a
 toggle value a =
     Toggle
         <| Control
@@ -155,15 +155,15 @@ toggle value a =
         <| a
 
 
-bool : Bool -> a -> Property a
+bool : Bool -> a -> Tree a
 bool = toggle
 
 
-nest : Set a -> a -> Property a
+nest : Set a -> a -> Tree a
 nest items a =
     Group
         Nothing
-        Property.defaultNestShape
+        Tree.defaultNestShape
         <| Control
             ( Array.fromList items
             )
@@ -181,10 +181,10 @@ useColor = WithColor
 choice
      : Set comparable
     -> comparable
-    -> Property (Int, comparable)
+    -> Tree (Int, comparable)
 choice set current =
     Choice.helper
-        Property.defaultNestShape
+        Tree.defaultNestShape
         set
         current
         (==)
@@ -194,10 +194,10 @@ choiceBy
      : Set a
     -> a
     -> ( a -> a -> Bool )
-    -> Property (Int, a)
+    -> Tree (Int, a)
 choiceBy set current compare =
     Choice.helper
-        Property.defaultNestShape
+        Tree.defaultNestShape
         set
         current
         compare
@@ -206,7 +206,7 @@ choiceBy set current compare =
 strings
      : List String
     -> String
-    -> Property (Int, String)
+    -> Tree (Int, String)
 strings options current =
     choice
         (options
@@ -222,7 +222,7 @@ labels
      : ( a -> Path.Label )
     -> List a
     -> a
-    -> Property ( Int, Path.Label )
+    -> Tree ( Int, Path.Label )
 labels toLabel options current =
     {- let
         labelToValue =
@@ -244,12 +244,12 @@ labels toLabel options current =
 palette
      : List ( Path.Label, Color )
     -> Color
-    -> Property ( Int, Color )
+    -> Tree ( Int, Color )
 palette options current =
     choiceBy
         (options
             |> buttons
-            |> List.map (Property.with (face << useColor << Tuple.second))
+            |> List.map (Tree.with (face << useColor << Tuple.second))
             |> addLabels Tuple.first
             |> mapSet Tuple.second
         )
@@ -265,36 +265,36 @@ palette options current =
     |> cells CS.half
 
 
-buttons : List a -> List (Property a)
+buttons : List a -> List (Tree a)
 buttons =
     List.map button
 
 
-toSet : (a -> Path.Label) -> List (Property a) -> Set a
+toSet : (a -> Path.Label) -> List (Tree a) -> Set a
 toSet toLabel =
     List.map
         (\prop ->
-            ( toLabel <| Tron.Property.get prop
+            ( toLabel <| Tron.Tree.get prop
             , prop )
         )
 
 
-addLabels : (a -> Path.Label) -> List (Property a) -> Set a
+addLabels : (a -> Path.Label) -> List (Tree a) -> Set a
 addLabels =
     toSet
 
 
-expand : Property a -> Property a
-expand = Property.expand
+expand : Tree a -> Tree a
+expand = Tree.expand
 
 
-collapse : Property a -> Property a
-collapse = Property.collapse
+collapse : Tree a -> Tree a
+collapse = Tree.collapse
 
 
-toChoice : Property a -> Property a
+toChoice : Tree a -> Tree a
 toChoice =
-    Property.toChoice
+    Tree.toChoice
 
 
 {-| Changes panel shape for `nest` and `choice` panels:
@@ -305,8 +305,8 @@ toChoice =
 
     Builder.choice ... |> Buidler.shape (by 2 3)
 -}
-shape : PanelShape -> Property a -> Property a
-shape = Property.setPanelShape
+shape : PanelShape -> Tree a -> Tree a
+shape = Tree.setPanelShape
 
 
 {-| Changes cell shape for `nest` and `choice` panels:
@@ -317,5 +317,5 @@ shape = Property.setPanelShape
 
     Builder.choice ... |> Buidler.shape halfByHalf
 -}
-cells : CellShape -> Property a -> Property a
-cells = Property.setCellShape
+cells : CellShape -> Tree a -> Tree a
+cells = Tree.setCellShape

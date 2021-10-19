@@ -154,9 +154,9 @@ import Tron as Def exposing (Tron)
 import Tron.Path as Path exposing (Path)
 import Tron.Control exposing (..)
 import Tron.Control.Value as Value exposing (..)
-import Tron.Property exposing (..)
-import Tron.Property as Property
-import Tron.Property.Controls as Property exposing (expand)
+import Tron.Tree exposing (..)
+import Tron.Tree as Tree
+import Tron.Tree.Controls as Tree exposing (expand)
 import Tron.Control as Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
@@ -170,8 +170,8 @@ import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Impl.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Impl.Nest as Nest exposing (Form(..), ItemId)
 
-import Tron.Property.Build as B
-import Tron.Property.Build.Choice as Choice
+import Tron.Tree.Build as B
+import Tron.Tree.Build.Choice as Choice
 
 
 {-|
@@ -388,7 +388,7 @@ type alias Face = Button.Face
 -}
 face : Face -> Tron msg -> Tron msg
 face =
-    Property.setFace
+    Tree.setFace
 
 
 {-| -}
@@ -492,7 +492,7 @@ nest : Set msg -> Tron msg
 nest items =
     Group
         Nothing
-        Property.defaultNestShape
+        Tree.defaultNestShape
         <| Control
             ( Array.fromList items
             )
@@ -539,7 +539,7 @@ choice
     -> Tron msg
 choice set current toMsg =
     Choice.helperDef
-        Property.defaultNestShape
+        Tree.defaultNestShape
         set
         current
         (==)
@@ -567,7 +567,7 @@ choiceBy
     -> Tron msg
 choiceBy set current compare toMsg =
     Choice.helperDef
-        Property.defaultNestShape
+        Tree.defaultNestShape
         set
         current
         compare
@@ -700,9 +700,9 @@ toSet : (a -> Path.Label) -> List (Tron a) -> Set a
 toSet toLabel =
     List.map
         (\prop ->
-            Property.get prop
+            Tree.get prop
                 |> (\handler ->
-                        ( Property.getValue prop
+                        ( Tree.getValue prop
                                 |> handler
                                 |> Maybe.map toLabel
                                 |> Maybe.withDefault "-"
@@ -728,7 +728,7 @@ addLabels =
     Builder.choice ... |> Builder.expand
 -}
 expand : Tron msg -> Tron msg
-expand = Property.expand
+expand = Tree.expand
 
 
 {-| Forcefully collapse the nesting:
@@ -737,7 +737,7 @@ expand = Property.expand
     Builder.choice ... |> Builder.collapse
 -}
 collapse : Tron msg -> Tron msg
-collapse = Property.collapse
+collapse = Tree.collapse
 
 
 {- Set the icon to the control that can have it:
@@ -747,7 +747,7 @@ collapse = Property.collapse
 -}
 -- TODO
 -- setIcon : Icon -> Tron msg -> Tron msg
--- setIcon icon = Property.collapse
+-- setIcon icon = Tree.collapse
 
 
 {-| Convert a `nest` control to `choice` control. It can be done
@@ -764,7 +764,7 @@ easily by specifying a handler:
 toChoice : (ItemId -> msg) -> Tron msg -> Tron msg
 toChoice f =
     B.toChoice
-        >> Property.map
+        >> Tree.map
             (always <| Value.fromChoice >> Maybe.map f)
 
 
@@ -774,7 +774,7 @@ toChoice f =
 -}
 toSwitch : Tron msg -> Tron msg
 toSwitch =
-    Property.setChoiceMode Nest.SwitchThrough
+    Tree.setChoiceMode Nest.SwitchThrough
 
 
 {-| Convert choice control to the knob form:
@@ -783,7 +783,7 @@ toSwitch =
 -}
 toKnob : Tron msg -> Tron msg
 toKnob =
-    Property.setChoiceMode Nest.Knob
+    Tree.setChoiceMode Nest.Knob
 
 
 {-| Convert any control to update its value live (i.e. on every change take them from you model)
@@ -792,7 +792,7 @@ toKnob =
 -}
 live : Tron msg -> Tron msg
 live =
-    Property.Live
+    Tree.Live
 
 
 {-| Handle a set of items with a converter of item to a message
@@ -819,7 +819,7 @@ handleWith = Def.mapSet
     Builder.choice ... |> Buidler.shape (by 2 3)
 -}
 shape : PanelShape -> Tron msg -> Tron msg
-shape = Property.setPanelShape
+shape = Tree.setPanelShape
 
 
 {-| Changes cell shape for `nest` and `choice` panels:
@@ -831,4 +831,4 @@ shape = Property.setPanelShape
     Builder.choice ... |> Buidler.shape halfByHalf
 -}
 cells : CellShape -> Tron msg -> Tron msg
-cells = Property.setCellShape
+cells = Tree.setCellShape

@@ -26,7 +26,7 @@ import Tron.Control.Toggle as Gui exposing (ToggleState(..))
 import Tron.Layout as Layout exposing (Cell(..), Layout, pack, fold)
 import Tron.Msg exposing (Msg_(..))
 import Tron.Path exposing (Path)
-import Tron.Property as Gui exposing (find)
+import Tron.Tree as Gui exposing (find)
 import Tron.Style.Theme exposing (Theme)
 
 
@@ -82,7 +82,7 @@ view theme gui =
                 []
             , entity
                 [ onClick <| Click path ]
-                [ viewProperty bounds path prop ]
+                [ viewTree bounds path prop ]
             ]
 
         viewPlate bounds path prop innerCells =
@@ -122,8 +122,8 @@ view theme gui =
             :: renderedCells
 
 
-viewProperty : Bounds -> Path -> Gui.Property a -> Html Msg_
-viewProperty bounds path prop =
+viewTree : Bounds -> Path -> Gui.Tree a -> Html Msg_
+viewTree bounds path prop =
     case prop of
         Gui.Number (Gui.Control cfg val _) ->
             entity

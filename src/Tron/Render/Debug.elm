@@ -8,7 +8,7 @@ import Color
 import Array
 
 import Tron.Control exposing (Control(..))
-import Tron.Property exposing (..)
+import Tron.Tree exposing (..)
 import Tron.Control.Impl.Toggle exposing (..)
 import Tron.Control.Impl.Nest exposing (..)
 import Tron.Render.Util exposing (..)
@@ -23,7 +23,7 @@ boundsDebug b =
         ]
 
 
-propertyDebug : ( Path.Label, Property a ) -> Svg a
+propertyDebug : ( Path.Label, Tree a ) -> Svg a
 propertyDebug ( label, prop )  =
     case prop of
         Nil _ ->

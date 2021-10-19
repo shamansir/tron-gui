@@ -17,9 +17,9 @@ import Bounds as B exposing (..)
 
 import Tron.Path as Path exposing (Path)
 import Tron.Control exposing (..)
-import Tron.Property as Property exposing (Property)
-import Tron.Property.Paths as Property
-import Tron.Property.Controls as Property
+import Tron.Tree as Tree exposing (Tree)
+import Tron.Tree.Paths as Tree
+import Tron.Tree.Controls as Tree
 import Tron.Msg exposing (..)
 import Tron.Layout exposing (..)
 import Tron.Layout as Layout exposing (fold)
@@ -33,7 +33,7 @@ import Size exposing (Size(..))
 import Tron.Render.Util exposing (..)
 import Tron.Render.Util as Svg exposing (none)
 import Tron.Render.Debug exposing (..)
-import Tron.Render.Property as Property exposing (..)
+import Tron.Render.Tree as Tree exposing (..)
 import Tron.Render.Plate as Plate exposing (..)
 
 import Tron.Style.Logic as Style exposing (..)
@@ -62,17 +62,17 @@ type Mode
     | Fancy
 
 
-viewProperty
+viewTree
     :  Mode
     -> Theme
     -> State
     -> Path
     -> BoundsF
-    -> Maybe ( Path.Label, Property a )
+    -> Maybe ( Path.Label, Tree a )
     -> CellShape
-    -> ( Path.Label, Property a )
+    -> ( Path.Label, Tree a )
     -> Svg Msg_
-viewProperty
+viewTree
     mode
     theme
     ( ( _, focus, selected ) as state )
@@ -99,7 +99,7 @@ viewProperty
                         <| propertyDebug ( label, prop )
                     ]
             Fancy ->
-                Property.view
+                Tree.view
                     theme
                     state
                     path
@@ -128,7 +128,7 @@ viewPlateControls
     -> Theme
     -> Path
     -> BoundsF
-    -> ( Path.Label, Property a )
+    -> ( Path.Label, Tree a )
     -> Svg Msg_
 viewPlateControls detach mode theme path pixelBounds ( label, source )  =
     positionAt_ pixelBounds <|
@@ -166,20 +166,20 @@ viewPagingControls mode theme path pixelBounds cellShape paging  =
 
 collectPlatesAndCells -- FIXME: a complicated function, split into many
     :  Dock
-    -> ( Path, Property a )
+    -> ( Path, Tree a )
     -> Layout
     ->
         ( List
             { path : Path
             , bounds : BoundsF
-            , source : Property a
+            , source : Tree a
             , pages : Pages.Count
             }
         , List
             { path : Path
             , bounds : BoundsF
-            , parent : Maybe (Property a)
-            , source : Property a
+            , parent : Maybe (Tree a)
+            , source : Tree a
             }
         )
 collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
@@ -189,7 +189,7 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
 
                 One ( cellBounds, cellPath ) ->
                     ( prevPlates
-                    , case root |> Property.find1 (Path.sub rootPath cellPath) of
+                    , case root |> Tree.find1 (Path.sub rootPath cellPath) of
                         Just ( label, source ) ->
                             { path = cellPath
                             , parent = Nothing
@@ -204,7 +204,7 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
 
                 Many ( plateBounds, originPath ) innerPages ->
 
-                    case root |> Property.find1 (Path.sub rootPath originPath) of
+                    case root |> Tree.find1 (Path.sub rootPath originPath) of
                         Just ( label, source ) ->
                             (
                                 { path = originPath
@@ -222,7 +222,7 @@ collectPlatesAndCells dock ( rootPath, root ) ( size, bp ) =
                                     |> List.map
                                         (\( cellBounds, cellPath ) ->
                                             case root
-                                                |> Property.find1 (Path.sub rootPath cellPath) of
+                                                |> Tree.find1 (Path.sub rootPath cellPath) of
                                                 Just ( cellLabel, cellSource ) ->
                                                     { path = cellPath
                                                     , parent = Just source
@@ -312,7 +312,7 @@ view
     -> BoundsF
     -> Detach.State
     -> Detach.GetAbility
-    -> Property a
+    -> Tree a
     -> Layout
     -> Html Msg_
 view mode theme dock bounds detach getDetachAbility root layout =
@@ -344,23 +344,23 @@ view mode theme dock bounds detach getDetachAbility root layout =
             cells |> List.map
                 (\cell ->
 
-                    viewProperty
+                    viewTree
                         mode
                         theme
                         ( if (Path.sub rootPath cell.path |> Path.howDeep) == 1
                             then AtRoot
                             else OnAPlate
                         , focused root cell.path
-                        , if Maybe.map2 Property.isSelected cell.parent (Path.lastIndex cell.path)
+                        , if Maybe.map2 Tree.isSelected cell.parent (Path.lastIndex cell.path)
                             |> Maybe.withDefault False
                             then Selected
                             else Usual
                         )
                         cell.path
                         cell.bounds
-                        (Property.getSelected cell.source)
+                        (Tree.getSelected cell.source)
                         ( cell.parent
-                            |> Maybe.andThen Property.getCellShape
+                            |> Maybe.andThen Tree.getCellShape
                             |> Maybe.withDefault CS.default
                         )
                         ( cell.path |> Path.lastLabel |> Maybe.withDefault "?"
@@ -374,7 +374,7 @@ view mode theme dock bounds detach getDetachAbility root layout =
                 |> List.map
                     (\plate ->
                         if plate.source
-                            |> Property.getCellShape
+                            |> Tree.getCellShape
                             |> Maybe.withDefault CS.default
                             |> CS.isSquare then
                             viewPlateControls
@@ -401,11 +401,11 @@ view mode theme dock bounds detach getDetachAbility root layout =
                                 plate.path
                                 plate.bounds
                                 ( plate.source
-                                    |> Property.getCellShape
-                                    |> Maybe.withDefault (Property.defaultNestShape |> Tuple.second)
+                                    |> Tree.getCellShape
+                                    |> Maybe.withDefault (Tree.defaultNestShape |> Tuple.second)
                                 )
                                 ( plate.source
-                                    |> Property.getPageNum
+                                    |> Tree.getPageNum
                                     |> Maybe.withDefault 1
                                 , n
                                 )

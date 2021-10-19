@@ -10,7 +10,7 @@ module Tron.Option.Communication exposing
 @docs Communication, map, noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
 -}
 
-import Tron.Property.ExposeData as Exp
+import Tron.Tree.Expose as Exp
 import Tron.Path as Path
 import Tron.Msg exposing (Msg_(..))
 
@@ -65,7 +65,7 @@ noCommunication =
  -}
 sendJson
     :
-        { ack : Exp.Property -> Cmd msg
+        { ack : Exp.Tree -> Cmd msg
         , transmit : Exp.Out -> Cmd msg
         }
     -> Ports msg
@@ -86,7 +86,7 @@ sendJson { ack, transmit } =
  -}
 sendReceiveJson
     :
-        { ack : Exp.Property -> Cmd msg
+        { ack : Exp.Tree -> Cmd msg
         , transmit : Exp.Out -> Cmd msg
         , apply : Sub (List Exp.DeduceIn)
         }
@@ -196,7 +196,7 @@ See `example/DatGui` for details.
  -}
 withDatGui
     :
-        { ack : Exp.Property -> Cmd msg
+        { ack : Exp.Tree -> Cmd msg
         --, receive : ((Exp.RawInUpdate -> msg) -> Sub msg)
         , receive : Sub Exp.In
         }

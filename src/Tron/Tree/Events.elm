@@ -1,9 +1,9 @@
-module Tron.Property.Events exposing (..)
+module Tron.Tree.Events exposing (..)
 
 
 import Tron.Path as Path exposing (Path)
-import Tron.Property as Property exposing (Property(..))
-import Tron.Property.Paths exposing (findWithParent)
+import Tron.Tree as Tree exposing (Tree(..))
+import Tron.Tree.Paths exposing (findWithParent)
 
 import Tron.Control.Impl.Text as Text exposing (..)
 import Tron.Control.Impl.Toggle as Toggle exposing (..)
@@ -14,16 +14,16 @@ import Tron.Control.Action as A
 -- for mouse click or enter key handling, does not change the tree
 -- only updates the controls itself
 -- FIXME: should not call controls itself, only return the update
-execute : Property a -> Maybe (Property a)
+execute : Tree a -> Maybe (Tree a)
 execute item =
-    case Property.update A.Execute item of
+    case Tree.update A.Execute item of
         ( _, A.Stay ) ->
             Nothing
         ( newCell, _ ) ->
             Just newCell
 
 
-executeAt : Path -> Property a -> List ( Path, Property a )
+executeAt : Path -> Tree a -> List ( Path, Tree a )
 executeAt path root =
     case root
         |> findWithParent path of
@@ -35,9 +35,9 @@ executeAt path root =
                         Just ( toParent, ( selectedIndex, selectedLabel ) ) ->
                             let
                                 ( newParent, _ ) = -- FIXME: find not by index but by label?
-                                    Property.update (A.Select selectedIndex) parent
+                                    Tree.update (A.Select selectedIndex) parent
                             in
-                                case Property.update A.Execute item of
+                                case Tree.update A.Execute item of
                                     ( _, A.Stay ) ->
                                         [ (toParent, newParent )
                                         ]
@@ -51,7 +51,7 @@ executeAt path root =
 
                 ( _, _ ) ->
 
-                    case Property.update A.Execute item of
+                    case Tree.update A.Execute item of
                         ( _, A.Stay ) -> []
                         ( newCell, _ ) -> [ ( path, newCell ) ]
 

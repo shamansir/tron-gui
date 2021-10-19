@@ -2,15 +2,14 @@ module WithTron.Logic exposing (..)
 
 import Random
 
-import Tron exposing (Tron)
 import Tron.Expose as Exp
-import Tron.Property.ExposeData as Exp
-import Tron.Option.Communication as Ports exposing (Ports)
+import Tron.Tree.Expose as Exp
+import Tron.Option.Communication exposing (Ports)
 import Tron.Option.Render as Render exposing (Target(..))
 import Tron.Core as Core exposing (State)
 import Tron.Detach as Detach
 import Tron.Render.Layout as L
-import Tron.Property exposing (Property)
+import Tron.Tree exposing (Tree)
 import HashId
 
 import Json.Encode as E
@@ -30,7 +29,7 @@ nextClientId =
     Random.generate identity Detach.clientIdGenerator
 
 
-performInitEffects : Maybe Detach.ClientId -> Ports msg -> Property () -> Cmd msg
+performInitEffects : Maybe Detach.ClientId -> Ports msg -> Tree () -> Cmd msg
 performInitEffects maybeClientId { ack } tree =
     ack
         |> Maybe.map
@@ -52,7 +51,7 @@ tryTransmitting { transmit } rawUpdate =
         |> Maybe.withDefault Cmd.none
 
 
-addSubscriptionsOptions : Ports msg -> Property () -> Sub (List Exp.In)
+addSubscriptionsOptions : Ports msg -> Tree () -> Sub (List Exp.In)
 addSubscriptionsOptions { apply, receive } tree =
     Sub.batch
         [ apply
@@ -74,7 +73,7 @@ addInitOptions target gui =
         Debug dock _ -> gui |> Core.dock dock
 
 
-useRenderTarget : Render.Target -> State -> Property () -> Html Core.Msg
+useRenderTarget : Render.Target -> State -> Tree () -> Html Core.Msg
 useRenderTarget target state tree =
     case target of
         Html dock theme -> tree |> Core.view L.Fancy theme (state |> Core.dock dock)

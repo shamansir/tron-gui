@@ -28,11 +28,11 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 
 import Task
 
-import Tron.Property as Property exposing (Property)
-import Tron.Property.Paths as Property
+import Tron.Tree as Tree exposing (Tree)
+import Tron.Tree.Paths as Tree
 import Tron.Path as Path exposing (Path)
-import Tron.Control.Value as Value exposing (Value)
-import Tron.Property.ExposeData as Exp
+import Tron.Control.Value exposing (Value)
+import Tron.Tree.Expose as Exp
 
 
 {-| `Tron a` is the tree of your controls or, recursively, any control in such tree.
@@ -41,7 +41,7 @@ To build your interface, use the helpers from the `Tron.Builder` module or any o
 `Tron.Builder.Proxy`, `Tron.Builder.Unit` or `Tron.Builder.String`
 -}
 type alias Tron a =
-    Property (Value -> Maybe a)
+    Tree (Value -> Maybe a)
 
 
 {-| `Set msg` is just the list of controls' definitions together with their labels.
@@ -53,18 +53,18 @@ type alias Set a =
 {-| The usual `map` function which allows you to substitute the messages sent through the components.
 -}
 map : (a -> b) -> Tron a -> Tron b
-map f = Property.map <| (<<) (Maybe.map f)
+map f = Tree.map <| (<<) (Maybe.map f)
 
 
 {-| The usual `andThen` function which allows you to change the message type
 -}
 andThen : (a -> Tron b) -> Tron a -> Tron b
 andThen f prop =
-    Property.andThen
+    Tree.andThen
         (\pF ->
-            case pF <| Property.getValue prop of
+            case pF <| Tree.getValue prop of
                 Just v -> f v
-                Nothing -> Property.Nil <| always Nothing
+                Nothing -> Tree.Nil <| always Nothing
         )
         prop
 
@@ -121,18 +121,18 @@ toUnit =
 
 
 -- proxy : Tron a -> Tron Value
--- proxy = Property.proxy
+-- proxy = Tree.proxy
 
 map2 : (a -> b -> c) -> Tron a -> Tron b -> Tron c
 map2 f =
-    Property.zmap2
+    Tree.zmap2
         (\maybeFToA maybeFToB val ->
             Maybe.map2
                 (\fToA fToB -> Maybe.map2 f (fToA val) (fToB val))
                 maybeFToA maybeFToB
             |> Maybe.andThen identity
         )
-    -- Property.map2
+    -- Tree.map2
     --     (\fToA fToB val ->
     --         Maybe.map2 f (fToA val) (fToB val)
     --     )
@@ -140,14 +140,14 @@ map2 f =
 
 map3 : (a -> b -> c -> d) -> Tron a -> Tron b -> Tron c -> Tron d
 map3 f =
-    Property.zmap3
+    Tree.zmap3
         (\maybeFToA maybeFToB maybeFToC val ->
             Maybe.map3
                 (\fToA fToB fToC -> Maybe.map3 f (fToA val) (fToB val) (fToC val))
                 maybeFToA maybeFToB maybeFToC
             |> Maybe.andThen identity
         )
-    -- Property.map3
+    -- Tree.map3
     --     (\fToA fToB fToC val ->
     --         Maybe.map3 f (fToA val) (fToB val) (fToC val)
     --     )
@@ -155,7 +155,7 @@ map3 f =
 
 map4 : (a -> b -> c -> d -> e) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e
 map4 f =
-    Property.zmap4
+    Tree.zmap4
         (\maybeFToA maybeFToB maybeFToC maybeFToD val ->
             Maybe.map4
                 (\fToA fToB fToC fToD ->
@@ -164,7 +164,7 @@ map4 f =
                 maybeFToA maybeFToB maybeFToC maybeFToD
             |> Maybe.andThen identity
         )
-    -- Property.map4
+    -- Tree.map4
     --     (\fToA fToB fToC fToD val ->
     --         Maybe.map4 f (fToA val) (fToB val) (fToC val) (fToD val)
     --     )
@@ -172,7 +172,7 @@ map4 f =
 
 map5 : (a -> b -> c -> d -> e -> f) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e -> Tron f
 map5 f =
-    Property.zmap5
+    Tree.zmap5
         (\maybeFToA maybeFToB maybeFToC maybeFToD maybeFToE val ->
             Maybe.map5
                 (\fToA fToB fToC fToD fToE ->
@@ -181,7 +181,7 @@ map5 f =
                 maybeFToA maybeFToB maybeFToC maybeFToD maybeFToE
             |> Maybe.andThen identity
         )
-    -- Property.map5
+    -- Tree.map5
     --     (\fToA fToB fToC fToD fToE val ->
     --         Maybe.map5 f (fToA val) (fToB val) (fToC val) (fToD val) (fToE val)
     --     )
@@ -189,9 +189,9 @@ map5 f =
 
 perform : Tron msg -> Cmd msg
 perform prop =
-    Property.get prop
+    Tree.get prop
         |> (\handler ->
-                case handler <| Property.getValue prop of
+                case handler <| Tree.getValue prop of
                     Just msg -> Task.succeed msg |> Task.perform identity
                     Nothing -> Cmd.none
             )
@@ -225,16 +225,16 @@ pathify2 tron =
 -}
 pathify : Tron a -> Tron Path
 pathify =
-    Property.pathify
-        >> Property.map (always << Just)
+    Tree.pathify
+        >> Tree.map (always << Just)
 
 
 proxify : Tron a -> Tron Value
 proxify =
-    Property.map <| always Just
+    Tree.map <| always Just
 
 
 expose : Tron a -> Tron Exp.Value
 expose tron =
-    Property.pathify tron
-        |> Property.map (\path val -> Just <| Exp.toRaw path val)
+    Tree.pathify tron
+        |> Tree.map (\path val -> Just <| Exp.toRaw path val)

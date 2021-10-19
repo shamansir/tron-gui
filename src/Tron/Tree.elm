@@ -1,5 +1,5 @@
-module Tron.Property exposing
-    ( Property(..), FocusAt(..), Shape, NestShape
+module Tron.Tree exposing
+    ( Tree(..), FocusAt(..), Shape, NestShape
     , get, set, setAt, setAll, move, getValue
     , map, mapWithPath, mapWithValue
     , zmap2, zmap3, zmap4, zmap5
@@ -49,7 +49,7 @@ type alias Shape = ( Float, Float )
 type alias NestShape = ( PanelShape, CellShape )
 
 
-type Property a
+type Tree a
     = Nil a
     | Number (Number.Control a)
     | Coordinate (XY.Control a)
@@ -57,12 +57,12 @@ type Property a
     | Color (Color.Control a)
     | Toggle (Toggle.Control a)
     | Action (Button.Control a)
-    | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Path.Label, Property a ) a)
-    | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Path.Label, Property a ) a)
-    | Live (Property a)
+    | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Path.Label, Tree a ) a)
+    | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Path.Label, Tree a ) a)
+    | Live (Tree a)
 
 
-map : (a -> b) -> Property a -> Property b
+map : (a -> b) -> Tree a -> Tree b
 map f prop =
     case prop of
         Nil a -> Nil <| f a
@@ -92,8 +92,8 @@ map f prop =
 
 mapWithPath
     :  (Path -> a -> b)
-    -> Property a
-    -> Property b
+    -> Tree a
+    -> Tree b
 mapWithPath f =
     -- FIXME: should be just another `fold` actually?
     mapHelper <| \path _ a -> f path a
@@ -102,17 +102,17 @@ mapWithPath f =
 
 mapWithValue
     :  (Path -> Value -> a -> b)
-    -> Property a
-    -> Property b
+    -> Tree a
+    -> Tree b
 mapWithValue f =
     -- FIXME: should be just another `fold` actually?
     mapHelper <| \path prop a -> f path (getValue prop) a
 
 
 mapHelper
-    :  (Path -> Property a -> a -> b)
-    -> Property a
-    -> Property b
+    :  (Path -> Tree a -> a -> b)
+    -> Tree a
+    -> Tree b
 mapHelper f root =
 
     let
@@ -120,8 +120,8 @@ mapHelper f root =
         mapItemWithPath
             :  Path
             -> Int
-            -> ( Path.Label, Property a )
-            -> ( Path.Label, Property b )
+            -> ( Path.Label, Tree a )
+            -> ( Path.Label, Tree b )
         mapItemWithPath parentPath index ( label, innerItem ) =
             ( label
             , helper
@@ -129,7 +129,7 @@ mapHelper f root =
                 innerItem
             )
 
-        helper : Path -> Property a -> Property b
+        helper : Path -> Tree a -> Tree b
         helper curPath item =
             case item of
                 Choice focus shape control ->
@@ -156,27 +156,27 @@ mapHelper f root =
         helper Path.start root
 
 
-andThen : (a -> Property b) -> Property a -> Property b
+andThen : (a -> Tree b) -> Tree a -> Tree b
 andThen = foldFix
 --andThen f = foldP <| always (get >> f)
 
 
-with : (a -> Property a -> Property b) -> Property a -> Property b
+with : (a -> Tree a -> Tree b) -> Tree a -> Tree b
 -- FIXME: should be changed to `andThen` with getting rid of function in Control
 with f prop =
     andThen (\v -> f v prop) prop
 
 
-unfold : Property a -> List (Path, Property a)
+unfold : Tree a -> List (Path, Tree a)
 unfold =
     fold (\path prop prev -> ( path, prop ) :: prev ) []
 
 
-fold : (Path -> Property a -> b -> b) -> b -> Property a -> b
+fold : (Path -> Tree a -> b -> b) -> b -> Tree a -> b
 fold f from root =
     let
 
-        foldItems : Path -> Array ( Path.Label, Property a ) -> b -> b
+        foldItems : Path -> Array ( Path.Label, Tree a ) -> b -> b
         foldItems curPath items val =
             items
                 |> Array.indexedMap Tuple.pair
@@ -186,7 +186,7 @@ fold f from root =
                     )
                     val
 
-        helper : Path -> Property a -> b -> b
+        helper : Path -> Tree a -> b -> b
         helper curPath prop val =
             case prop of
                 Choice _ _ control ->
@@ -203,15 +203,15 @@ fold f from root =
         helper Path.start root from
 
 
-foldP : (Path -> Property a -> Property a) -> Property a -> Property a
+foldP : (Path -> Tree a -> Tree a) -> Tree a -> Tree a
 foldP f root =
     let
 
-        foldItem : Path -> Int -> ( Path.Label, Property a ) -> ( Path.Label, Property a )
+        foldItem : Path -> Int -> ( Path.Label, Tree a ) -> ( Path.Label, Tree a )
         foldItem parentPath index ( label, item ) =
             ( label, helper (parentPath |> Path.advance (index, label)) item )
 
-        helper : Path -> Property a -> Property a
+        helper : Path -> Tree a -> Tree a
         helper curPath prop =
             case prop of
                 Choice focus shape control ->
@@ -236,7 +236,7 @@ foldP f root =
         helper Path.start root
 
 
-foldFix : (a -> x) -> Property a -> x
+foldFix : (a -> x) -> Tree a -> x
 foldFix f prop =
     case prop of
         Nil a -> f a
@@ -251,16 +251,16 @@ foldFix f prop =
         Live innerProp -> foldFix f innerProp
 
 
-foldZipP : (Z.Zipper (Property a) (Property b) -> c -> c) -> Property a -> Property b -> c -> c
+foldZipP : (Z.Zipper (Tree a) (Tree b) -> c -> c) -> Tree a -> Tree b -> c -> c
 foldZipP f propA propB = fold2Helper f <| Both propA propB
 
 
-foldZip : (Z.Zipper a b -> c -> c) -> Property a -> Property b -> c -> c
+foldZip : (Z.Zipper a b -> c -> c) -> Tree a -> Tree b -> c -> c
 foldZip f =
     foldZipP (f << Z.mapAB get get)
 
 
-fold2Helper : (Z.Zipper (Property a) (Property b) -> c -> c) -> Z.Zipper (Property a) (Property b) -> c -> c
+fold2Helper : (Z.Zipper (Tree a) (Tree b) -> c -> c) -> Z.Zipper (Tree a) (Tree b) -> c -> c
 fold2Helper f zipper def =
     let
         foldNestItems itemsA itemsB =
@@ -305,12 +305,12 @@ fold2Helper f zipper def =
         ( _, _ ) -> f zipper def
 
 
-{- fold3 : (Path -> Property a -> b -> b) -> b -> Property a -> b
+{- fold3 : (Path -> Tree a -> b -> b) -> b -> Tree a -> b
 fold3 f from root =
     -- FIXME: use this one as `fold`, just omit `LabelPath`
     let
 
-        foldItems : Path -> Array ( Path.Label, Property a ) -> b -> b
+        foldItems : Path -> Array ( Path.Label, Tree a ) -> b -> b
         foldItems curPath items val =
             items
                 --|> Array.map Tuple.second
@@ -323,7 +323,7 @@ fold3 f from root =
                     )
                     val
 
-        helper : Path -> Property a -> b -> b
+        helper : Path -> Tree a -> b -> b
         helper curPath prop val =
             case prop of
                 Choice _ _ control ->
@@ -340,14 +340,14 @@ fold3 f from root =
         helper Path.start root from -}
 
 
-updateAt : Path -> (Property a -> Property a) -> Property a -> Property a
+updateAt : Path -> (Tree a -> Tree a) -> Tree a -> Tree a
 updateAt path f =
     foldP
         <| \otherPath item ->
             if Path.equal otherPath path then f item else item
 
 
-updateMany : List ( Path, Property a ) -> Property a -> Property a
+updateMany : List ( Path, Tree a ) -> Tree a -> Tree a
 updateMany updates root =
     List.foldl
         (\(path, nextProp) lastRoot ->
@@ -357,12 +357,12 @@ updateMany updates root =
         updates
 
 
-replaceAt : Path -> Property a -> Property a -> Property a
-replaceAt path newProperty =
-    updateAt path <| always newProperty
+replaceAt : Path -> Tree a -> Tree a -> Tree a
+replaceAt path newTree =
+    updateAt path <| always newTree
 
 
-perform : Property x -> Cmd x
+perform : Tree x -> Cmd x
 perform prop =
     case prop of
         Nil msg -> Task.succeed msg |> Task.perform identity
@@ -377,7 +377,7 @@ perform prop =
         Live innerProp -> perform innerProp
 
 
-get : Property a -> a
+get : Tree a -> a
 get prop =
     case prop of
         Nil a -> a
@@ -391,7 +391,7 @@ get prop =
         Group _ _ control -> control |> Control.get
         Live innerProp -> get innerProp
 
-set : a -> Property a -> Property a
+set : a -> Tree a -> Tree a
 set a prop =
     case prop of
         Nil _ -> Nil a
@@ -406,16 +406,16 @@ set a prop =
         Live innerProp -> Live <| set a innerProp
 
 
-setAt : Path -> a -> Property a -> Property a
+setAt : Path -> a -> Tree a -> Tree a
 setAt path =
     updateAt path << set
 
 
-setAll : a -> Property x -> Property a
+setAll : a -> Tree x -> Tree a
 setAll = map << always
 
 
-zip : Property a -> Property b -> Property (Z.Zipper a b)
+zip : Tree a -> Tree b -> Tree (Z.Zipper a b)
 zip =
     let
        join zipper =
@@ -429,7 +429,7 @@ zip =
 
 {- `zmap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
 become `Nothing` -}
-zmap2 : (Maybe a -> Maybe b -> c) -> Property a -> Property b -> Property c
+zmap2 : (Maybe a -> Maybe b -> c) -> Tree a -> Tree b -> Tree c
 zmap2 f propA propB =
     zip propA propB
         |> map (Z.fold f)
@@ -437,13 +437,13 @@ zmap2 f propA propB =
 
 {- `zjmap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
 of the resulting prop becomes `Nothing` -}
-zjmap2 : (a -> b -> c) -> Property a -> Property b -> Property (Maybe c)
+zjmap2 : (a -> b -> c) -> Tree a -> Tree b -> Tree (Maybe c)
 zjmap2 = zmap2 << Maybe.map2
 
 
 {- `wmap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping,
 the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
-wmap2 : (a -> b -> c) -> Property a -> Property b -> Property c
+wmap2 : (a -> b -> c) -> Tree a -> Tree b -> Tree c
 wmap2 f propA propB =
     zmap2
         (\maybeA maybeB ->
@@ -465,7 +465,7 @@ zmapHelper nf maybeFn maybeLastVal =
 
 {- `zmap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
 become `Nothing` -}
-zmap3 : (Maybe a -> Maybe b -> Maybe c -> d) -> Property a -> Property b -> Property c -> Property d
+zmap3 : (Maybe a -> Maybe b -> Maybe c -> d) -> Tree a -> Tree b -> Tree c -> Tree d
 zmap3 f propA propB propC =
     zip
        (zmap2 f propA propB)
@@ -476,13 +476,13 @@ zmap3 f propA propB propC =
 
 {- `zjmap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
 of the resulting prop becomes `Nothing` -}
-zjmap3 : (a -> b -> c -> d) -> Property a -> Property b -> Property c -> Property (Maybe d)
+zjmap3 : (a -> b -> c -> d) -> Tree a -> Tree b -> Tree c -> Tree (Maybe d)
 zjmap3 = zmap3 << Maybe.map3
 
 
 {- `wmap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping,
 the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
-wmap3 : (a -> b -> c -> d) -> Property a -> Property b -> Property c -> Property d
+wmap3 : (a -> b -> c -> d) -> Tree a -> Tree b -> Tree c -> Tree d
 wmap3 f propA propB propC =
     zmap3
         (\maybeA maybeB maybeC ->
@@ -496,7 +496,7 @@ wmap3 f propA propB propC =
 
 {- `zmap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
 become `Nothing` -}
-zmap4 : (Maybe a -> Maybe b -> Maybe c -> Maybe d -> e) -> Property a -> Property b -> Property c -> Property d -> Property e
+zmap4 : (Maybe a -> Maybe b -> Maybe c -> Maybe d -> e) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e
 zmap4 f propA propB propC propD =
     zip
        (zmap3 f propA propB propC)
@@ -507,13 +507,13 @@ zmap4 f propA propB propC propD =
 
 {- `zjmap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
 of the resulting prop becomes `Nothing` -}
-zjmap4 : (a -> b -> c -> d -> e) -> Property a -> Property b -> Property c -> Property d -> Property (Maybe e)
+zjmap4 : (a -> b -> c -> d -> e) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree (Maybe e)
 zjmap4 = zmap4 << Maybe.map4
 
 
 {- `wmap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping,
 the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
-wmap4 : (a -> b -> c -> d -> e) -> Property a -> Property b -> Property c -> Property d -> Property e
+wmap4 : (a -> b -> c -> d -> e) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e
 wmap4 f propA propB propC propD =
     zmap4
         (\maybeA maybeB maybeC maybeD ->
@@ -528,7 +528,7 @@ wmap4 f propA propB propC propD =
 
 {- `zmap5` maps five properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
 become `Nothing` -}
-zmap5 : (Maybe a -> Maybe b -> Maybe c -> Maybe d -> Maybe e -> f) -> Property a -> Property b -> Property c -> Property d -> Property e -> Property f
+zmap5 : (Maybe a -> Maybe b -> Maybe c -> Maybe d -> Maybe e -> f) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e -> Tree f
 zmap5 f propA propB propC propD propE =
     zip
        (zmap4 f propA propB propC propD)
@@ -539,13 +539,13 @@ zmap5 f propA propB propC propD propE =
 
 {- `zjmap5` maps five properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
 of the resulting prop becomes `Nothing` -}
-zjmap5 : (a -> b -> c -> d -> e -> f) -> Property a -> Property b -> Property c -> Property d -> Property e -> Property (Maybe f)
+zjmap5 : (a -> b -> c -> d -> e -> f) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e -> Tree (Maybe f)
 zjmap5 = zmap5 << Maybe.map5
 
 
 {- `wmap5` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping,
 the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
-wmap5 : (a -> b -> c -> d -> e -> f) -> Property a -> Property b -> Property c -> Property d -> Property e -> Property f
+wmap5 : (a -> b -> c -> d -> e -> f) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e -> Tree f
 wmap5 f propA propB propC propD propE =
     zmap5
         (\maybeA maybeB maybeC maybeD maybeE ->
@@ -560,22 +560,22 @@ wmap5 f propA propB propC propD propE =
 
 
 move
-     : (Z.Zipper (Property a) (Property b) -> Property c)
-    -> Property a
-    -> Property b
-    -> Property c
+     : (Z.Zipper (Tree a) (Tree b) -> Tree c)
+    -> Tree a
+    -> Tree b
+    -> Tree c
 move f propA propB = moveHelper f <| Z.Both propA propB
 
 
 moveHelper
-     : (Z.Zipper (Property a) (Property b) -> Property c)
-    -> Z.Zipper (Property a) (Property b)
-    -> Property c
+     : (Z.Zipper (Tree a) (Tree b) -> Tree c)
+    -> Z.Zipper (Tree a) (Tree b)
+    -> Tree c
 moveHelper f zipper =
     let
         merge
-             : Z.Zipper ( Path.Label, Property a ) ( Path.Label, Property b )
-            -> ( Path.Label, Property c )
+             : Z.Zipper ( Path.Label, Tree a ) ( Path.Label, Tree b )
+            -> ( Path.Label, Tree c )
         merge zipperCursor =
             case zipperCursor of
                 Z.Both (labelA, propA_) (labelB, propB_) ->
@@ -585,9 +585,9 @@ moveHelper f zipper =
                 Z.Right (labelB, propB_) ->
                     (labelB, moveHelper f <| Z.Right propB_)
         zipItems
-             : NestControl (Path.Label, Property a) value a
-            -> NestControl (Path.Label, Property b) value b
-            -> Array (Path.Label, Property c)
+             : NestControl (Path.Label, Tree a) value a
+            -> NestControl (Path.Label, Tree b) value b
+            -> Array (Path.Label, Tree c)
         zipItems controlA controlB =
             Z.zip
                 (Nest.getItems controlA)
@@ -608,39 +608,39 @@ moveHelper f zipper =
         _ -> f zipper
 
 
-insideOut : Property ( a, b ) -> ( a, Property b )
+insideOut : Tree ( a, b ) -> ( a, Tree b )
 insideOut prop =
     ( get prop |> Tuple.first, prop |> map Tuple.second )
 
 
-{- outsideIn : ( a, Property b ) -> Property ( a, b )
+{- outsideIn : ( a, Tree b ) -> Tree ( a, b )
 outsideIn ( a, prop ) =
     ( get prop |> Tuple.first, prop |> map Tuple.second ) -}
 
 
 {-| Replace the `()` subject everywhere within Tron GUI tree, it is useful for truly a lot of cases when you don't care about what are the associated values.
 -}
-toUnit : Property a -> Property ()
+toUnit : Tree a -> Tree ()
 toUnit = setAll ()
 
 
-proxify : Property a -> Property Value
+proxify : Tree a -> Tree Value
 proxify = mapWithValue <| \_ val _ -> val
 
 
 {-| convert usual `Tron a` to `Tron.OfValue a`. Please prefer the one from the `Tron.OfValue` module. -}
-lift : Property a -> Property (Value -> Maybe a)
+lift : Tree a -> Tree (Value -> Maybe a)
 lift =
     map (always << Just)
 
 
-apply : Property (Value -> Maybe a) -> Property (Maybe a)
+apply : Tree (Value -> Maybe a) -> Tree (Maybe a)
 apply = mapWithValue (\_ val handler -> handler val)
 
 
 
 {-| get proxied value from `Tron` -}
-getValue : Property a -> Value
+getValue : Tree a -> Value
 getValue prop =
     case prop of
         Nil _ -> None
@@ -655,7 +655,7 @@ getValue prop =
         Live innerProp -> getValue innerProp
 
 
-update : A.Action -> Property a -> ( Property a, A.Change )
+update : A.Action -> Tree a -> ( Tree a, A.Change )
 update action prop =
     case prop of
         Nil v -> ( Nil v, A.Stay )

@@ -52,7 +52,7 @@ main =
         } -}
 
 
-port ack : Exp.Property -> Cmd msg
+port ack : Exp.Tree -> Cmd msg
 
 port transmit : Exp.Out -> Cmd msg
 

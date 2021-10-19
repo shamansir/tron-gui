@@ -6,7 +6,7 @@ import Url.Builder as Url
 
 import Tron exposing (Tron)
 import Tron.Builder.Unit as Gui
-import Tron.Property as Property
+import Tron.Tree as Tree
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
 import Tron.Style.Theme as Theme
@@ -113,7 +113,7 @@ colorNest =
             |> Gui.shape (cols 1)
 
 
-choiceToLabel : Choice -> Property.Label
+choiceToLabel : Choice -> Tree.Label
 choiceToLabel c =
     case c of
         A -> "The A"

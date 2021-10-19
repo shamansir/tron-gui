@@ -1,5 +1,5 @@
-module Tron.Property.ExposeData exposing
-    ( Property, Update
+module Tron.Tree.Expose exposing
+    ( Tree, Update
     , ClientId, Value
     , Ack, In, Out, DeduceIn
     , nothingGoesIn, noAck, nothingGoesOut
@@ -14,7 +14,7 @@ module Tron.Property.ExposeData exposing
 
 # Helpers
 
-@docs Property, Update, ClientId, Value
+@docs Tree, Update, ClientId, Value
 
 # No-value
 
@@ -30,7 +30,7 @@ import Tron.Path as Path exposing (Path, Index, Label)
 
 
 {-| The GUI Tree converted to a JSON value. -}
-type alias Property =
+type alias Tree =
     E.Value
 
 
@@ -75,7 +75,7 @@ type alias In =
 {-| Acknowledge package, which lets the server know the current Client ID. -}
 type alias Ack =
     { client : ClientId
-    , tree : Property
+    , tree : Tree
     }
 
 

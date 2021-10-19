@@ -20,10 +20,10 @@ import Tron.Control.Impl.Button as Button
 import Tron.Control.Impl.XY as XY
 import Tron.Path as Path exposing (Path)
 -- import Tron.Detach as Detach
-import Tron.Property as Property exposing (..)
-import Tron.Property.Controls as Property
-import Tron.Property.Paths as Property
-import Tron.Property.ExposeData as Exp
+import Tron.Tree as Tree exposing (..)
+import Tron.Tree.Controls as Tree
+import Tron.Tree.Paths as Tree
+import Tron.Tree.Expose as Exp
 import Tron.Control.Value as Value exposing (Value(..))
 -- import Tron.Expose.Convert as Exp
 import Tron.Style.Theme as Theme
@@ -32,8 +32,8 @@ import Tron.Style.CellShape as CS
 
 
 
-runProperty : Value -> Property x -> Cmd x
-runProperty value property =
+runTree : Value -> Tree x -> Cmd x
+runTree value property =
     case ( property, value ) of
         ( Nil _, _ ) ->
             Cmd.none
@@ -74,11 +74,11 @@ runProperty value property =
             Cmd.none
 
 
-run : Exp.Update -> Property x -> Cmd x -- FIXME: looks close to `apply`
+run : Exp.Update -> Tree x -> Cmd x -- FIXME: looks close to `apply`
 run { path, value } prop =
     case path of
         [] ->
-            runProperty value prop
+            runTree value prop
 
         ( id, _ ) :: next ->
             case prop of
@@ -98,8 +98,8 @@ run { path, value } prop =
                     Cmd.none
 
 
-applyProperty : Value -> Property a -> Property a
-applyProperty value prop =
+applyTree : Value -> Tree a -> Tree a
+applyTree value prop =
     case ( prop, value ) of
         ( Nil _, _ ) ->
             prop
@@ -132,11 +132,11 @@ applyProperty value prop =
             prop
 
 
-apply : Exp.Update -> Property a -> Property a
+apply : Exp.Update -> Tree a -> Tree a
 apply { path, value } prop =
     case path of
         [] ->
-            applyProperty value prop
+            applyTree value prop
 
         ( _, label ) :: next -> -- id :: next
             case prop of
@@ -168,7 +168,7 @@ apply { path, value } prop =
                     prop
 
 
-loadValues : Dict Path Value -> Property a -> Property a
+loadValues : Dict Path Value -> Tree a -> Tree a
 loadValues dict prop =
     dict
         |> Dict.toList
@@ -179,9 +179,9 @@ loadValues dict prop =
             prop
 
 
-loadStringValues : Dict (List Path.Label) String -> Property a -> Property a
+loadStringValues : Dict (List Path.Label) String -> Tree a -> Tree a
 loadStringValues dict =
-    Property.foldP
+    Tree.foldP
         (\path innerProp ->
             dict
                 |> Dict.get (Path.toLabelPath path)
@@ -190,7 +190,7 @@ loadStringValues dict =
         )
 
 
-loadJsonValues : Dict (List Path.Index) Exp.Value -> Property a -> Property a
+loadJsonValues : Dict (List Path.Index) Exp.Value -> Tree a -> Tree a
 loadJsonValues dict prop =
     dict
         |> Dict.toList
@@ -199,7 +199,7 @@ loadJsonValues dict prop =
                 apply (outUpdate |> loadValue |> fromPort) root
             )
             prop
-    {- Tron.Property.fold
+    {- Tron.Tree.fold
         (\path _ root ->
             Dict.get (Path.toList path) dict
                 |> Maybe.map (\outUpdate -> apply (outUpdate |> swap |> fromPort) root)
@@ -209,7 +209,7 @@ loadJsonValues dict prop =
         prop -}
 
 
-applyStringValue : String -> Property a -> Maybe (Property a)
+applyStringValue : String -> Tree a -> Maybe (Tree a)
 applyStringValue str prop =
     let
         helper typeStr maybeFn =
@@ -357,23 +357,23 @@ applyStringValue str prop =
                 |> Maybe.map Live
 
 
-decode : D.Decoder (Property ())
+decode : D.Decoder (Tree ())
 decode =
     let
         faceAndShape maybeShape maybeFace prop =
             case ( maybeShape, maybeFace ) of
                 ( Just ( panelShape, cellShape ), Just face ) ->
                     prop
-                        |> Property.setFace face
-                        |> Property.setPanelShape panelShape
-                        |> Property.setCellShape cellShape
+                        |> Tree.setFace face
+                        |> Tree.setPanelShape panelShape
+                        |> Tree.setCellShape cellShape
                 ( Just ( panelShape, cellShape ), Nothing ) ->
                     prop
-                        |> Property.setPanelShape panelShape
-                        |> Property.setCellShape cellShape
+                        |> Tree.setPanelShape panelShape
+                        |> Tree.setCellShape cellShape
                 ( Nothing, Just face ) ->
                     prop
-                        |> Property.setFace face
+                        |> Tree.setFace face
                 ( Nothing, Nothing ) -> prop
     in
     D.field "type" D.string
@@ -470,7 +470,7 @@ decode =
                     |> D.map2
                         (\maybeFace button ->
                             maybeFace
-                                |> Maybe.map (\face -> Property.setFace face button)
+                                |> Maybe.map (\face -> Tree.setFace face button)
                                 |> Maybe.withDefault button
                         )
                         (D.maybe <| D.field "face" decodeFace)
@@ -485,7 +485,7 @@ decode =
                         )
                         |> D.map
                             (\items -> Nest.createGroup items ())
-                        |> D.map (Group Nothing Property.defaultNestShape)
+                        |> D.map (Group Nothing Tree.defaultNestShape)
                         |> D.map3 faceAndShape
                             (D.maybe <| D.field "shape" decodeShape)
                             (D.maybe <| D.field "face" decodeFace)
@@ -507,7 +507,7 @@ decode =
                                     Nothing -> control
                             )
                             (D.maybe <| D.field "mode" decodeChoiceMode)
-                        |> D.map (Choice Nothing Property.defaultNestShape)
+                        |> D.map (Choice Nothing Tree.defaultNestShape)
                         |> D.map3 faceAndShape
                             (D.maybe <| D.field "shape" decodeShape)
                             (D.maybe <| D.field "face" decodeFace)
@@ -527,8 +527,8 @@ encodePath =
     Path.toList >> encodeRawPath
 
 
-encodePropertyAt : Path -> Property a -> Exp.Property
-encodePropertyAt path property =
+encodeTreeAt : Path -> Tree a -> Exp.Tree
+encodeTreeAt path property =
     case property of
         Nil _ ->
             E.object
@@ -672,10 +672,10 @@ encodePropertyAt path property =
                 ]
 
         Live innerProp ->
-            encodePropertyAt path innerProp
+            encodeTreeAt path innerProp
 
 
-encodeNested : Path -> Array ( Path.Label, Property a ) -> Exp.Property
+encodeNested : Path -> Array ( Path.Label, Tree a ) -> Exp.Tree
 encodeNested path items =
     E.list
         (\( id, ( label, property ) ) ->
@@ -683,7 +683,7 @@ encodeNested path items =
                 [ ( "index", E.int id )
                 , ( "label", E.string label )
                 , ( "property"
-                  , encodePropertyAt
+                  , encodeTreeAt
                         (path |> Path.advance ( id, label ))
                         property
                   )
@@ -694,13 +694,13 @@ encodeNested path items =
             items
 
 
-encode : Property a -> Exp.Property
+encode : Tree a -> Exp.Tree
 encode =
-    encodePropertyAt Path.start
+    encodeTreeAt Path.start
 
 
 {-
-   encodeUpdate : Maybe HashId -> Path -> Property a -> RawUpdate
+   encodeUpdate : Maybe HashId -> Path -> Tree a -> RawUpdate
    encodeUpdate maybeClient path prop =
        let
            ( type_, value ) =
@@ -816,7 +816,7 @@ decodeChoiceMode =
         )
 
 
-encodeShape : Property.NestShape -> E.Value
+encodeShape : Tree.NestShape -> E.Value
 encodeShape ( panelShape, cellShape ) =
     E.object
         [
@@ -1041,7 +1041,7 @@ encodeAck { client, tree } =
         ]
 
 
-{- encodeAck_ : Detach.ClientId -> Property a -> E.Value
+{- encodeAck_ : Detach.ClientId -> Tree a -> E.Value
 encodeAck_ clientId tree =
     encodeAck
         { client = Detach.encodeClientId <| Just clientId
@@ -1049,7 +1049,7 @@ encodeAck_ clientId tree =
         } -}
 
 
-makeAck : String -> Property () -> Exp.Ack
+makeAck : String -> Tree () -> Exp.Ack
 makeAck clientId tree =
     { client = E.string clientId
     , tree = encode tree
@@ -1144,22 +1144,22 @@ decodeToggle =
         ]
 
 
-execute : Property (Maybe msg) -> Cmd msg
+execute : Tree (Maybe msg) -> Cmd msg
 execute =
-    Property.get
+    Tree.get
     >> Maybe.toCommand
 
 
-{-runExposed : Property Exp.Update -> Cmd Exp.Out
+{-runExposed : Tree Exp.Update -> Cmd Exp.Out
 runExposed prop =
-    case Property.get prop of
+    case Tree.get prop of
         Just rawUpdate ->
             Task.succeed rawUpdate
                 |> Task.perform identity
         Nothing -> Cmd.none -}
 
 
-reflect : Property a -> Property Value
+reflect : Tree a -> Tree Value
 reflect prop =
     case prop of
         Nil _ -> Nil None
@@ -1208,11 +1208,11 @@ reflect prop =
                 |> Live
 
 
-reflectWithPath : Property a -> Property ( Path, Value )
+reflectWithPath : Tree a -> Tree ( Path, Value )
 reflectWithPath =
     reflect
-        >> Property.pathifyWithValue
-    {- Property.map2
+        >> Tree.pathifyWithValue
+    {- Tree.map2
         Tuple.pair
         (pathify prop)
         (reflect prop)

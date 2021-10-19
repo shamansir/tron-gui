@@ -1,4 +1,4 @@
-module Tron.Property.Build.Choice exposing (..)
+module Tron.Tree.Build.Choice exposing (..)
 
 
 import Array
@@ -7,7 +7,7 @@ import Maybe.Extra as Maybe
 
 import Tron as Def
 import Tron.Path as Path
-import Tron.Property as Property exposing (..)
+import Tron.Tree as Tree exposing (..)
 import Tron.Control exposing (Control(..))
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
@@ -21,7 +21,7 @@ import Json.Decode exposing (index)
 withButtons
     :  (a -> Path.Label)
     -> (a -> Button.Face)
-    -> ( ( Int -> a ) -> Int -> a -> ( Path.Label, Property a ) )
+    -> ( ( Int -> a ) -> Int -> a -> ( Path.Label, Tree a ) )
 withButtons toLabel toButtonFace =
     \callByIndex index val ->
         ( toLabel val
@@ -36,14 +36,14 @@ withButtons toLabel toButtonFace =
 
 helper
      : ( PanelShape, CellShape )
-    -> List ( Path.Label, Property a )
+    -> List ( Path.Label, Tree a )
     -> a
     -> ( a -> a -> Bool )
-    -> Property (Int, a)
+    -> Tree (Int, a)
 helper ( panelShape, cellShape ) options current compare =
     let
 
-        optionsArray : Array.Array ( Path.Label, Property ( Int, a ))
+        optionsArray : Array.Array ( Path.Label, Tree ( Int, a ))
         optionsArray =
             options
                 |> Array.fromList
@@ -51,7 +51,7 @@ helper ( panelShape, cellShape ) options current compare =
                     (\index (label, prop) ->
                         ( label
                         , prop
-                            |> Property.map (Tuple.pair index)
+                            |> Tree.map (Tuple.pair index)
                         )
                     )
 
@@ -59,7 +59,7 @@ helper ( panelShape, cellShape ) options current compare =
         values =
             options
                 |> Array.fromList
-                |> Array.map (Tuple.second >> Property.get)
+                |> Array.map (Tuple.second >> Tree.get)
 
         currentIndex : Int
         currentIndex =
@@ -93,15 +93,15 @@ helper ( panelShape, cellShape ) options current compare =
 
 helperDef
      : ( PanelShape, CellShape )
-    -> List ( Path.Label, Property ( Value -> Maybe a ) )
+    -> List ( Path.Label, Tree ( Value -> Maybe a ) )
     -> a
     -> ( a -> a -> Bool )
     -> ( Int -> a -> msg )
-    -> Property (Value -> Maybe msg)
+    -> Tree (Value -> Maybe msg)
 helperDef ( panelShape, cellShape ) options current compare toMsg =
     let
 
-        optionsArray : Array.Array ( Path.Label, Property ( Int, ( Value -> Maybe a ) ))
+        optionsArray : Array.Array ( Path.Label, Tree ( Int, ( Value -> Maybe a ) ))
         optionsArray =
             options
                 |> Array.fromList
@@ -109,16 +109,16 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
                     (\index (label, prop) ->
                         ( label
                         , prop
-                            |> Property.map (Tuple.pair index)
+                            |> Tree.map (Tuple.pair index)
                         )
                     )
 
-        properties : Array.Array ( Path.Label, Property ( Value -> Maybe msg ) )
+        properties : Array.Array ( Path.Label, Tree ( Value -> Maybe msg ) )
         properties =
             optionsArray
                 |> Array.indexedMap
                     (\idx (label, prop) ->
-                        (label, prop |> Property.map Tuple.second |> Def.map (toMsg idx)))
+                        (label, prop |> Tree.map Tuple.second |> Def.map (toMsg idx)))
 
         values : Array.Array ( Maybe a )
         values =
@@ -127,8 +127,8 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
                 |> Array.map (Tuple.second)
                 |> Array.map
                     (\prop ->
-                        Property.get prop
-                            |> (\handler_ -> handler_ <| Property.getValue prop)
+                        Tree.get prop
+                            |> (\handler_ -> handler_ <| Tree.getValue prop)
                     )
 
         currentIndex : Int
@@ -173,14 +173,14 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
 
 helperProxy
      : ( PanelShape, CellShape )
-    -> List ( Path.Label, Property ( Value -> Maybe a ) )
+    -> List ( Path.Label, Tree ( Value -> Maybe a ) )
     -> a
     -> ( a -> a -> Bool )
-    -> Property (Value -> Maybe Value)
+    -> Tree (Value -> Maybe Value)
 helperProxy ( panelShape, cellShape ) options current compare =
     let
 
-        optionsArray : Array.Array ( Path.Label, Property ( Int, ( Value -> Maybe a ) ))
+        optionsArray : Array.Array ( Path.Label, Tree ( Int, ( Value -> Maybe a ) ))
         optionsArray =
             options
                 |> Array.fromList
@@ -188,16 +188,16 @@ helperProxy ( panelShape, cellShape ) options current compare =
                     (\index (label, prop) ->
                         ( label
                         , prop
-                            |> Property.map (Tuple.pair index)
+                            |> Tree.map (Tuple.pair index)
                         )
                     )
 
-        properties : Array.Array ( Path.Label, Property ( Value -> Maybe Value ) )
+        properties : Array.Array ( Path.Label, Tree ( Value -> Maybe Value ) )
         properties =
             optionsArray
                 |> Array.map
                     (\(label, prop) ->
-                        (label, prop |> Property.map Tuple.second |> Property.map (always Just))
+                        (label, prop |> Tree.map Tuple.second |> Tree.map (always Just))
                     )
 
         values : Array.Array ( Maybe a )
@@ -207,8 +207,8 @@ helperProxy ( panelShape, cellShape ) options current compare =
                 |> Array.map (Tuple.second)
                 |> Array.map
                     (\prop ->
-                        Property.get prop
-                            |> (\handler_ -> handler_ <| Property.getValue prop)
+                        Tree.get prop
+                            |> (\handler_ -> handler_ <| Tree.getValue prop)
                     )
 
         currentIndex : Int

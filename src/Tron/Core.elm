@@ -9,13 +9,10 @@ module Tron.Core exposing
 import Browser.Dom as Dom
 import Browser.Events as Browser
 import Task
-import Color
 import Html exposing (Html)
 import Html.Events as HE
 import Json.Encode as E
 import Json.Decode as D
-import Array
-import Dict
 
 import Size exposing (..)
 
@@ -24,12 +21,10 @@ import Tron as Tron
 import Tron.Path exposing (Path)
 import Tron.Path as Path
 import Tron.Control exposing (..)
-import Tron.Control as Control
-import Tron.Control.Impl.Text as Text
-import Tron.Property as Property exposing (Property(..))
-import Tron.Property.Paths as Property
-import Tron.Property.Events as Property
-import Tron.Property.Controls as Property
+import Tron.Tree as Tree exposing (Tree(..))
+import Tron.Tree.Paths as Tree
+import Tron.Tree.Events as Tree
+import Tron.Tree.Controls as Tree
 import Tron.Layout exposing (Layout)
 import Tron.Layout as Layout exposing (..)
 import Tron.Msg exposing (..)
@@ -50,11 +45,10 @@ import Tron.Style.Dock exposing (Dock(..))
 import Tron.Style.Dock as Dock exposing (..)
 import Tron.Style.Theme exposing (Theme)
 import Tron.Style.Logic as Style exposing (..)
-import Tron.Style.Logic as Dock exposing (boundsFromSize)
+import Tron.Style.Logic as Dock
 import Tron.Style.Cell as Cell exposing (..)
 
-import Tron.Property.ExposeData as Exp
-import Tron.Control.Value as Control exposing (Value)
+import Tron.Tree.Expose as Exp
 import Tron.Control.Value as Value
 import Tron.Control.Action as A
 
@@ -108,52 +102,52 @@ run =
 -- transferTransientState gui.tree tree
 
 
--- overMap : (msgA -> msgB) -> Property msgA -> Model msgB -> Model msgB
+-- overMap : (msgA -> msgB) -> Tree msgA -> Model msgB -> Model msgB
 -- overMap f prop =
---     over <| Tron.Property.map f prop
+--     over <| Tron.Tree.map f prop
 
 
 update
     :  Msg
     -> State
     -> Tron msg
-    -> ( State, Property (), Cmd (Exp.Out, msg) )
+    -> ( State, Tree (), Cmd (Exp.Out, msg) )
 update msg state tree  =
     case msg of
         NoOp ->
-            ( state, tree |> Property.toUnit, Cmd.none )
+            ( state, tree |> Tree.toUnit, Cmd.none )
 
         ApplyMouse mouseAction ->
             let
                 ( nextState, changesTree ) =
-                    handleMouse mouseAction state (tree |> Property.toUnit)
+                    handleMouse mouseAction state (tree |> Tree.toUnit)
             in
                 ( nextState
-                , changesTree |> Property.toUnit
+                , changesTree |> Tree.toUnit
                 , fireChangesFrom nextState ( tree, changesTree )
                 )
 
         Click path ->
             let
                 changesTree =
-                    tree |> Property.setAll A.Stay
+                    tree |> Tree.setAll A.Stay
                 updates =
                     changesTree
-                        |> Property.executeAt path
-                        |> List.map (Tuple.mapSecond <| Property.set A.Fire)
+                        |> Tree.executeAt path
+                        |> List.map (Tuple.mapSecond <| Tree.set A.Fire)
                 nextRoot =
                     changesTree
-                        |> Property.updateMany updates
+                        |> Tree.updateMany updates
 
             in
                 ( state
-                , nextRoot |> Property.toUnit
+                , nextRoot |> Tree.toUnit
                 , fireChangesFrom state ( tree, changesTree )
                 )
 
         MouseDown path ->
             ( state
-            , Focus.on tree path |> Property.toUnit
+            , Focus.on tree path |> Tree.toUnit
             , Cmd.none
             )
 
@@ -161,10 +155,10 @@ update msg state tree  =
            let
                 curFocus = Focus.find tree
                 ( nextState, changesTree ) =
-                    handleKeyDown keyCode curFocus state (tree |> Property.toUnit)
+                    handleKeyDown keyCode curFocus state (tree |> Tree.toUnit)
             in
                 ( nextState
-                , changesTree |> Property.toUnit
+                , changesTree |> Tree.toUnit
                 , fireChangesFrom nextState ( tree, changesTree )
                 )
 
@@ -173,7 +167,7 @@ update msg state tree  =
                 { state
                 | viewport = Size (w, h)
                 }
-            , tree |> Property.toUnit
+            , tree |> Tree.toUnit
             , Cmd.none
             )
 
@@ -181,28 +175,28 @@ update msg state tree  =
             let
                 nextRoot =
                     tree
-                        |> Property.updateTextAt path val
+                        |> Tree.updateTextAt path val
             in
                 ( state
-                , nextRoot |> Property.toUnit
+                , nextRoot |> Tree.toUnit
                 , Cmd.none
                 )
 
         Detach path ->
             let
-                nextRoot = Property.detachAt path tree
+                nextRoot = Tree.detachAt path tree
             in
                 ( state
-                , nextRoot |> Property.toUnit
+                , nextRoot |> Tree.toUnit
                 , Cmd.none -- FIXME: Detach.sendTree gui.detach nextRoot
                 )
 
         SwitchPage path pageNum ->
             let
-                nextRoot = Property.switchPageAt path pageNum tree
+                nextRoot = Tree.switchPageAt path pageNum tree
             in
                 ( state
-                , nextRoot |> Property.toUnit
+                , nextRoot |> Tree.toUnit
                 , Cmd.none
                 )
 
@@ -222,19 +216,19 @@ applyDeduced
     -> Tron msg
     -> Cmd msg
 applyDeduced toDeduce tree =
-    case tryDeduce (tree |> Property.toUnit) toDeduce of
+    case tryDeduce (tree |> Tree.toUnit) toDeduce of
         Just rawUpdate -> tree |> applyRaw rawUpdate
         Nothing -> Cmd.none
 
 
-applyHandlers : Tron msg -> Property (Maybe msg)
-applyHandlers = Property.apply
+applyHandlers : Tron msg -> Tree (Maybe msg)
+applyHandlers = Tree.apply
 
 
-tryDeduce : Property () -> Exp.DeduceIn -> Maybe Exp.In
+tryDeduce : Tree () -> Exp.DeduceIn -> Maybe Exp.In
 tryDeduce tree { path, value } =
     tree
-        |> Property.find (Path.fromList path)
+        |> Tree.find (Path.fromList path)
         |> Maybe.map
             (\prop ->
                 { path = path
@@ -252,7 +246,7 @@ tryDeduce tree { path, value } =
                                 Err _ -> value
 
                         _ -> value
-                , type_ = prop |> Property.getValue |> Value.getTypeString
+                , type_ = prop |> Tree.getValue |> Value.getTypeString
                 }
             )
 
@@ -288,12 +282,12 @@ knobDistance = 90 -- FIXME: move to `Control.Knob`
 
 
 
-handleMouse : MouseAction -> State -> Property () -> ( State, Property A.Change )
+handleMouse : MouseAction -> State -> Tree () -> ( State, Tree A.Change )
 handleMouse mouseAction state tree =
     let
         --rootPath = getRootPath state
         changesTree =
-            tree |> Property.setAll A.Stay
+            tree |> Tree.setAll A.Stay
         curMouseState =
             state.mouse
         nextMouseState =
@@ -355,18 +349,18 @@ handleMouse mouseAction state tree =
         nextTree =
             case maybePathAtCursor of
                 Just path ->
-                    Property.updateAt
+                    Tree.updateAt
                         path
                         (\property ->
                             let
-                                ( nextProperty, change ) =
+                                ( nextTree_, change ) =
                                     List.foldl
                                         (\action ( p, _ ) ->
-                                            p |> Property.update action
+                                            p |> Tree.update action
                                         )
                                         ( property, A.Stay )
                                         mouseActions
-                            in nextProperty |> Property.set change
+                            in nextTree_ |> Tree.set change
                         )
                         changesTree
                 Nothing -> changesTree
@@ -391,20 +385,20 @@ handleKeyDown
     :  Int
     -> Path
     -> State
-    -> Property ()
-    -> ( State, Property A.Change )
+    -> Tree ()
+    -> ( State, Tree A.Change )
 handleKeyDown keyCode path state tree =
     let
 
         changesTree =
-            tree |> Property.setAll A.Stay
+            tree |> Tree.setAll A.Stay
 
         executeByPath _ = -- uses only `gui.tree`
             let
-                updates = changesTree |> Property.executeAt path
+                updates = changesTree |> Tree.executeAt path
                 markedUpdates =
-                    updates |> List.map (Tuple.mapSecond <| Property.set A.Fire)
-                nextRoot = changesTree |> Property.updateMany markedUpdates
+                    updates |> List.map (Tuple.mapSecond <| Tree.set A.Fire)
+                nextRoot = changesTree |> Tree.updateMany markedUpdates
             in
                 ( state
                 , nextRoot
@@ -435,17 +429,17 @@ handleKeyDown keyCode path state tree =
             -- executeByPath ()
         -- enter
         13 ->
-            case changesTree |> Property.find path of
+            case changesTree |> Tree.find path of
                 Just prop ->
                     let
                         ( nextProp, _ ) =
-                            prop |> Property.update A.Exit -- FIXME: exit?? no enter??
+                            prop |> Tree.update A.Exit -- FIXME: exit?? no enter??
                     in
                         ( state
                         ,
                             -- FIXME: second time search for a path
                             changesTree
-                                |> Property.replaceAt path nextProp
+                                |> Tree.replaceAt path nextProp
                         -- FIXME: inside, we check if it is a text prop again
                         -- , Tron.perform nextProp
                             --|> Cmd.map (Tuple.pair path)
@@ -455,10 +449,10 @@ handleKeyDown keyCode path state tree =
         _ -> ( state, changesTree )
 
 
-expose : State -> Property a -> Property Exp.Out
+expose : State -> Tree a -> Tree Exp.Out
 expose state =
-    Property.expose
-        >> Property.map
+    Tree.expose
+        >> Tree.map
             ( (\val ->
                 { update = val
                 , client =  Detach.encodeClientId <| Tuple.first <| state.detach
@@ -466,17 +460,17 @@ expose state =
             ) )
 
 
-expose_ : State -> Property a -> Property ( Exp.Out, a )
+expose_ : State -> Tree a -> Tree ( Exp.Out, a )
 expose_ state tree =
     tree
-        |> Property.wmap2 Tuple.pair (tree |> expose state)
+        |> Tree.wmap2 Tuple.pair (tree |> expose state)
 
 
-collectChanges : State -> Property ( A.Change, Maybe msg ) -> List (Exp.Out, msg)
+collectChanges : State -> Tree ( A.Change, Maybe msg ) -> List (Exp.Out, msg)
 collectChanges state =
     expose_ state
-        >> Property.unfold
-        >> List.map (Tuple.second >> Property.get)
+        >> Tree.unfold
+        >> List.map (Tuple.second >> Tree.get)
         >> List.filterMap
             (\(expOut, (valState, maybeMsg)) ->
                 case ( valState, maybeMsg ) of
@@ -495,14 +489,14 @@ fireChanges =
         >> Cmd.batch
 
 
-fireChangesFrom : State -> ( Tron msg, Property A.Change ) -> Cmd (Exp.Out, msg)
+fireChangesFrom : State -> ( Tron msg, Tree A.Change ) -> Cmd (Exp.Out, msg)
 fireChangesFrom state ( tron, changesTree ) =
-    Property.wmap3
+    Tree.wmap3
         (\handler currentVal valueState ->
             ( valueState, handler currentVal )
         )
         tron
-        (changesTree |> Property.proxify)
+        (changesTree |> Tree.proxify)
         changesTree
             |> collectChanges state
             |> fireChanges
@@ -553,7 +547,7 @@ getRootPath gui =
         |> Maybe.withDefault Path.start
 
 
-sizeFromViewport : Property a -> Size Pixels -> Size Cells
+sizeFromViewport : Tree a -> Size Pixels -> Size Cells
 sizeFromViewport _ (Size ( widthInPixels, heightInPixels )) =
     {- let
         cellsFitHorizontally = floor (toFloat widthInPixels / Cell.width)
@@ -565,7 +559,7 @@ sizeFromViewport _ (Size ( widthInPixels, heightInPixels )) =
 
 
 
-getSizeInCells : State -> Property a -> Size Cells
+getSizeInCells : State -> Tree a -> Size Cells
 getSizeInCells state tree =
     case state.size of
         Just userSize -> userSize
@@ -574,7 +568,7 @@ getSizeInCells state tree =
                 |> sizeFromViewport tree
 
 
-layout : State -> Property a -> ( Property a, Layout )
+layout : State -> Tree a -> ( Tree a, Layout )
 layout state tree =
     let
         ( Size cellsSize ) = getSizeInCells state tree
@@ -586,7 +580,7 @@ layout state tree =
         |> Maybe.andThen
             (\path ->
                 tree
-                    |> Property.find path
+                    |> Tree.find path
                     |> Maybe.map (Tuple.pair path)
             ) of
         Nothing ->
@@ -604,7 +598,7 @@ subscriptions _ =
         ]
 
 
-view : Mode -> Theme -> State -> Property a -> Html Msg
+view : Mode -> Theme -> State -> Tree a -> Html Msg
 view mode theme state tree  =
     let
         cellsSize = getSizeInCells state tree

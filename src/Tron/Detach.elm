@@ -9,8 +9,8 @@ import HashId exposing (HashId)
 import Json.Encode as E
 
 import Tron.Path as Path exposing (Path)
-import Tron.Property.ExposeData as Exp
-import Tron.Property exposing (Property)
+import Tron.Tree.Expose as Exp
+import Tron.Tree exposing (Tree)
 import Tron.Msg exposing (Msg_(..))
 
 
@@ -141,7 +141,7 @@ ack (Detach d) =
     d.ack <| Exp.encodeAck d.client
 
 
-send : Detach msg -> Path -> Property a -> Cmd a
+send : Detach msg -> Path -> Tree a -> Cmd a
 send (Detach d) path =
     d.send << Exp.encodeUpdate d.client path
 

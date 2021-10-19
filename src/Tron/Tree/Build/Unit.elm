@@ -1,93 +1,86 @@
-module Tron.Property.Build.Unit exposing (..)
+module Tron.Tree.Build.Unit exposing (..)
 
 
-import Array
 import Color exposing (Color)
-import Color.Convert as Color
 import Axis exposing (Axis)
 
 import Tron.Path as Path
 import Tron.Control exposing (..)
-import Tron.Property as P exposing (..)
-import Tron.Property as Property
-import Tron.Property.Controls as Property
-import Tron.Property.Build as B
+import Tron.Tree as T exposing (..)
+import Tron.Tree as Tree
+import Tron.Tree.Controls as Tree
+import Tron.Tree.Build as B
 import Tron.Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)
-import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
-import Tron.Style.PanelShape exposing (rows, cols)
 import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Impl.Text exposing (TextState(..))
-import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..), Url(..))
-import Tron.Control.Impl.Toggle exposing (boolToToggle)
+import Tron.Control.Impl.Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Impl.Nest exposing (Form(..))
 
-import Tron.Property.Build.Choice as Choice
 
 
-
-type alias Property = P.Property ()
+type alias Tree = T.Tree ()
 
 
 type alias Set = B.Set ()
 
 
-none : Property
+none : Tree
 none = B.none ()
 
 
-root : Set -> Property
+root : Set -> Tree
 root props =
     B.root props ()
 
 
-float : Axis -> Float -> Property
+float : Axis -> Float -> Tree
 float axis value =
     B.float axis value ()
 
 
 
-int : { min: Int, max : Int, step : Int } -> Int -> Property
+int : { min: Int, max : Int, step : Int } -> Int -> Tree
 int opts default =
     B.int opts default ()
 
 
-number : Axis -> Float -> Property
+number : Axis -> Float -> Tree
 number axis val = B.number axis val ()
 
 
-xy : ( Axis, Axis ) -> ( Float, Float ) -> Property
+xy : ( Axis, Axis ) -> ( Float, Float ) -> Tree
 xy axes value = B.xy axes value ()
 
 
-coord : ( Axis, Axis ) -> ( Float, Float ) -> Property
+coord : ( Axis, Axis ) -> ( Float, Float ) -> Tree
 coord axes value = B.coord axes value ()
 
 
-input : ( x -> String ) -> x -> Property
+input : ( x -> String ) -> x -> Tree
 input toString value = -- FIXME: accept just `String` and `value`
     B.input toString value ()
 
 
-text : String -> Property
+text : String -> Tree
 text value =
     B.text value ()
 
 
-color : Color -> Property
+color : Color -> Tree
 color value =
     B.color value ()
 
 
-button : Property
+button : Tree
 button =
     B.button ()
 
 
-face : Face -> Property -> Property
+face : Face -> Tree -> Tree
 face = B.face
 
 
@@ -112,21 +105,21 @@ makeUrl = B.makeUrl
 
 
 -- not exposed
-buttonByFace : Face -> Property
+buttonByFace : Face -> Tree
 buttonByFace face_ =
     B.buttonByFace face_ ()
 
 
-toggle : Bool -> Property
+toggle : Bool -> Tree
 toggle value =
     B.toggle value ()
 
 
-bool : Bool -> Property
+bool : Bool -> Tree
 bool value = B.bool value ()
 
 
-nest : Set -> Property
+nest : Set -> Tree
 nest items =
     B.nest items ()
 
@@ -138,7 +131,7 @@ useColor = B.useColor
 choice
      : B.Set comparable
     -> comparable
-    -> P.Property (Int, comparable)
+    -> T.Tree (Int, comparable)
 choice = B.choice
 
 
@@ -146,7 +139,7 @@ choiceBy
      : B.Set a
     -> a
     -> ( a -> a -> Bool )
-    -> P.Property (Int, a)
+    -> T.Tree (Int, a)
 choiceBy =
     B.choiceBy
 
@@ -154,7 +147,7 @@ choiceBy =
 strings
      : List String
     -> String
-    -> P.Property (Int, String)
+    -> T.Tree (Int, String)
 strings = B.strings
 
 
@@ -162,46 +155,46 @@ labels
      : ( a -> Path.Label )
     -> List a
     -> a
-    -> P.Property ( Int, Path.Label )
+    -> T.Tree ( Int, Path.Label )
 labels = B.labels
 
 
 palette
      : List ( Path.Label, Color )
     -> Color
-    -> P.Property ( Int, Color )
+    -> T.Tree ( Int, Color )
 palette = B.palette
 
 
-buttons : List a -> List (P.Property a)
+buttons : List a -> List (T.Tree a)
 buttons =
     B.buttons
 
 
-toSet : (a -> Path.Label) -> List (P.Property a) -> Set
+toSet : (a -> Path.Label) -> List (T.Tree a) -> Set
 toSet toLabel =
     List.map
         (\prop ->
-            ( toLabel <| Property.get prop
-            , prop |> Property.toUnit
+            ( toLabel <| Tree.get prop
+            , prop |> Tree.toUnit
             )
         )
 
 
-addLabels : (a -> Path.Label) -> List (P.Property a) -> Set
+addLabels : (a -> Path.Label) -> List (T.Tree a) -> Set
 addLabels =
     toSet
 
 
-expand : Property -> Property
+expand : Tree -> Tree
 expand = B.expand
 
 
-collapse : Property -> Property
+collapse : Tree -> Tree
 collapse = B.collapse
 
 
-toChoice : Property -> Property
+toChoice : Tree -> Tree
 toChoice = B.toChoice
 
 
@@ -213,7 +206,7 @@ toChoice = B.toChoice
 
     Builder.choice ... |> Buidler.shape (by 2 3)
 -}
-shape : PanelShape -> Property -> Property
+shape : PanelShape -> Tree -> Tree
 shape = B.shape
 
 
@@ -225,5 +218,5 @@ shape = B.shape
 
     Builder.choice ... |> Buidler.shape halfByHalf
 -}
-cells : CellShape -> Property -> Property
+cells : CellShape -> Tree -> Tree
 cells = B.cells

@@ -13,9 +13,9 @@ import Size exposing (..)
 
 import Tron.Control exposing (Control(..))
 import Tron.Path as Path exposing (Path)
-import Tron.Property exposing (..)
-import Tron.Property as Property exposing (fold)
-import Tron.Property.Controls exposing (isGhost)
+import Tron.Tree exposing (..)
+import Tron.Tree as Tree exposing (fold)
+import Tron.Tree.Controls exposing (isGhost)
 import Tron.Style.Dock exposing (Dock)
 import Tron.Style.Dock as Dock
 import Tron.Style.Logic as Dock exposing (rootPosition)
@@ -86,11 +86,11 @@ find ( _, layout ) { x, y } =
             Nothing
 
 
-pack : Dock -> SizeF Cells -> Property a -> Layout
+pack : Dock -> SizeF Cells -> Tree a -> Layout
 pack dock size_ = pack1 dock size_ Path.start
 
 
-pack1 : Dock -> SizeF Cells -> Path -> Property a -> Layout
+pack1 : Dock -> SizeF Cells -> Path -> Tree a -> Layout
 pack1 dock size_ rootPath prop =
     case prop of
         Nil _ ->
@@ -125,7 +125,7 @@ packItemsAtRoot
     -> SizeF Cells
     -> Path
     -> PanelShape
-    -> Array (Path.Label, Property a)
+    -> Array (Path.Label, Tree a)
     -> SmartPack (Cell_ Path)
 packItemsAtRoot dock size_ rp shape items =
     let
@@ -199,7 +199,7 @@ packItemsAtRoot dock size_ rp shape items =
         --     -> Int
         --     -> PanelShape
         --     -> CellShape
-        --     -> Array (Path.Label, Property a)
+        --     -> Array (Path.Label, Tree a)
         --     -> (Int, Int)
         --     -> SmartPack (Cell_ Path)
         --     -> SmartPack (Cell_ Path)
@@ -285,7 +285,7 @@ packItemsAtRoot dock size_ rp shape items =
             -> Position
             -> SmartPack (Cell_ Path)
             -> Control
-                    ( Array ( Path.Label, Property a ) )
+                    ( Array ( Path.Label, Tree a ) )
                     { r | form : Form, page : PageNum }
                     a
             -> SmartPack (Cell_ Path)
@@ -309,7 +309,7 @@ packItemsAtRoot dock size_ rp shape items =
                                 cellShape
                                 items_
                                 parentPos
-                    itemsAndPositions_ : Array ( D.Position, ( Path.Label, Property.Property a ) )
+                    itemsAndPositions_ : Array ( D.Position, ( Path.Label, Tree.Tree a ) )
                     itemsAndPositions_ =
                         items_ |>
                             Array.indexedMap
@@ -329,7 +329,7 @@ packItemsAtRoot dock size_ rp shape items =
                     packPlatesOf path layoutWithPlate itemsAndPositions_
             else layout
 
-        --packPlatesOf : Path -> Array ( D.Position, ( Path.Label, Property.Property a ) ) -> SmartPack (Cell_ Path)
+        --packPlatesOf : Path -> Array ( D.Position, ( Path.Label, Tree.Tree a ) ) -> SmartPack (Cell_ Path)
         packPlatesOf path layout =
             Array.indexedMap Tuple.pair -- FIXME: consider pages
                 >> Array.foldl

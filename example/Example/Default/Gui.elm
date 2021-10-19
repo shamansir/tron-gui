@@ -5,8 +5,8 @@ import Color exposing (Color)
 
 import Tron.OfValue exposing (Tron)
 import Tron.Builder as Gui
-import Tron.Property  exposing (Property)
-import Tron.Property as Property
+import Tron.Tree  exposing (Tree)
+import Tron.Tree as Tree
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
 import Tron.Style.Theme as Theme
@@ -165,7 +165,7 @@ allControlsNest model =
             ] |> Gui.shape (rows 4)
 
 
-choiceToLabel : Choice -> Property.Label
+choiceToLabel : Choice -> Tree.Label
 choiceToLabel c =
     case c of
         A -> "The A"

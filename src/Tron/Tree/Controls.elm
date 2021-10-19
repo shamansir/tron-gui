@@ -1,10 +1,10 @@
-module Tron.Property.Controls exposing (..)
+module Tron.Tree.Controls exposing (..)
 
 
 import Array exposing (Array)
 import Array.Extra.Zipper as Z exposing (zip, Zipper(..))
 
-import Tron.Property exposing (Property(..), NestShape, foldP, updateAt, move)
+import Tron.Tree exposing (Tree(..), NestShape, foldP, updateAt, move)
 import Tron.Path as Path exposing (Path)
 import Tron.Style.CellShape as CS exposing (CellShape)
 import Tron.Style.PanelShape as PS exposing (PanelShape)
@@ -24,7 +24,7 @@ defaultNestShape : NestShape
 defaultNestShape = ( PS.auto, CS.single )
 
 
-transferTransientState : Property a -> Property a -> Property a
+transferTransientState : Tree a -> Tree a -> Tree a
 transferTransientState propA propB =
     let
         f zipper =
@@ -53,7 +53,7 @@ transferTransientState propA propB =
 -- TODO: better use the functions below directly from their controls
 
 
-finishEditingAt : Path -> Property a -> Property a
+finishEditingAt : Path -> Tree a -> Tree a
 finishEditingAt path =
     updateAt path <|
         \prop ->
@@ -62,7 +62,7 @@ finishEditingAt path =
                 _ -> prop
 
 
-updateTextAt : Path -> String -> Property a -> Property a
+updateTextAt : Path -> String -> Tree a -> Tree a
 updateTextAt path newValue =
     updateAt path <|
         \prop ->
@@ -74,7 +74,7 @@ updateTextAt path newValue =
 
 -- updateAndExecute : (v -> v) -> Control s v a -> ( Control s v a, a )
 
-ensureEditing : Property a -> Property a
+ensureEditing : Tree a -> Tree a
 ensureEditing prop =
     case prop of
         Text control ->
@@ -82,7 +82,7 @@ ensureEditing prop =
         _ -> prop
 
 
-expand : Property a -> Property a
+expand : Tree a -> Tree a
 expand prop =
     case prop of
         Group focus shape control ->
@@ -92,7 +92,7 @@ expand prop =
         _ -> prop
 
 
-collapse : Property a -> Property a
+collapse : Tree a -> Tree a
 collapse prop =
     case prop of
         Group focus shape control ->
@@ -102,7 +102,7 @@ collapse prop =
         _ -> prop
 
 
-isExpanded : Property a -> Maybe Nest.Form
+isExpanded : Tree a -> Maybe Nest.Form
 isExpanded prop =
     case prop of
         Group _ _ control ->
@@ -112,7 +112,7 @@ isExpanded prop =
         _ -> Nothing
 
 
-detach : Property a -> Property a
+detach : Tree a -> Tree a
 detach prop =
     case prop of
         Group focus shape control ->
@@ -122,7 +122,7 @@ detach prop =
         _ -> prop
 
 
-switchPage : Pages.PageNum -> Property a -> Property a
+switchPage : Pages.PageNum -> Tree a -> Tree a
 switchPage pageNum prop =
     case prop of
         Group focus shape control ->
@@ -132,27 +132,27 @@ switchPage pageNum prop =
         _ -> prop
 
 
-expandAt : Path -> Property a -> Property a
+expandAt : Path -> Tree a -> Tree a
 expandAt path =
     updateAt path expand
 
 
-detachAt : Path -> Property a -> Property a
+detachAt : Path -> Tree a -> Tree a
 detachAt path =
     updateAt path detach
 
 
-switchPageAt : Path -> Pages.PageNum -> Property a -> Property a
+switchPageAt : Path -> Pages.PageNum -> Tree a -> Tree a
 switchPageAt path pageNum =
     updateAt path <| switchPage pageNum
 
 
-detachAll : Property a -> Property a
+detachAll : Tree a -> Tree a
 detachAll =
     foldP <| always detach
 
 
-toggle : Property a -> Property a
+toggle : Tree a -> Tree a
 toggle prop =
     case prop of
         Toggle control ->
@@ -160,12 +160,12 @@ toggle prop =
         _ -> prop
 
 
-toggleAt : Path -> Property a -> Property a
+toggleAt : Path -> Tree a -> Tree a
 toggleAt path =
     updateAt path toggle
 
 
-toggleOn : Property a -> Property a
+toggleOn : Tree a -> Tree a
 toggleOn prop =
     case prop of
         Toggle control ->
@@ -173,7 +173,7 @@ toggleOn prop =
         _ -> prop
 
 
-toggleOff : Property a -> Property a
+toggleOff : Tree a -> Tree a
 toggleOff prop =
     case prop of
         Toggle control ->
@@ -181,12 +181,12 @@ toggleOff prop =
         _ -> prop
 
 
-ensureEditingAt : Path -> Property a -> Property a
+ensureEditingAt : Path -> Tree a -> Tree a
 ensureEditingAt path =
     updateAt path ensureEditing
 
 
-setChoiceMode : Nest.ChoiceMode -> Property a -> Property a
+setChoiceMode : Nest.ChoiceMode -> Tree a -> Tree a
 setChoiceMode newMode prop =
     case prop of
         Choice focus shape control ->
@@ -197,7 +197,7 @@ setChoiceMode newMode prop =
 
 
 {-
-reshape : Shape -> Property a -> Property a
+reshape : Shape -> Tree a -> Tree a
 reshape shape prop =
     case prop of
         Group ( Control ( _, items ) ( expanded, focus ) handler ) ->
@@ -206,18 +206,18 @@ reshape shape prop =
 -}
 
 
-isGhost : Property a -> Bool
+isGhost : Tree a -> Bool
 isGhost prop =
     case prop of
         Nil _ -> True
         _ -> False
 
 
-noGhosts : List (Property a) -> List (Property a)
+noGhosts : List (Tree a) -> List (Tree a)
 noGhosts = List.filter (not << isGhost)
 
 
-getCellShape : Property a -> Maybe CellShape
+getCellShape : Tree a -> Maybe CellShape
 getCellShape prop =
     case prop of
         Choice _ ( _, cellShape ) _ ->
@@ -229,7 +229,7 @@ getCellShape prop =
         _ -> Nothing
 
 
-getPageNum : Property a -> Maybe Pages.PageNum
+getPageNum : Tree a -> Maybe Pages.PageNum
 getPageNum prop =
     case prop of
         Choice _ _ control ->
@@ -241,7 +241,7 @@ getPageNum prop =
         _ -> Nothing
 
 
-getItems : Property a -> Maybe (Array (Path.Label, Property a))
+getItems : Tree a -> Maybe (Array (Path.Label, Tree a))
 getItems prop =
     case prop of
         Choice _ _ control ->
@@ -253,7 +253,7 @@ getItems prop =
         _ -> Nothing
 
 
-getSelected : Property a -> Maybe ( Path.Label, Property a )
+getSelected : Tree a -> Maybe ( Path.Label, Tree a )
 getSelected prop =
     case prop of
         Choice _ _ control ->
@@ -261,7 +261,7 @@ getSelected prop =
         _ -> Nothing
 
 
-isSelected : Property a -> Int -> Bool
+isSelected : Tree a -> Int -> Bool
 isSelected prop index =
     case prop of
         Choice _ _ control ->
@@ -269,7 +269,7 @@ isSelected prop index =
         _ -> False
 
 
-setFace : Button.Face -> Property a -> Property a
+setFace : Button.Face -> Tree a -> Tree a
 setFace face prop =
     case prop of
         Action control ->
@@ -291,7 +291,7 @@ setFace face prop =
         _ -> prop
 
 
-clearFace : Property a -> Property a
+clearFace : Tree a -> Tree a
 clearFace prop =
     case prop of
         Action control ->
@@ -313,7 +313,7 @@ clearFace prop =
         _ -> prop
 
 
-toChoice : Property a -> Property a
+toChoice : Tree a -> Tree a
 toChoice prop =
     case prop of
         Group focus shape control ->
@@ -324,7 +324,7 @@ toChoice prop =
         _ -> prop
 
 
-setPanelShape : PanelShape -> Property a -> Property a
+setPanelShape : PanelShape -> Tree a -> Tree a
 setPanelShape ps prop =
     case prop of
         Group focus ( _, cs ) control ->
@@ -334,7 +334,7 @@ setPanelShape ps prop =
         _ -> prop
 
 
-setCellShape : CellShape -> Property a -> Property a
+setCellShape : CellShape -> Tree a -> Tree a
 setCellShape cs prop =
     case prop of
         Group focus ( ps, _ ) control ->
@@ -345,7 +345,7 @@ setCellShape cs prop =
 
 
 
-updatePanelShape : (PanelShape -> PanelShape) -> Property a -> Property a
+updatePanelShape : (PanelShape -> PanelShape) -> Tree a -> Tree a
 updatePanelShape fn prop =
     case prop of
         Group focus ( ps, cs ) control ->
@@ -355,7 +355,7 @@ updatePanelShape fn prop =
         _ -> prop
 
 
-updateCellShape : (CellShape -> CellShape) -> Property a -> Property a
+updateCellShape : (CellShape -> CellShape) -> Tree a -> Tree a
 updateCellShape fn prop =
     case prop of
         Group focus ( ps, cs ) control ->
@@ -365,11 +365,11 @@ updateCellShape fn prop =
         _ -> prop
 
 
-togglePagination : Property a -> Property a
+togglePagination : Tree a -> Tree a
 togglePagination = updatePanelShape PS.togglePagination
 
 
-append : ( Path.Label, Property a ) -> Property a -> Property a
+append : ( Path.Label, Tree a ) -> Tree a -> Tree a
 append ( label, prop ) toProp =
     case toProp of
         Choice focus shape control ->
@@ -381,7 +381,7 @@ append ( label, prop ) toProp =
         _ -> toProp
 
 
-remove : ItemId -> Property a -> Property a
+remove : ItemId -> Tree a -> Tree a
 remove item fromProp =
     case fromProp of
         Choice focus shape control ->
@@ -393,7 +393,7 @@ remove item fromProp =
         _ -> fromProp
 
 
-forward : ItemId -> Property a -> Property a
+forward : ItemId -> Tree a -> Tree a
 forward item inProp =
     case inProp of
         Choice focus shape control ->
@@ -405,7 +405,7 @@ forward item inProp =
         _ -> inProp
 
 
-backward : ItemId -> Property a -> Property a
+backward : ItemId -> Tree a -> Tree a
 backward item inProp =
     case inProp of
         Choice focus shape control ->

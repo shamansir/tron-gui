@@ -114,11 +114,11 @@ import Tron.Option.Render as Render
 import Tron.Option.Communication as Comm
 import Tron.Msg exposing (Msg_(..))
 import Tron.Detach as Detach
-import Tron.Property as Property exposing (Property)
-import Tron.Property.ExposeData as Exp
-import Tron.Property.Controls as Property
-import Tron.Property.Values as Property
-import Tron.Property.Paths as Property
+import Tron.Tree as Tree exposing (Tree)
+import Tron.Tree.Expose as Exp
+import Tron.Tree.Controls as Tree
+import Tron.Tree.Values as Tree
+import Tron.Tree.Paths as Tree
 import Tron.Control.Value as Control
 
 import WithTron.Logic exposing (..)
@@ -128,17 +128,17 @@ import WithTron.ValueAt exposing (ValueAt)
 
 {-| Adds `Model msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
 type alias Program flags model msg =
-    Platform.Program flags ( model, State, Property () ) ( WithTronMsg msg )
+    Platform.Program flags ( model, State, Tree () ) ( WithTronMsg msg )
 
 
 type alias Def flags model msg =
-    { init : flags -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
-    , subscriptions : ( model, State, Property () ) -> Sub (WithTronMsg msg)
+    { init : flags -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
+    , subscriptions : ( model, State, Tree () ) -> Sub (WithTronMsg msg)
     , update :
           WithTronMsg msg
-          -> ( model, State, Property () )
-          -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
-    , view : ( model, State, Property () ) -> Html (WithTronMsg msg)
+          -> ( model, State, Tree () )
+          -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
+    , view : ( model, State, Tree () ) -> Html (WithTronMsg msg)
     }
 
 
@@ -147,14 +147,14 @@ type alias AppDef flags model msg =
           flags
           -> Url
           -> Nav.Key
-          -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
-    , subscriptions : ( model, State, Property () ) -> Sub (WithTronMsg msg)
+          -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
+    , subscriptions : ( model, State, Tree () ) -> Sub (WithTronMsg msg)
     , update :
           WithTronMsg msg
-          -> ( model, State, Property () )
-          -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
+          -> ( model, State, Tree () )
+          -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
     , view :
-          ( model, State, Property () )
+          ( model, State, Tree () )
           -> { body : List (Html (WithTronMsg msg)), title : String }
     , onUrlChange : Url -> WithTronMsg msg
     , onUrlRequest : UrlRequest -> WithTronMsg msg
@@ -162,14 +162,14 @@ type alias AppDef flags model msg =
 
 
 type alias DocumentDef flags model msg =
-    { init : flags -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
-    , subscriptions : ( model, State, Property () ) -> Sub (WithTronMsg msg)
+    { init : flags -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
+    , subscriptions : ( model, State, Tree () ) -> Sub (WithTronMsg msg)
     , update :
           WithTronMsg msg
-          -> ( model, State, Property () )
-          -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
+          -> ( model, State, Tree () )
+          -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
     , view :
-          ( model, State, Property () )
+          ( model, State, Tree () )
           -> { body : List (Html (WithTronMsg msg)), title : String }
     }
 
@@ -185,11 +185,11 @@ type WithTronMsg msg
 
 
 init
-    :  ( ( model, Cmd msg ), ValueAt -> model -> Property () )
+    :  ( ( model, Cmd msg ), ValueAt -> model -> Tree () )
     -> Maybe Url
     -> Render.Target
     -> Comm.Ports msg
-    -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
+    -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
 init ( userInit, userFor ) maybeUrl renderTarget ports =
     let
         ( initialModel, userEffect ) =
@@ -224,7 +224,7 @@ init ( userInit, userFor ) maybeUrl renderTarget ports =
 view
     :  ( ValueAt -> model -> Html msg )
     -> Render.Target
-    -> ( model, State, Property () )
+    -> ( model, State, Tree () )
     -> Html (WithTronMsg msg)
 view userView renderTarget ( model, state, tree ) =
     Html.div
@@ -240,7 +240,7 @@ view userView renderTarget ( model, state, tree ) =
 subscriptions
     :  ( ValueAt -> model -> Sub msg )
     -> Comm.Ports msg
-    -> ( model, State, Property () )
+    -> ( model, State, Tree () )
     -> Sub (WithTronMsg msg)
 subscriptions userSubscriptions ports ( model, state, tree ) =
     Sub.batch
@@ -256,8 +256,8 @@ update
       )
     -> Comm.Ports msg
     -> WithTronMsg msg
-    -> ( model, State, Property () )
-    -> ( ( model, State, Property () ), Cmd (WithTronMsg msg) )
+    -> ( model, State, Tree () )
+    -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
 update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
     case withTronMsg of
 
@@ -273,11 +273,11 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                 ( newUserModel
                 , state
                 , nextTree
-                    |> Property.toUnit
-                    |> Property.transferTransientState prevTree
-                    |> Property.loadValues prevTree
-                    --|> Property.loadChangedValues prevTree nextTree
-                    --|> Property.loadLiveValues nextGui
+                    |> Tree.toUnit
+                    |> Tree.transferTransientState prevTree
+                    |> Tree.loadValues prevTree
+                    --|> Tree.loadChangedValues prevTree nextTree
+                    --|> Tree.loadLiveValues nextGui
                 )
             , userEffect |> Cmd.map ToUser
             )
@@ -285,16 +285,16 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
         ToTron guiMsg ->
             let
                 tree = userFor (toValueAt prevTree) model
-                unitTree = tree |> Property.toUnit
+                unitTree = tree |> Tree.toUnit
             in case {- prevTree
                     |> Exp.lift -}
                 Core.update guiMsg state
                     <| (
                             unitTree
-                                |> Property.transferTransientState prevTree
-                                |> Property.loadValues prevTree
-                                |> Property.wmap2 (\handler _ -> handler) tree
-                       --|> Property.loadLiveValues nextGui
+                                |> Tree.transferTransientState prevTree
+                                |> Tree.loadValues prevTree
+                                |> Tree.wmap2 (\handler _ -> handler) tree
+                       --|> Tree.loadLiveValues nextGui
                        )  of
                 ( nextState, nextTree, guiEffect ) ->
                     (
@@ -315,8 +315,8 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                 tree = userFor (toValueAt prevTree) model
                 unitRoot =
                     tree
-                        |> Property.toUnit
-                        |> Property.transferTransientState prevTree
+                        |> Tree.toUnit
+                        |> Tree.transferTransientState prevTree
                 nextRoot =
                     rawUpdates
                         |> List.foldl (Exp.apply << Exp.fromPort) unitRoot
@@ -328,7 +328,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                     , nextRoot
                     )
                 , nextRoot
-                    |> Property.wmap2 (\handler _ -> handler) tree
+                    |> Tree.wmap2 (\handler _ -> handler) tree
                     |> Tron.perform
                     |> Cmd.map ToUser
                 )
@@ -390,7 +390,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
 -- FIXME: move to WithTron.Logic
 applyUrl
     :  Comm.Ports msg
-    -> Property ()
+    -> Tree ()
     -> Url.Url
     -> Cmd (WithTronMsg msg)
 applyUrl ports tree url =
@@ -413,14 +413,14 @@ applyUrl ports tree url =
             _ -> Cmd.none
 
 
-toValueStorage : Property a -> Dict (List Path.Label) Control.Value
+toValueStorage : Tree a -> Dict (List Path.Label) Control.Value
 toValueStorage =
-    Property.unfold
-        >> List.map (Tuple.mapBoth Path.toLabelPath Property.getValue)
+    Tree.unfold
+        >> List.map (Tuple.mapBoth Path.toLabelPath Tree.getValue)
         >> Dict.fromList
 
 
-toValueAt : Property a -> ValueAt
+toValueAt : Tree a -> ValueAt
 toValueAt prop path = Dict.get path <| toValueStorage prop
 
 
@@ -464,7 +464,7 @@ recalling
     -> Def flags model msg
 recalling renderTarget ports def =
     { init =
-        \flags -> init ( def.init flags, \valueAt -> def.for valueAt >> Property.toUnit ) Nothing renderTarget ports
+        \flags -> init ( def.init flags, \valueAt -> def.for valueAt >> Tree.toUnit ) Nothing renderTarget ports
     , update =
         update ( def.update, def.for ) ports
     , view =
@@ -513,7 +513,7 @@ toApplication renderTarget ports def =
     { init =
         \flags url key ->
             init
-                ( def.init flags url key, \valueAt -> def.for valueAt >> Property.toUnit ) (Just url) renderTarget ports
+                ( def.init flags url key, \valueAt -> def.for valueAt >> Tree.toUnit ) (Just url) renderTarget ports
     , update =
         update ( def.update, def.for ) ports
     , view =
@@ -559,7 +559,7 @@ toDocument
 toDocument renderTarget ports def =
     { init =
         \flags ->
-            init ( def.init flags, \valueAt -> def.for valueAt >> Property.toUnit ) Nothing renderTarget ports
+            init ( def.init flags, \valueAt -> def.for valueAt >> Tree.toUnit ) Nothing renderTarget ports
     , update =
         update ( def.update, def.for ) ports
     , view =

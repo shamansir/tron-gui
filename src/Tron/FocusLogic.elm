@@ -2,9 +2,9 @@ module Tron.FocusLogic exposing (..)
 
 
 import Tron.Path as Path exposing (Path)
-import Tron.Property exposing (..)
-import Tron.Property.Paths as Property
-import Tron.Property.Controls as Property
+import Tron.Tree exposing (..)
+import Tron.Tree.Paths as Tree
+import Tron.Tree.Controls as Tree
 import Tron.Focus exposing (Focused(..), Level, Direction(..)) -- FIXME: better to have one module
 import Tron.Control.Impl.Nest as Nest exposing (..)
 
@@ -12,7 +12,7 @@ import Array
 import Array exposing (Array)
 
 
-clear : Property a -> Property a
+clear : Tree a -> Tree a
 clear =
     foldP
         (\_ prop ->
@@ -25,7 +25,7 @@ clear =
         )
 
 
-on : Property a -> Path -> Property a
+on : Tree a -> Path -> Tree a
 on root path =
     let
 
@@ -77,10 +77,10 @@ on root path =
             ( _, _ ) -> root
 
 
-find : Property a -> Path
+find : Tree a -> Path
 find root =
     let
-        findDeeper : Maybe FocusAt -> Array ( Path.Label, Property a ) -> List ( Path.Index, Path.Label )
+        findDeeper : Maybe FocusAt -> Array ( Path.Label, Tree a ) -> List ( Path.Index, Path.Label )
         findDeeper focus items =
             focus
                 |> Maybe.andThen
@@ -104,18 +104,18 @@ find root =
     in Path.fromList <| helper root
 
 
-shift : Direction -> Property a -> Property a
+shift : Direction -> Tree a -> Tree a
 shift direction root =
     let
         currentFocus : Path
         currentFocus = find root
         maybeFocusedProp =
             root
-                |> Property.find currentFocus
+                |> Tree.find currentFocus
         nextItems =
             root
-                |> Property.find currentFocus
-                |> Maybe.andThen Property.getItems
+                |> Tree.find currentFocus
+                |> Maybe.andThen Tree.getItems
                 |> Maybe.withDefault Array.empty
         --curFocusArr = currentFocus |> Path.toList |> Array.fromList
         indexOfLast = Path.length currentFocus
@@ -164,7 +164,7 @@ shift direction root =
     in on (clear root) nextFocus
 
 
-focused : Property a -> Path -> Focused
+focused : Tree a -> Path -> Focused
 focused root path =
     let
         helper iPath flevel prop =

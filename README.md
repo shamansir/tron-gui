@@ -143,7 +143,7 @@ main =
 
 port sendUpdate : Exp.RawOutUpdate -> Cmd msg
 
-port initGui : Exp.RawProperty -> Cmd msg
+port initGui : Exp.RawTree -> Cmd msg
 ```
 
 ### Detachable
@@ -284,7 +284,7 @@ colorNest =
             ]
 
 
-choiceToLabel : Choice -> Property.Label
+choiceToLabel : Choice -> Path.Label
 choiceToLabel c =
     case c of
         A -> "The A"

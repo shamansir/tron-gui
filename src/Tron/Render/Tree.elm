@@ -1,4 +1,4 @@
-module Tron.Render.Property exposing (..)
+module Tron.Render.Tree exposing (..)
 
 
 import Bounds exposing (..)
@@ -12,8 +12,8 @@ import Html.Events as HE
 
 import Axis exposing (Axis)
 
-import Tron.Property exposing (..)
-import Tron.Property.Controls exposing (..)
+import Tron.Tree exposing (..)
+import Tron.Tree.Controls exposing (..)
 import Tron.Path as Path exposing (Path)
 import Tron.Msg exposing (Msg_(..))
 import Tron.Focus exposing (Focused(..))
@@ -50,9 +50,9 @@ view
     -> State
     -> Path
     -> BoundsF
-    -> Maybe ( Path.Label, Property a )
+    -> Maybe ( Path.Label, Tree a )
     -> CellShape
-    -> ( Path.Label, Property a )
+    -> ( Path.Label, Tree a )
     -> Svg Msg_
 view theme state path bounds maybeSelectedInside cellShape ( label, prop ) =
     Svg.g
@@ -77,7 +77,7 @@ view theme state path bounds maybeSelectedInside cellShape ( label, prop ) =
             --, SA.strokeDasharray <| strokeDashFor state
             ]
             []
-        , viewProperty
+        , viewTree
             theme state path bounds maybeSelectedInside cellShape ( label, prop )
         , {- case prop of
             Action _ -> Svg.none
@@ -105,16 +105,16 @@ viewLabel theme state cellShape bounds label =
         else Svg.none
 
 
-viewProperty
+viewTree
      : Theme
     -> State
     -> Path
     -> BoundsF
-    -> Maybe ( Path.Label, Property a )
+    -> Maybe ( Path.Label, Tree a )
     -> CellShape
-    -> ( Path.Label, Property a )
+    -> ( Path.Label, Tree a )
     -> Svg Msg_
-viewProperty
+viewTree
     theme
     ( ( placement, focus, _ ) as state )
     path
@@ -176,7 +176,7 @@ viewProperty
                     button theme state buttonFace cellShape label bounds
 
                 ( Nest.Pages, Nothing, Just theSelectedProp ) ->
-                    viewProperty
+                    viewTree
                         theme
                         ( placement, focus, Selected )
                         path
@@ -186,7 +186,7 @@ viewProperty
                         theSelectedProp
 
                 ( Nest.SwitchThrough, Nothing, Just theSelectedProp ) ->
-                    viewProperty
+                    viewTree
                         theme
                         ( placement, focus, Selected )
                         path
@@ -219,7 +219,7 @@ viewProperty
                 Nothing -> arrow theme state form bounds
 
         Live innerProp ->
-            viewProperty
+            viewTree
                 theme
                 state
                 path
@@ -631,7 +631,7 @@ arrow theme state form bounds =
         ]
 
 
-makeClass : CellShape -> Property a -> String
+makeClass : CellShape -> Tree a -> String
 makeClass shape prop =
     let
         propTypeId prop_ =

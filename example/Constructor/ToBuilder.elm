@@ -6,7 +6,7 @@ import Color exposing (Color)
 
 import Tron exposing (Tron)
 
-import Tron.Property exposing (..)
+import Tron.Tree exposing (..)
 import Tron.Control exposing (..)
 import Tron.Control.Value as V
 import Tron.Control.Impl.Button as Button

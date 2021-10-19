@@ -56,4 +56,4 @@ main =
 
 port sendUpdate : Exp.Out -> Cmd msg
 
-port initGui : Exp.Property -> Cmd msg
+port initGui : Exp.Tree -> Cmd msg
