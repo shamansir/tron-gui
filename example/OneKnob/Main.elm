@@ -4,8 +4,8 @@ module OneKnob.Main exposing (main)
 import Html exposing (Html)
 
 import Tron exposing (Tron)
-import WithTron exposing (ProgramWithTron)
-import WithTron.ValueAt exposing (ValueAt)
+import WithTron as WithTron
+--import WithTron.ValueAt exposing (ValueAt)
 import Tron.Option.Render as Option
 import Tron.Option.Communication as Option
 import Tron.Build as Builder
@@ -23,13 +23,12 @@ type Msg
 type alias Model = Amount
 
 
-init : flags -> ( Model, Cmd Msg )
-init _ =
-    ( 0, Cmd.none )
+init : Model
+init = 0
 
 
-for : ValueAt -> Model -> Tron Msg
-for _ amount =
+for : Model -> Tron Msg
+for amount =
     Builder.root
         [
             ( "amount"
@@ -41,35 +40,27 @@ for _ amount =
         ]
 
 
-view : ValueAt -> Model -> Html Msg
-view _ amount =
+view : Model -> Html Msg
+view amount =
     Html.text
         <| String.fromFloat amount
 
 
-update : Msg -> ValueAt -> Model -> ( Model, Cmd Msg )
-update msg _ curAmount =
+update : Msg -> Model -> Model
+update msg curAmount =
     case msg of
 
         AmountChanged newAmount ->
-            ( newAmount
-            , Cmd.none
-            )
+            newAmount
 
 
-subscriptions : ValueAt -> Model -> Sub Msg
-subscriptions _ _ =
-    Sub.none
-
-
-main : ProgramWithTron () Model Msg
+main : WithTron.Program () Model Msg
 main =
-    WithTron.element
+    WithTron.sandbox
         (Option.toHtml Dock.center Theme.dark)
         Option.noCommunication
         { for = for
         , init = init
         , view = view
         , update = update
-        , subscriptions = subscriptions
         }

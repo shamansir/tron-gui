@@ -5,7 +5,7 @@ import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock as Dock
 import Tron.Option.Render as Option
 import Tron.Option.Communication as Option
-import WithTron exposing (ProgramWithTron)
+import WithTron as WithTron
 
 
 import Example.Goose.Main as Example
@@ -25,7 +25,7 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
-main : ProgramWithTron () Example.Model Example.Msg
+main : WithTron.Program () Example.Model Example.Msg
 main =
     WithTron.element
         (Option.toHtml Dock.center Theme.dark)
