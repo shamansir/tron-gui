@@ -2,7 +2,6 @@ module WithTron exposing
     ( Program
     , sandbox, element, document, application
     , easy, minimal, recalling
-    , toValueAt
     )
 
 
@@ -123,7 +122,6 @@ import Tron.Tree.Paths as Tree
 import Tron.Control.Value as Control
 
 import WithTron.Logic exposing (..)
-import WithTron.ValueAt exposing (ValueAt)
 
 
 
@@ -412,21 +410,6 @@ applyUrl ports tree url =
                     |> Cmd.map SetClientId
 
             _ -> Cmd.none
-
-
-toValueStorage : Tree a -> Dict (List Path.Label) Control.Value
-toValueStorage =
-    Tree.unfold
-        >> List.map (Tuple.mapBoth Path.toLabelPath Tree.getValue)
-        >> Dict.fromList
-
-
-toValueAt : Tree a -> ValueAt
-toValueAt prop path = Dict.get path <| toValueStorage prop
-
-
-noValues : ValueAt
-noValues = always Nothing
 
 
 easy
