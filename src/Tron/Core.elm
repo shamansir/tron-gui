@@ -347,17 +347,24 @@ handleMouse mouseAction state tree =
                 nextMouseState.dragFrom |> Maybe.andThen findPathAt
             else Nothing
 
+        applyActions property =
+            List.foldl
+                (\action -> Tree.toUnit >> Tree.update action)
+                property
+                mouseActions
+            |> forceIfLive
+
+        forceIfLive property = -- FIXME: should be forces in the `update` code for any `Live` property, not only regading the mouse events
+            case property of
+                Live liveProp -> liveProp |> Tree.set A.Fire
+                _ -> property
+
         nextTree =
             case maybePathAtCursor of
                 Just path ->
                     Tree.updateAt
                         path
-                        (\property ->
-                            List.foldl
-                                (\action -> Tree.toUnit >> Tree.update action)
-                                property
-                                mouseActions
-                        )
+                        applyActions
                         changesTree
                 Nothing -> changesTree
 
