@@ -17,7 +17,8 @@ import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Impl.Text exposing (TextState(..))
-import Tron.Control.Impl.Button exposing (Face(..), Icon(..), Url(..))
+import Tron.Control.Impl.Button exposing (Icon(..), Url(..))
+import Tron.Control.Impl.Button as Button exposing (Face)
 import Tron.Control.Impl.Nest exposing (Form(..))
 
 
@@ -26,6 +27,9 @@ type alias Tree = T.Tree ()
 
 
 type alias Set = B.Set ()
+
+
+type alias Face = Button.Face
 
 
 none : Tree
@@ -131,39 +135,48 @@ useColor = B.useColor
 choice
      : B.Set comparable
     -> comparable
-    -> T.Tree (Int, comparable)
-choice = B.choice
+    -> Tree
+choice set current =
+    B.choice set current
+        |> T.toUnit
 
 
 choiceBy
      : B.Set a
     -> a
     -> ( a -> a -> Bool )
-    -> T.Tree (Int, a)
-choiceBy =
-    B.choiceBy
+    -> Tree
+choiceBy set a cmp =
+    B.choiceBy set a cmp
+        |> T.toUnit
 
 
 strings
      : List String
     -> String
-    -> T.Tree (Int, String)
-strings = B.strings
+    -> Tree
+strings list current =
+    B.strings list current
+        |> T.toUnit
 
 
 labels
      : ( a -> Path.Label )
     -> List a
     -> a
-    -> T.Tree ( Int, Path.Label )
-labels = B.labels
+    -> Tree
+labels toLabel items current =
+    B.labels toLabel items current
+        |> T.toUnit
 
 
 palette
      : List ( Path.Label, Color )
     -> Color
-    -> T.Tree ( Int, Color )
-palette = B.palette
+    -> Tree
+palette items current =
+    B.palette items current
+        |> T.toUnit
 
 
 buttons : List a -> List (T.Tree a)
@@ -220,3 +233,8 @@ shape = B.shape
 -}
 cells : CellShape -> Tree -> Tree
 cells = B.cells
+
+
+
+live : Tree -> Tree
+live = B.live

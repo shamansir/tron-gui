@@ -5,21 +5,22 @@ import Html exposing (Html)
 import Html.Attributes as HA
 import Example.Tiler.Product exposing (Product)
 
-import Tron.Builder as Tron exposing (Face)
+import Tron.Tree exposing (Tree)
+import Tron.Build as Tron exposing (Face)
 import Tron.Style.Theme as Tron
-import WithTron.ValueAt exposing (ValueAt)
+--import WithTron.ValueAt exposing (ValueAt)
 
 
 type alias TileCount = Int
 
 
 type alias SizeInfo =
-     { sizeInTiles : ( Int, Int )
-     , logoPosition : ( Int, Int )
-     , titlePosition : ( Int, Int )
-     , textBlockSize : Float
-     , screenSize : ( Int, Int )
-     }
+    { sizeInTiles : ( Int, Int )
+    , logoPosition : ( Int, Int )
+    , titlePosition : ( Int, Int )
+    , textBlockSize : Float
+    , screenSize : ( Int, Int )
+    }
 
 
 type Msg
@@ -56,7 +57,7 @@ type alias Model =
     }
 
 
-init : flags -> ValueAt -> ( Model, Cmd Msg )
+init : flags -> Tree () -> ( Model, Cmd Msg )
 init _ _ =
     (
         { tilesets = Dict.empty
@@ -71,7 +72,7 @@ init _ _ =
     )
 
 
-update : Msg -> ValueAt -> Model -> ( Model, Cmd Msg )
+update : Msg -> Tree () -> Model -> ( Model, Cmd Msg )
 update msg _ model =
     ( case msg of
         WaitingForTileset tileset ->
@@ -115,7 +116,7 @@ update msg _ model =
     )
 
 
-view : ValueAt -> Model -> Html Msg
+view : Tree () -> Model -> Html Msg
 view _ tilesets =
     Html.div [ HA.style "display" "none" ] []
 
@@ -162,7 +163,7 @@ statusIcon status =
         )
 
 
-subscriptions : ValueAt -> Model -> Sub Msg
+subscriptions : Tree () -> Model -> Sub Msg
 subscriptions _ _ =
     Sub.batch
         [ tilesetReady (\(set, count) -> TilesetReady set count)

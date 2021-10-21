@@ -3,7 +3,7 @@ module Example.Tiler.Gui exposing (gui)
 
 import Dict
 import Color exposing (Color)
-import Tron exposing (Tron)
+import Tron
 import Tron.Tree exposing (Tree)
 import Tron.Tree.Build.Unit as Gui
 import Tron.Style.PanelShape exposing (..)
@@ -158,7 +158,7 @@ products =
         (Product.all
             |> List.filter Product.hasIcon
             |> Gui.buttons
-            |> List.map (Gui.with (Gui.face << productIcon))
+            |> List.map (Tron.with (Gui.face << productIcon))
             |> Gui.addLabels Product.getName
         )
         Product.default
@@ -182,7 +182,7 @@ colorToString : Color -> String
 colorToString = always "white"
 
 
-productIcon : Product -> Tron.Face
+productIcon : Product -> Gui.Face
 productIcon product =
     Gui.iconAt
         [ "assets"
@@ -191,7 +191,7 @@ productIcon product =
         , (product |> Product.iconName |> Maybe.withDefault "none") ++ ".svg"
         ]
 
-icon : String -> Tron.Face
+icon : String -> Gui.Face
 icon name =
     Gui.themedIconAt
         (\theme ->

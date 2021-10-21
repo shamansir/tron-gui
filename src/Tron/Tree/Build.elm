@@ -30,6 +30,9 @@ import Tron.Tree.Build.Choice as Choice
 type alias Set a = List (Path.Label, Tree a)
 
 
+type alias Face = Button.Face
+
+
 mapSet : (a -> b) -> Set a -> Set b
 mapSet =
     List.map << Tuple.mapSecond << Tree.map
@@ -319,3 +322,10 @@ shape = Tree.setPanelShape
 -}
 cells : CellShape -> Tree a -> Tree a
 cells = Tree.setCellShape
+
+
+live : Tree a -> Tree a
+live prop =
+    case prop of
+        Live _ -> prop
+        _ -> Live prop
