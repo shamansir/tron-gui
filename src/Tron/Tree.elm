@@ -3,9 +3,9 @@ module Tron.Tree exposing
     , empty
     , get, set, setAt, setAll, move, getValue
     , map, mapWithPath, mapWithValue
-    , zmap2, zmap3, zmap4, zmap5
-    , zjmap2, zjmap3, zjmap4, zjmap5
-    , wmap2, wmap3, wmap4, wmap5
+    , zipMap2, zipMap3, zipMap4, zipMap5
+    , zipJoinMap2, zipJoinMap3, zipJoinMap4, zipJoinMap5
+    , squeezeMap2, squeezeMap3, squeezeMap4, squeezeMap5
     , andThen, with
     , toUnit, proxify, lift
     , zip
@@ -432,25 +432,25 @@ zip =
 
 
 
-{- `zmap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
+{- `zipMap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
 become `Nothing` -}
-zmap2 : (Maybe a -> Maybe b -> c) -> Tree a -> Tree b -> Tree c
-zmap2 f propA propB =
+zipMap2 : (Maybe a -> Maybe b -> c) -> Tree a -> Tree b -> Tree c
+zipMap2 f propA propB =
     zip propA propB
         |> map (Z.fold f)
 
 
-{- `zjmap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
+{- `zipJoinMap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
 of the resulting prop becomes `Nothing` -}
-zjmap2 : (a -> b -> c) -> Tree a -> Tree b -> Tree (Maybe c)
-zjmap2 = zmap2 << Maybe.map2
+zipJoinMap2 : (a -> b -> c) -> Tree a -> Tree b -> Tree (Maybe c)
+zipJoinMap2 = zipMap2 << Maybe.map2
 
 
-{- `wmap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping,
+{- `squeezeMap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping,
 the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
-wmap2 : (a -> b -> c) -> Tree a -> Tree b -> Tree c
-wmap2 f propA propB =
-    zmap2
+squeezeMap2 : (a -> b -> c) -> Tree a -> Tree b -> Tree c
+squeezeMap2 f propA propB =
+    zipMap2
         (\maybeA maybeB ->
             f
                 (maybeA |> Maybe.withDefault (get propA))
@@ -459,8 +459,8 @@ wmap2 f propA propB =
         propA propB
 
 
-zmapHelper : (Maybe a -> b) -> Maybe (Maybe a -> b) -> Maybe a -> b
-zmapHelper nf maybeFn maybeLastVal =
+zipMapHelper : (Maybe a -> b) -> Maybe (Maybe a -> b) -> Maybe a -> b
+zipMapHelper nf maybeFn maybeLastVal =
     case ( maybeFn, maybeLastVal ) of
         ( Just fn, Just lastVal ) -> fn <| Just lastVal
         ( Just fn, Nothing ) -> fn Nothing
@@ -468,28 +468,28 @@ zmapHelper nf maybeFn maybeLastVal =
         ( Nothing, Nothing ) -> nf Nothing
 
 
-{- `zmap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
+{- `zipMap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
 become `Nothing` -}
-zmap3 : (Maybe a -> Maybe b -> Maybe c -> d) -> Tree a -> Tree b -> Tree c -> Tree d
-zmap3 f propA propB propC =
+zipMap3 : (Maybe a -> Maybe b -> Maybe c -> d) -> Tree a -> Tree b -> Tree c -> Tree d
+zipMap3 f propA propB propC =
     zip
-       (zmap2 f propA propB)
+       (zipMap2 f propA propB)
        propC
        |> map
-            (Z.fold <| zmapHelper <| f Nothing Nothing)
+            (Z.fold <| zipMapHelper <| f Nothing Nothing)
 
 
 {- `zjmap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
 of the resulting prop becomes `Nothing` -}
-zjmap3 : (a -> b -> c -> d) -> Tree a -> Tree b -> Tree c -> Tree (Maybe d)
-zjmap3 = zmap3 << Maybe.map3
+zipJoinMap3 : (a -> b -> c -> d) -> Tree a -> Tree b -> Tree c -> Tree (Maybe d)
+zipJoinMap3 = zipMap3 << Maybe.map3
 
 
-{- `wmap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping,
+{- `squeezeMap3` maps three properties using zipper with given `fn`; if tree structure doesn't match while zipping,
 the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
-wmap3 : (a -> b -> c -> d) -> Tree a -> Tree b -> Tree c -> Tree d
-wmap3 f propA propB propC =
-    zmap3
+squeezeMap3 : (a -> b -> c -> d) -> Tree a -> Tree b -> Tree c -> Tree d
+squeezeMap3 f propA propB propC =
+    zipMap3
         (\maybeA maybeB maybeC ->
             f
                 (maybeA |> Maybe.withDefault (get propA))
@@ -499,28 +499,28 @@ wmap3 f propA propB propC =
         propA propB propC
 
 
-{- `zmap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
+{- `zipMap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
 become `Nothing` -}
-zmap4 : (Maybe a -> Maybe b -> Maybe c -> Maybe d -> e) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e
-zmap4 f propA propB propC propD =
+zipMap4 : (Maybe a -> Maybe b -> Maybe c -> Maybe d -> e) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e
+zipMap4 f propA propB propC propD =
     zip
-       (zmap3 f propA propB propC)
+       (zipMap3 f propA propB propC)
        propD
        |> map
-            (Z.fold <| zmapHelper <| f Nothing Nothing Nothing)
+            (Z.fold <| zipMapHelper <| f Nothing Nothing Nothing)
 
 
-{- `zjmap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
+{- `zipJoinMap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
 of the resulting prop becomes `Nothing` -}
-zjmap4 : (a -> b -> c -> d -> e) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree (Maybe e)
-zjmap4 = zmap4 << Maybe.map4
+zipJoinMap4 : (a -> b -> c -> d -> e) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree (Maybe e)
+zipJoinMap4 = zipMap4 << Maybe.map4
 
 
-{- `wmap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping,
+{- `sqeezeMap4` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping,
 the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
-wmap4 : (a -> b -> c -> d -> e) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e
-wmap4 f propA propB propC propD =
-    zmap4
+squeezeMap4 : (a -> b -> c -> d -> e) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e
+squeezeMap4 f propA propB propC propD =
+    zipMap4
         (\maybeA maybeB maybeC maybeD ->
             f
                 (maybeA |> Maybe.withDefault (get propA))
@@ -531,28 +531,28 @@ wmap4 f propA propB propC propD =
         propA propB propC propD
 
 
-{- `zmap5` maps five properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
+{- `zipMap5` maps five properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
 become `Nothing` -}
-zmap5 : (Maybe a -> Maybe b -> Maybe c -> Maybe d -> Maybe e -> f) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e -> Tree f
-zmap5 f propA propB propC propD propE =
+zipMap5 : (Maybe a -> Maybe b -> Maybe c -> Maybe d -> Maybe e -> f) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e -> Tree f
+zipMap5 f propA propB propC propD propE =
     zip
-       (zmap4 f propA propB propC propD)
+       (zipMap4 f propA propB propC propD)
        propE
        |> map
-            (Z.fold <| zmapHelper <| f Nothing Nothing Nothing Nothing)
+            (Z.fold <| zipMapHelper <| f Nothing Nothing Nothing Nothing)
 
 
-{- `zjmap5` maps five properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
+{- `zipJoinMap5` maps five properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
 of the resulting prop becomes `Nothing` -}
-zjmap5 : (a -> b -> c -> d -> e -> f) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e -> Tree (Maybe f)
-zjmap5 = zmap5 << Maybe.map5
+zipJoinMap5 : (a -> b -> c -> d -> e -> f) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e -> Tree (Maybe f)
+zipJoinMap5 = zipMap5 << Maybe.map5
 
 
-{- `wmap5` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping,
+{- `sqeezeMap5` maps four properties using zipper with given `fn`; if tree structure doesn't match while zipping,
 the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
-wmap5 : (a -> b -> c -> d -> e -> f) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e -> Tree f
-wmap5 f propA propB propC propD propE =
-    zmap5
+squeezeMap5 : (a -> b -> c -> d -> e -> f) -> Tree a -> Tree b -> Tree c -> Tree d -> Tree e -> Tree f
+squeezeMap5 f propA propB propC propD propE =
+    zipMap5
         (\maybeA maybeB maybeC maybeD maybeE ->
             f
                 (maybeA |> Maybe.withDefault (get propA))

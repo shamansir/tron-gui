@@ -4,7 +4,7 @@ module Tron.Tree.Paths exposing (..)
 import Dict as Dict exposing (Dict)
 import Array as Array
 
-import Tron.Tree exposing (Tree(..), map, wmap2, fold, proxify)
+import Tron.Tree exposing (Tree(..), map, squeezeMap2, fold, proxify)
 import Tron.Path as Path exposing (Path)
 import Tron.Tree.Expose as Exp
 
@@ -135,7 +135,7 @@ pathify =
 
 pathifyWithValue : Tree a -> Tree ( Path, a )
 pathifyWithValue prop =
-    wmap2
+    squeezeMap2
         Tuple.pair
         (pathify prop)
         prop
@@ -225,7 +225,7 @@ Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
 -}
 expose : Tree a -> Tree Exp.Value
 expose prop =
-    wmap2
+    squeezeMap2
         Tuple.pair
         (pathify prop)
         (proxify prop)

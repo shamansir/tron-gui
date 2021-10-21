@@ -459,7 +459,7 @@ expose state =
 expose_ : State -> Tree a -> Tree ( Exp.Out, a )
 expose_ state tree =
     tree
-        |> Tree.wmap2 Tuple.pair (tree |> expose state)
+        |> Tree.squeezeMap2 Tuple.pair (tree |> expose state)
 
 
 collectChanges : State -> Tree ( A.Change, Maybe msg ) -> List (Exp.Out, msg)
@@ -487,7 +487,7 @@ fireChanges =
 
 fireChangesFrom : State -> ( Tron msg, Tree A.Change ) -> Cmd (Exp.Out, msg)
 fireChangesFrom state ( tron, changesTree ) =
-    Tree.wmap3
+    Tree.squeezeMap3
         (\handler currentVal valueState ->
             ( valueState, handler currentVal )
         )

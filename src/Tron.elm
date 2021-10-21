@@ -125,7 +125,7 @@ toUnit =
 
 map2 : (a -> b -> c) -> Tron a -> Tron b -> Tron c
 map2 f =
-    Tree.zmap2
+    Tree.zipMap2
         (\maybeFToA maybeFToB val ->
             Maybe.map2
                 (\fToA fToB -> Maybe.map2 f (fToA val) (fToB val))
@@ -140,7 +140,7 @@ map2 f =
 
 map3 : (a -> b -> c -> d) -> Tron a -> Tron b -> Tron c -> Tron d
 map3 f =
-    Tree.zmap3
+    Tree.zipMap3
         (\maybeFToA maybeFToB maybeFToC val ->
             Maybe.map3
                 (\fToA fToB fToC -> Maybe.map3 f (fToA val) (fToB val) (fToC val))
@@ -155,7 +155,7 @@ map3 f =
 
 map4 : (a -> b -> c -> d -> e) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e
 map4 f =
-    Tree.zmap4
+    Tree.zipMap4
         (\maybeFToA maybeFToB maybeFToC maybeFToD val ->
             Maybe.map4
                 (\fToA fToB fToC fToD ->
@@ -172,7 +172,7 @@ map4 f =
 
 map5 : (a -> b -> c -> d -> e -> f) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e -> Tron f
 map5 f =
-    Tree.zmap5
+    Tree.zipMap5
         (\maybeFToA maybeFToB maybeFToC maybeFToD maybeFToE val ->
             Maybe.map5
                 (\fToA fToB fToC fToD fToE ->
