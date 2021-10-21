@@ -659,10 +659,9 @@ getValue prop =
 update : A.Action -> Tree () -> Tree A.Change
 update action prop =
     let
-        _ = Debug.log "action" action
         swap ( control, change ) = control |> Control.set change -- FIXME: make Controls' `update` act the same
     in
-    Debug.log "update" <| case prop of
+    case prop of
         Nil _ -> ( Nil A.Stay )
         Number control -> control |> Number.update action |> swap |> Number
         Coordinate control -> control |> XY.update action |> swap |> Coordinate

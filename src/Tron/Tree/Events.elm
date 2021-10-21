@@ -21,7 +21,7 @@ execute =
 
 executeAt : Path -> Tree () -> List ( Path, Tree A.Change )
 executeAt path root =
-    Debug.log "changes" <| case root
+    case root
         |> findWithParent path of
         Just ( parent, item ) ->
             case ( parent, item ) of

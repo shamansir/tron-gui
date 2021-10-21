@@ -143,7 +143,7 @@ update msg state tree  =
             in
                 ( state
                 , nextRoot |> Tree.toUnit
-                , fireChangesFrom state ( tree, changesTree )
+                , fireChangesFrom state ( tree, nextRoot )
                 )
 
         MouseDown path ->
