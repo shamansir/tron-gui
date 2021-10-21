@@ -618,10 +618,6 @@ insideOut prop =
     ( get prop |> Tuple.first, prop |> map Tuple.second )
 
 
-{- outsideIn : ( a, Tree b ) -> Tree ( a, b )
-outsideIn ( a, prop ) =
-    ( get prop |> Tuple.first, prop |> map Tuple.second ) -}
-
 
 {-| Replace the `()` subject everywhere within Tron GUI tree, it is useful for truly a lot of cases when you don't care about what are the associated values.
 -}
@@ -660,18 +656,30 @@ getValue prop =
         Live innerProp -> getValue innerProp
 
 
-update : A.Action -> Tree a -> ( Tree a, A.Change )
+update : A.Action -> Tree () -> Tree A.Change
 update action prop =
-    case prop of
-        Nil v -> ( Nil v, A.Stay )
-        Number control -> control |> Number.update action |> Tuple.mapFirst Number
-        Coordinate control -> control |> XY.update action |> Tuple.mapFirst Coordinate
-        Text control -> control |> Text.update action |> Tuple.mapFirst Text
-        Color control -> control |> Color.update action |> Tuple.mapFirst Color
-        Toggle control -> control |> Toggle.update action |> Tuple.mapFirst Toggle
-        Action control -> control |> Button.update action |> Tuple.mapFirst Action
+    let
+        _ = Debug.log "action" action
+        swap ( control, change ) = control |> Control.set change -- FIXME: make Controls' `update` act the same
+    in
+    Debug.log "update" <| case prop of
+        Nil _ -> ( Nil A.Stay )
+        Number control -> control |> Number.update action |> swap |> Number
+        Coordinate control -> control |> XY.update action |> swap |> Coordinate
+        Text control -> control |> Text.update action |> swap |> Text
+        Color control -> control |> Color.update action |> swap |> Color
+        Toggle control -> control |> Toggle.update action |> swap |> Toggle
+        Action control -> control |> Button.update action |> swap |> Action
         Choice focus shape control ->
-            control |> Nest.updateChoice action |> Tuple.mapFirst (Choice focus shape)
+            control
+                |> Nest.updateChoice action
+                |> swap
+                |> Nest.mapItems (Tuple.mapSecond <| map <| always A.Stay)
+                |> (Choice focus shape)
         Group focus shape control ->
-            control |> Nest.updateGroup action |> Tuple.mapFirst (Group focus shape)
-        Live innerProp -> innerProp |> update action |> Tuple.mapFirst Live
+            control
+                |> Nest.updateGroup action
+                |> swap
+                |> Nest.mapItems (Tuple.mapSecond <| map <| always A.Stay)
+                |> (Group focus shape)
+        Live innerProp -> innerProp |> update action |> set A.Fire |> Live

@@ -14,18 +14,14 @@ import Tron.Control.Action as A
 -- for mouse click or enter key handling, does not change the tree
 -- only updates the controls itself
 -- FIXME: should not call controls itself, only return the update
-execute : Tree a -> Maybe (Tree a)
-execute item =
-    case Tree.update A.Execute item of
-        ( _, A.Stay ) ->
-            Nothing
-        ( newCell, _ ) ->
-            Just newCell
+execute : Tree () -> Tree A.Change
+execute =
+    Tree.update A.Execute
 
 
-executeAt : Path -> Tree a -> List ( Path, Tree a )
+executeAt : Path -> Tree () -> List ( Path, Tree A.Change )
 executeAt path root =
-    case root
+    Debug.log "changes" <| case root
         |> findWithParent path of
         Just ( parent, item ) ->
             case ( parent, item ) of
@@ -34,14 +30,16 @@ executeAt path root =
                     case Path.pop path of
                         Just ( toParent, ( selectedIndex, selectedLabel ) ) ->
                             let
-                                ( newParent, _ ) = -- FIXME: find not by index but by label?
+                                newParent = -- FIXME: find not by index but by label?
                                     Tree.update (A.Select selectedIndex) parent
+                                newCell =
+                                    Tree.update A.Execute item
                             in
-                                case Tree.update A.Execute item of
-                                    ( _, A.Stay ) ->
-                                        [ (toParent, newParent )
+                                case newCell |> Tree.get of
+                                    A.Stay ->
+                                        [ ( toParent, newParent )
                                         ]
-                                    ( newCell, _ ) ->
+                                    _ ->
                                         [ ( toParent, newParent )
                                         , ( path, newCell )
                                         ]
@@ -51,8 +49,11 @@ executeAt path root =
 
                 ( _, _ ) ->
 
-                    case Tree.update A.Execute item of
-                        ( _, A.Stay ) -> []
-                        ( newCell, _ ) -> [ ( path, newCell ) ]
+                    let
+                        newCell = Tree.update A.Execute item
+                    in
+                    case newCell |> Tree.get of
+                        A.Stay -> []
+                        _ -> [ ( path, newCell ) ]
 
         Nothing -> []

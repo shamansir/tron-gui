@@ -1,12 +1,9 @@
 module Example.Default.Gui exposing (..)
 
 
-import Color exposing (Color)
-
-import Tron.OfValue exposing (Tron)
-import Tron.Builder as Gui
-import Tron.Tree  exposing (Tree)
-import Tron.Tree as Tree
+import Tron.Path as Path
+import Tron exposing (Tron)
+import Tron.Build as Gui
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
 import Tron.Style.Theme as Theme
@@ -165,7 +162,7 @@ allControlsNest model =
             ] |> Gui.shape (rows 4)
 
 
-choiceToLabel : Choice -> Tree.Label
+choiceToLabel : Choice -> Path.Label
 choiceToLabel c =
     case c of
         A -> "The A"

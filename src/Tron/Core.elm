@@ -133,6 +133,7 @@ update msg state tree  =
                     tree |> Tree.setAll A.Stay
                 updates =
                     changesTree
+                        |> Tree.toUnit
                         |> Tree.executeAt path
                         |> List.map (Tuple.mapSecond <| Tree.set A.Fire)
                 nextRoot =
@@ -352,15 +353,10 @@ handleMouse mouseAction state tree =
                     Tree.updateAt
                         path
                         (\property ->
-                            let
-                                ( nextTree_, change ) =
-                                    List.foldl
-                                        (\action ( p, _ ) ->
-                                            p |> Tree.update action
-                                        )
-                                        ( property, A.Stay )
-                                        mouseActions
-                            in nextTree_ |> Tree.set change
+                            List.foldl
+                                (\action -> Tree.toUnit >> Tree.update action)
+                                property
+                                mouseActions
                         )
                         changesTree
                 Nothing -> changesTree
@@ -395,7 +391,7 @@ handleKeyDown keyCode path state tree =
 
         executeByPath _ = -- uses only `gui.tree`
             let
-                updates = changesTree |> Tree.executeAt path
+                updates = changesTree |> Tree.toUnit |> Tree.executeAt path
                 markedUpdates =
                     updates |> List.map (Tuple.mapSecond <| Tree.set A.Fire)
                 nextRoot = changesTree |> Tree.updateMany markedUpdates
@@ -432,8 +428,8 @@ handleKeyDown keyCode path state tree =
             case changesTree |> Tree.find path of
                 Just prop ->
                     let
-                        ( nextProp, _ ) =
-                            prop |> Tree.update A.Exit -- FIXME: exit?? no enter??
+                        nextProp =
+                            prop |> Tree.toUnit |> Tree.update A.Exit -- FIXME: exit?? not enter??
                     in
                         ( state
                         ,
