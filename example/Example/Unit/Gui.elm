@@ -2,12 +2,8 @@ module Example.Unit.Gui exposing (..)
 
 
 import Color
-import Url.Builder as Url
 
-import Tron exposing (Tron)
-import Tron.Tree.Build.Unit as Gui
-import Tron.Tree as Tree exposing (Tree)
-import Tron.Path as Path
+import Tron.Tree.Build.Unit as Tron
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
 import Tron.Style.Theme as Theme
@@ -23,25 +19,25 @@ choices : List Choice
 choices = [ A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z ]
 
 
-gui : Tree ()
+gui : Tron.Tree
 gui =
-    Gui.root
-        [ ( "ghost", Gui.none )
+    Tron.root
+        [ ( "ghost", Tron.none )
         ,
             ( "int"
-            , Gui.int
+            , Tron.int
                     { min = -20, max = 20, step = 5 }
                     0
             )
         ,
             ( "float"
-            , Gui.float
+            , Tron.float
                 { min = -10.5, max = 10.5, step = 0.5 }
                 0.0
             )
         ,
             ( "xy",
-                Gui.xy
+                Tron.xy
                     ( { min = -20, max = 20, step = 5 }
                     , { min = -20, max = 20, step = 5 }
                     )
@@ -49,32 +45,32 @@ gui =
             )
         ,
             ( "text"
-            , Gui.text "foobar"
+            , Tron.text "foobar"
             )
         ,
             ( "color",
-                Gui.color
+                Tron.color
                     <| Color.rgb255 255 194 0
             )
         ,
             ( "choice",
-                Gui.choiceBy
+                Tron.choiceBy
                     (choices
-                        |> Gui.buttons
-                        |> Gui.toSet choiceToLabel
+                        |> Tron.buttons
+                        |> Tron.toSet choiceToLabel
                     )
                     A
                     compareChoices
-                    |> Gui.expand
-                    |> Gui.shape (cols 3)
+                    |> Tron.expand
+                    |> Tron.shape (cols 3)
             )
         ,
             ( "nest", nestedButtons C )
         ,
             ( "button"
-            , Gui.button
-                |> Gui.face (
-                        Gui.themedIconAt
+            , Tron.button
+                |> Tron.face (
+                        Tron.themedIconAt
                             (\theme ->
                                 [ "assets", "export_" ++ Theme.toString theme ++ ".svg" ]
                             )
@@ -82,39 +78,39 @@ gui =
             )
 
         ,
-            ( "toggle", Gui.toggle False )
+            ( "toggle", Tron.toggle False )
         ]
 
 
-nestedButtons : Choice -> Tree ()
+nestedButtons : Choice -> Tron.Tree
 nestedButtons curChoice =
-    Gui.nest
-        [ ( "a", Gui.button )
-        , ( "b", Gui.button )
-        , ( "c", Gui.button )
-        , ( "d", Gui.button )
+    Tron.nest
+        [ ( "a", Tron.button )
+        , ( "b", Tron.button )
+        , ( "c", Tron.button )
+        , ( "d", Tron.button )
         , ( "color", colorNest )
         ]
-        |> Gui.shape (cols 2)
+        |> Tron.shape (cols 2)
 
 
-colorNest : Tree ()
+colorNest : Tron.Tree
 colorNest =
     let
         colorCompKnob =
-            Gui.float
+            Tron.float
                 { min = 0, max = 255, step = 1 }
                 0
     in
-        Gui.nest
+        Tron.nest
             [ ( "red", colorCompKnob )
             , ( "green", colorCompKnob )
             , ( "blue", colorCompKnob )
             ]
-            |> Gui.shape (cols 1)
+            |> Tron.shape (cols 1)
 
 
-choiceToLabel : Choice -> Path.Label
+choiceToLabel : Choice -> Tron.Label
 choiceToLabel c =
     case c of
         A -> "The A"

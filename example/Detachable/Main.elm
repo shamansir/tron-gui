@@ -1,11 +1,12 @@
 port module Detachable.Main exposing (main)
 
 
-import WithTron exposing (ProgramWithTron)
+import WithTron as WithTron
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock as Dock
-import Tron.Expose.Data as Exp
-import Tron.Option as Option
+import Tron.Tree.Expose as Exp
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
 
 
 import Example.Goose.Main as Example
@@ -14,27 +15,27 @@ import Example.Goose.Msg as Example
 import Example.Goose.Gui as ExampleGui
 
 
-main : ProgramWithTron () Example.Model Example.Msg
+main : WithTron.Program () Example.Model Example.Msg
 main =
     WithTron.application
-        (Option.toHtml Dock.center Theme.light)
-        (Option.detachable
+        (Render.toHtml Dock.center Theme.light)
+        (Communication.detachable
             { ack = ackToWs
             , transmit = sendUpdateToWs
             , receive = receieveUpdateFromWs identity
             }
         )
-        { for = ExampleGui.for
-        , init = always Example.init
+        { for = \_ -> ExampleGui.for
+        , init = \_ _ _ -> Example.init
         , view =
-            \model ->
+            \_ model ->
                 { title = "Detachable Tron"
                 , body = [ Example.view model ]
                 }
-        , update = Example.update
-        , subscriptions = always Sub.none
-        , onUrlChange = always Example.NoOp
-        , onUrlRequest = always Example.NoOp
+        , update = \msg _ model -> Example.update msg model
+        , subscriptions = \_ _ -> Sub.none
+        , onUrlChange = \_ -> Example.NoOp
+        , onUrlRequest = \_ -> Example.NoOp
         }
 
 

@@ -172,13 +172,13 @@ See `example/Detachable` for details.
  -}
 detachable
     :
-        { ack : Exp.ClientId -> Cmd msg
+        { ack : Exp.Ack -> Cmd msg
         , transmit : Exp.Out -> Cmd msg
         , receive : Sub Exp.In
         }
     -> Ports msg
 detachable { ack, transmit, receive } =
-    { ack = Just <| .client >> ack
+    { ack = Just ack -- <| .client >> ack
     , transmit = Just transmit
     , receive = Just receive
     , apply = Nothing
