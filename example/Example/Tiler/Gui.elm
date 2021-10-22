@@ -3,8 +3,8 @@ module Example.Tiler.Gui exposing (gui)
 
 import Dict
 import Color exposing (Color)
-import Tron
-import Tron.Tree exposing (Tree)
+import Tron as Tron
+import Tron.Tree as T exposing (Tree)
 import Tron.Tree.Build.Unit as Gui
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape as CellShape exposing (..)
@@ -158,8 +158,8 @@ products =
         (Product.all
             |> List.filter Product.hasIcon
             |> Gui.buttons
-            |> List.map (Tron.with (Gui.face << productIcon))
-            |> Gui.addLabels Product.getName
+            |> List.map (T.with (Gui.face << productIcon))
+            |> Gui.toSet Product.getName
         )
         Product.default
         Product.compare
@@ -267,8 +267,8 @@ tileset tilesets defaultTileset =
         (tilesets
             |> Gui.buttons
             --|> List.map (Gui.with (Gui.face << statusIcon << Tuple.second))
-            |> Gui.addLabels Tuple.first
-            |> Gui.mapSet Tuple.first
+            |> List.map (T.map Tuple.first)
+            |> Gui.toSet identity
         )
         defaultTileset
     |> Gui.cells CellShape.twiceByHalf

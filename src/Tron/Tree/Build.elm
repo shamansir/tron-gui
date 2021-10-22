@@ -8,7 +8,6 @@ import Axis exposing (Axis)
 
 import Tron.Path as Path
 import Tron.Control exposing (..)
-import Tron.Tree exposing (..)
 import Tron.Tree as Tree
 import Tron.Tree.Controls as Tree
 import Tron.Control exposing (Control(..))
@@ -27,10 +26,16 @@ import Tron.Control.Impl.Nest exposing (Form(..))
 import Tron.Tree.Build.Choice as Choice
 
 
-type alias Set a = List (Path.Label, Tree a)
+type alias Tree a = Tree.Tree a
+
+
+type alias Set a = List (Label, Tree a)
 
 
 type alias Face = Button.Face
+
+
+type alias Label = Path.Label
 
 
 mapSet : (a -> b) -> Set a -> Set b
@@ -39,7 +44,7 @@ mapSet =
 
 
 none : a -> Tree a
-none = Nil
+none = Tree.Nil
 
 
 root : Set a -> a -> Tree a
@@ -53,7 +58,7 @@ root props a =
 
 float : Axis -> Float -> a -> Tree a
 float axis value a =
-    Number
+    Tree.Number
         <| Control axis ( Nothing, value )
         <| a
 
@@ -73,7 +78,7 @@ number = float
 
 xy : ( Axis, Axis ) -> ( Float, Float ) -> a -> Tree a
 xy axes value a =
-    Coordinate
+    Tree.Coordinate
         <| Control axes ( Nothing, value )
         <| a
 
@@ -84,7 +89,7 @@ coord = xy
 
 input : ( x -> String ) -> x -> a -> Tree a
 input toString value a = -- FIXME: accept just `String` and `value`
-    Text
+    Tree.Text
         <| Control
             ()
             ( Ready, toString value )
@@ -93,7 +98,7 @@ input toString value a = -- FIXME: accept just `String` and `value`
 
 text : String -> a -> Tree a
 text value a =
-    Text
+    Tree.Text
         <| Control
             ()
             ( Ready, value )
@@ -102,7 +107,7 @@ text value a =
 
 color : Color -> a -> Tree a
 color value a =
-    Color
+    Tree.Color
         <| Control
             ()
             ( Nothing, value )
@@ -142,7 +147,7 @@ makeUrl = Button.makeUrl
 -- not exposed
 buttonByFace : Face -> a -> Tree a
 buttonByFace face_ a =
-    Action
+    Tree.Action
         <| Control
             face_
             ()
@@ -151,7 +156,7 @@ buttonByFace face_ a =
 
 toggle : Bool -> a -> Tree a
 toggle value a =
-    Toggle
+    Tree.Toggle
         <| Control
             ()
             (boolToToggle value)
@@ -164,7 +169,7 @@ bool = toggle
 
 nest : Set a -> a -> Tree a
 nest items a =
-    Group
+    Tree.Group
         Nothing
         Tree.defaultNestShape
         <| Control
@@ -214,7 +219,7 @@ strings options current =
     choice
         (options
             |> buttons
-            |> addLabels identity
+            |> toSet identity
         )
         current
     |> shape (cols 1)
@@ -222,10 +227,10 @@ strings options current =
 
 
 labels
-     : ( a -> Path.Label )
+     : ( a -> Label )
     -> List a
     -> a
-    -> Tree ( Int, Path.Label )
+    -> Tree ( Int, Label )
 labels toLabel options current =
     {- let
         labelToValue =
@@ -237,7 +242,7 @@ labels toLabel options current =
         (options
             |> List.map toLabel
             |> buttons
-            |> addLabels identity
+            |> toSet identity
         )
         (toLabel current)
         |> shape (cols 1)
@@ -245,7 +250,7 @@ labels toLabel options current =
 
 
 palette
-     : List ( Path.Label, Color )
+     : List ( Label, Color )
     -> Color
     -> Tree ( Int, Color )
 palette options current =
@@ -253,7 +258,7 @@ palette options current =
         (options
             |> buttons
             |> List.map (Tree.with (face << useColor << Tuple.second))
-            |> addLabels Tuple.first
+            |> toSet Tuple.first
             |> mapSet Tuple.second
         )
         current
@@ -273,18 +278,14 @@ buttons =
     List.map button
 
 
-toSet : (a -> Path.Label) -> List (Tree a) -> Set a
+toSet : (a -> Label) -> List (Tree a) -> Set a
 toSet toLabel =
     List.map
         (\prop ->
-            ( toLabel <| Tron.Tree.get prop
-            , prop )
+            ( toLabel <| Tree.get prop
+            , prop
+            )
         )
-
-
-addLabels : (a -> Path.Label) -> List (Tree a) -> Set a
-addLabels =
-    toSet
 
 
 expand : Tree a -> Tree a
@@ -327,5 +328,5 @@ cells = Tree.setCellShape
 live : Tree a -> Tree a
 live prop =
     case prop of
-        Live _ -> prop
-        _ -> Live prop
+        Tree.Live _ -> prop
+        _ -> Tree.Live prop

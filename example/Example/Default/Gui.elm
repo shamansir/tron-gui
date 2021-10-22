@@ -46,7 +46,7 @@ for model =
                 Gui.choiceBy
                     (choices
                         |> Gui.buttons
-                        |> Gui.addLabels choiceToLabel
+                        |> Gui.toSet choiceToLabel
                     )
                     model.choice
                     compareChoices
@@ -137,7 +137,7 @@ allControlsNest model =
                     Gui.choiceBy
                         (choices
                             |> Gui.buttons
-                            |> Gui.addLabels choiceToLabel
+                            |> Gui.toSet choiceToLabel
                         )
                         model.choice
                         compareChoices

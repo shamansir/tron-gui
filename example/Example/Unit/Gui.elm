@@ -5,8 +5,9 @@ import Color
 import Url.Builder as Url
 
 import Tron exposing (Tron)
-import Tron.Builder.Unit as Gui
-import Tron.Tree as Tree
+import Tron.Tree.Build.Unit as Gui
+import Tron.Tree as Tree exposing (Tree)
+import Tron.Path as Path
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
 import Tron.Style.Theme as Theme
@@ -22,7 +23,7 @@ choices : List Choice
 choices = [ A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z ]
 
 
-gui : Tron ()
+gui : Tree ()
 gui =
     Gui.root
         [ ( "ghost", Gui.none )
@@ -60,7 +61,7 @@ gui =
                 Gui.choiceBy
                     (choices
                         |> Gui.buttons
-                        |> Gui.addLabels choiceToLabel
+                        |> Gui.toSet choiceToLabel
                     )
                     A
                     compareChoices
@@ -85,7 +86,7 @@ gui =
         ]
 
 
-nestedButtons : Choice -> Tron ()
+nestedButtons : Choice -> Tree ()
 nestedButtons curChoice =
     Gui.nest
         [ ( "a", Gui.button )
@@ -97,7 +98,7 @@ nestedButtons curChoice =
         |> Gui.shape (cols 2)
 
 
-colorNest : Tron ()
+colorNest : Tree ()
 colorNest =
     let
         colorCompKnob =
@@ -113,7 +114,7 @@ colorNest =
             |> Gui.shape (cols 1)
 
 
-choiceToLabel : Choice -> Tree.Label
+choiceToLabel : Choice -> Path.Label
 choiceToLabel c =
     case c of
         A -> "The A"

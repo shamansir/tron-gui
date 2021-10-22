@@ -38,7 +38,7 @@ for model =
                 Gui.choiceBy
                     ([ Left, Right ]
                         |> Gui.buttons
-                        |> Gui.addLabels
+                        |> Gui.toSet
                             (\v ->
                                 case v of
                                     Left -> "left"

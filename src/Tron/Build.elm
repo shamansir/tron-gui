@@ -5,7 +5,6 @@ module Tron.Build exposing
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
     , live, toChoice, toSet, handleWith, toSwitch, toKnob
     , expand, collapse, shape, cells
-    , addLabels
     )
 
 
@@ -190,7 +189,10 @@ type alias Tron msg = Def.Tron msg
 
 See also: `Builder.map`.
 -}
-type alias Set msg = List ( Path.Label, Tron msg )
+type alias Set msg = List ( Label, Tron msg )
+
+
+type alias Label = Path.Label
 
 
 {-| Similar to `Cmd.none`, `Sub.none` etc., makes it easier to use expressions in the definition.
@@ -590,7 +592,7 @@ strings options current toMsg =
     choice
         (options
             |> buttons
-            |> addLabels identity
+            |> toSet identity
         )
         current
         toMsg
@@ -603,7 +605,7 @@ strings options current toMsg =
 Requires a message that is a fallback for a case when comparison failed.
 -}
 labels
-     : ( a -> Path.Label )
+     : ( a -> Label )
     -> List a
     -> a
     -> msg
@@ -619,7 +621,7 @@ labels toLabel options current fallback toMsg =
         (options
             |> List.map toLabel
             |> buttons
-            |> addLabels identity
+            |> toSet identity
         )
         (toLabel current)
         (\label ->
@@ -640,7 +642,7 @@ labels toLabel options current fallback toMsg =
         RepaintIceCream
 -}
 palette
-     : List ( Path.Label, Color )
+     : List ( Label, Color )
     -> Color
     -> (Color -> msg)
     -> Tron msg
@@ -649,7 +651,7 @@ palette options current toMsg =
         (options
             |> buttons
             |> List.map (Def.with (face << useColor << Tuple.second))
-            |> addLabels Tuple.first
+            |> toSet Tuple.first
             |> Def.mapSet Tuple.second
         )
         current
@@ -696,7 +698,7 @@ buttons =
 
 {-| Convert a list of components to a set by adding labels.
 -}
-toSet : (a -> Path.Label) -> List (Tron a) -> Set a
+toSet : (a -> Label) -> List (Tron a) -> Set a
 toSet toLabel =
     List.map
         (\prop ->
@@ -711,15 +713,6 @@ toSet toLabel =
                     )
         )
     -->> List.filterMap identity
-
-
-{-| Convert a list of components to a set by adding labels.
-
-Same as `Builder.toSet`
--}
-addLabels : (a -> Path.Label) -> List (Tron a) -> Set a
-addLabels =
-    toSet
 
 
 {-| Forcefully expand the nesting:

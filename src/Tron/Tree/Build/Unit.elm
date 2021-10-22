@@ -7,8 +7,6 @@ import Axis exposing (Axis)
 import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Tree as T exposing (..)
-import Tron.Tree as Tree
-import Tron.Tree.Controls as Tree
 import Tron.Tree.Build as B
 import Tron.Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)
@@ -26,7 +24,10 @@ import Tron.Control.Impl.Nest exposing (Form(..))
 type alias Tree = T.Tree ()
 
 
-type alias Set = B.Set ()
+type alias Set = List (Label, Tree)
+
+
+type alias Label = Path.Label
 
 
 type alias Face = Button.Face
@@ -84,7 +85,7 @@ button =
     B.button ()
 
 
-face : Face -> Tree -> Tree
+face : Face -> T.Tree a -> T.Tree a
 face = B.face
 
 
@@ -161,7 +162,7 @@ strings list current =
 
 
 labels
-     : ( a -> Path.Label )
+     : ( a -> Label )
     -> List a
     -> a
     -> Tree
@@ -171,7 +172,7 @@ labels toLabel items current =
 
 
 palette
-     : List ( Path.Label, Color )
+     : List ( Label, Color )
     -> Color
     -> Tree
 palette items current =
@@ -184,19 +185,8 @@ buttons =
     B.buttons
 
 
-toSet : (a -> Path.Label) -> List (T.Tree a) -> Set
-toSet toLabel =
-    List.map
-        (\prop ->
-            ( toLabel <| Tree.get prop
-            , prop |> Tree.toUnit
-            )
-        )
-
-
-addLabels : (a -> Path.Label) -> List (T.Tree a) -> Set
-addLabels =
-    toSet
+toSet : (a -> Label) -> List (T.Tree a) -> B.Set a
+toSet = B.toSet
 
 
 expand : Tree -> Tree
@@ -238,3 +228,7 @@ cells = B.cells
 
 live : Tree -> Tree
 live = B.live
+
+
+toUnit : T.Tree a -> Tree
+toUnit = T.toUnit
