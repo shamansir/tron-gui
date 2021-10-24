@@ -4,24 +4,31 @@ port module ForTiler.Main exposing (..)
 import Tron
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
-import Tron.Option as Option
-import Tron.Expose.Data as Exp
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
+import Tron.Tree.Expose as Exp
 
-import WithTron.Backed exposing (AppBackedByProxy)
+import WithTron
 
 
 import Example.Tiler.Gui as ExampleGui
 import Example.Tiler.Logic as Example
 
 
-main : AppBackedByProxy () Example.Model Example.Msg
+main : WithTron.Program () Example.Model Example.Msg
 main =
-    WithTron.Backed.byProxyApp
-        (Option.toHtml Dock.bottomCenter Theme.dark)
-        ( ack, transmit, apply identity )
+    WithTron.element
+        (Render.toHtml Dock.bottomCenter Theme.dark)
+        (Communication.sendReceiveJson
+            { ack = ack
+            , transmit = transmit
+            , apply = apply identity
+            }
+        )
         { for =
-            \valueAt model ->
-                ExampleGui.gui valueAt model
+            \tree model ->
+                ExampleGui.gui tree model
+                    |> Tron.lift
                     |> Tron.map ( always Example.NoOp )
         , init = Example.init
         , update = Example.update

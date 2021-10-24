@@ -7,7 +7,7 @@ module Tron.Tree exposing
     , zipJoinMap2, zipJoinMap3, zipJoinMap4, zipJoinMap5
     , squeezeMap2, squeezeMap3, squeezeMap4, squeezeMap5
     , andThen, with
-    , toUnit, proxify, lift
+    , toUnit, proxify
     , zip
     , fold, foldP, foldFix, foldZip, foldZipP, unfold
     , updateAt, updateMany
@@ -627,12 +627,6 @@ toUnit = setAll ()
 
 proxify : Tree a -> Tree Value
 proxify = mapWithValue <| \_ val _ -> val
-
-
-{-| convert usual `Tron a` to `Tron.OfValue a`. Please prefer the one from the `Tron.OfValue` module. -}
-lift : Tree a -> Tree (Value -> Maybe a)
-lift =
-    map (always << Just)
 
 
 apply : Tree (Value -> Maybe a) -> Tree (Maybe a)

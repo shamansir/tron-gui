@@ -2,6 +2,7 @@ module Tron exposing
     ( Tron, Set
     , map, map2, map3, map4, map5
     , mapSet
+    , lift
     , andThen, with
     , toUnit, pathify, proxify, expose
     , perform
@@ -118,6 +119,12 @@ mapSet =
 toUnit : Tron a -> Tron ()
 toUnit =
     map <| always ()
+
+
+{-| convert usual `Tron a` to `Tron.OfValue a`. Please prefer the one from the `Tron.OfValue` module. -}
+lift : Tree a -> Tron a
+lift =
+    Tree.map (always << Just)
 
 
 -- proxy : Tron a -> Tron Value

@@ -57,8 +57,8 @@ type alias Model =
     }
 
 
-init : flags -> Tree () -> ( Model, Cmd Msg )
-init _ _ =
+init : flags -> ( Model, Cmd Msg )
+init _ =
     (
         { tilesets = Dict.empty
         , preselectedTileset = Nothing
