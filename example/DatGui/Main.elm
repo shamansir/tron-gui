@@ -1,9 +1,10 @@
 port module DatGui.Main exposing (main)
 
 
-import Tron.Expose.Data as Exp
-import WithTron exposing (ProgramWithTron)
-import Tron.Option as Option
+import Tron.Tree.Expose as Exp
+import WithTron
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example
@@ -22,19 +23,19 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
-main : ProgramWithTron () Example.Model Example.Msg
+main : WithTron.Program () Example.Model Example.Msg
 main =
     WithTron.element
-        Option.hidden
-        (Option.withDatGui
+        Render.hidden
+        (Communication.withDatGui
             { ack = startDatGui
             , receive = updateFromDatGui identity
             })
-        { for = ExampleGui.for
+        { for = always ExampleGui.for
         , init = always Example.init
-        , view = Example.view
-        , update = Example.update
-        , subscriptions = Example.subscriptions
+        , view = always Example.view
+        , update = \msg _ model -> Example.update msg model
+        , subscriptions = always Example.subscriptions
         }
 
 
