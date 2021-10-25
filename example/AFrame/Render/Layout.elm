@@ -19,13 +19,16 @@ import BinPack exposing (Bounds)
 import Color
 import Html exposing (Html)
 import Html.Events exposing (..)
+
 import Tron exposing (Tron)
 import Tron.Control as Gui exposing (Control(..))
 import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..))
 import Tron.Control.Impl.Toggle as Gui exposing (ToggleState(..))
 import Tron.Layout as Layout exposing (Cell(..), Layout, pack, fold)
+
 import Tron.Msg exposing (Msg_(..))
 import Tron.Path exposing (Path)
+import Tron.Tree exposing (Tree)
 import Tron.Tree.Paths as Gui exposing (find)
 import Tron.Style.Theme exposing (Theme)
 
@@ -55,7 +58,7 @@ xOffset =
 
 
 view : Theme -> Model msg -> Html Msg_
-view theme gui =
+view _ gui =
     let
         layout =
             Layout.pack gui.dock (SizeF ( 20, 20 )) gui.tree
@@ -122,7 +125,7 @@ view theme gui =
             :: renderedCells
 
 
-viewTree : Bounds -> Path -> Gui.Tree a -> Html Msg_
+viewTree : Bounds -> Path -> Tree () -> Html Msg_
 viewTree bounds path prop =
     case prop of
         Gui.Number (Gui.Control cfg val _) ->
