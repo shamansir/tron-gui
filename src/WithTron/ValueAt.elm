@@ -47,15 +47,15 @@ import Tron.Tree.Paths as Tree
 
 Using `ask` and any `Decoder` you don't have to worry what `Value` is, just do:
 
-    valueAt |> ask (xy [ "Goose", "Eye" ])
+    tree |> ask (xy [ "Goose", "Eye" ])
 
 And get `Maybe (Float, Float)` in response. Same works for any of the decoders below:
 
-    valueAt |> ask (toggle [ "Goose", "Punk" ]) -- returns `Maybe Bool`
-    valueAt |> ask (choice [ "Color Scheme", "Product" ]) -- returns `Maybe ItemId`
-    valueAt |> ask (choiceOf Products.all [ "Color Scheme", "Product" ]) -- returns `Maybe Product`
+    tree |> ask (toggle [ "Goose", "Punk" ]) -- returns `Maybe Bool`
+    tree |> ask (choice [ "Color Scheme", "Product" ]) -- returns `Maybe ItemId`
+    tree |> ask (choiceOf Products.all [ "Color Scheme", "Product" ]) -- returns `Maybe Product`
         -- NB: Just ensure to use the very same list you used for creating the `choice` in this case
-    valueAt |> ask (color [ "Feather", "Color" ]) -- returns `Maybe Color`
+    tree |> ask (color [ "Feather", "Color" ]) -- returns `Maybe Color`
     -- and so on...
 
 -}
@@ -76,7 +76,7 @@ map f (Decoder decoder path) =
 
 {-| Load value from the storage using the decoder, and if it's there, you'll get it:
 
-    valueAt |> ask (xy [ "Goose", "Eye" ]) -- returns `Maybe (Float, Float)`
+    tree |> ask (xy [ "Goose", "Eye" ]) -- returns `Maybe (Float, Float)`
 -}
 ask : Decoder a -> Tree x -> Maybe a
 ask (Decoder decoder path) =

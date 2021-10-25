@@ -6,8 +6,8 @@ import Html exposing (Html)
 import Tron exposing (Tron)
 import WithTron as WithTron
 --import WithTron.ValueAt exposing (ValueAt)
-import Tron.Option.Render as Option
-import Tron.Option.Communication as Option
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
 import Tron.Build as Builder
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
@@ -57,8 +57,8 @@ update msg curAmount =
 main : WithTron.Program () Model Msg
 main =
     WithTron.sandbox
-        (Option.toHtml Dock.center Theme.dark)
-        Option.noCommunication
+        (Render.toHtml Dock.center Theme.dark)
+        Communication.none
         { for = for
         , init = init
         , view = view

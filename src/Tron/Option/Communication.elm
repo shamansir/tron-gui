@@ -1,6 +1,6 @@
 module Tron.Option.Communication exposing
     ( Ports, map
-    , noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
+    , none, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
     , connect
     )
 
@@ -49,8 +49,8 @@ map f p =
 
 
 {-| No communication with JS -}
-noCommunication : Ports msg
-noCommunication =
+none : Ports msg
+none =
     { ack = Nothing
     , transmit = Nothing
     , apply = Nothing

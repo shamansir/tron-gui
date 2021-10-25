@@ -1,7 +1,9 @@
 module WithTron exposing
     ( Program
     , sandbox, element, document, application
-    , easy, minimal, recalling, empty
+    , overSandbox, overElement, overDocument, overApplication
+    , pastDependentOverElement, pastDependentOverDocument, pastDependentOverApplication
+    , justUi
     )
 
 
@@ -114,7 +116,7 @@ import Tron.Option.Render as Render
 import Tron.Option.Communication as Comm
 import Tron.Msg exposing (Msg_(..))
 import Tron.Detach as Detach
-import Tron.Tree as Tree exposing (Tree)
+import Tron.Tree as Tree
 import Tron.Tree.Expose as Exp
 import Tron.Tree.Controls as Tree
 import Tron.Tree.Values as Tree
@@ -124,36 +126,45 @@ import Tron.Control.Value as Control
 import WithTron.Logic exposing (..)
 
 
+type alias Tree = Tree.Tree ()
+
 
 {-| Adds `Model msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
 type alias Program flags model msg =
-    Platform.Program flags ( model, State, Tree () ) ( WithTronMsg msg )
+    Platform.Program flags ( model, State, Tree ) ( WithTronMsg msg )
 
 
-type alias Def flags model msg =
-    { init : flags -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
-    , subscriptions : ( model, State, Tree () ) -> Sub (WithTronMsg msg)
-    , update :
-          WithTronMsg msg
-          -> ( model, State, Tree () )
-          -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
-    , view : ( model, State, Tree () ) -> Html (WithTronMsg msg)
+type alias SandboxDef model msg =
+    { init : ( model, State, Tree )
+    , update : WithTronMsg msg -> ( model, State, Tree ) -> ( model, State, Tree )
+    , view : ( model, State, Tree ) -> Html (WithTronMsg msg)
     }
 
 
-type alias AppDef flags model msg =
+type alias ElementDef flags model msg =
+    { init : flags -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
+    , subscriptions : ( model, State, Tree ) -> Sub (WithTronMsg msg)
+    , update :
+          WithTronMsg msg
+          -> ( model, State, Tree )
+          -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
+    , view : ( model, State, Tree ) -> Html (WithTronMsg msg)
+    }
+
+
+type alias ApplicationDef flags model msg =
     { init :
           flags
           -> Url
           -> Nav.Key
-          -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
-    , subscriptions : ( model, State, Tree () ) -> Sub (WithTronMsg msg)
+          -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
+    , subscriptions : ( model, State, Tree ) -> Sub (WithTronMsg msg)
     , update :
           WithTronMsg msg
-          -> ( model, State, Tree () )
-          -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
+          -> ( model, State, Tree )
+          -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
     , view :
-          ( model, State, Tree () )
+          ( model, State, Tree )
           -> { body : List (Html (WithTronMsg msg)), title : String }
     , onUrlChange : Url -> WithTronMsg msg
     , onUrlRequest : UrlRequest -> WithTronMsg msg
@@ -161,14 +172,14 @@ type alias AppDef flags model msg =
 
 
 type alias DocumentDef flags model msg =
-    { init : flags -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
-    , subscriptions : ( model, State, Tree () ) -> Sub (WithTronMsg msg)
+    { init : flags -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
+    , subscriptions : ( model, State, Tree ) -> Sub (WithTronMsg msg)
     , update :
           WithTronMsg msg
-          -> ( model, State, Tree () )
-          -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
+          -> ( model, State, Tree )
+          -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
     , view :
-          ( model, State, Tree () )
+          ( model, State, Tree )
           -> { body : List (Html (WithTronMsg msg)), title : String }
     }
 
@@ -184,11 +195,11 @@ type WithTronMsg msg
 
 
 init
-    :  ( ( model, Cmd msg ), Tree () -> model -> Tree () )
+    :  ( ( model, Cmd msg ), Tree -> model -> Tree )
     -> Maybe Url
     -> Render.Target
     -> Comm.Ports msg
-    -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
+    -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
 init ( userInit, userFor ) maybeUrl renderTarget ports =
     let
         ( initialModel, userEffect ) =
@@ -221,9 +232,9 @@ init ( userInit, userFor ) maybeUrl renderTarget ports =
 
 
 view
-    :  ( Tree () -> model -> Html msg )
+    :  ( Tree -> model -> Html msg )
     -> Render.Target
-    -> ( model, State, Tree () )
+    -> ( model, State, Tree )
     -> Html (WithTronMsg msg)
 view userView renderTarget ( model, state, tree ) =
     Html.div
@@ -237,9 +248,9 @@ view userView renderTarget ( model, state, tree ) =
 
 
 subscriptions
-    :  ( Tree () -> model -> Sub msg )
+    :  ( Tree -> model -> Sub msg )
     -> Comm.Ports msg
-    -> ( model, State, Tree () )
+    -> ( model, State, Tree )
     -> Sub (WithTronMsg msg)
 subscriptions userSubscriptions ports ( model, state, tree ) =
     Sub.batch
@@ -250,13 +261,13 @@ subscriptions userSubscriptions ports ( model, state, tree ) =
 
 
 update
-    : ( msg -> Tree () -> model -> (model, Cmd msg)
-      , Tree () -> model -> Tron msg
+    : ( msg -> Tree -> model -> (model, Cmd msg)
+      , Tree -> model -> Tron msg
       )
     -> Comm.Ports msg
     -> WithTronMsg msg
-    -> ( model, State, Tree () )
-    -> ( ( model, State, Tree () ), Cmd (WithTronMsg msg) )
+    -> ( model, State, Tree )
+    -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
 update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
     case withTronMsg of
 
@@ -389,7 +400,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
 -- FIXME: move to WithTron.Logic
 applyUrl
     :  Comm.Ports msg
-    -> Tree ()
+    -> Tree
     -> Url.Url
     -> Cmd (WithTronMsg msg)
 applyUrl ports tree url =
@@ -412,7 +423,41 @@ applyUrl ports tree url =
             _ -> Cmd.none
 
 
-easy
+overSandbox
+     : Render.Target
+    ->
+        { for : model -> Tron msg
+        , init : model
+        , view : model -> Html msg
+        , update : msg -> model -> model
+        }
+    -> SandboxDef model msg
+overSandbox renderTarget def =
+    { init =
+        init
+            ( ( def.init, Cmd.none )
+            , always (def.for >> Tree.toUnit)
+            )
+            Nothing
+            renderTarget
+            Comm.none
+        |> Tuple.first
+    , view =
+        view (always def.view) renderTarget
+    , update =
+        \msg model ->
+            update
+                ( (\uMsg _ uModel -> ( def.update uMsg uModel, Cmd.none) )
+                , always def.for
+                )
+                Comm.none
+                msg
+                model
+            |> Tuple.first
+    }
+
+
+overElement
      : Render.Target
     -> Comm.Ports msg
     ->
@@ -422,9 +467,9 @@ easy
         , view : model -> Html msg
         , update : msg -> model -> ( model, Cmd msg )
         }
-    -> Def flags model msg
-easy renderTarget ports def =
-    recalling
+    -> ElementDef flags model msg
+overElement renderTarget ports def =
+    pastDependentOverElement
         renderTarget
         ports
         { for = always def.for
@@ -435,20 +480,20 @@ easy renderTarget ports def =
         }
 
 
-recalling
+pastDependentOverElement
      : Render.Target
     -> Comm.Ports msg
     ->
-        { for : Tree () -> model -> Tron msg
+        { for : Tree -> model -> Tron msg
         , init : flags -> ( model, Cmd msg )
-        , subscriptions : Tree () -> model -> Sub msg
-        , view : Tree () -> model -> Html msg
-        , update : msg -> Tree () -> model -> ( model, Cmd msg )
+        , subscriptions : Tree -> model -> Sub msg
+        , view : Tree -> model -> Html msg
+        , update : msg -> Tree -> model -> ( model, Cmd msg )
         }
-    -> Def flags model msg
-recalling renderTarget ports def =
+    -> ElementDef flags model msg
+pastDependentOverElement renderTarget ports def =
     { init =
-        \flags -> init ( def.init flags, \valueAt -> def.for valueAt >> Tree.toUnit ) Nothing renderTarget ports
+        \flags -> init ( def.init flags, \tree -> def.for tree >> Tree.toUnit ) Nothing renderTarget ports
     , update =
         update ( def.update, def.for ) ports
     , view =
@@ -458,46 +503,51 @@ recalling renderTarget ports def =
     }
 
 
-minimal
-     : Render.Target
-    -> Comm.Ports msg
-    ->
-        { for : model -> Tron msg
-        , init : model
-        , view : model -> Html msg
-        , update : msg -> model -> model
-        }
-    -> Def flags model msg
-minimal renderTarget ports def =
-    easy
-        renderTarget
-        ports
-        { for = def.for
-        , init = \_ -> ( def.init, Cmd.none )
-        , view = def.view
-        , update = \msg model -> ( def.update msg model, Cmd.none )
-        , subscriptions = \_ -> Sub.none
-        }
-
-
-toApplication
+overApplication
      : Render.Target
     -> Comm.Ports msg
     ->
         { init : flags -> Url.Url -> Nav.Key -> ( model, Cmd msg )
-        , for : Tree () -> model -> Tron msg
-        , subscriptions : Tree () -> model -> Sub msg
-        , view : Tree () -> model -> Browser.Document msg
-        , update : msg -> Tree () -> model -> ( model, Cmd msg )
+        , for : model -> Tron msg
+        , subscriptions : model -> Sub msg
+        , view : model -> Browser.Document msg
+        , update : msg -> model -> ( model, Cmd msg )
         , onUrlChange : Url.Url -> msg
         , onUrlRequest : Browser.UrlRequest -> msg
         }
-    -> AppDef flags model msg
-toApplication renderTarget ports def =
+    -> ApplicationDef flags model msg
+overApplication renderTarget ports def =
+    pastDependentOverApplication
+        renderTarget
+        ports
+        { for = always def.for
+        , init = def.init
+        , subscriptions = always def.subscriptions
+        , view = always def.view
+        , update = \msg _ model -> def.update msg model
+        , onUrlChange = def.onUrlChange
+        , onUrlRequest = def.onUrlRequest
+        }
+
+
+pastDependentOverApplication
+     : Render.Target
+    -> Comm.Ports msg
+    ->
+        { init : flags -> Url.Url -> Nav.Key -> ( model, Cmd msg )
+        , for : Tree -> model -> Tron msg
+        , subscriptions : Tree -> model -> Sub msg
+        , view : Tree -> model -> Browser.Document msg
+        , update : msg -> Tree -> model -> ( model, Cmd msg )
+        , onUrlChange : Url.Url -> msg
+        , onUrlRequest : Browser.UrlRequest -> msg
+        }
+    -> ApplicationDef flags model msg
+pastDependentOverApplication renderTarget ports def =
     { init =
         \flags url key ->
             init
-                ( def.init flags url key, \valueAt -> def.for valueAt >> Tree.toUnit ) (Just url) renderTarget ports
+                ( def.init flags url key, \tree -> def.for tree >> Tree.toUnit ) (Just url) renderTarget ports
     , update =
         update ( def.update, def.for ) ports
     , view =
@@ -529,21 +579,44 @@ toApplication renderTarget ports def =
     }
 
 
-toDocument
+overDocument
      : Render.Target
     -> Comm.Ports msg
     ->
         { init : flags -> ( model, Cmd msg )
-        , for : Tree () -> model -> Tron msg
-        , subscriptions : Tree () -> model -> Sub msg
-        , view : Tree () -> model -> Browser.Document msg
-        , update : msg -> Tree () -> model -> ( model, Cmd msg )
+        , for : model -> Tron msg
+        , subscriptions : model -> Sub msg
+        , view : model -> Browser.Document msg
+        , update : msg -> model -> ( model, Cmd msg )
         }
     -> DocumentDef flags model msg
-toDocument renderTarget ports def =
+overDocument renderTarget ports def =
+    pastDependentOverDocument
+        renderTarget
+        ports
+        { for = always def.for
+        , init = def.init
+        , subscriptions = always def.subscriptions
+        , view = always def.view
+        , update = \msg _ model -> def.update msg model
+        }
+
+
+pastDependentOverDocument
+     : Render.Target
+    -> Comm.Ports msg
+    ->
+        { init : flags -> ( model, Cmd msg )
+        , for : Tree -> model -> Tron msg
+        , subscriptions : Tree -> model -> Sub msg
+        , view : Tree -> model -> Browser.Document msg
+        , update : msg -> Tree -> model -> ( model, Cmd msg )
+        }
+    -> DocumentDef flags model msg
+pastDependentOverDocument renderTarget ports def =
     { init =
         \flags ->
-            init ( def.init flags, \valueAt -> def.for valueAt >> Tree.toUnit ) Nothing renderTarget ports
+            init ( def.init flags, \tree -> def.for tree >> Tree.toUnit ) Nothing renderTarget ports
     , update =
         update ( def.update, def.for ) ports
     , view =
@@ -553,7 +626,7 @@ toDocument renderTarget ports def =
             { title = userView.title
             , body =
                 [ view
-                    (\valueAt umodel ->
+                    (\_ _ ->
                         -- FIXME: we calculate view two times, it seems
                         Html.div [] <| userView.body
                     )
@@ -590,17 +663,18 @@ For example:
 -}
 sandbox
     :  Render.Target
-    -> Comm.Ports msg
     ->
         { for : model -> Tron msg
         , init : model
         , view : model -> Html msg
         , update : msg -> model -> model
         }
-    -> Program flags model msg
-sandbox renderTarget ports def =
-    Browser.element
-        <| minimal renderTarget ports def
+    -> Program () model msg
+sandbox renderTarget def =
+    Browser.sandbox
+        <| overSandbox renderTarget def
+    {- Browser.element
+        <| minimal renderTarget ports def -}
 
 
 {-| Wrapper for `Program.element` with `for` function and `Tron` options.
@@ -634,16 +708,16 @@ element
     :  Render.Target
     -> Comm.Ports msg
     ->
-        { for : Tree () -> model -> Tron msg
+        { for : Tree -> model -> Tron msg
         , init : flags -> ( model, Cmd msg )
-        , subscriptions : Tree () -> model -> Sub msg
-        , view : Tree () -> model -> Html msg
-        , update : msg -> Tree () -> model -> ( model, Cmd msg )
+        , subscriptions : Tree -> model -> Sub msg
+        , view : Tree -> model -> Html msg
+        , update : msg -> Tree -> model -> ( model, Cmd msg )
         }
     -> Program flags model msg
 element renderTarget ports def =
     Browser.element
-        <| recalling renderTarget ports def
+        <| pastDependentOverElement renderTarget ports def
 
 
 {-| Wrapper for `Program.document` with `for` function and `Tron` options.
@@ -683,15 +757,15 @@ document
     -> Comm.Ports msg
     ->
         { init : flags -> ( model, Cmd msg )
-        , for : Tree () -> model -> Tron msg
-        , subscriptions : Tree () -> model -> Sub msg
-        , view : Tree () -> model -> Browser.Document msg
-        , update : msg -> Tree () -> model -> ( model, Cmd msg )
+        , for : Tree -> model -> Tron msg
+        , subscriptions : Tree -> model -> Sub msg
+        , view : Tree -> model -> Browser.Document msg
+        , update : msg -> Tree -> model -> ( model, Cmd msg )
         }
     -> Program flags model msg
 document renderTarget ports def =
     Browser.document
-        <| toDocument renderTarget ports def
+        <| pastDependentOverDocument renderTarget ports def
 
 
 {-| Wrapper for `Program.application` with `for` function and `Tron` options.
@@ -744,28 +818,27 @@ application
     -> Comm.Ports msg
     ->
         { init : flags -> Url.Url -> Nav.Key -> ( model, Cmd msg )
-        , for : Tree () -> model -> Tron msg
-        , subscriptions : Tree () -> model -> Sub msg
-        , view : Tree () -> model -> Browser.Document msg
-        , update : msg -> Tree () -> model -> ( model, Cmd msg )
+        , for : Tree -> model -> Tron msg
+        , subscriptions : Tree -> model -> Sub msg
+        , view : Tree -> model -> Browser.Document msg
+        , update : msg -> Tree -> model -> ( model, Cmd msg )
         , onUrlChange : Url.Url -> msg
         , onUrlRequest : Browser.UrlRequest -> msg
         }
     -> Program flags model msg
 application renderTarget ports def =
     Browser.application
-        <| toApplication renderTarget ports def
+        <| pastDependentOverApplication renderTarget ports def
 
 
-empty
+justUi
     :  Render.Target
-    -> Comm.Ports ()
-    -> (Tree () -> Tree ())
-    -> Def () () ()
-empty renderTarget ports for =
-    recalling
+    -> (Tree -> Tree)
+    -> ElementDef () () ()
+justUi renderTarget for =
+    pastDependentOverElement
         renderTarget
-        ports
+        Comm.none
         <|
             { init = always ( (), Cmd.none )
             , view = \_ _ -> Html.div [] []

@@ -1,4 +1,4 @@
-module Example.Goose.Main exposing (init, view, update, subscriptions)
+module Example.Goose.Main exposing (init, view, update)
 
 
 import Color
@@ -10,20 +10,18 @@ import Example.Goose.View as V
 import Example.Goose.Msg exposing (..)
 
 
-init : ( Model, Cmd Msg )
+init : Model
 init =
-    ( Model.default
-    , Cmd.none
-    )
+    Model.default
 
 
 view : Model -> Svg msg
 view = V.view
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> Model
 update msg model =
-    ( let
+    let
         changeHonk f =
             { model
             | honk = model.honk |> Tuple.mapSecond f
@@ -69,9 +67,3 @@ update msg model =
             changeColor (\colors -> { colors | iroquois = color })
         ChangeBackground color ->
             changeColor (\colors -> { colors | background = color })
-    , Cmd.none
-    )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions _ = Sub.none

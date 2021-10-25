@@ -49,7 +49,7 @@ main =
         (Option.toHtml Dock.bottomCenter Theme.dark)
         ( ack, transmit, apply identity )
         { for =
-            \valueAt model ->
+            \tree model ->
                 ExampleGui.for model
                     |> Tron.map ( always Example.NoOp )
         , init = always <| always Example.init

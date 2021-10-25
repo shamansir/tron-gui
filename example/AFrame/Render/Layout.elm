@@ -22,11 +22,11 @@ import Html.Events exposing (..)
 import Tron exposing (Tron)
 import Tron.Control as Gui exposing (Control(..))
 import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..))
-import Tron.Control.Toggle as Gui exposing (ToggleState(..))
+import Tron.Control.Impl.Toggle as Gui exposing (ToggleState(..))
 import Tron.Layout as Layout exposing (Cell(..), Layout, pack, fold)
 import Tron.Msg exposing (Msg_(..))
 import Tron.Path exposing (Path)
-import Tron.Tree as Gui exposing (find)
+import Tron.Tree.Paths as Gui exposing (find)
 import Tron.Style.Theme exposing (Theme)
 
 

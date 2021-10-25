@@ -30,16 +30,16 @@ type GradientStatus
 
 
 gui : Tree () -> Model -> Tree ()
-gui valueAt model =
+gui tree model =
     Gui.root
         [ ( "Color Scheme",
                 colorScheme
-                    (loadProduct valueAt)
+                    (loadProduct tree)
                     |> Gui.face (icon "chromatic")
           )
         , ( "Sizes",
                 sizes
-                    (isFullscreenEnabled valueAt)
+                    (isFullscreenEnabled tree)
                     |> Gui.face (icon "size")
           )
         , ( "Tile",
@@ -50,14 +50,14 @@ gui valueAt model =
           )
         , ( "Randomness",
                 randomness
-                    (isGradientEnabled valueAt)
-                    (getTileCount model.tilesets valueAt)
+                    (isGradientEnabled tree)
+                    (getTileCount model.tilesets tree)
                     |> Gui.face (icon "settings") )
         , ( "Title", title model.textBlockSize model.titlePosition model.screenSize |> Gui.face (icon "text") )
         , ( "Logo", logo model.sizeInTiles model.logoPosition |> Gui.face (icon "text") )
         , ( "Animation", animation |> Gui.face (icon "animation") )
         , ( "Click action", clickAction |> Gui.face (icon "cursor"))
-        , ( "Click opacity", clickOpacity <| loadActionType valueAt )
+        , ( "Click opacity", clickOpacity <| loadActionType tree )
         , ( "Shuffle tiles", Gui.button |> Gui.face (icon "shuffle"))
         , ( "Refresh", Gui.button |> Gui.face (icon "update"))
         , ( "Make URL", Gui.button |> Gui.face (icon "link" ))

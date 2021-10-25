@@ -3,8 +3,8 @@ module Basic.Main exposing (main)
 
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock as Dock
-import Tron.Option.Render as Option
-import Tron.Option.Communication as Option
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
 import WithTron as WithTron
 
 
@@ -28,8 +28,8 @@ import Example.Default.Gui as ExampleGui
 main : WithTron.Program () Example.Model Example.Msg
 main =
     WithTron.element
-        (Option.toHtml Dock.center Theme.dark)
-        Option.noCommunication
+        (Render.toHtml Dock.center Theme.dark)
+        Communication.none
         { for = always ExampleGui.for
         , init = always Example.init
         , view = always Example.view

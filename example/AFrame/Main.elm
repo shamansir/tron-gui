@@ -1,19 +1,10 @@
 module AFrame.Main exposing (main)
 
 
-import Browser exposing (element)
-
-import Html exposing (Html, div)
-import Html.Attributes as Attr exposing (class)
-
-import Tron.Style.Theme as Theme exposing (Theme)
-
-import AFrame.Render.Layout as AFrame exposing (view)
-
-
-import Tron.Style.Dock as Dock
-import Tron.Option as Option
-import WithTron exposing (ProgramWithTron)
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
+import Tron.Style.Theme as Theme
+import WithTron
 
 
 import Example.Goose.Main as Example
@@ -33,14 +24,12 @@ import Example.Default.Gui as ExampleGui
 -}
 
 
-main : ProgramWithTron () Example.Model Example.Msg
+main : WithTron.Program () Example.Model Example.Msg
 main =
-    WithTron.element
-        (Option.toVr Theme.light)
-        Option.noCommunication
+    WithTron.sandbox
+        (Render.toVr Theme.light)
         { for = ExampleGui.for
-        , init = always Example.init
+        , init = Example.init
         , view = Example.view
         , update = Example.update
-        , subscriptions = always Sub.none
         }
