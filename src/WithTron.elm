@@ -1,7 +1,7 @@
 module WithTron exposing
     ( Program
     , sandbox, element, document, application
-    , easy, minimal, recalling
+    , easy, minimal, recalling, empty
     )
 
 
@@ -755,3 +755,21 @@ application
 application renderTarget ports def =
     Browser.application
         <| toApplication renderTarget ports def
+
+
+empty
+    :  Render.Target
+    -> Comm.Ports ()
+    -> (Tree () -> Tree ())
+    -> Def () () ()
+empty renderTarget ports for =
+    recalling
+        renderTarget
+        ports
+        <|
+            { init = always ( (), Cmd.none )
+            , view = \_ _ -> Html.div [] []
+            , update = \_ _ _ -> ( (), Cmd.none )
+            , subscriptions = \_ _ -> Sub.none
+            , for = \tree x -> for tree |> Tron.lift
+            }
