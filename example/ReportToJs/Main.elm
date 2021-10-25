@@ -22,7 +22,7 @@ port transmit : Exp.Out -> Cmd msg
 main : WithTron.Program () () ()
 main =
     Browser.element
-        <| WithTron.empty
+        <| WithTron.justUiAndCommunication
             (Render.toHtml Dock.middleRight Theme.dark)
             (Communication.sendJson { ack = ack, transmit = transmit })
         <| always ExampleGui.gui

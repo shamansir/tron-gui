@@ -1,9 +1,9 @@
 module WithTron exposing
     ( Program
     , sandbox, element, document, application
-    , overSandbox, overElement, overDocument, overApplication
+    , overElement, overDocument, overApplication
     , pastDependentOverElement, pastDependentOverDocument, pastDependentOverApplication
-    , justUi
+    , justUi, justUiAndCommunication
     )
 
 
@@ -423,40 +423,6 @@ applyUrl ports tree url =
             _ -> Cmd.none
 
 
-overSandbox
-     : Render.Target
-    ->
-        { for : model -> Tron msg
-        , init : model
-        , view : model -> Html msg
-        , update : msg -> model -> model
-        }
-    -> SandboxDef model msg
-overSandbox renderTarget def =
-    { init =
-        init
-            ( ( def.init, Cmd.none )
-            , always (def.for >> Tree.toUnit)
-            )
-            Nothing
-            renderTarget
-            Comm.none
-        |> Tuple.first
-    , view =
-        view (always def.view) renderTarget
-    , update =
-        \msg model ->
-            update
-                ( (\uMsg _ uModel -> ( def.update uMsg uModel, Cmd.none) )
-                , always def.for
-                )
-                Comm.none
-                msg
-                model
-            |> Tuple.first
-    }
-
-
 overElement
      : Render.Target
     -> Comm.Ports msg
@@ -671,10 +637,15 @@ sandbox
         }
     -> Program () model msg
 sandbox renderTarget def =
-    Browser.sandbox
-        <| overSandbox renderTarget def
-    {- Browser.element
-        <| minimal renderTarget ports def -}
+    Browser.element
+        <| overElement renderTarget Comm.none
+        <|
+        { for = def.for
+        , init = always ( def.init, Cmd.none )
+        , view = def.view
+        , update = \msg model -> ( def.update msg model, Cmd.none )
+        , subscriptions = always Sub.none
+        }
 
 
 {-| Wrapper for `Program.element` with `for` function and `Tron` options.
@@ -836,9 +807,18 @@ justUi
     -> (Tree -> Tree)
     -> ElementDef () () ()
 justUi renderTarget for =
+    justUiAndCommunication renderTarget Comm.none for
+
+
+justUiAndCommunication
+    :  Render.Target
+    -> Comm.Ports ()
+    -> (Tree -> Tree)
+    -> ElementDef () () ()
+justUiAndCommunication renderTarget ports for =
     pastDependentOverElement
         renderTarget
-        Comm.none
+        ports
         <|
             { init = always ( (), Cmd.none )
             , view = \_ _ -> Html.div [] []

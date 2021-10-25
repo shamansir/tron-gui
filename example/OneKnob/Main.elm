@@ -56,9 +56,17 @@ update msg curAmount =
 
 main : WithTron.Program () Model Msg
 main =
+    {- WithTron.element
+        (Render.toHtml Dock.center Theme.dark)
+        (Communication.none)
+        { for = always for
+        , init = always ( init, Cmd.none )
+        , view = always view
+        , update = \msg _ model -> ( update msg model, Cmd.none )
+        , subscriptions = \_ _ -> Sub.none
+        } -}
     WithTron.sandbox
         (Render.toHtml Dock.center Theme.dark)
-        Communication.none
         { for = for
         , init = init
         , view = view
