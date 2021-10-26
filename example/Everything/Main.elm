@@ -129,7 +129,7 @@ init url _ =
                 (state.detach |> Tuple.first)
                 portCommunication
                 initialGui
-            , applyUrl portCommunication url
+            , applyUrl portCommunication url initialGui
             ]
         )
 
@@ -229,7 +229,7 @@ update msg model =
                     }
             , case portCommunication.ack of
                 Just ack ->
-                    Exp.encodeAck clientId
+                    Exp.makeAck (Detach.clientIdToString clientId) model.lastGui
                         |> ack
                 _ -> Cmd.none
             )
@@ -252,10 +252,9 @@ update msg model =
                         if model.isRandom
                             then model.lastGui
                             else
-                                ExampleGui.for nextExample
-                                    |> Tree.transferTransientState model.lastGui
-                                    |> Tree.loadValues model.lastGui
-                                    |> Tron.toUnit
+                                Tree.toUnit
+                                <| advanceGui model.lastGui
+                                <| ExampleGui.for nextExample
                     }
                 , updateEffects |> Cmd.map ToExample
                 )
@@ -269,10 +268,9 @@ update msg model =
                                 |> Tron.lift
                                 |> Tron.map (always NoOp)
                         else
-                            ExampleGui.for model.example
-                                |> Tree.transferTransientState model.lastGui
-                                |> Tree.loadValues model.lastGui
-                                |> Tron.map ToExample
+                            advanceGui
+                                model.lastGui
+                            <| ExampleGui.for model.example
                     ) |> Core.update guiMsg model.state
             in
                 (
@@ -330,7 +328,10 @@ update msg model =
                         |> Exp.encode
                         |> startDatGui
                 TronGui ->
-                    WithTron.performInitEffects portCommunication newTree
+                    WithTron.performInitEffects
+                        (model.state.detach |> Tuple.first)
+                        portCommunication
+                        newTree
             )
 
         ( TriggerDefault, _ ) ->
@@ -412,14 +413,15 @@ portCommunication =
 applyUrl
     :  Communication.Ports msg
     -> Url.Url
+    -> Tree ()
     -> Cmd Msg
-applyUrl ports url =
+applyUrl ports url tree =
     let
         ( maybeClientId, state ) = Detach.fromUrl url
     in
         case ( ports.ack, maybeClientId ) of
             ( Just ack, Just clientId ) ->
-                Exp.encodeAck clientId
+                Exp.makeAck (Detach.clientIdToString clientId) tree
                     |> ack
                     |> Cmd.map (always NoOp)
             ( Just _, Nothing ) ->
@@ -427,6 +429,19 @@ applyUrl ports url =
                     |> Cmd.map SetClientId
 
             _ -> Cmd.none
+
+
+advanceGui : Tree () -> Tron Example.Msg -> Tron Msg
+advanceGui lastGui nextGui =
+    Tree.squeezeMap2
+        (\_ handler -> handler)
+        (nextGui
+            |> Tree.toUnit
+            |> Tree.transferTransientState lastGui
+            |> Tree.loadValues lastGui)
+        (nextGui)
+        |> Tron.map ToExample
+
 
 
 {-

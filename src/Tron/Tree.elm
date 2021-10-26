@@ -420,6 +420,7 @@ setAll : a -> Tree x -> Tree a
 setAll = map << always
 
 
+{- When two properties match at the same place in two given trees, the state is taken from the second (right) one. -}
 zip : Tree a -> Tree b -> Tree (Z.Zipper a b)
 zip =
     let
@@ -433,7 +434,8 @@ zip =
 
 
 {- `zipMap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping, the corresponding `Maybe`s
-become `Nothing` -}
+become `Nothing`.
+When two properties match at the same place in two given trees, the state is taken from the second (right) one. -}
 zipMap2 : (Maybe a -> Maybe b -> c) -> Tree a -> Tree b -> Tree c
 zipMap2 f propA propB =
     zip propA propB
@@ -441,13 +443,15 @@ zipMap2 f propA propB =
 
 
 {- `zipJoinMap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping, the subject
-of the resulting prop becomes `Nothing` -}
+of the resulting prop becomes `Nothing`.
+When two properties match at the same place in two given trees, the state is taken from the second (right) one. -}
 zipJoinMap2 : (a -> b -> c) -> Tree a -> Tree b -> Tree (Maybe c)
 zipJoinMap2 = zipMap2 << Maybe.map2
 
 
 {- `squeezeMap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping,
 the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!).
+When two properties match at the same place in two given trees, state is taken from the second (right) one.
 You are safe if you use the same tree as both sources though.
 For example:
 
