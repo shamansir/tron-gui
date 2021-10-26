@@ -6,7 +6,7 @@ import Array as Array
 
 import Tron.Tree exposing (Tree(..), map, squeezeMap2, fold, proxify)
 import Tron.Path as Path exposing (Path)
-import Tron.Tree.Expose as Exp
+import Tron.Tree.Expose.Data as Exp
 
 import Tron.Control.Impl.Nest as Nest
 import Tron.Control as Control

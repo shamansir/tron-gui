@@ -26,10 +26,9 @@ import Tron.Control.Impl.Nest as Nest
 import Tron.Control.Value as V exposing (Value)
 import Tron.Control.Impl.Button as Button
 import Tron.Tree.Expose as Exp
-import Tron.Expose as Exp
+import Tron.Tree.Expose.Data as Exp
 
 import WithTron.ValueAt as V
-import Tron.Expose as Exp
 import Tron.Style.PanelShape as PS
 import Tron.Style.CellShape as CS
 

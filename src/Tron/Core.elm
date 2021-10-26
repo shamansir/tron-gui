@@ -39,7 +39,9 @@ import Tron.Detach exposing (State(..))
 import Tron.Control.Value exposing (..)
 import Tron.Control.Impl.Nest as Nest
 import Tron.Build exposing (..)
-import Tron.Expose as Exp
+import Tron.Tree.Expose.Data as Exp
+import Tron.Tree.Expose.Tree as Exp
+import Tron.Tree.Expose.Convert as Exp
 
 import Tron.Style.Dock exposing (Dock(..))
 import Tron.Style.Dock as Dock exposing (..)
@@ -48,7 +50,6 @@ import Tron.Style.Logic as Style exposing (..)
 import Tron.Style.Logic as Dock
 import Tron.Style.Cell as Cell exposing (..)
 
-import Tron.Tree.Expose as Exp
 import Tron.Control.Value as Value
 import Tron.Control.Action as A
 

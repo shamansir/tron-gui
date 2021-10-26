@@ -1,4 +1,4 @@
-module Tron.Tree.Expose exposing
+module Tron.Tree.Expose.Data exposing
     ( Tree, Update
     , ClientId, Value
     , Ack, In, Out, DeduceIn

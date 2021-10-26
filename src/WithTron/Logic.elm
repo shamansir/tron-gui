@@ -2,8 +2,8 @@ module WithTron.Logic exposing (..)
 
 import Random
 
-import Tron.Expose as Exp
-import Tron.Tree.Expose as Exp
+import Tron.Tree.Expose.Data as Exp
+import Tron.Tree.Expose.Json as Exp
 import Tron.Option.Communication exposing (Ports)
 import Tron.Option.Render as Render exposing (Target(..))
 import Tron.Core as Core exposing (State)

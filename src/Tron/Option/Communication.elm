@@ -10,7 +10,7 @@ module Tron.Option.Communication exposing
 @docs Communication, map, noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
 -}
 
-import Tron.Tree.Expose as Exp
+import Tron.Tree.Expose.Data as Exp
 import Tron.Path as Path
 import Tron.Msg exposing (Msg_(..))
 
@@ -18,8 +18,8 @@ import Tron.Msg exposing (Msg_(..))
 {-| If the GUI communicates with outside world using ports
 
 - It doesn't;
-- It sends JSON values to the given ports: see `example/ReportToJsJson` and `Tron.Expose.*` modules' documentation for details;
-- It sends stringified to the given ports: see `example/ReportToJsString` and `Tron.Expose.*` modules' documentation for details;
+- It sends JSON values to the given ports: see `example/ReportToJsJson` and `Tron.Tree.Expose.*` modules' documentation for details;
+- It sends stringified to the given ports: see `example/ReportToJsString` and `Tron.Tree.Expose.*` modules' documentation for details;
 - It is _detachable_, so part of the GUI may be moved to another tab/browser/device and they communicate using WebSocket server using given ports: see `example/Detachable` for details, ensure to run `example/start-server.sh` before running `start-example Detachable`;
 - It communicates with `dat.gui` using given ports: see `example/DatGui`for details;
 -}

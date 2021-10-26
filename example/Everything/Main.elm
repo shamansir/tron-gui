@@ -21,12 +21,12 @@ import Tron.Core as T
 import Tron.Tree as T
 import Tron.Option.Render as Render
 import Tron.Option.Communication as Communication
-import Tron.Expose as Exp
+import Tron.Tree.Expose.Data as Exp
+import Tron.Tree.Expose.Json as Exp
+import Tron.Tree.Expose.Convert as Exp
 import Tron.Tree exposing (Tree)
-import Tron.Tree.Expose as Exp
 import Tron.Tree.Controls as Tree
 import Tron.Tree.Values as Tree
-import Tron.Expose as Exp
 import Tron.Mouse exposing (Position)
 import Tron.Detach as Detach exposing (fromUrl)
 import Tron.Style.Theme exposing (Theme)

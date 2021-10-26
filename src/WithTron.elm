@@ -111,13 +111,14 @@ import Tron.Path as Path
 --import Tron.Builder as Builder exposing (Builder)
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))
-import Tron.Expose as Exp
+import Tron.Tree.Expose.Data as Exp
+import Tron.Tree.Expose.Convert as Exp
+import Tron.Tree.Expose.Tree as Exp
 import Tron.Option.Render as Render
 import Tron.Option.Communication as Comm
 import Tron.Msg exposing (Msg_(..))
 import Tron.Detach as Detach
 import Tron.Tree as Tree
-import Tron.Tree.Expose as Exp
 import Tron.Tree.Controls as Tree
 import Tron.Tree.Values as Tree
 import Tron.Tree.Paths as Tree
