@@ -169,7 +169,7 @@ import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Impl.Toggle exposing (boolToToggle, toggleToBool)
 import Tron.Control.Impl.Nest as Nest exposing (Form(..), ItemId)
 
-import Tron.Tree.Build as B
+import Tron.Tree.Build.Any as B
 import Tron.Tree.Build.Choice as Choice
 
 
