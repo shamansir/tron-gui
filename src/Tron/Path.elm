@@ -69,6 +69,11 @@ reverse : Path -> Path
 reverse (Path l) = Path <| List.reverse l
 
 
+first : Path -> Maybe ( Index, Label )
+first =
+    toList >> List.head
+
+
 last : Path -> Maybe ( Index, Label )
 last =
     pop >> Maybe.map Tuple.second

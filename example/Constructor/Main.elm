@@ -9,7 +9,7 @@ import Color
 import Dict exposing (Dict)
 
 import Tron exposing (Tron)
-import Tron.Tree.Build.Unit as Tron
+import Tron.Tree.Build.Unit as Build
 import Tron.Option.Render as Render
 import Tron.Option.Communication as Communication
 import Tron.Style.Dock as Dock
@@ -100,7 +100,7 @@ type Msg
     | Forward Int
     | Backward Int
     | Remove Int
-    | SwitchTo Path (Tron Type)
+    | SwitchTo Path (Tree Type)
     | Edit String E.Value
     | EditLabel String
     | EditPanelShape PS.PanelShape
@@ -125,7 +125,7 @@ init : Model
 init =
     { current = Nothing
     , tree =
-        Tron.root
+        Build.root
             [
             ]
     , expands =
@@ -233,11 +233,11 @@ update msg model =
 
         EditLabel newLabel ->
             case model.current of
-                Just ( ( path, labelPath ), prop ) ->
+                Just ( path, prop ) ->
                     { model
                     | current =
                         Just
-                            ( ( path, labelPath |> changeLastTo newLabel ), prop )
+                            ( ( path |> changeLastTo newLabel ), prop )
                     , tree =
                         model.tree |> Tree.changeLabel path newLabel
                     }
@@ -253,7 +253,7 @@ update msg model =
             | current = Nothing
             , expands = Dict.empty |> Dict.insert [] True
             , tree = case example of
-                Empty -> Tron.root []
+                Empty -> Build.root []
                 Default -> Example_Default.for Example_Default.default |> Tree.toUnit
                 Goose -> Example_Goose.for Example_Goose.default |> Tree.toUnit
                 Tiler -> Example_Tiler.gui Tree.empty (Example_Tiler.init () |> Tuple.first) |> Tree.toUnit
@@ -275,7 +275,7 @@ update msg model =
             | expands
                 = model.expands
                     |> Dict.update
-                        (Path.toList path)
+                        (path |> Path.toIndexPath)
                         (\maybeCur ->
                             case maybeCur of
                                 Just True -> Just False
@@ -294,7 +294,7 @@ view model =
             [ preview
                 model.expands
                 (model.current
-                    |> Maybe.map (Tuple.first >> Tuple.first)
+                    |> Maybe.map Tuple.first
                     |> Maybe.withDefault Path.start
                 )
                 <| fillTypes
@@ -325,7 +325,7 @@ view model =
         ]
 
 
-fillTypes : Tree () -> Tree Type
+fillTypes : Tree a -> Tree Type
 fillTypes =
     Exp.reflect
         >> Tree.map valueToType
@@ -360,7 +360,7 @@ typeToString t =
         None -> "None"
 
 
-editorFor : Path -> Tron Type -> Html Msg
+editorFor : Path -> Tree Type -> Html Msg
 editorFor path prop =
     let
 
@@ -442,7 +442,7 @@ editorFor path prop =
         [ viewPath path
         , viewLabelPath path
 
-        , case path |> List.reverse |> List.head of
+        , case path |> Path.first |> Maybe.map Tuple.second of
             Just label ->
                 Html.div
                     [ ]
@@ -494,31 +494,26 @@ editorFor path prop =
         ]
 
 
-typeOf : Tron Type -> Type
-typeOf =
-    Tree.get
-        >> Maybe.withDefault None
+typeOf : Tree Type -> Type
+typeOf = Tree.get
 
 
-preview : Dict (List Path.Index) Bool -> Path -> Tron Type -> Html Msg
+preview : Dict (List Path.Index) Bool -> Path -> Tree Type -> Html Msg
 preview expands current root =
     let
         helper prop =
             let
-                ( path, labelPath ) =
-                    prop
-                        |> Tree.get
-                        |> Maybe.map Tuple.first
-                        |> Maybe.withDefault ( Path.start, [] )
+                path =
+                    prop |> Tree.get |> Tuple.first
                 isExpanded =
                     expands
-                        |> Dict.get (Path.toList path)
+                        |> Dict.get (Path.toIndexPath path)
                         |> Maybe.withDefault False
                 previewProp =
                     viewCellAsALine
                         (Path.equal path current)
                         isExpanded
-                        ( path, labelPath )
+                        path
                         (prop |> Tree.map Tuple.second)
                 viewItems control =
                     if isExpanded then
@@ -546,7 +541,11 @@ preview expands current root =
                     _ ->
                         previewProp
     in
-        helper <| Tree.pathify <| root
+        helper
+            <| Tree.squeezeMap2
+                Tuple.pair
+                (Tree.pathify root)
+                (fillTypes root)
 
 
     {-
@@ -559,7 +558,7 @@ preview expands current root =
     -}
 
 
-viewCellAsALine : Bool -> Bool -> Path -> Tron Type -> Html Msg
+viewCellAsALine : Bool -> Bool -> Path -> Tree Type -> Html Msg
 viewCellAsALine isCurrent isExpanded path prop =
     Html.div
         [ Html.onClick <| SwitchTo path prop
@@ -591,7 +590,7 @@ expandCollapseButton path isExpanded =
         [ Html.text <| if isExpanded then "▲" else "▼" ]
 
 
-previewCell : Bool -> Path -> Tron Type -> Html Msg
+previewCell : Bool -> Path -> Tree Type -> Html Msg
 previewCell isCurrent path prop =
     Html.div
         [ Html.onClick <| SwitchTo path prop
@@ -611,10 +610,12 @@ previewCell isCurrent path prop =
         ]
 
 
-previewNestCell : Path -> Tron Type -> Html Msg
+previewNestCell : Path -> Tree Type -> Html Msg
 previewNestCell path prop =
     let
-        maybeIdx = Path.pop path |> Maybe.map Tuple.second
+        maybeIdx =
+            Path.last path
+                |> Maybe.map Tuple.first
     in
 
     Html.div
@@ -676,7 +677,7 @@ emptyLabelPath =
 viewPath : Path -> Html msg
 viewPath =
     Path.toList
-        >> List.map String.fromInt
+        >> List.map (Tuple.first >> String.fromInt)
         >> List.map (\n -> Html.span [ Html.class "item" ] [ Html.text n ])
         >> List.intersperse (Html.span [ Html.class "sep" ] [ Html.text "/" ])
         >> Html.span [ Html.class "path" ]
@@ -684,7 +685,9 @@ viewPath =
 
 viewLabelPath : Path -> Html msg
 viewLabelPath =
-     List.map (\n -> Html.span [ Html.class "item" ] [ Html.text n ])
+    Path.toList
+        >> List.map Tuple.second
+        >> List.map (\n -> Html.span [ Html.class "item" ] [ Html.text n ])
         >> List.intersperse (Html.span [ Html.class "sep" ] [ Html.text "/" ])
         >> Html.span [ Html.class "label-path" ]
 
@@ -693,26 +696,26 @@ viewLabel : Path -> Html msg
 viewLabel path =
     Html.span
         [ Html.class "label-path" ]
-        [ case List.reverse path of
-            (last::_) -> Html.span [ Html.class "item" ] [ Html.text last ]
-            _ -> Html.span [] []
+        [ case Path.last path |> Maybe.map Tuple.second of
+            Just last -> Html.span [ Html.class "item" ] [ Html.text last ]
+            Nothing -> Html.span [] []
         ]
 
 
 changeLastTo : String -> Path -> Path
 changeLastTo newLabel path =
     let
-        reversed = List.reverse path
+        reversed = List.reverse <| Path.toList path
     in
         (case reversed |> List.head of
-            Just _ ->
-                newLabel :: (List.tail reversed |> Maybe.withDefault [])
+            Just (prevIndex, _) ->
+                (prevIndex, newLabel) :: (List.tail reversed |> Maybe.withDefault [])
             Nothing ->
                 []
-        ) |> List.reverse
+        ) |> List.reverse |> Path.fromList
 
 
-edit : String -> E.Value -> Tron Type -> Tron Type
+edit : String -> E.Value -> Tree Type -> Tree Type
 edit name value prop =
     case ( typeOf prop, name ) of
         ( _, "type" ) ->
@@ -738,21 +741,21 @@ edit name value prop =
         _ -> prop
 
 
-editIcon : E.Value -> Tron Type -> Tron Type
+editIcon : E.Value -> Tree Type -> Tree Type
 editIcon value prop =
     prop |>
         edit_
             (\iconPath ->
                 if List.length iconPath > 0 then
                     prop
-                        |> Tron.face (Tron.iconAt iconPath)
+                        |> Build.face (Build.iconAt iconPath)
                 else prop |> Tree.setFace Button.Default
             )
             (D.list D.string)
             value
 
 
-edit_ : (x -> Tron a) -> D.Decoder x -> E.Value -> Tron a -> Tron a
+edit_ : (x -> Tree a) -> D.Decoder x -> E.Value -> Tree a -> Tree a
 edit_ f decoder value prop =
     case value |> D.decodeValue decoder of
         Ok decodedValue ->
@@ -760,36 +763,36 @@ edit_ f decoder value prop =
         Err _ -> prop
 
 
-create : String -> Tron ()
+create : String -> Tree ()
 create s =
     case s of
         "Knob" ->
-            Tron.float { min = 0, max = 1, step = 0.01 } 0
+            Build.float { min = 0, max = 1, step = 0.01 } 0
         "XY" ->
-            Tron.xy
+            Build.xy
                 ( { min = 0, max = 1, step = 0.01 }
                 , { min = 0, max = 1, step = 0.01 }
                 )
                 ( 0, 0 )
         "Text" ->
-            Tron.text "foo"
+            Build.text "foo"
         "Toggle" ->
-            Tron.toggle False
+            Build.toggle False
         "Color" ->
-            Tron.color Color.black
+            Build.color Color.black
         "Choice" ->
-            Tron.choice
+            Build.choice
                 [
                 ]
                 "foo"
         "Button" ->
-            Tron.button
+            Build.button
         "Nest" ->
-            Tron.nest []
-        _ -> Tron.none
+            Build.nest []
+        _ -> Build.none
 
 
-viewCode : Tron () -> Html msg
+viewCode : Tree () -> Html msg
 viewCode =
     ToBuilder.toCodeLines
         >> String.join "\n"
@@ -798,12 +801,12 @@ viewCode =
         >> Html.textarea [ Html.id "builder-code" ]
 
 
-addGhosts : Tron () -> Tron ()
+{- addGhosts : Tree () -> Tree ()
 addGhosts =
     Tree.mapWithPath
         <| always
         -- it will skip all non-group elements
-        <| Tree.append ( "_Add", Tron.none )
+        <| Tree.append ( "_Add", Build.none ) -}
 
 
 subscriptions : Model -> Sub Msg

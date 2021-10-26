@@ -447,7 +447,15 @@ zipJoinMap2 = zipMap2 << Maybe.map2
 
 
 {- `squeezeMap2` maps two properties using zipper with given `fn`; if tree structure doesn't match while zipping,
-the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!) -}
+the subjects for the function are taken from the given properties (which can be dangerous, use it on your own risk!).
+You are safe if you use the same tree as both sources though.
+For example:
+
+    Tree.squeezeMap2
+        Tuple.pair
+        (Tree.pathify myTree)
+        (Tree.proxify myTree)
+-}
 squeezeMap2 : (a -> b -> c) -> Tree a -> Tree b -> Tree c
 squeezeMap2 f propA propB =
     zipMap2

@@ -16,7 +16,7 @@ import Tron.Style.PanelShape as PS
 import Tron.Style.CellShape as CS
 
 
-toCodeLines : Tron () -> List String
+toCodeLines : Tree () -> List String
 toCodeLines root =
     [ "module Gui exposing (..)"
     , ""
@@ -29,7 +29,7 @@ toCodeLines root =
     ] ++ "root = " :: (propToLines root |> indent 4)
 
 
-propToLines : Tron () -> List String
+propToLines : Tree () -> List String
 propToLines prop =
     case prop of
 
@@ -117,7 +117,7 @@ propToLines prop =
             propToLines prop_ ++ [ "|> live" ]
 
 
-labelAndPropToLines : ( String, Tron () ) -> List String
+labelAndPropToLines : ( String, Tree () ) -> List String
 labelAndPropToLines ( label, prop ) =
     [ "( " ++ quote label
     , "  , " ]
