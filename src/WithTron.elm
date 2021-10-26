@@ -99,32 +99,22 @@ import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Url exposing (Url)
 import Html exposing (Html)
-import Random
-import Dict exposing (Dict)
-import Dict.Extra as Dict
-import Task
 
-import Tron.Core as Core exposing (State)
+import Tron.Core exposing (State)
 import Tron exposing (Tron)
 import Tron as Tron
-import Tron.Path as Path
---import Tron.Builder as Builder exposing (Builder)
-import Tron.Style.Theme as Theme exposing (Theme(..))
+import Tron.Style.Theme exposing (Theme(..))
 import Tron.Style.Dock exposing (Dock(..))
-import Tron.Tree.Expose.Data as Exp
-import Tron.Tree.Expose.Convert as Exp
-import Tron.Tree.Expose.Tree as Exp
 import Tron.Option.Render as Render
 import Tron.Option.Communication as Comm
 import Tron.Msg exposing (Msg_(..))
-import Tron.Detach as Detach
 import Tron.Tree.Internals as Tree
 import Tron.Tree.Controls as Tree
 import Tron.Tree.Values as Tree
 import Tron.Tree.Paths as Tree
-import Tron.Control.Value as Control
 
-import WithTron.Logic exposing (..)
+import WithTron.Logic as L
+import WithTron.Architecture as Arc
 
 
 type alias Tree = Tree.Tree ()
@@ -132,24 +122,24 @@ type alias Tree = Tree.Tree ()
 
 {-| Adds `Model msg` to the Elm `Program` and so controls all the required communication between usual App and GUI. -}
 type alias Program flags model msg =
-    Platform.Program flags ( model, State, Tree ) ( WithTronMsg msg )
+    Platform.Program flags ( model, State, Tree ) ( Arc.WithTronMsg msg )
 
 
 type alias SandboxDef model msg =
     { init : ( model, State, Tree )
-    , update : WithTronMsg msg -> ( model, State, Tree ) -> ( model, State, Tree )
-    , view : ( model, State, Tree ) -> Html (WithTronMsg msg)
+    , update : Arc.WithTronMsg msg -> ( model, State, Tree ) -> ( model, State, Tree )
+    , view : ( model, State, Tree ) -> Html (Arc.WithTronMsg msg)
     }
 
 
 type alias ElementDef flags model msg =
-    { init : flags -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
-    , subscriptions : ( model, State, Tree ) -> Sub (WithTronMsg msg)
+    { init : flags -> ( ( model, State, Tree ), Cmd (Arc.WithTronMsg msg) )
+    , subscriptions : ( model, State, Tree ) -> Sub (Arc.WithTronMsg msg)
     , update :
-          WithTronMsg msg
+          Arc.WithTronMsg msg
           -> ( model, State, Tree )
-          -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
-    , view : ( model, State, Tree ) -> Html (WithTronMsg msg)
+          -> ( ( model, State, Tree ), Cmd (Arc.WithTronMsg msg) )
+    , view : ( model, State, Tree ) -> Html (Arc.WithTronMsg msg)
     }
 
 
@@ -158,270 +148,31 @@ type alias ApplicationDef flags model msg =
           flags
           -> Url
           -> Nav.Key
-          -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
-    , subscriptions : ( model, State, Tree ) -> Sub (WithTronMsg msg)
+          -> ( ( model, State, Tree ), Cmd (Arc.WithTronMsg msg) )
+    , subscriptions : ( model, State, Tree ) -> Sub (Arc.WithTronMsg msg)
     , update :
-          WithTronMsg msg
+          Arc.WithTronMsg msg
           -> ( model, State, Tree )
-          -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
+          -> ( ( model, State, Tree ), Cmd (Arc.WithTronMsg msg) )
     , view :
           ( model, State, Tree )
-          -> { body : List (Html (WithTronMsg msg)), title : String }
-    , onUrlChange : Url -> WithTronMsg msg
-    , onUrlRequest : UrlRequest -> WithTronMsg msg
+          -> { body : List (Html (Arc.WithTronMsg msg)), title : String }
+    , onUrlChange : Url -> Arc.WithTronMsg msg
+    , onUrlRequest : UrlRequest -> Arc.WithTronMsg msg
     }
 
 
 type alias DocumentDef flags model msg =
-    { init : flags -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
-    , subscriptions : ( model, State, Tree ) -> Sub (WithTronMsg msg)
+    { init : flags -> ( ( model, State, Tree ), Cmd (Arc.WithTronMsg msg) )
+    , subscriptions : ( model, State, Tree ) -> Sub (Arc.WithTronMsg msg)
     , update :
-          WithTronMsg msg
+          Arc.WithTronMsg msg
           -> ( model, State, Tree )
-          -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
+          -> ( ( model, State, Tree ), Cmd (Arc.WithTronMsg msg) )
     , view :
           ( model, State, Tree )
-          -> { body : List (Html (WithTronMsg msg)), title : String }
+          -> { body : List (Html (Arc.WithTronMsg msg)), title : String }
     }
-
-
-type WithTronMsg msg
-    = ToUser msg
-    | ToTron Core.Msg
-    --| Ack Exp.Ack
-    | SendUpdate Exp.Out
-    | ReceiveRaw (List Exp.In)
-    | SetClientId Detach.ClientId
-    | UrlChange (Maybe msg) Url
-
-
-init
-    :  ( ( model, Cmd msg ), Tree -> model -> Tree )
-    -> Maybe Url
-    -> Render.Target
-    -> Comm.Ports msg
-    -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
-init ( userInit, userFor ) maybeUrl renderTarget ports =
-    let
-        ( initialModel, userEffect ) =
-            userInit
-        ( state, guiEffect ) =
-            Core.init
-        firstTree =
-            userFor Tree.empty initialModel
-    in
-        (
-            ( initialModel
-            , state |> addInitOptions renderTarget
-            , firstTree
-            )
-        , Cmd.batch
-            [ userEffect |> Cmd.map ToUser
-            , guiEffect |> Cmd.map ToTron
-            , performInitEffects -- FIXME: `clientId` is always `Nothing`
-                (state.detach |> Tuple.first)
-                ports
-                firstTree
-                |> Cmd.map ToUser
-            , case maybeUrl of
-                Just url ->
-                    Task.succeed url
-                        |> Task.perform (UrlChange Nothing)
-                Nothing -> Cmd.none
-            ]
-        )
-
-
-view
-    :  ( Tree -> model -> Html msg )
-    -> Render.Target
-    -> ( model, State, Tree )
-    -> Html (WithTronMsg msg)
-view userView renderTarget ( model, state, tree ) =
-    Html.div
-        [ ]
-        [ tree
-            |> useRenderTarget renderTarget state
-            |> Html.map ToTron
-        , userView tree model
-            |> Html.map ToUser
-        ]
-
-
-subscriptions
-    :  ( Tree -> model -> Sub msg )
-    -> Comm.Ports msg
-    -> ( model, State, Tree )
-    -> Sub (WithTronMsg msg)
-subscriptions userSubscriptions ports ( model, state, tree ) =
-    Sub.batch
-        [ userSubscriptions tree model |> Sub.map ToUser
-        , Core.subscriptions state |> Sub.map ToTron
-        , addSubscriptionsOptions ports tree |> Sub.map ReceiveRaw
-        ]
-
-
-update
-    : ( msg -> Tree -> model -> (model, Cmd msg)
-      , Tree -> model -> Tron msg
-      )
-    -> Comm.Ports msg
-    -> WithTronMsg msg
-    -> ( model, State, Tree )
-    -> ( ( model, State, Tree ), Cmd (WithTronMsg msg) )
-update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
-    case withTronMsg of
-
-        ToUser userMsg ->
-            let
-                ( newUserModel, userEffect ) =
-                    userUpdate userMsg prevTree model
-                nextTree =
-                    userFor prevTree newUserModel
-            in
-
-            (
-                ( newUserModel
-                , state
-                , nextTree
-                    |> Tree.toUnit
-                    |> Tree.transferTransientState prevTree
-                    |> Tree.loadValues prevTree
-                    --|> Tree.loadChangedValues prevTree nextTree
-                    --|> Tree.loadLiveValues nextGui
-                )
-            , userEffect |> Cmd.map ToUser
-            )
-
-        ToTron guiMsg ->
-            let
-                tree = userFor prevTree model
-                unitTree = tree |> Tree.toUnit
-            in case {- prevTree
-                    |> Exp.lift -}
-                Core.update guiMsg state
-                    <| (
-                            unitTree
-                                |> Tree.transferTransientState prevTree
-                                |> Tree.loadValues prevTree
-                                |> Tree.squeezeMap2 (\handler _ -> handler) tree
-                       --|> Tree.loadLiveValues nextGui
-                       )  of
-                ( nextState, nextTree, guiEffect ) ->
-                    (
-                        ( model
-                        , nextState
-                        , nextTree
-                        )
-                    , Cmd.batch
-                        [ guiEffect
-                            |> Cmd.map (Tuple.second >> ToUser)
-                        , guiEffect
-                            |> Cmd.map (Tuple.first >> SendUpdate)
-                        ]
-                    )
-
-        ReceiveRaw rawUpdates ->
-            let
-                tree = userFor prevTree model
-                unitRoot =
-                    tree
-                        |> Tree.toUnit
-                        |> Tree.transferTransientState prevTree
-                nextRoot =
-                    rawUpdates
-                        |> List.foldl (Exp.apply << Exp.fromPort) unitRoot
-                        --|> Exp.apply (Exp.fromPort rawUpdate)
-            in
-                (
-                    ( model
-                    , state
-                    , nextRoot
-                    )
-                , nextRoot
-                    |> Tree.squeezeMap2 (\handler _ -> handler) tree
-                    |> Tron.perform
-                    |> Cmd.map ToUser
-                )
-
-        SetClientId clientId ->
-            (
-                ( model
-                ,
-                    { state
-                    | detach =
-                        case state.detach of
-                            ( _, detachState ) -> ( Just clientId, detachState )
-
-                    }
-                , prevTree
-                )
-            , case ports.ack of -- FIXME: move to WithTron.Logic
-                Just ack ->
-                    Exp.makeAck
-                        (Detach.clientIdToString clientId)
-                        prevTree
-                        |> ack
-                        |> Cmd.map ToUser
-                _ -> Cmd.none
-            )
-
-        SendUpdate rawUpdate ->
-            ( ( model, state, prevTree )
-            , rawUpdate
-                |> tryTransmitting ports
-                |> Cmd.map ToUser
-            )
-
-        UrlChange maybeUserMsg url ->
-            let
-                detachState = Detach.fromUrl url
-                urlEffects = applyUrl ports prevTree url
-            in
-                (
-                    ( model
-                    ,
-                        { state
-                        | detach = detachState
-                        }
-                    , prevTree
-                    )
-                , Cmd.batch
-                    [ urlEffects
-                    , case maybeUserMsg of
-                        Just userMsg ->
-                            Task.succeed userMsg
-                                |> Task.perform identity
-                                |> Cmd.map ToUser
-                        Nothing -> Cmd.none
-                    ]
-                )
-
-
--- FIXME: move to WithTron.Logic
-applyUrl
-    :  Comm.Ports msg
-    -> Tree
-    -> Url.Url
-    -> Cmd (WithTronMsg msg)
-applyUrl ports tree url =
-    let
-        ( maybeClientId, state ) = Detach.fromUrl url
-    in
-        case ( ports.ack, maybeClientId ) of
-            ( Just ack, Just clientId ) ->
-                Exp.makeAck
-                    (Detach.clientIdToString clientId)
-                    tree
-                    |> ack
-                    |> Cmd.map ToUser
-                -- Task.succeed id
-                --     |> Task.perform SetClientId
-            ( Just ack, Nothing ) ->
-                nextClientId
-                    |> Cmd.map SetClientId
-
-            _ -> Cmd.none
 
 
 overElement
@@ -460,13 +211,13 @@ pastDependentOverElement
     -> ElementDef flags model msg
 pastDependentOverElement renderTarget ports def =
     { init =
-        \flags -> init ( def.init flags, \tree -> def.for tree >> Tree.toUnit ) Nothing renderTarget ports
+        \flags -> Arc.init ( def.init flags, \tree -> def.for tree >> Tree.toUnit ) Nothing renderTarget ports
     , update =
-        update ( def.update, def.for ) ports
+        Arc.update ( def.update, def.for ) ports
     , view =
-        view def.view renderTarget
+        Arc.view def.view renderTarget
     , subscriptions =
-        subscriptions def.subscriptions ports
+        Arc.subscriptions def.subscriptions ports
     }
 
 
@@ -513,17 +264,17 @@ pastDependentOverApplication
 pastDependentOverApplication renderTarget ports def =
     { init =
         \flags url key ->
-            init
+            Arc.init
                 ( def.init flags url key, \tree -> def.for tree >> Tree.toUnit ) (Just url) renderTarget ports
     , update =
-        update ( def.update, def.for ) ports
+        Arc.update ( def.update, def.for ) ports
     , view =
         \(userModel, state, tree) ->
             let userView = def.view tree userModel
             in
                 { title = userView.title
                 , body =
-                    [ view
+                    [ Arc.view
                         (\_ umodel ->
                             -- FIXME: we calculate view two times, it seems
                             Html.div [] <| userView.body
@@ -533,16 +284,16 @@ pastDependentOverApplication renderTarget ports def =
                     ]
                 }
     , subscriptions =
-        subscriptions def.subscriptions ports
+        Arc.subscriptions def.subscriptions ports
     , onUrlChange =
-        \url -> UrlChange (Just <| def.onUrlChange url) url
+        \url -> Arc.UrlChange (Just <| def.onUrlChange url) url
     , onUrlRequest =
         \req ->
             case req of
                 Internal url ->
-                    UrlChange (Just <| def.onUrlRequest req) <| url
+                    Arc.UrlChange (Just <| def.onUrlRequest req) <| url
                 External _ ->
-                    ToUser <| def.onUrlRequest req
+                    Arc.ToUser <| def.onUrlRequest req
     }
 
 
@@ -583,16 +334,16 @@ pastDependentOverDocument
 pastDependentOverDocument renderTarget ports def =
     { init =
         \flags ->
-            init ( def.init flags, \tree -> def.for tree >> Tree.toUnit ) Nothing renderTarget ports
+            Arc.init ( def.init flags, \tree -> def.for tree >> Tree.toUnit ) Nothing renderTarget ports
     , update =
-        update ( def.update, def.for ) ports
+        Arc.update ( def.update, def.for ) ports
     , view =
         \(userModel, state, tree) ->
             let userView = def.view tree userModel
             in
             { title = userView.title
             , body =
-                [ view
+                [ Arc.view
                     (\_ _ ->
                         -- FIXME: we calculate view two times, it seems
                         Html.div [] <| userView.body
@@ -602,7 +353,7 @@ pastDependentOverDocument renderTarget ports def =
                 ]
             }
     , subscriptions =
-        subscriptions def.subscriptions ports
+        Arc.subscriptions def.subscriptions ports
     }
 
 
