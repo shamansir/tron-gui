@@ -3,7 +3,7 @@ module Tron.Tree.Expose.Convert exposing (..)
 
 import Tron.Tree.Expose.Data as Exp
 import Tron.Tree.Expose.Json as Exp
-import Tron.Tree exposing (Tree(..))
+import Tron.Tree.Internals exposing (Tree(..))
 import Tron.Control.Value as Control
 
 import Json.Decode as D

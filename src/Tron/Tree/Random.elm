@@ -27,7 +27,7 @@ import Tron.Control.Impl.XY as XY
 import Tron.Control.Impl.Color as Color
 import Tron.Path as Path
 
-import Tron.Tree  exposing (Tree(..))
+import Tron.Tree.Internals  exposing (Tree(..))
 import Tron.Style.PanelShape exposing (PanelShape, cols)
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS exposing (..)

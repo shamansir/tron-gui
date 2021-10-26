@@ -8,7 +8,7 @@ import Color
 import Array
 
 import Tron.Control exposing (Control(..))
-import Tron.Tree exposing (..)
+import Tron.Tree.Internals exposing (..)
 import Tron.Control.Impl.Toggle exposing (..)
 import Tron.Control.Impl.Nest exposing (..)
 import Tron.Render.Util exposing (..)

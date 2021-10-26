@@ -20,7 +20,7 @@ import Tron.Control.Impl.Button as Button
 import Tron.Control.Impl.XY as XY
 import Tron.Path as Path exposing (Path)
 -- import Tron.Detach as Detach
-import Tron.Tree as Tree exposing (..)
+import Tron.Tree.Internals as Tree exposing (..)
 import Tron.Tree.Controls as Tree
 import Tron.Tree.Paths as Tree
 import Tron.Tree.Expose.Data as Exp

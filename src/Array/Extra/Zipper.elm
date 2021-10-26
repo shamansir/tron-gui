@@ -4,8 +4,10 @@ module Array.Extra.Zipper exposing (..)
 import Array exposing (Array)
 import Array as Array
 
+-- see https://package.elm-lang.org/packages/joneshf/elm-these/latest/These
 
-type Zipper a b
+
+type Zipper a b -- a.k.a. `These` in Haskell
     = Left a
     | Right b
     | Both a b

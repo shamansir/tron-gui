@@ -8,7 +8,7 @@ import Axis exposing (Axis)
 
 import Tron.Path as Path
 import Tron.Control exposing (..)
-import Tron.Tree as Tree
+import Tron.Tree.Internals as Tree
 import Tron.Tree.Controls as Tree
 import Tron.Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)

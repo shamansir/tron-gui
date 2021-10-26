@@ -153,8 +153,8 @@ import Tron as Def exposing (Tron)
 import Tron.Path as Path exposing (Path)
 import Tron.Control exposing (..)
 import Tron.Control.Value as Value exposing (..)
-import Tron.Tree exposing (..)
-import Tron.Tree as Tree
+import Tron.Tree.Internals exposing (..)
+import Tron.Tree.Internals as Tree
 import Tron.Tree.Controls as Tree exposing (expand)
 import Tron.Control as Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)

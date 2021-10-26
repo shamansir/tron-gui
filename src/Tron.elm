@@ -29,7 +29,7 @@ See `WithTron` for the helpers to add `Tron` to your applcation.
 
 import Task
 
-import Tron.Tree as Tree exposing (Tree)
+import Tron.Tree.Internals as Tree exposing (Tree)
 import Tron.Tree.Paths as Tree
 import Tron.Path as Path exposing (Path)
 import Tron.Control.Value exposing (Value)

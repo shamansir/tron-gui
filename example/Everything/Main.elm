@@ -18,13 +18,13 @@ import WithTron.Logic as WithTron
 import Tron exposing (Tron)
 import Tron.Core as Core
 import Tron.Core as T
-import Tron.Tree as T
+import Tron.Tree.Internals as T
 import Tron.Option.Render as Render
 import Tron.Option.Communication as Communication
 import Tron.Tree.Expose.Data as Exp
 import Tron.Tree.Expose.Json as Exp
 import Tron.Tree.Expose.Convert as Exp
-import Tron.Tree exposing (Tree)
+import Tron.Tree.Internals exposing (Tree)
 import Tron.Tree.Controls as Tree
 import Tron.Tree.Values as Tree
 import Tron.Mouse exposing (Position)
@@ -433,7 +433,7 @@ applyUrl ports url tree =
 
 advanceGui : Tree () -> Tron Example.Msg -> Tron Msg
 advanceGui lastGui nextGui =
-    Tree.squeezeMap2
+    T.squeezeMap2
         (\_ handler -> handler)
         (nextGui
             |> Tree.toUnit

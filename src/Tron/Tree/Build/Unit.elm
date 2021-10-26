@@ -7,7 +7,7 @@ import Axis exposing (Axis)
 import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Tree as T exposing (..)
-import Tron.Tree.Build as B
+import Tron.Tree.Build.Any as B
 import Tron.Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.PanelShape exposing (PanelShape)

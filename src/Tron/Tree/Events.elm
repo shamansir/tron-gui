@@ -2,7 +2,7 @@ module Tron.Tree.Events exposing (..)
 
 
 import Tron.Path as Path exposing (Path)
-import Tron.Tree as Tree exposing (Tree(..))
+import Tron.Tree.Internals as Tree exposing (Tree(..))
 import Tron.Tree.Paths exposing (findWithParent)
 
 import Tron.Control.Impl.Text as Text exposing (..)

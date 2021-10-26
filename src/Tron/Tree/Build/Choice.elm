@@ -7,7 +7,7 @@ import Maybe.Extra as Maybe
 
 import Tron as Def
 import Tron.Path as Path
-import Tron.Tree as Tree exposing (..)
+import Tron.Tree.Internals as Tree exposing (..)
 import Tron.Control exposing (Control(..))
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)

@@ -4,7 +4,7 @@ port module Detachable.Main exposing (main)
 import WithTron as WithTron
 import Tron.Style.Theme as Theme exposing (Theme(..))
 import Tron.Style.Dock as Dock
-import Tron.Tree.Expose as Exp
+import Tron.Tree.Expose.Data as Exp
 import Tron.Option.Render as Render
 import Tron.Option.Communication as Communication
 

@@ -17,7 +17,7 @@ import Tron.Style.Theme as Theme
 import Tron.Path as Path exposing (Path)
 
 import Tron.Core as Core
-import Tron.Tree as Tree exposing (Tree)
+import Tron.Tree.Internals as Tree exposing (Tree)
 import Tron.Tree.Paths as Tree
 import Tron.Tree.Controls as Tree
 import Tron.Path as Path
@@ -25,7 +25,9 @@ import Tron.Control as Core
 import Tron.Control.Impl.Nest as Nest
 import Tron.Control.Value as V exposing (Value)
 import Tron.Control.Impl.Button as Button
-import Tron.Tree.Expose as Exp
+import Tron.Tree.Expose.Json as Exp
+import Tron.Tree.Expose.Tree as Exp
+import Tron.Tree.Expose.Convert as Exp
 import Tron.Tree.Expose.Data as Exp
 
 import WithTron.ValueAt as V

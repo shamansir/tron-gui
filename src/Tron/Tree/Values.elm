@@ -4,7 +4,7 @@ module Tron.Tree.Values exposing (..)
 import Array.Extra.Zipper as Z exposing (Zipper(..))
 
 
-import Tron.Tree exposing (Tree(..), foldZipP, updateMany, move, insideOut)
+import Tron.Tree.Internals exposing (Tree(..), foldZipP, updateMany, move, insideOut)
 import Tron.Tree.Paths exposing (pathifyWithValue)
 import Tron.Control as Control
 import Tron.Control.Impl.Nest as Nest exposing (..)

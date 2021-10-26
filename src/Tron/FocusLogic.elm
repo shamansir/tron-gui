@@ -2,7 +2,7 @@ module Tron.FocusLogic exposing (..)
 
 
 import Tron.Path as Path exposing (Path)
-import Tron.Tree exposing (..)
+import Tron.Tree.Internals exposing (..)
 import Tron.Tree.Paths as Tree
 import Tron.Tree.Controls as Tree
 import Tron.Focus exposing (Focused(..), Level, Direction(..)) -- FIXME: better to have one module

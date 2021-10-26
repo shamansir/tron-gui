@@ -1,10 +1,10 @@
 port module DatGui.Main exposing (main)
 
 
-import Tron.Tree.Expose as Exp
 import WithTron
 import Tron.Option.Render as Render
 import Tron.Option.Communication as Communication
+import Tron.Tree.Expose.Data as Exp
 
 import Example.Goose.Main as Example
 import Example.Goose.Model as Example

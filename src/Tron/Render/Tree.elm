@@ -12,7 +12,7 @@ import Html.Events as HE
 
 import Axis exposing (Axis)
 
-import Tron.Tree exposing (..)
+import Tron.Tree.Internals exposing (..)
 import Tron.Tree.Controls exposing (..)
 import Tron.Path as Path exposing (Path)
 import Tron.Msg exposing (Msg_(..))

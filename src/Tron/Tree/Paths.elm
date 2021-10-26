@@ -4,7 +4,7 @@ module Tron.Tree.Paths exposing (..)
 import Dict as Dict exposing (Dict)
 import Array as Array
 
-import Tron.Tree exposing (Tree(..), map, squeezeMap2, fold, proxify)
+import Tron.Tree.Internals exposing (Tree(..), map, squeezeMap2, fold, proxify)
 import Tron.Path as Path exposing (Path)
 import Tron.Tree.Expose.Data as Exp
 

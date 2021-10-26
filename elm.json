@@ -13,15 +13,15 @@
         "Tron.Option.Communication",
         "Tron.Tree",
         "Tron.Tree.Random",
-        "Tron.Tree.Build",
+        "Tron.Tree.Build.Any",
         "Tron.Tree.Build.Unit",
+        "Tron.Tree.Expose.Data",
+        "Tron.Tree.Expose.Json",
         "Tron.Control.Value",
         "Tron.Style.Theme",
         "Tron.Style.Dock",
         "Tron.Style.PanelShape",
-        "Tron.Style.CellShape",
-        "Tron.Tree.Expose.Data",
-        "Tron.Tree.Expose.Json"
+        "Tron.Style.CellShape"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

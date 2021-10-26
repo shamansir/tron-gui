@@ -4,7 +4,7 @@ module Tron.Tree.Controls exposing (..)
 import Array exposing (Array)
 import Array.Extra.Zipper as Z exposing (zip, Zipper(..))
 
-import Tron.Tree exposing (Tree(..), NestShape, foldP, updateAt, move)
+import Tron.Tree.Internals exposing (Tree(..), NestShape, foldP, updateAt, move)
 import Tron.Path as Path exposing (Path)
 import Tron.Style.CellShape as CS exposing (CellShape)
 import Tron.Style.PanelShape as PS exposing (PanelShape)

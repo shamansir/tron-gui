@@ -21,7 +21,7 @@ import Tron as Tron
 import Tron.Path exposing (Path)
 import Tron.Path as Path
 import Tron.Control exposing (..)
-import Tron.Tree as Tree exposing (Tree(..))
+import Tron.Tree.Internals as Tree exposing (Tree(..))
 import Tron.Tree.Paths as Tree
 import Tron.Tree.Events as Tree
 import Tron.Tree.Controls as Tree

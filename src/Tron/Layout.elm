@@ -13,8 +13,8 @@ import Size exposing (..)
 
 import Tron.Control exposing (Control(..))
 import Tron.Path as Path exposing (Path)
-import Tron.Tree exposing (..)
-import Tron.Tree as Tree exposing (fold)
+import Tron.Tree.Internals exposing (..)
+import Tron.Tree.Internals as Tree exposing (fold)
 import Tron.Tree.Controls exposing (isGhost)
 import Tron.Style.Dock exposing (Dock)
 import Tron.Style.Dock as Dock
