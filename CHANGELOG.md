@@ -1,3 +1,26 @@
+### Next
+
+* JS helpers for the ease of building the UI and subscribing to its changes from JS;
+* Moving CSS into the code, so no `Tron.css` would be required;
+* Detailed documentation;
+
+### 13.0.0
+
+* Massive changes in the public API:
+    * `WithTron` helpers are now suggesting to help user create `Browser.*` configurations instead of hiding and replacing them;
+    * No more confusing `Backed` Tron-s in favor of just enabling specific ports in `Tron.Option.Communication` and always storing the previous GUI tree;
+    * `Communication` options are simplified and moved to separate module;
+    * `Tron.OfValue msg` is now just `Tron msg`, under the hood it is `Tree (Control.Value -> Maybe msg)`;
+    * `Property a` was renamed to `Tree a` and so what was confusing _normal_ `Tron a` is now `Tree a`;
+    * No more `ValueAt` type, the module is still there to work with `Tree ()`, which is the simply the previous state of GUI tree structure;
+    * More `map`-pings and `zip`-pings to help converting things here and there;
+    * Building `Tree ()` is from `Tree.Build.Unit`, building `Tree a` is from `Tree.Build.Any` and building `Tron msg` is from `Tron.Build`;
+    * Several improvements in _builders_ to make them easier and friendlier;
+* Massive changes in the internal API:
+    * `Property a` which is `Tree a` now, always holds the value (wasn't holding for `Ghost` case before);
+    * `Control`s now have their own `update` cycle and `Action`s as well;
+    * ...
+* All the examples were updated to the new API;
 
 ### 12.1.0
 
