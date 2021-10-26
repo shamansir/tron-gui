@@ -1,4 +1,4 @@
-module Tron.Random exposing (generator)
+module Tron.Tree.Random exposing (generator)
 
 
 {-| Using this module, you may generate the random UI structure if you would ever want to, for testing purposes, for example.
