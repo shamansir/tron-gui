@@ -843,11 +843,11 @@ main =
     WithTron.element
         (Render.toHtml Dock.bottomCenter Theme.dark)
         Communication.none
-        { for = for
+        { for = \_ -> for
         , init = \_ -> ( init, Cmd.none )
-        , view = view
+        , view = \_ -> view
         , update =
-            (\msg model ->
+            (\msg _ model ->
                 let
                     nextModel = update msg model
                 in
@@ -866,7 +866,7 @@ main =
                     _ -> Cmd.none
                 )
             )
-        , subscriptions = subscriptions
+        , subscriptions = \_ -> subscriptions
         }
 
 
