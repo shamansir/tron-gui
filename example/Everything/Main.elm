@@ -22,7 +22,10 @@ import Tron.Tree as T
 import Tron.Option.Render as Render
 import Tron.Option.Communication as Communication
 import Tron.Expose as Exp
+import Tron.Tree exposing (Tree)
 import Tron.Tree.Expose as Exp
+import Tron.Tree.Controls as Tree
+import Tron.Tree.Values as Tree
 import Tron.Expose as Exp
 import Tron.Mouse exposing (Position)
 import Tron.Detach as Detach exposing (fromUrl)
@@ -76,7 +79,7 @@ type Msg
     | ReceiveRaw (List Exp.In)
     | ToTron Core.Msg
     | ToExample Example.Msg
-    | Randomize (Tron ())
+    | Randomize (Tree ())
     | SwitchTheme
     | TriggerRandom
     | TriggerDefault
@@ -105,7 +108,7 @@ init url _ =
         ( state, startGui ) = Core.init
         initialGui =
             ExampleGui.for initialModel
-                    |> Tron.toUnit
+                    |> Tree.toUnit
     in
         (
             { mode = TronGui
@@ -115,16 +118,17 @@ init url _ =
                 state
                     |> Core.reshape ( 7, 7 )
                     |> Core.dock Dock.bottomLeft
-            , lastGui =
-                ExampleGui.for initialModel
-                    |> Tron.toUnit
+            , lastGui = initialGui
             , url = url
             , isRandom = False
             }
         , Cmd.batch
             [ initEffects |> Cmd.map ToExample
             , startGui |> Cmd.map ToTron
-            , WithTron.performInitEffects portCommunication initialGui
+            , WithTron.performInitEffects
+                (state.detach |> Tuple.first)
+                portCommunication
+                initialGui
             , applyUrl portCommunication url
             ]
         )
@@ -174,7 +178,7 @@ view { mode, state, example, lastGui, theme } =
                 lastGui
                     |> Core.view Mode.Fancy theme state
                     |> Html.map ToTron
-        , Example.view example
+        , Example.view lastGui example
         ]
 
 
@@ -239,7 +243,7 @@ update msg model =
         ( ToExample dmsg, _ ) ->
             let
                 ( nextExample, updateEffects ) =
-                    model.example |> Example.update dmsg
+                    model.example |> Example.update dmsg model.lastGui
             in
                 (
                     { model
@@ -268,7 +272,7 @@ update msg model =
                             ExampleGui.for model.example
                                 |> Tree.transferTransientState model.lastGui
                                 |> Tree.loadValues model.lastGui
-                                |> Def.map ToExample
+                                |> Tron.map ToExample
                     ) |> Core.update guiMsg model.state
             in
                 (
