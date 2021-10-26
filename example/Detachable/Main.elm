@@ -26,14 +26,14 @@ main =
             }
         )
         { for = \_ -> ExampleGui.for
-        , init = \_ _ _ -> ( Example.init, Cmd.none )
+        , init = \_ _ _ -> Example.init
         , view =
-            \_ model ->
+            \tree model ->
                 { title = "Detachable Tron"
-                , body = [ Example.view model ]
+                , body = [ Example.view tree model ]
                 }
-        , update = \msg _ model -> ( Example.update msg model, Cmd.none )
-        , subscriptions = \_ _ -> Sub.none
+        , update = Example.update
+        , subscriptions = always Example.subscriptions
         , onUrlChange = \_ -> Example.NoOp
         , onUrlRequest = \_ -> Example.NoOp
         }

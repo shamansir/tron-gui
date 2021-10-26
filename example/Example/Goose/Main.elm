@@ -1,8 +1,9 @@
-module Example.Goose.Main exposing (init, view, update)
+module Example.Goose.Main exposing (init, init_, view, view_, update, update_, subscriptions)
 
 
 import Color
 import Svg exposing (Svg)
+import Tron.Tree exposing (Tree)
 
 import Example.Goose.Model exposing (..)
 import Example.Goose.Model as Model
@@ -10,17 +11,29 @@ import Example.Goose.View as V
 import Example.Goose.Msg exposing (..)
 
 
-init : Model
-init =
+init : ( Model, Cmd msg )
+init = ( init_, Cmd.none )
+
+
+init_ : Model
+init_ =
     Model.default
 
 
-view : Model -> Svg msg
-view = V.view
+view : Tree () -> Model -> Svg msg
+view _ = view_
 
 
-update : Msg -> Model -> Model
-update msg model =
+view_ : Model -> Svg msg
+view_ = V.view
+
+
+update : Msg -> Tree () -> Model -> ( Model, Cmd msg )
+update msg _ model = ( update_ msg model, Cmd.none )
+
+
+update_ : Msg -> Model -> Model
+update_ msg model =
     let
         changeHonk f =
             { model
@@ -67,3 +80,8 @@ update msg model =
             changeColor (\colors -> { colors | iroquois = color })
         ChangeBackground color ->
             changeColor (\colors -> { colors | background = color })
+
+
+subscriptions : Model -> Sub msg
+subscriptions _ =
+    Sub.none

@@ -2,6 +2,7 @@ module Example.Default.Gui exposing (..)
 
 
 import Tron.Path as Path
+import Tron.Tree exposing (Tree)
 import Tron exposing (Tron)
 import Tron.Build as Gui
 import Tron.Style.PanelShape exposing (..)

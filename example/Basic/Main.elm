@@ -18,7 +18,7 @@ main =
     WithTron.sandbox
         (Render.toHtml Dock.center Theme.dark)
         { for = ExampleGui.for
-        , init = Example.init
-        , view = Example.view
-        , update = Example.update
+        , init = Example.init_
+        , view = Example.view_
+        , update = Example.update_
         }

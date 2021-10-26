@@ -32,10 +32,10 @@ main =
             , receive = updateFromDatGui identity
             })
         { for = always ExampleGui.for
-        , init = always ( Example.init, Cmd.none )
-        , view = always Example.view
-        , update = \msg _ model -> ( Example.update msg model, Cmd.none )
-        , subscriptions = \_ _ -> Sub.none
+        , init = always Example.init
+        , view = Example.view
+        , update = Example.update
+        , subscriptions = always Example.subscriptions
         }
 
 

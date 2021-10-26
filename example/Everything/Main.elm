@@ -16,13 +16,14 @@ import Url exposing (Url)
 
 import WithTron.Logic as WithTron
 import Tron exposing (Tron)
-import Tron.OfValue as Def
 import Tron.Core as Core
 import Tron.Core as T
-import Tron.Option as Option
+import Tron.Tree as T
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
 import Tron.Expose as Exp
-import Tron.Expose.Data as Exp
-import Tron.Expose.Convert as Exp
+import Tron.Tree.Expose as Exp
+import Tron.Expose as Exp
 import Tron.Mouse exposing (Position)
 import Tron.Detach as Detach exposing (fromUrl)
 import Tron.Style.Theme exposing (Theme)
@@ -90,7 +91,7 @@ type alias Model =
     { mode : Mode
     , theme : Theme
     , state : Core.State
-    , lastGui : Tron ()
+    , lastGui : T.Tree ()
     , example : Example.Model
     , url : Url
     , isRandom : Bool
@@ -222,8 +223,8 @@ update msg model =
                     { model
                     | state = newState
                     }
-            , case portCommunication of
-                Option.Detachable { ack } ->
+            , case portCommunication.ack of
+                Just ack ->
                     Exp.encodeAck clientId
                         |> ack
                 _ -> Cmd.none
@@ -261,8 +262,8 @@ update msg model =
                     ( if model.isRandom
                         then
                             model.lastGui
-                                |> Def.lift
-                                |> Def.map (always NoOp)
+                                |> Tron.lift
+                                |> Tron.map (always NoOp)
                         else
                             ExampleGui.for model.example
                                 |> Tree.transferTransientState model.lastGui
@@ -290,11 +291,11 @@ update msg model =
                         (if model.isRandom
                             then
                                 model.lastGui
-                                    |> Def.lift
-                                    |> Def.map (always NoOp)
+                                    |> Tron.lift
+                                    |> Tron.map (always NoOp)
                             else
                                 ExampleGui.for model.example
-                                    |> Def.map ToExample
+                                    |> Tron.map ToExample
                         )
                 in
                     guiUpdates
@@ -394,30 +395,30 @@ main =
         }
 
 
-portCommunication : Option.PortCommunication msg
+portCommunication : Communication.Ports msg
 portCommunication =
-    Option.Detachable
-        { ack = ackToWs
-        , transmit = sendUpdateToWs
-        , receive = receieveUpdateFromWs identity
-        }
+    { ack = Just ackToWs
+    , transmit = Just sendUpdateToWs
+    , receive = Just <| receieveUpdateFromWs identity
+    , apply = Nothing
+    }
 
 
 -- See WithTron.applyUrl
 applyUrl
-    :  Option.PortCommunication msg
+    :  Communication.Ports msg
     -> Url.Url
     -> Cmd Msg
 applyUrl ports url =
     let
         ( maybeClientId, state ) = Detach.fromUrl url
     in
-        case ( ports, maybeClientId ) of
-            ( Option.Detachable { ack }, Just clientId ) ->
+        case ( ports.ack, maybeClientId ) of
+            ( Just ack, Just clientId ) ->
                 Exp.encodeAck clientId
                     |> ack
                     |> Cmd.map (always NoOp)
-            ( Option.Detachable { ack }, Nothing ) ->
+            ( Just _, Nothing ) ->
                 WithTron.nextClientId
                     |> Cmd.map SetClientId
 
