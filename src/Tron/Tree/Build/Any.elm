@@ -11,12 +11,15 @@ module Tron.Tree.Build.Any exposing
 
 {-|
 
-# Sets
+For the detailed examples, see `Tron.Build`, it contains the same functions and types.
+The difference is that `Tron msg` is the `Tree (Control.Value -> Maybe msg)` and so it produces messages in response to anything, but `Tree a` just
+stores the given `a` values along with the components.
 
-`Set a` is just the list of components' definitions together with their labels.
-It is what `Build.root`, `Build.nest` and `Build.choice` get as an argument.
-`Set a` is exposed as a separate type to help you in the cases where you build your GUI from several modules,
-but want to join them in a single panel rather than nesting every module separately.
+To map over and manipulate such trees in different ways, use `Tron.Tree` module.
+
+Using `Tron.lift` any `Tree a` may be lifted to `Tron a` (i.e. `Tree (Control.Value -> Maybe a)`).
+
+# Sets
 
 @docs Set, mapSet, toSet
 
@@ -82,28 +85,37 @@ import Tron.Tree.Build.Choice as Choice
 
 type alias Tree a = Tree.Tree a
 
-
+{-| `Set a` is just the list of components' definitions together with their labels.
+It is what `Build.root`, `Build.nest` and `Build.choice` get as an argument.
+`Set a` is exposed as a separate type to help you in the cases where you build your GUI from several modules,
+but want to join them in a single panel rather than nesting every module separately.
+-}
 type alias Set a = List (Label, Tree a)
 
 
+{-| Button face -}
 type alias Face = Button.Face
 
 
+{-| Button icon -}
 type alias Icon = Button.Icon
 
 
 type alias Label = Path.Label
 
 
+{-| map all the items in the set with one function. -}
 mapSet : (a -> b) -> Set a -> Set b
 mapSet =
     List.map << Tuple.mapSecond << Tree.map
 
 
+{-| -}
 none : a -> Tree a
 none = Tree.Nil
 
 
+{-| -}
 root : Set a -> a -> Tree a
 root props a =
     nest
@@ -113,6 +125,7 @@ root props a =
         |> shape (rows 1)
 
 
+{-| -}
 float : Axis -> Float -> a -> Tree a
 float axis value a =
     Tree.Number
@@ -121,6 +134,7 @@ float axis value a =
 
 
 
+{-| -}
 int : { min: Int, max : Int, step : Int } -> Int -> a -> Tree a
 int { min, max, step } default a =
     float
@@ -129,10 +143,12 @@ int { min, max, step } default a =
         a
 
 
+{-| -}
 number : Axis -> Float -> a -> Tree a
 number = float
 
 
+{-| -}
 xy : ( Axis, Axis ) -> ( Float, Float ) -> a -> Tree a
 xy axes value a =
     Tree.Coordinate
@@ -140,10 +156,12 @@ xy axes value a =
         <| a
 
 
+{-| -}
 coord : ( Axis, Axis ) -> ( Float, Float ) -> a -> Tree a
 coord = xy
 
 
+{-| -}
 input : ( x -> String ) -> x -> a -> Tree a
 input toString value a = -- FIXME: accept just `String` and `value`
     Tree.Text
@@ -153,6 +171,7 @@ input toString value a = -- FIXME: accept just `String` and `value`
         <| a
 
 
+{-| -}
 text : String -> a -> Tree a
 text value a =
     Tree.Text
@@ -162,6 +181,7 @@ text value a =
         <| a
 
 
+{-| -}
 color : Color -> a -> Tree a
 color value a =
     Tree.Color
@@ -171,28 +191,34 @@ color value a =
         <| a
 
 
+{-| -}
 button : a -> Tree a
 button =
     buttonWith Default
 
 
+{-| -}
 face : Face -> Tree a -> Tree a
 face =
     Tree.setFace
 
 
+{-| -}
 icon : Url -> Face
 icon = Button.icon >> WithIcon
 
 
+{-| -}
 iconAt : List String -> Face
 iconAt = Button.iconAt >> WithIcon
 
 
+{-| -}
 themedIcon : (Theme -> Url) -> Face
 themedIcon = Button.themedIcon >> WithIcon
 
 
+{-| -}
 themedIconAt : (Theme -> List String) -> Face
 themedIconAt = Button.themedIconAt >> WithIcon
 
@@ -201,6 +227,7 @@ makeUrl : String -> Url
 makeUrl = Button.makeUrl
 
 
+{-| -}
 -- not exposed
 buttonWith : Face -> a -> Tree a
 buttonWith face_ a =
@@ -211,6 +238,7 @@ buttonWith face_ a =
         <| a
 
 
+{-| -}
 toggle : Bool -> a -> Tree a
 toggle value a =
     Tree.Toggle
@@ -220,10 +248,12 @@ toggle value a =
         <| a
 
 
+{-| -}
 bool : Bool -> a -> Tree a
 bool = toggle
 
 
+{-| -}
 nest : Set a -> a -> Tree a
 nest items a =
     Tree.Group
@@ -239,10 +269,12 @@ nest items a =
             <| a
 
 
+{-| -}
 useColor : Color -> Face
 useColor = WithColor
 
 
+{-| -}
 choice
      : Set comparable
     -> comparable
@@ -255,6 +287,7 @@ choice set current =
         (==)
 
 
+{-| -}
 choiceBy
      : Set a
     -> a
@@ -268,6 +301,7 @@ choiceBy set current compare =
         compare
 
 
+{-| -}
 strings
      : List String
     -> String
@@ -283,6 +317,7 @@ strings options current =
     |> cells CS.twiceByHalf
 
 
+{-| -}
 labels
      : ( a -> Label )
     -> List a
@@ -306,6 +341,7 @@ labels toLabel options current =
         |> cells CS.twiceByHalf
 
 
+{-| -}
 palette
      : List ( Label, Color )
     -> Color
@@ -330,11 +366,13 @@ palette options current =
     |> cells CS.half
 
 
+{-| -}
 buttons : List a -> List (Tree a)
 buttons =
     List.map button
 
 
+{-| -}
 toSet : (a -> Label) -> List (Tree a) -> Set a
 toSet toLabel =
     List.map
@@ -345,14 +383,17 @@ toSet toLabel =
         )
 
 
+{-| -}
 expand : Tree a -> Tree a
 expand = Tree.expand
 
 
+{-| -}
 collapse : Tree a -> Tree a
 collapse = Tree.collapse
 
 
+{-| -}
 toChoice : Tree a -> Tree a
 toChoice =
     Tree.toChoice
@@ -400,7 +441,7 @@ cells : CellShape -> Tree a -> Tree a
 cells = Tree.setCellShape
 
 
-
+{-| -}
 live : Tree a -> Tree a
 live prop =
     case prop of

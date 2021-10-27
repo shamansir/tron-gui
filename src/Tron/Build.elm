@@ -195,6 +195,7 @@ type alias Set msg = List ( Label, Tron msg )
 type alias Label = Path.Label
 
 
+{-| map all the items in the set with one function. -}
 mapSet : (a -> b) -> Set a -> Set b
 mapSet =
     List.map << Tuple.mapSecond << Def.map
