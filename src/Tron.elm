@@ -1,6 +1,6 @@
 module Tron exposing
     ( Tron, Set
-    , map, map2, map3, map4, map5
+    , map, looseMap2, looseMap3, looseMap4, looseMap5
     , mapSet
     , lift
     , andThen, with
@@ -19,6 +19,8 @@ See `Tron.Build` for the helpers to define your own interface.
 
 See `WithTron` for the ways to add `Tron` to your applcation.
 
+`Tron msg` is the same as `Tree (Control.Value -> Maybe msg)`, so it stores the value handler together with every control.
+
 # Tron
 
 @docs Tron, Set
@@ -29,9 +31,11 @@ See `WithTron` for the ways to add `Tron` to your applcation.
 
 # Common helpers
 
-@docs map, mapSet, andThen, with, map2, map3, map4, map5
+@docs map, mapSet, andThen, with, looseMap2, looseMap3, looseMap4, looseMap5
 
-#
+# Special
+
+@docs perform
 -}
 
 import Task
@@ -138,8 +142,10 @@ lift =
 -- proxy : Tron a -> Tron Value
 -- proxy = Tree.proxy
 
-map2 : (a -> b -> c) -> Tron a -> Tron b -> Tron c
-map2 f =
+{-| maps two GUI trees with given `fn`; If some control exists only in one tree at the specific compared place, it is removed;
+NB: The control state is always taken from the second (right) variant, that's why this `map` is `loose` :). -}
+looseMap2 : (a -> b -> c) -> Tron a -> Tron b -> Tron c
+looseMap2 f =
     Tree.zipMap2
         (\maybeFToA maybeFToB val ->
             Maybe.map2
@@ -153,8 +159,10 @@ map2 f =
     --     )
 
 
-map3 : (a -> b -> c -> d) -> Tron a -> Tron b -> Tron c -> Tron d
-map3 f =
+{-| maps three GUI trees with given `fn`; If one of the trees lacks the control at the specific compared place, this place is empty in the resulting tree;
+NB: The control state is always taken from the most right variant, that's why this `map` is `loose` :). -}
+looseMap3 : (a -> b -> c -> d) -> Tron a -> Tron b -> Tron c -> Tron d
+looseMap3 f =
     Tree.zipMap3
         (\maybeFToA maybeFToB maybeFToC val ->
             Maybe.map3
@@ -168,8 +176,10 @@ map3 f =
     --     )
 
 
-map4 : (a -> b -> c -> d -> e) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e
-map4 f =
+{-| maps four GUI trees with given `fn`; If one of the trees lacks the control at the specific compared place, this place is empty in the resulting tree;
+NB: The control state is always taken from the most right variant, that's why this `map` is `loose` :). -}
+looseMap4 : (a -> b -> c -> d -> e) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e
+looseMap4 f =
     Tree.zipMap4
         (\maybeFToA maybeFToB maybeFToC maybeFToD val ->
             Maybe.map4
@@ -185,8 +195,10 @@ map4 f =
     --     )
 
 
-map5 : (a -> b -> c -> d -> e -> f) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e -> Tron f
-map5 f =
+{-| maps five GUI trees with given `fn`; If one of the trees lacks the control at the specific compared place, this place is empty in the resulting tree;
+NB: The control state is always taken from the most right variant, that's why this `map` is `loose` :). -}
+looseMap5 : (a -> b -> c -> d -> e -> f) -> Tron a -> Tron b -> Tron c -> Tron d -> Tron e -> Tron f
+looseMap5 f =
     Tree.zipMap5
         (\maybeFToA maybeFToB maybeFToC maybeFToD maybeFToE val ->
             Maybe.map5
@@ -202,6 +214,8 @@ map5 f =
     --     )
 
 
+{-| Apply the value of the given control (at the current level, no going deep) to the handler it holds (`Tron msg`  is `Tree (Control.Value -> Maybe msg)`),
+and this way get the current `msg`. Then fire it using `Cmd` as the side-effect, at least if it was determined. -}
 perform : Tron msg -> Cmd msg
 perform prop =
     Tree.get prop
@@ -244,11 +258,19 @@ pathify =
         >> Tree.map (always << Just)
 
 
+{-| Make all the controls in the `Tron` tree return the current value, projected to `Control.Value`, themselves. In combination with `perform` and `map`, this helps to send values or ports of fire them as messages.
+
+Under the hood, since `Tron a == Tree (Control.Value -> Maybe a)`, it becomes `Tree (Control.Value -> Maybe Control.Value)` where it always `Just` with the same value given as argument.
+-}
 proxify : Tron a -> Tron Value
 proxify =
     Tree.map <| always Just
 
 
+{-| Make all the controls in the `Tron` tree return the current value, converted to the exposed JSON `Expose.Value`, themselves. In combination with `perform`, this helps to send values to ports or fire them as messages.
+
+Under the hood, since `Tron a == Tree (Control.Value -> Maybe a)`, it becomes `Tree (Control.Value -> Maybe Exp.Value)` where it always `Just` with the same value, converted to JSON, given as argument.
+-}
 expose : Tron a -> Tron Exp.Value
 expose tron =
     Tree.pathify tron

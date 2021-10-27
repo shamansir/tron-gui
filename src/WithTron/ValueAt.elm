@@ -1,7 +1,7 @@
 module WithTron.ValueAt exposing
-    ( ask
+    ( ask, at
     , Decoder, number, xy, text, toggle, color, action, choice, choiceOf
-    , at, atKnob, atXY, atText, atToggle, atColor, atChoice, atChoiceOf
+    , atKnob, atXY, atText, atToggle, atColor, atChoice, atChoiceOf
     , map
     )
 
@@ -23,13 +23,13 @@ And get `Maybe (Float, Float)` in response. Same works for any of the decoders b
 
 For the example of such, see `example/ForTiler`, where the structure/state of GUI is dependent on current values, but also doesn't store them in its own model, since mostly connects to JavaScript.
 
-@docs ValueAt, empty
-
 # Asking values at path
 
-Actually, the way to get your value as a common type.
+@docs at
 
-@docs at, atKnob, atXY, atText, atToggle, atColor, atChoice, atChoiceOf
+# Actually, all the possible ways to get your value as a common type:
+
+@docs atKnob, atXY, atText, atToggle, atColor, atChoice, atChoiceOf
 
 # Ask using decoders
 
@@ -38,8 +38,6 @@ Actually, the way to get your value as a common type.
 # Decode
 
 @docs Decoder
-
-Actually, the way to get your value as a common type.
 
 # Common helpers
 
@@ -50,17 +48,17 @@ Actually, the way to get your value as a common type.
 
 import Color exposing (Color)
 import Tron.Control.Impl.Nest exposing (ItemId)
-import Tron.Control.Impl.Toggle exposing (ToggleState)
-import Tron.Control.Value as Proxy exposing (Value)
+import Tron.Control.Value as Proxy
+import Tron.Control.Value as Control
 import Tron.Path as Path
 import Tron.Tree as Tree exposing (Tree)
 import Tron.Tree.Paths as Tree
 
 
-{-| The decoder that knows how to extract the value at the certain path.
+{-| The decoder that knows how to extract a value at the certain path.
 -}
 type Decoder a
-    = Decoder (Value -> Maybe a) (List Path.Label)
+    = Decoder (Control.Value -> Maybe a) (List Path.Label)
 
 
 {-| Common `map` function for decoder.
@@ -82,7 +80,7 @@ ask (Decoder decoder path) =
         >> Maybe.andThen decoder
 
 
-make : (Value -> Maybe a) -> List Path.Label -> Decoder a
+make : (Control.Value -> Maybe a) -> List Path.Label -> Decoder a
 make =
     Decoder
 
@@ -112,7 +110,7 @@ toggle =
 
 
 {-| Load chosen item ID (which is `Int`) by path. Use `choiceOf` to get the actual value. -}
-choice : List Path.Label -> Decoder ( ItemId, Path.Label )
+choice : List Path.Label -> Decoder ( ItemId, Maybe Path.Label )
 choice =
     make Proxy.fromChoice
 
@@ -136,43 +134,46 @@ color =
 
 
 {-| -}
-at : (List Path.Label -> Decoder a) -> List Path.Label -> Tree x -> Maybe a
-at decoder = ask << decoder
+at : List Path.Label -> Tree a -> Maybe Control.Value
+at path =
+    Tree.findByLabelPath path
+        >> Maybe.map Tree.proxify
+        >> Maybe.map Tree.get
 
 
 {-| -}
 atKnob : Float -> List Path.Label -> Tree x -> Float
 atKnob default path =
-    at number path
+    ask (number path)
         >> Maybe.withDefault default
 
 
 {-| -}
 atXY : ( Float, Float ) -> List Path.Label -> Tree x -> ( Float, Float )
 atXY default path =
-    at xy path
+    ask (xy path)
         >> Maybe.withDefault default
 
 
 {-| -}
 atText : String -> List Path.Label -> Tree x -> String
 atText default path =
-    at text path
+    ask (text path)
         >> Maybe.withDefault default
 
 
 {-| -}
 atToggle : (Bool -> a) -> a -> List Path.Label -> Tree x -> a
 atToggle f default path =
-    at toggle path
+    ask (toggle path)
         >> Maybe.map f
         >> Maybe.withDefault default
 
 
 {-| -}
-atChoice : ( ( ItemId, Path.Label ) -> a ) -> a -> List Path.Label -> Tree x -> a
+atChoice : ( ( ItemId, Maybe Path.Label ) -> a ) -> a -> List Path.Label -> Tree x -> a
 atChoice f default path =
-    at choice path
+    ask (choice path)
         >> Maybe.map f
         >> Maybe.withDefault default
 
@@ -180,12 +181,12 @@ atChoice f default path =
 {-| -}
 atChoiceOf : List a -> a -> List Path.Label -> Tree x -> a
 atChoiceOf values default path =
-    at (choiceOf values) path
+    ask (choiceOf values path)
         >> Maybe.withDefault default
 
 
 {-| -}
 atColor : Color -> List Path.Label -> Tree x -> Color
 atColor default path =
-    at color path
+    ask (color path)
         >> Maybe.withDefault default
