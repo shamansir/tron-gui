@@ -20,7 +20,7 @@ toCodeLines : Tree () -> List String
 toCodeLines root =
     [ "module Gui exposing (..)"
     , ""
-    , "import Tron.Builder.Unit as Tron"
+    , "import Tron.Build.Unit as Tron"
     , "import Tron.Style.CellShape as CS"
     , "import Tron.Style.PanelShape as PS"
     , "import Color"

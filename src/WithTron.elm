@@ -25,10 +25,10 @@ The only things that is different from usual `Elm` application is `for` function
 
     for : Model -> Tron Msg
     for amount =
-        Builder.root
+        Build.root
             [
                 ( "amount"
-                , Builder.float
+                , Build.float
                     { min = 0, max = 1, step = 0.01 }
                     amount
                     AmountChanged
@@ -72,15 +72,15 @@ Sometimes  you don't even need the `init`/`view`/`update`, for example to connec
 
 More examples are in the `README`, and in the `example/*/Main.elm` modules.
 
-See also: `Tron.Option`, `Tron.Builder`, `Tron.Builder.*`.
+See also: `Tron.Option`, `Tron.Builder`, `Tron.Build.*`.
 
 There are some special types of GUI Builders that can come in handy if you don't want to use messages, but get them as the type-value pairs or add paths to them or just skip them. All of them doesn't require you to specify handling message so, every function from such `Builder` has one argument less:
 
-- `Tron ()` (`Tron.Builder.Unit`) — do not expose values (keeps them inside);
-- `Tron Value` (`Tron.Builder.Proxy`) — store values as a type-value data, see `Tron.Control.Value` for more info;
-- `Tron String` (`Tron.Builder.String`) — store value stringified;
+- `Tron ()` (`Tron.Build.Unit`) — do not expose values (keeps them inside);
+- `Tron Value` (`Tron.Build.Proxy`) — store values as a type-value data, see `Tron.Control.Value` for more info;
+- `Tron String` (`Tron.Build.String`) — store value stringified;
 
-Any `Tron a` can be converted to `Tron ( Path, Value )` using `Builder.addPath`, `Builder.addLabeledPath` and/or `Tron.Expose.Convert` helpers.
+Any `Tron a` can be converted to `Tron ( Path, Value )` using `Build.addPath`, `Build.addLabeledPath` and/or `Tron.Expose.Convert` helpers.
 
 There is a special `Backed` program, that just stores the stringified values in the `Dict` and is able to send them to the JS, see [Backed](#Backed) section below.
 

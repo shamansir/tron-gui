@@ -1,4 +1,51 @@
-module Tron.Tree.Build.Unit exposing (..)
+module Tron.Tree.Build.Unit exposing
+    ( Set
+    , root
+    , none, int, float, number, xy, coord, color, text, input, toggle, bool, button, buttonWith
+    , nest, choice, choiceBy, strings, labels, palette, buttons
+    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
+    , live, toChoice, toSet, toSwitch, toKnob
+    , expand, collapse, shape, cells
+    )
+
+{-|
+
+# Sets
+@docs Set, mapSet, toSet
+
+# Root
+@docs root
+
+# Items
+@docs none, int, float, number, xy, coord, color, text, input, button, toggle, bool
+
+# Groups
+@docs nest, choice, choiceBy, strings, labels, palette
+
+# Buttons
+@docs buttons, useColor, face, Face
+
+# Icons
+@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+
+# Force expand / collapse for nesting
+@docs expand, collapse
+
+# Shape
+@docs shape, cells
+
+# Live
+
+Usually in your `for` function you set the default value to the control, but if you change the control with `live`, then you'll be able to pass some dynamic value from your model to it.
+
+@docs live
+
+# Conversion between types of controls + helpers
+@docs toSet, toChoice, toKnob, toSwitch, addLabels, handleWith
+
+# Add Path
+@docs addPath, addLabeledPath
+-}
 
 
 import Color exposing (Color)
@@ -31,6 +78,9 @@ type alias Label = Path.Label
 
 
 type alias Face = Button.Face
+
+
+type alias Icon = Button.Icon
 
 
 none : Tree
@@ -110,9 +160,9 @@ makeUrl = B.makeUrl
 
 
 -- not exposed
-buttonByFace : Face -> Tree
-buttonByFace face_ =
-    B.buttonByFace face_ ()
+buttonWith : Face -> Tree
+buttonWith face_ =
+    B.buttonWith face_ ()
 
 
 toggle : Bool -> Tree
@@ -201,13 +251,29 @@ toChoice : Tree -> Tree
 toChoice = B.toChoice
 
 
+{-| Convert choice control to a switch by click form:
+
+    Build.choice ... |> Build.toSwitch
+-}
+toSwitch : Tree -> Tree
+toSwitch = B.toSwitch
+
+
+{-| Convert choice control to a switch by click form:
+
+    Build.choice ... |> Build.toSwitch
+-}
+toKnob : Tree -> Tree
+toKnob = B.toKnob
+
+
 {-| Changes panel shape for `nest` and `choice` panels:
 
-    Builder.nest ... |> Buidler.shape (cols 2)
+    Build.nest ... |> Buidler.shape (cols 2)
 
-    Builder.choice ... |> Buidler.shape (rows 1)
+    Build.choice ... |> Buidler.shape (rows 1)
 
-    Builder.choice ... |> Buidler.shape (by 2 3)
+    Build.choice ... |> Buidler.shape (by 2 3)
 -}
 shape : PanelShape -> Tree -> Tree
 shape = B.shape
@@ -215,11 +281,11 @@ shape = B.shape
 
 {-| Changes cell shape for `nest` and `choice` panels:
 
-    Builder.nest ... |> Buidler.cells single
+    Build.nest ... |> Buidler.cells single
 
-    Builder.choice ... |> Buidler.shape halfByTwo
+    Build.choice ... |> Buidler.shape halfByTwo
 
-    Builder.choice ... |> Buidler.shape halfByHalf
+    Build.choice ... |> Buidler.shape halfByHalf
 -}
 cells : CellShape -> Tree -> Tree
 cells = B.cells
@@ -228,7 +294,3 @@ cells = B.cells
 
 live : Tree -> Tree
 live = B.live
-
-
-toUnit : T.Tree a -> Tree
-toUnit = T.toUnit

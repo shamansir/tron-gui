@@ -84,7 +84,7 @@ the required information about the value, such as:
 - the type of the value, as a string;
 - client ID, for the communication with WebSockets; (will be removed in future versions)
 
-Use `Builder.map Tuple.first` to get rid of the message if you don't need it.
+Use `Build.map Tuple.first` to get rid of the message if you don't need it.
 -}
 expose : Tree a -> Tree Exp.Value
 expose prop =

@@ -1,4 +1,58 @@
-module Tron.Tree.Build.Any exposing (..)
+module Tron.Tree.Build.Any exposing
+    ( Set
+    , root
+    , none, int, float, number, xy, coord, color, text, input, toggle, bool, button, buttonWith
+    , nest, choice, choiceBy, strings, labels, palette, buttons
+    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
+    , live, toChoice, toSet, mapSet, toSwitch, toKnob
+    , expand, collapse, shape, cells
+    )
+
+
+{-|
+
+# Sets
+
+`Set a` is just the list of components' definitions together with their labels.
+It is what `Build.root`, `Build.nest` and `Build.choice` get as an argument.
+`Set a` is exposed as a separate type to help you in the cases where you build your GUI from several modules,
+but want to join them in a single panel rather than nesting every module separately.
+
+@docs Set, mapSet, toSet
+
+# Root
+@docs root
+
+# Items
+@docs none, int, float, number, xy, coord, color, text, input, button, toggle, bool
+
+# Groups
+@docs nest, choice, choiceBy, strings, labels, palette
+
+# Buttons
+@docs buttons, useColor, face, Face
+
+# Icons
+@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+
+# Force expand / collapse for nesting
+@docs expand, collapse
+
+# Shape
+@docs shape, cells
+
+# Live
+
+Usually in your `for` function you set the default value to the control, but if you change the control with `live`, then you'll be able to pass some dynamic value from your model to it.
+
+@docs live
+
+# Conversion between types of controls + helpers
+@docs toChoice, toKnob, toSwitch, addLabels, handleWith
+
+# Add Path
+@docs addPath, addLabeledPath
+-}
 
 
 import Array
@@ -21,7 +75,7 @@ import Tron.Style.Theme exposing (Theme)
 import Tron.Control.Impl.Text exposing (TextState(..))
 import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..), Url(..))
 import Tron.Control.Impl.Toggle exposing (boolToToggle)
-import Tron.Control.Impl.Nest exposing (Form(..))
+import Tron.Control.Impl.Nest as Nest exposing (Form(..))
 
 import Tron.Tree.Build.Choice as Choice
 
@@ -33,6 +87,9 @@ type alias Set a = List (Label, Tree a)
 
 
 type alias Face = Button.Face
+
+
+type alias Icon = Button.Icon
 
 
 type alias Label = Path.Label
@@ -116,7 +173,7 @@ color value a =
 
 button : a -> Tree a
 button =
-    buttonByFace Default
+    buttonWith Default
 
 
 face : Face -> Tree a -> Tree a
@@ -145,8 +202,8 @@ makeUrl = Button.makeUrl
 
 
 -- not exposed
-buttonByFace : Face -> a -> Tree a
-buttonByFace face_ a =
+buttonWith : Face -> a -> Tree a
+buttonWith face_ a =
     Tree.Action
         <| Control
             face_
@@ -301,13 +358,31 @@ toChoice =
     Tree.toChoice
 
 
+{-| Convert choice control to a switch by click form:
+
+    Build.choice ... |> Build.toSwitch
+-}
+toSwitch : Tree msg -> Tree msg
+toSwitch =
+    Tree.setChoiceMode Nest.SwitchThrough
+
+
+{-| Convert choice control to a switch by click form:
+
+    Build.choice ... |> Build.toSwitch
+-}
+toKnob : Tree msg -> Tree msg
+toKnob =
+    Tree.setChoiceMode Nest.Knob
+
+
 {-| Changes panel shape for `nest` and `choice` panels:
 
-    Builder.nest ... |> Buidler.shape (cols 2)
+    Build.nest ... |> Buidler.shape (cols 2)
 
-    Builder.choice ... |> Buidler.shape (rows 1)
+    Build.choice ... |> Buidler.shape (rows 1)
 
-    Builder.choice ... |> Buidler.shape (by 2 3)
+    Build.choice ... |> Buidler.shape (by 2 3)
 -}
 shape : PanelShape -> Tree a -> Tree a
 shape = Tree.setPanelShape
@@ -315,14 +390,15 @@ shape = Tree.setPanelShape
 
 {-| Changes cell shape for `nest` and `choice` panels:
 
-    Builder.nest ... |> Buidler.cells single
+    Build.nest ... |> Buidler.cells single
 
-    Builder.choice ... |> Buidler.shape halfByTwo
+    Build.choice ... |> Buidler.shape halfByTwo
 
-    Builder.choice ... |> Buidler.shape halfByHalf
+    Build.choice ... |> Buidler.shape halfByHalf
 -}
 cells : CellShape -> Tree a -> Tree a
 cells = Tree.setCellShape
+
 
 
 live : Tree a -> Tree a

@@ -5,7 +5,7 @@ import Task
 
 
 type Control setup value a =
-    Control setup value a -- TODO: `Maybe a`, for `Builder.root`, `Builder.nest` etc.
+    Control setup value a -- TODO: `Maybe a`, for `Build.root`, `Build.nest` etc.
 
 
 map : (a -> b) -> Control setup value a -> Control setup value b

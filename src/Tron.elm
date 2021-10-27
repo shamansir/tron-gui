@@ -51,7 +51,7 @@ import Tron.Tree.Expose.Convert as Exp
 {-| `Tron a` is the tree of your controls or, recursively, any control in such tree.
 
 To build your interface, use the helpers from the `Tron.Builder` module or any of its variants like
-`Tron.Builder.Proxy`, `Tron.Builder.Unit` or `Tron.Builder.String`
+`Tron.Build.Proxy`, `Tron.Build.Unit` or `Tron.Build.String`
 -}
 type alias Tron a =
     Tree (Value -> Maybe a)
@@ -99,12 +99,12 @@ with : (a -> Tron a -> Tron a) -> Tron a -> Tron a
 with f prop = andThen (\a -> f a prop) prop
 
 
-{-| The usual `map` function which allows you to substitute the messages sent through the components in a `Set`. For example, implementation of `Tron.Builder.palette`:
+{-| The usual `map` function which allows you to substitute the messages sent through the components in a `Set`. For example, implementation of `Tron.Build.palette`:
 
-    Builder.choiceBy
+    Build.choiceBy
         (options
-            |> Builder.buttons
-            |> List.map (Tron.with (Builder.face << Builder.useColor << Tuple.second))
+            |> Build.buttons
+            |> List.map (Tron.with (Build.face << Build.useColor << Tuple.second))
             |> addLabels Tuple.first
             |> Tron.mapSet Tuple.second
         )

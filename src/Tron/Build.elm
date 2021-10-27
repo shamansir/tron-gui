@@ -1,9 +1,10 @@
 module Tron.Build exposing
-    ( root
-    , none, int, float, number, xy, coord, color, text, input, toggle, bool, button
+    ( Set
+    , root
+    , none, int, float, number, xy, coord, color, text, input, toggle, bool, button, buttonWith
     , nest, choice, choiceBy, strings, labels, palette, buttons
     , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
-    , live, toChoice, toSet, handleWith, toSwitch, toKnob
+    , live, toChoice, toSet, mapSet, handleWith, toSwitch, toKnob
     , expand, collapse, shape, cells
     )
 
@@ -24,7 +25,7 @@ Every control may:
 
 # Shapes
 
-For `choice...` and `nest...` items you are required to specify both the shape of the panel (in cells) and shape of every cell (they only can be all of one shape).
+For `choice...` and `nest...` items you may specify both the shape of the panel (in cells) and shape of every cell (they only can be all of one shape).
 
 Shape of the panel may be requested to be calculated automatically (`Shape.auto`) or asked to have the desired number of rows (`Shape.rows 3`) or columns (`Shape.columns 1`) and so auto-calculate the other side, or specified manually using `by` function (`Shape.by 4 3`).
 
@@ -32,10 +33,10 @@ Cell shapes are usually just 1x1 (`CellShape.single`), but in some specific case
 
 # The Naming
 
-In the examples below, we use `Builder.` as a prefix in the places where we reference functions from this module. This assumes that you did something like this in your code:
+In the examples below, we use `Build.` as a prefix in the places where we reference functions from this module. This assumes that you did something like this in your code:
 
     import Tron exposing (Tron)
-    import Tron.Builder as Builder exposing (..)
+    import Tron.Build as Build exposing (..)
 
 However, it is ok to use any name you like, for sure. Be it `Tron.` or `Def.` or whatever...
 
@@ -61,10 +62,10 @@ This module contains all the helpers you need to build your own interface. Here 
 
     for : Model -> Tron Msg
     for amount =
-        Builder.root
+        Build.root
             [
                 ( "amount"
-                , Builder.float
+                , Build.float
                     { min = 0, max = 1, step = 0.01 }
                     amount
                     AmountChanged
@@ -75,24 +76,24 @@ This module contains all the helpers you need to build your own interface. Here 
 
 Use the methods in the module as the helpers in building your own grid structure:
 
-    Builder.root
-        [ ( "int", Builder.int ... )
-        , ( "float", Builder.float ... )
+    Build.root
+        [ ( "int", Build.int ... )
+        , ( "float", Build.float ... )
         ,
             ( "nest"
-            , Builder.nest
-                [ ( "button", Builder.button ... )
+            , Build.nest
+                [ ( "button", Build.button ... )
                 , ...
                 ]
             )
         ]
 
-Using `Tron msg` together with `Builder.map` you may build your GUI from several modules with different messages.
+Using `Tron msg` together with `Build.map` you may build your GUI from several modules with different messages.
 
-    Builder.root
-        [ ( "one", ModuleOne.gui model.moduleOne |> Builder.map ModuleOne )
-        , ( "two", ModuleTwo.gui model.moduleTwo |> Builder.map ModuleTwo )
-        , ( "three", ModuleThree.gui model.moduleThree |> Builder.map ModuleThree )
+    Build.root
+        [ ( "one", ModuleOne.gui model.moduleOne |> Build.map ModuleOne )
+        , ( "two", ModuleTwo.gui model.moduleTwo |> Build.map ModuleTwo )
+        , ( "three", ModuleThree.gui model.moduleThree |> Build.map ModuleThree )
         ]
 
 For more information, see the `examples` folder in the source code.
@@ -100,12 +101,12 @@ For more information, see the `examples` folder in the source code.
 # Sets
 
 `Set msg` is just the list of components' definitions together with their labels. It is what
-`Builder.root` and `Builder.nest` get as an argument. `Set msg` is exposed as a separate type to help you in the cases where you build your GUI from several modules, but want to join them in a single panel rather than nesting every module separately.
+`Build.root`, `Build.nest` and `Build.choice` get as an argument. `Set msg` is exposed as a separate type to help you in the cases where you build your GUI from several modules, but want to join them in a single panel rather than nesting every module separately.
 
-    Builder.nest
-        <| (ModuleOne.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleOne))
-            ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleTwo))
-            ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleThree))
+    Build.nest
+        <| (ModuleOne.gui |> List.map (Tuple.mapSecond <| Build.map ToModuleOne))
+            ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Build.map ToModuleTwo))
+            ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Build.map ToModuleThree))
 
 # Root
 @docs root
@@ -146,17 +147,16 @@ import Array
 import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
-import Url.Builder as Url
 import Dict
 
 import Tron as Def exposing (Tron)
-import Tron.Path as Path exposing (Path)
+import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Control.Value as Value exposing (..)
 import Tron.Tree.Internals exposing (..)
 import Tron.Tree.Internals as Tree
 import Tron.Tree.Controls as Tree exposing (expand)
-import Tron.Control as Control exposing (Control(..))
+import Tron.Control exposing (Control(..))
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS
 import Tron.Style.PanelShape exposing (PanelShape)
@@ -166,7 +166,7 @@ import Tron.Style.Theme exposing (Theme)
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Impl.Text exposing (TextState(..))
 import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..), Url(..))
-import Tron.Control.Impl.Toggle exposing (boolToToggle, toggleToBool)
+import Tron.Control.Impl.Toggle
 import Tron.Control.Impl.Nest as Nest exposing (Form(..), ItemId)
 
 import Tron.Tree.Build.Any as B
@@ -174,20 +174,20 @@ import Tron.Tree.Build.Choice as Choice
 
 
 {-|
-See also: `Builder.Set`.
+See also: `Build.Set`.
 -}
 type alias Tron msg = Def.Tron msg
 
 
 {-| `Set msg` is just the list of components' definitions together with their labels. It is what
-`Builder.root` and `Builder.nest` get as an argument. `Set msg` is exposed as a separate type to help you in the cases where you build your GUI from several modules, but want to join them in a single panel rather than nesting every module separately.
+`Build.root` and `Build.nest` get as an argument. `Set msg` is exposed as a separate type to help you in the cases where you build your GUI from several modules, but want to join them in a single panel rather than nesting every module separately.
 
-    Builder.nest
-        <| (ModuleOne.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleOne))
-            ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleTwo))
-            ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Builder.map ToModuleThree))
+    Build.nest
+        <| (ModuleOne.gui |> List.map (Tuple.mapSecond <| Build.map ToModuleOne))
+            ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Build.map ToModuleTwo))
+            ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Build.map ToModuleThree))
 
-See also: `Builder.map`.
+See also: `Build.map`.
 -}
 type alias Set msg = List ( Label, Tron msg )
 
@@ -195,14 +195,19 @@ type alias Set msg = List ( Label, Tron msg )
 type alias Label = Path.Label
 
 
+mapSet : (a -> b) -> Set a -> Set b
+mapSet =
+    List.map << Tuple.mapSecond << Def.map
+
+
 {-| Similar to `Cmd.none`, `Sub.none` etc., makes it easier to use expressions in the definition.
 
 For example:
 
     if user |> User.is Root then
-        Builder.button RemoveAllFiles
+        Build.button RemoveAllFiles
     else
-        Builder.none
+        Build.none
 
 -}
 none : Tron msg
@@ -214,40 +219,40 @@ none = B.none <| always Nothing
 Actually it is just an alias for the nested row of controls, always expanded.
 
     for myModel =
-        Builder.root
+        Build.root
             [
                 ( "octave"
-                , Builder.int { min = 1, max = 8, step = 1 } myModel.octave ChangeOctave
+                , Build.int { min = 1, max = 8, step = 1 } myModel.octave ChangeOctave
                 )
             ,
                 ( "note"
-                , Builder.int { min = 1, max = 127, step = 1 } myModel.midiNote ChangeMidiNote
+                , Build.int { min = 1, max = 127, step = 1 } myModel.midiNote ChangeMidiNote
                 )
             ,
                 ( "shape"
-                , Builder.nest
+                , Build.nest
 
                     [
                         ( "sine"
-                        , Builder.button
+                        , Build.button
                             (always <| ChangeShape Sine)
-                            |> Builder.face
-                                (Builder.icon <| Url.Builder.relative [ "sawwave.svg" ] [])
+                            |> Build.face
+                                (Build.icon <| Url.Build.relative [ "sawwave.svg" ] [])
 
                         )
                     ,
                         ( "square"
-                        , Builder.button
+                        , Build.button
                             (always <| ChangeShape Square)
-                            |> Builder.face
-                                (Builder.icon <| Url.Builder.relative [ "sawwave.svg" ] [])
+                            |> Build.face
+                                (Build.icon <| Url.Build.relative [ "sawwave.svg" ] [])
                         )
                     ,
                         ( "saw"
-                        , Builder.button
+                        , Build.button
                             (always <| ChangeShape Saw)
-                            |> Builder.face
-                                (Builder.icon <| Url.Builder.relative [ "sawwave.svg" ] [])
+                            |> Build.face
+                                (Build.icon <| Url.Build.relative [ "sawwave.svg" ] [])
 
                         )
                     ]
@@ -266,7 +271,7 @@ root props =
 
 {-| `float` creates a control over a rational number value, with a minimum, maximum and a step.
 
-    Builder.float { min = 0, max = 44000, step = 1 } myModel.frequency ChangeFrequency
+    Build.float { min = 0, max = 44000, step = 1 } myModel.frequency ChangeFrequency
 
 -}
 float : Axis -> Float -> ( Float -> msg ) -> Tron msg
@@ -276,7 +281,7 @@ float axis value toMsg =
 
 {-| `int` creates a control over an integer number value, with a minimum, maximum and a step.
 
-    Builder.int { min = 1, max = 8, step = 1 } myModel.octave ChangeOctave
+    Build.int { min = 1, max = 8, step = 1 } myModel.octave ChangeOctave
 
 -}
 int : { min: Int, max : Int, step : Int } -> Int -> ( Int -> msg ) -> Tron msg
@@ -289,7 +294,7 @@ int { min, max, step } default toMsg =
 
 {-| `number` is the alias for `Builde.float`.
 
-    Builder.number { min = 0, max = 44000, step = 1 } myModel.frequency ChangeFrequency
+    Build.number { min = 0, max = 44000, step = 1 } myModel.frequency ChangeFrequency
 -}
 number : Axis -> Float -> ( Float -> msg ) -> Tron msg
 number = float
@@ -297,7 +302,7 @@ number = float
 
 {-| `xy` creates a control over a pair of two number values or anything that can be translated to them.
 
-    Builder.xy
+    Build.xy
         ( { min = 0, max = scene.width, step = 0.1 }
         , { min = 0, max = scene.height, step = 0.1 }
         )
@@ -310,7 +315,7 @@ xy axes value toMsg =
     B.xy axes value <| Value.fromXY >> Maybe.map toMsg
 
 
-{-| `coord` is the alias for `Builder.xy`
+{-| `coord` is the alias for `Build.xy`
 -}
 coord : ( Axis, Axis ) -> ( Float, Float ) -> ( ( Float, Float ) -> msg ) -> Tron msg
 coord = xy
@@ -318,7 +323,7 @@ coord = xy
 
 {-| `input` creates a control over a value which can be translated to `String` and parsed from `String`. It is just a helper over `text` control.
 
-    Builder.input
+    Build.input
         (\color ->
             case color of
                 Red -> "red"
@@ -342,7 +347,7 @@ input toString fromString value toMsg =
 
 {-| `text` creates a control over a `String` value.
 
-    Builder.text model.elfName RenameElf
+    Build.text model.elfName RenameElf
 -}
 text : String -> (String -> msg) -> Tron msg
 text value toMsg =
@@ -353,7 +358,7 @@ text value toMsg =
 
 The `Color` type here is from `avh4/elm-color` module.
 
-    Builder.color model.lightColor AdjustColor
+    Build.color model.lightColor AdjustColor
 -}
 color : Color -> (Color -> msg) -> Tron msg
 color value toMsg =
@@ -362,11 +367,11 @@ color value toMsg =
 
 {-| `button` creates a control over a _unit_ `()` value. Type science aside, when you receive the unit value `()` in the handler, it just means that this button was pushed.
 
-    Builder.button <| always DoABang
+    Build.button <| always DoABang
 -}
 button : (() -> msg) -> Tron msg
 button =
-    buttonByFace Default
+    buttonWith Default
 
 
 {-| -}
@@ -375,16 +380,16 @@ type alias Face = Button.Face
 
 {-| Set face for the `button`, `nest`, or `choice`, it can be icon or color:
 
-    Builder.button (always DoABang)
+    Build.button (always DoABang)
         |> face (iconAt [ "assets", "myIcon.svg" ])
 
-    Builder.nest
+    Build.nest
         ... |> face (iconAt [ "assets", "myIcon.svg" ])
 
-    Builder.choice
+    Build.choice
         ... |> face (iconAt [ "assets", "myIcon.svg" ])
 
-    Builder.buttons ...
+    Build.buttons ...
         |> Tron.map (face << icon)
 
 -}
@@ -401,10 +406,10 @@ type alias Icon = Button.Icon
 
     import Url.Builder as Url
 
-    Builder.icon
+    Build.icon
         <| makeUrl <| Url.relative [ "assets", "myicon.svg" ] []
 
-See also: `Builder.iconAt`, `Builder.themedIcon`, `Builder.themedIconAt`
+See also: `Build.iconAt`, `Build.themedIcon`, `Build.themedIconAt`
 -}
 icon : Url -> Face
 icon = Button.icon >> WithIcon
@@ -412,9 +417,9 @@ icon = Button.icon >> WithIcon
 
 {-| Create an `Icon` using its relative local path.
 
-    Builder.iconAt [ "assets", "myicon.svg" ]
+    Build.iconAt [ "assets", "myicon.svg" ]
 
-See also: `Builder.themedIconAt`
+See also: `Build.themedIconAt`
 -}
 iconAt : List String -> Face
 iconAt = Button.iconAt >> WithIcon
@@ -424,7 +429,7 @@ iconAt = Button.iconAt >> WithIcon
 
     import Url.Builder as Url
 
-    Builder.themedIcon
+    Build.themedIcon
         <| \theme ->
             makeUrl <| Url.relative [ "assets", "myicon_" ++ Theme.toString theme ++ ".svg" ] []
 -}
@@ -434,7 +439,7 @@ themedIcon = Button.themedIcon >> WithIcon
 
 {-| Create a themed `Icon` using its relative local path.
 
-    Builder.themedIconAt
+    Build.themedIconAt
         <| \theme -> [ "assets", "myicon_" ++ Theme.toString theme ++ ".svg" ]
 -}
 themedIconAt : (Theme -> List String) -> Face
@@ -448,22 +453,21 @@ makeUrl = Button.makeUrl
 
 
 
--- not exposed
-buttonByFace : Face -> (() -> msg) -> Tron msg
-buttonByFace face_ toMsg =
-    B.buttonByFace face_ <| Value.fromAction >> Maybe.map toMsg
+buttonWith : Face -> (() -> msg) -> Tron msg
+buttonWith face_ toMsg =
+    B.buttonWith face_ <| Value.fromAction >> Maybe.map toMsg
 
 
 {-| `toggle` creates a control over a boolean value.
 
-    Builder.toggle model.lightOn SwitchLight
+    Build.toggle model.lightOn SwitchLight
 -}
 toggle : Bool -> (Bool -> msg) -> Tron msg
 toggle value toMsg =
     B.toggle value <| Value.fromToggle >> Maybe.map toMsg
 
 
-{-| `bool` is the alias for `Builder.toggle`
+{-| `bool` is the alias for `Build.toggle`
 -}
 bool : Bool -> (Bool -> msg) -> Tron msg
 bool = toggle
@@ -473,18 +477,18 @@ bool = toggle
 
 Handler receives the state of the group, like if it is exapanded or collapsed or detached, but usually it's fine just to make it `always NoOp`.
 
-    Builder.nest
+    Build.nest
         [
             ( "red"
-            , Builder.float { min = 0, max = 255, step = 0.1 } model.red <| AdjustColor Red
+            , Build.float { min = 0, max = 255, step = 0.1 } model.red <| AdjustColor Red
             )
         ,
             ( "green"
-            , Builder.float { min = 0, max = 255, step = 0.1 } model.blue <| AdjustColor Green
+            , Build.float { min = 0, max = 255, step = 0.1 } model.blue <| AdjustColor Green
             )
         ,
             ( "blue"
-            , Builder.float { min = 0, max = 255, step = 0.1 } model.blue <| AdjustColor Blue
+            , Build.float { min = 0, max = 255, step = 0.1 } model.blue <| AdjustColor Blue
             )
         ]
 
@@ -520,7 +524,7 @@ useColor = WithColor
 
 {-| `choice` defines a list of options for user to choose between. Consider it as `<select>` tag with `<option>`s. When some option is chosen by user, the handler gets the corresponding value. Notice that we ask for `comparable` type here.
 
-    Builder.choice
+    Build.choice
         ([ 128, 256, 512 ]
             |> buttons
             |> addLabels String.fromInt
@@ -532,7 +536,7 @@ useColor = WithColor
 
 *NB*: If you want to add icons to the buttons, use `buttons |> List.map (Tron.map (face << myIcon))`, where `myIcon : a -> Face`, for colors use `[ Color.white, Color.red, Color.yellow, ... ] |> buttons |> List.map (Tron.map (face << useColor))`.
 
-See also: `Builder.choiceBy`, `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
+See also: `Build.choiceBy`, `Build.strings`, `Build.palette`, `Style.Shape`, `Style.CellShape`
 -}
 choice
      : Set comparable
@@ -550,7 +554,7 @@ choice set current toMsg =
 
 {-| `choiceBy` is identical to `choice`, but asks user for a custom comparison function instead of requiring `comparable` values.
 
-    Builder.choiceBy
+    Build.choiceBy
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> addLabels waveToString
@@ -559,7 +563,7 @@ choice set current toMsg =
         compareWaves -- sometimes just (==) works, but it's better not to rely on it
         ChangeWaveShape
 
-See also: `Builder.strings`, `Builder.palette`, `Style.Shape`, `Style.CellShape`
+See also: `Build.strings`, `Build.palette`, `Style.Shape`, `Style.CellShape`
 -}
 choiceBy
      : Set a
@@ -578,7 +582,7 @@ choiceBy set current compare toMsg =
 
 {-| `strings` is a helper to create `choice` over string values.
 
-    Builder.strings
+    Build.strings
         greekChildrenNames
         model.currentChildName
         ChangeChildName
@@ -636,7 +640,7 @@ labels toLabel options current fallback toMsg =
 
 {-| `palette` is a helper to create `choice` over color values.
 
-    Builder.palette
+    Build.palette
         [ Color.aqua, Color.rouge, Color.vanilla ]
         model.iceCreamColor
         RepaintIceCream
@@ -671,7 +675,7 @@ palette options current toMsg =
 
 It could be useful to pass such list to `choice` or `nest`:
 
-    Builder.choiceBy
+    Build.choiceBy
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> addLabels waveToString
@@ -682,7 +686,7 @@ It could be useful to pass such list to `choice` or `nest`:
 
 Or:
 
-    Builder.nest
+    Build.nest
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> toSet waveToString -- `toSet` is just another name for `addLabels`
@@ -717,8 +721,8 @@ toSet toLabel =
 
 {-| Forcefully expand the nesting:
 
-    Builder.nest ... |> Builder.expand
-    Builder.choice ... |> Builder.expand
+    Build.nest ... |> Build.expand
+    Build.choice ... |> Build.expand
 -}
 expand : Tron msg -> Tron msg
 expand = Tree.expand
@@ -726,8 +730,8 @@ expand = Tree.expand
 
 {-| Forcefully collapse the nesting:
 
-    Builder.nest ... |> Builder.collapse
-    Builder.choice ... |> Builder.collapse
+    Build.nest ... |> Build.collapse
+    Build.choice ... |> Build.collapse
 -}
 collapse : Tron msg -> Tron msg
 collapse = Tree.collapse
@@ -735,8 +739,8 @@ collapse = Tree.collapse
 
 {- Set the icon to the control that can have it:
 
-    Builder.nest ... |> Builder.setIcon (Builder.icon ...)
-    Builder.button ... |> Builder.setIcon (Builder.icon ...)
+    Build.nest ... |> Build.setIcon (Build.icon ...)
+    Build.button ... |> Build.setIcon (Build.icon ...)
 -}
 -- TODO
 -- setIcon : Icon -> Tron msg -> Tron msg
@@ -746,7 +750,7 @@ collapse = Tree.collapse
 {-| Convert a `nest` control to `choice` control. It can be done
 easily by specifying a handler:
 
-    Builder.nest
+    Build.nest
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> toSet waveToString -- `toSet` is just another name for `addLabels`
@@ -763,7 +767,7 @@ toChoice f =
 
 {-| Convert choice control to a switch by click form:
 
-    Builder.choice ... |> Builder.toSwitch
+    Build.choice ... |> Build.toSwitch
 -}
 toSwitch : Tron msg -> Tron msg
 toSwitch =
@@ -772,7 +776,7 @@ toSwitch =
 
 {-| Convert choice control to the knob form:
 
-    Builder.choice ... |> Builder.toKnob
+    Build.choice ... |> Build.toKnob
 -}
 toKnob : Tron msg -> Tron msg
 toKnob =
@@ -781,7 +785,7 @@ toKnob =
 
 {-| Convert any control to update its value live (i.e. on every change take them from you model)
 
-    Builder.knob ... |> Builder.live
+    Build.knob ... |> Build.live
 -}
 live : Tron msg -> Tron msg
 live =
@@ -790,7 +794,7 @@ live =
 
 {-| Handle a set of items with a converter of item to a message
 
-    Builder.nest
+    Build.nest
         ([ Sine, Square, Triangle, Saw ]
             |> buttons
             |> toSet waveToString -- `toSet` is just another name for `addLabels`
@@ -805,11 +809,11 @@ handleWith = Def.mapSet
 
 {-| Changes panel shape for `nest` and `choice` panels:
 
-    Builder.nest ... |> Buidler.shape (cols 2)
+    Build.nest ... |> Buidler.shape (cols 2)
 
-    Builder.choice ... |> Buidler.shape (rows 1)
+    Build.choice ... |> Buidler.shape (rows 1)
 
-    Builder.choice ... |> Buidler.shape (by 2 3)
+    Build.choice ... |> Buidler.shape (by 2 3)
 -}
 shape : PanelShape -> Tron msg -> Tron msg
 shape = Tree.setPanelShape
@@ -817,11 +821,11 @@ shape = Tree.setPanelShape
 
 {-| Changes cell shape for `nest` and `choice` panels:
 
-    Builder.nest ... |> Buidler.cells single
+    Build.nest ... |> Buidler.cells single
 
-    Builder.choice ... |> Buidler.shape halfByTwo
+    Build.choice ... |> Buidler.shape halfByTwo
 
-    Builder.choice ... |> Buidler.shape halfByHalf
+    Build.choice ... |> Buidler.shape halfByHalf
 -}
 cells : CellShape -> Tron msg -> Tron msg
 cells = Tree.setCellShape
