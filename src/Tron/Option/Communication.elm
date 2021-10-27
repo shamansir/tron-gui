@@ -28,6 +28,7 @@ type alias Ports msg =
     , transmit : Maybe (Exp.Out -> Cmd msg)
     , apply : Maybe (Sub (List Exp.DeduceIn))
     , receive : Maybe (Sub Exp.In)
+    , build : Maybe (Sub Exp.Tree)
     }
 
 
@@ -37,6 +38,7 @@ map f p =
     , transmit = Maybe.map (\transmit -> transmit >> Cmd.map f) p.transmit
     , receive = p.receive
     , apply = p.apply
+    , build = p.build
     }
 
 
@@ -55,6 +57,7 @@ none =
     , transmit = Nothing
     , apply = Nothing
     , receive = Nothing
+    , build = Nothing
     }
 
 
@@ -74,6 +77,7 @@ sendJson { ack, transmit } =
     , transmit = Just transmit
     , receive = Nothing
     , apply = Nothing
+    , build = Nothing
     }
 
 
@@ -96,6 +100,7 @@ sendReceiveJson { ack, transmit, apply } =
     , transmit = Just transmit
     , receive = Nothing
     , apply = Just apply
+    , build = Nothing
     }
 
 
@@ -118,6 +123,7 @@ sendStrings { transmit } =
                 )
     , receive = Nothing
     , apply = Nothing
+    , build = Nothing
     }
 
 
@@ -182,6 +188,7 @@ detachable { ack, transmit, receive } =
     , transmit = Just transmit
     , receive = Just receive
     , apply = Nothing
+    , build = Nothing
     }
 
 
@@ -206,6 +213,7 @@ withDatGui { ack, receive } =
     , transmit = Nothing
     , receive = Just receive
     , apply = Nothing
+    , build = Nothing
     }
 
 
@@ -215,10 +223,12 @@ connect :
     , transmit : Exp.Out -> Cmd msg
     , apply : Sub (List Exp.DeduceIn)
     , receive : Sub Exp.In
+    , build : Sub Exp.Tree
     } -> Ports msg
 connect spec =
     { ack = Just spec.ack
     , transmit = Just spec.transmit
     , apply = Just spec.apply
     , receive = Just spec.receive
+    , build = Just spec.build
     }

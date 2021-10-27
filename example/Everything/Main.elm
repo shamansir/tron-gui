@@ -406,6 +406,7 @@ portCommunication =
     , transmit = Just sendUpdateToWs
     , receive = Just <| receieveUpdateFromWs identity
     , apply = Nothing
+    , build = Nothing
     }
 
 

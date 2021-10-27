@@ -10,7 +10,7 @@ module Tron.Control.Value exposing
 
 Used for converting values from controls to JSON;
 
-@docs Value, get, lift
+@docs Value
 
 # Encode and convert
 
