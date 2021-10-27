@@ -3,18 +3,16 @@ module Tron.Tree.Expose.Json exposing (..)
 
 import Array as Array exposing (Array)
 import Color exposing (Color)
-import Dict exposing (Dict)
 import Json.Decode as D
 import Json.Encode as E
 import Color.Convert as Color
 import Maybe.Extra as Maybe
-import Task
 
 
-import Tron.Control as Control exposing (..)
+import Tron.Control exposing (..)
 import Tron.Control.Impl.Nest as Nest exposing (Form(..))
-import Tron.Control.Impl.Text as Text exposing (TextState(..))
-import Tron.Control.Impl.Toggle exposing (ToggleState(..))
+import Tron.Control.Impl.Text exposing (TextState(..))
+import Tron.Control.Impl.Toggle as Toggle exposing (ToggleState(..))
 import Tron.Control.Impl.Button as Button
 import Tron.Control.Impl.XY as XY
 import Tron.Path as Path exposing (Path)
@@ -23,7 +21,7 @@ import Tron.Tree.Internals as Tree exposing (..)
 import Tron.Tree.Controls as Tree
 import Tron.Tree.Paths as Tree
 import Tron.Tree.Expose.Data as Exp
-import Tron.Control.Value as Value exposing (Value(..))
+import Tron.Control.Value exposing (Value(..))
 -- import Tron.Expose.Convert as Exp
 import Tron.Style.Theme as Theme
 import Tron.Style.PanelShape as PS
@@ -585,10 +583,10 @@ valueDecoder type_ =
             decodeColor |> D.map FromColor
 
         "choice" ->
-            D.int |> D.map FromChoice
+            decodeChoice |> D.map FromChoice
 
         "toggle" ->
-            decodeToggle |> D.map FromToggle
+            decodeToggle |> D.map (Toggle.toggleToBool >> FromToggle)
 
         "button" ->
             D.succeed FromButton
@@ -638,13 +636,13 @@ fromString type_ str =
 
         "choice" ->
             str
-                |> D.decodeString (D.int |> D.map FromChoice)
+                |> D.decodeString (decodeChoice |> D.map FromChoice)
                 |> Result.mapError D.errorToString
 
         "toggle" ->
             case str of
-                "on" -> Ok <| FromToggle <| TurnedOn
-                "off" -> Ok <| FromToggle <| TurnedOff
+                "on" -> Ok <| FromToggle <| Toggle.toggleToBool TurnedOn
+                "off" -> Ok <| FromToggle <| Toggle.toggleToBool TurnedOff
                 _ -> Err str
 
         "button" ->
@@ -685,12 +683,46 @@ decodeColor =
                         |> Result.map D.succeed
                         |> Result.withDefault (D.fail <| "failed to parse color: " ++ str)
                 )
+        -- FIXME: use either one in the corresponding place
         , D.map4
             Color.rgba
             (D.field "red" D.float)
             (D.field "green" D.float)
             (D.field "blue" D.float)
             (D.field "alpha" D.float)
+        ]
+
+
+decodeChoice : D.Decoder ( Int, Maybe Path.Label )
+decodeChoice =
+    D.oneOf
+        [ D.string
+            |> D.andThen
+            (\str ->
+                case str |> String.split Nest.separator of
+                    v1 :: "" :: _ ->
+                        String.toInt v1
+                            |> Maybe.map (\n -> (n, Nothing))
+                            |> Maybe.map D.succeed
+                            |> Maybe.withDefault (D.fail <| "failed to parse choice value: " ++ str)
+                    v1 :: v2 :: _ ->
+                        String.toInt v1
+                            |> Maybe.map (\n -> (n, Just v2))
+                            |> Maybe.map D.succeed
+                            |> Maybe.withDefault (D.fail <| "failed to parse choice value: " ++ str)
+                    v1 :: _ ->
+                        String.toInt v1
+                            |> Maybe.map (\n -> (n, Nothing))
+                            |> Maybe.map D.succeed
+                            |> Maybe.withDefault (D.fail <| "failed to parse choice value: " ++ str)
+                    _ ->
+                        D.fail <| "failed to parse coord: " ++ str
+            )
+        -- FIXME: use either one in the corresponding place
+        , D.map2
+            Tuple.pair
+            (D.field "id" D.int)
+            (D.field "selection" <| D.maybe D.string)
         ]
 
 
@@ -712,6 +744,7 @@ decodeCoord =
                     _ ->
                         D.fail <| "failed to parse coord: " ++ str
             )
+        -- FIXME: use either one in the corresponding place
         , D.map2
             Tuple.pair
             (D.field "x" D.float)
@@ -727,6 +760,7 @@ decodeToggle =
                 (\bool ->
                     if bool then TurnedOn else TurnedOff
                 )
+        -- FIXME: use either one in the corresponding place
         , D.string
             |> D.map (\str ->
                 case str of

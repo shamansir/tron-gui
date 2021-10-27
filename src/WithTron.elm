@@ -86,12 +86,10 @@ There is a special `Backed` program, that just stores the stringified values in 
 
 # Program
 
-@docs ProgramWithTron
+@docs Program
 
 # Program Wrappers
 @docs sandbox, element, document, application
-
-See also: `WithTron.Backed`.
 -}
 
 

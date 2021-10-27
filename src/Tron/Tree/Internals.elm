@@ -655,9 +655,9 @@ getValue prop =
         Coordinate control -> control |> Control.getValue |> Tuple.second |> FromXY
         Text control -> control |> Control.getValue |> Tuple.second |> FromInput
         Color control -> control |> Control.getValue |> Tuple.second |> FromColor
-        Toggle control -> control |> Control.getValue |> FromToggle
+        Toggle control -> control |> Control.getValue |> Toggle.toggleToBool |> FromToggle
         Action _ -> FromButton
-        Choice _ _ control -> control |> Control.getValue |> .selected |> FromChoice
+        Choice _ _ control -> control |> Nest.getSelectedAsPair |> Tuple.mapSecond (Maybe.map Tuple.first) |> FromChoice
         Group _ _ _ -> FromGroup
         Live innerProp -> getValue innerProp
 

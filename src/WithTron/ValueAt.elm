@@ -5,8 +5,21 @@ module WithTron.ValueAt exposing
     , map
     )
 
-{-| `ValueAt` is the helper to load values from the `Dict`-like storage, which is only used
-for `WithTron.Backed` applications to store current values from the UI in universal format. For the cases, when Elm serves only as the UI, and the core of the application logic in in JavaScript.
+
+{-| `ValueAt` is the way to extract values from the `Tree x` or `Tron x`.
+
+Using `ask` and any `Decoder` you don't have to worry what `Value` is, just do:
+
+    tree |> ask (xy [ "Goose", "Eye" ])
+
+And get `Maybe (Float, Float)` in response. Same works for any of the decoders below:
+
+    tree |> ask (toggle [ "Goose", "Punk" ]) -- returns `Maybe Bool`
+    tree |> ask (choice [ "Color Scheme", "Product" ]) -- returns `Maybe (ItemId, Path.Label)`
+    tree |> ask (choiceOf Products.all [ "Color Scheme", "Product" ]) -- returns `Maybe Product`
+        -- NB: Just ensure to use the very same list you used for creating the `choice` in this case
+    tree |> ask (color [ "Feather", "Color" ]) -- returns `Maybe Color`
+    -- and so on...
 
 For the example of such, see `example/ForTiler`, where the structure/state of GUI is dependent on current values, but also doesn't store them in its own model, since mostly connects to JavaScript.
 
@@ -34,6 +47,7 @@ Actually, the way to get your value as a common type.
 
 -}
 
+
 import Color exposing (Color)
 import Tron.Control.Impl.Nest exposing (ItemId)
 import Tron.Control.Impl.Toggle exposing (ToggleState)
@@ -43,25 +57,7 @@ import Tron.Tree as Tree exposing (Tree)
 import Tron.Tree.Paths as Tree
 
 
-{- `ValueAt` is the function of type `List Path.Label -> Maybe Value`.
-
-Using `ask` and any `Decoder` you don't have to worry what `Value` is, just do:
-
-    tree |> ask (xy [ "Goose", "Eye" ])
-
-And get `Maybe (Float, Float)` in response. Same works for any of the decoders below:
-
-    tree |> ask (toggle [ "Goose", "Punk" ]) -- returns `Maybe Bool`
-    tree |> ask (choice [ "Color Scheme", "Product" ]) -- returns `Maybe ItemId`
-    tree |> ask (choiceOf Products.all [ "Color Scheme", "Product" ]) -- returns `Maybe Product`
-        -- NB: Just ensure to use the very same list you used for creating the `choice` in this case
-    tree |> ask (color [ "Feather", "Color" ]) -- returns `Maybe Color`
-    -- and so on...
-
--}
-
-
-{-| The decoder which is able to extract the value.
+{-| The decoder that knows how to extract the value at the certain path.
 -}
 type Decoder a
     = Decoder (Value -> Maybe a) (List Path.Label)
@@ -74,7 +70,7 @@ map f (Decoder decoder path) =
     Decoder (decoder >> Maybe.map f) path
 
 
-{-| Load value from the storage using the decoder, and if it's there, you'll get it:
+{-| Load value from the tree using the decoder, and if it's there, you'll get it:
 
     tree |> ask (xy [ "Goose", "Eye" ]) -- returns `Maybe (Float, Float)`
 -}
@@ -91,7 +87,7 @@ make =
     Decoder
 
 
-{-| Load number value by path: works both for `Builder.int` & `Builder.float` -}
+{-| Load number value by path: works both for `Builr.int` & `Build.float` -}
 number : List Path.Label -> Decoder Float
 number =
     make Proxy.fromNumber
@@ -109,14 +105,14 @@ text =
     make Proxy.fromText
 
 
-{-| Load Toggle value by path. Use helpers from `Builder` to extract it. -}
-toggle : List Path.Label -> Decoder ToggleState
+{-| Load Toggle value by path. -}
+toggle : List Path.Label -> Decoder Bool
 toggle =
     make Proxy.fromToggle
 
 
 {-| Load chosen item ID (which is `Int`) by path. Use `choiceOf` to get the actual value. -}
-choice : List Path.Label -> Decoder ItemId
+choice : List Path.Label -> Decoder ( ItemId, Path.Label )
 choice =
     make Proxy.fromChoice
 
@@ -169,15 +165,15 @@ atText default path =
 atToggle : (Bool -> a) -> a -> List Path.Label -> Tree x -> a
 atToggle f default path =
     at toggle path
-        >> Maybe.map Proxy.toggleToBool
         >> Maybe.map f
         >> Maybe.withDefault default
 
 
 {-| -}
-atChoice : ItemId -> List Path.Label -> Tree x -> ItemId
-atChoice default path =
+atChoice : ( ( ItemId, Path.Label ) -> a ) -> a -> List Path.Label -> Tree x -> a
+atChoice f default path =
     at choice path
+        >> Maybe.map f
         >> Maybe.withDefault default
 
 

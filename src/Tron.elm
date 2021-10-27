@@ -8,23 +8,30 @@ module Tron exposing
     , perform
     )
 
-{-| This is the `Tron a`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application. In this case, it represents your components.
+{-| This is the `Tron msg`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application.
+In this case, it represents the tree of your components with the associated handlers that produce messages.
 
 To use Tron in your application, you'll need to specify this function:
 
     for : Model -> Tron Msg
 
-See `Tron.Builder` for the helpers to define your own interface.
+See `Tron.Build` for the helpers to define your own interface.
 
-See `WithTron` for the helpers to add `Tron` to your applcation.
+See `WithTron` for the ways to add `Tron` to your applcation.
 
 # Tron
 
 @docs Tron, Set
 
+# Convert from and to
+
+@docs lift, toUnit, pathify, proxify, expose
+
 # Common helpers
 
-@docs map, mapSet, andThen, with, toUnit
+@docs map, mapSet, andThen, with, map2, map3, map4, map5
+
+#
 -}
 
 import Task

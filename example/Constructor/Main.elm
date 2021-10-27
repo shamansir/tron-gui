@@ -341,7 +341,6 @@ valueToType v =
         V.FromToggle _ -> Toggle
         V.FromColor _ -> Color
         V.FromChoice _ -> Choice
-        V.FromSwitch _ -> Choice
         V.FromButton -> Button
         V.FromGroup -> Group
         V.None -> None

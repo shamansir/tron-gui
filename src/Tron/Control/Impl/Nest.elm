@@ -11,6 +11,9 @@ import Tron.Pages exposing (PageNum)
 import Tron.Util as U
 
 
+separator = "::"
+
+
 type Form
     = Expanded
     | Collapsed
@@ -186,12 +189,19 @@ getSelected control =
     get (whichSelected control) control
 
 
+getSelectedAsPair : ChoiceControl item a -> ( ItemId, Maybe item )
+getSelectedAsPair control =
+    ( whichSelected control
+    , getSelected control
+    )
+
+
 isSelected : ChoiceControl item a -> ItemId -> Bool
 isSelected control n = whichSelected control == n
 
 
 whichSelected : ChoiceControl item a -> ItemId
-whichSelected (Core.Control _ { selected } handler) = selected
+whichSelected (Core.Control _ { selected } _) = selected
 
 
 expand

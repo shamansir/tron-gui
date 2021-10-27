@@ -147,6 +147,7 @@ helperDef ( panelShape, cellShape ) options current compare toMsg =
         handler : Value -> Maybe msg
         handler =
             Value.fromChoice
+                >> Maybe.map Tuple.first
                 >> Maybe.andThen
                     (\id -> Array.get id values
                                 |> Maybe.andThen identity

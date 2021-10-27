@@ -460,7 +460,7 @@ buttonByFace face_ toMsg =
 -}
 toggle : Bool -> (Bool -> msg) -> Tron msg
 toggle value toMsg =
-    B.toggle value <| Value.fromToggle >> Maybe.map Value.toggleToBool >> Maybe.map toMsg
+    B.toggle value <| Value.fromToggle >> Maybe.map toMsg
 
 
 {-| `bool` is the alias for `Builder.toggle`
@@ -758,7 +758,7 @@ toChoice : (ItemId -> msg) -> Tron msg -> Tron msg
 toChoice f =
     B.toChoice
         >> Tree.map
-            (always <| Value.fromChoice >> Maybe.map f)
+            (always <| Value.fromChoice >> Maybe.map (Tuple.first >> f))
 
 
 {-| Convert choice control to a switch by click form:

@@ -1,21 +1,15 @@
 module Tron.Tree.Expose.Tree exposing (..)
 
--- TODO: make controls expose themselves, so get rid of these imports below
 
-import Array as Array exposing (Array)
 import Color exposing (Color)
 import Dict exposing (Dict)
-import Json.Decode as D
-import Json.Encode as E
-import Color.Convert as Color
 import Maybe.Extra as Maybe
-import Task
 
 
 import Tron.Control as Control exposing (..)
 import Tron.Control.Impl.Nest as Nest exposing (Form(..))
 import Tron.Control.Impl.Text as Text exposing (TextState(..))
-import Tron.Control.Impl.Toggle exposing (ToggleState(..))
+import Tron.Control.Impl.Toggle as Toggle exposing (ToggleState(..))
 import Tron.Control.Impl.Button as Button
 import Tron.Control.Impl.XY as XY
 import Tron.Path as Path exposing (Path)
@@ -26,7 +20,7 @@ import Tron.Tree.Paths as Tree
 import Tron.Tree.Expose.Data as Exp
 import Tron.Tree.Expose.Json as Exp
 import Tron.Tree.Expose.Convert as Exp
-import Tron.Control.Value as Value exposing (Value(..))
+import Tron.Control.Value exposing (Value(..))
 -- import Tron.Expose.Convert as Exp
 
 
@@ -51,13 +45,13 @@ runTree value property =
         ( Color control, FromColor c ) ->
             control |> Control.update ( Tuple.mapSecond <| always c )|> Control.run
 
-        ( Toggle control, FromToggle t ) ->
-            control |> setValue t |> Control.run
+        ( Toggle control, FromToggle b ) ->
+            control |> setValue (Toggle.boolToToggle b) |> Control.run
 
         ( Action control, FromButton ) ->
             control |> setValue () |> Control.run
 
-        ( Choice _ _ control, FromChoice i ) ->
+        ( Choice _ _ control, FromChoice ( i, _ ) ) ->
             control
                 |> Control.update
                     (\curValue ->
@@ -116,13 +110,13 @@ applyTree value prop =
         ( Color control, FromColor c ) ->
             control |> Control.update ( Tuple.mapSecond <| always c ) |> Color
 
-        ( Toggle control, FromToggle t ) ->
-            control |> Control.setValue t |> Toggle
+        ( Toggle control, FromToggle b ) ->
+            control |> Control.setValue ( Toggle.boolToToggle b ) |> Toggle
 
         ( Action control, FromButton ) ->
             control |> Control.setValue () |> Action
 
-        ( Choice focus shape control, FromChoice i ) ->
+        ( Choice focus shape control, FromChoice ( i, _ ) ) ->
             Choice focus shape <| Nest.select i <| control
 
         ( Group _ _ _, _ ) ->
@@ -296,30 +290,15 @@ applyStringValue str prop =
                 "toggle"
                 (\v ->
                     case v of
-                        FromToggle n ->
+                        FromToggle b ->
                             control
-                                |> Control.setValue n
+                                |> Control.setValue (Toggle.boolToToggle b)
                                 |> Toggle
                                 |> Just
 
                         _ ->
                             Nothing
                 )
-
-        {- Switch control ->
-            helper
-                "switch"
-                (\v ->
-                    case v of
-                        FromSwitch n ->
-                            control
-                                |> Control.update ( Tuple.mapSecond <| always n )
-                                |> Switch
-                                |> Just
-
-                        _ ->
-                            Nothing
-                ) -}
 
         Action control ->
             helper
@@ -338,7 +317,7 @@ applyStringValue str prop =
                 "choice"
                 (\v ->
                     case v of
-                        FromChoice n ->
+                        FromChoice ( n, _ ) ->
                             control
                                 |> Nest.select n
                                 |> Choice focus shape
@@ -418,7 +397,7 @@ reflect prop =
         Toggle control ->
             control
                 |> Control.move
-                |> Control.map FromToggle
+                |> Control.map (Toggle.toggleToBool >> FromToggle)
                 |> Toggle
         Action control ->
             control
@@ -426,8 +405,14 @@ reflect prop =
                 |> Action
         Choice focus shape control ->
             control
-                |> Control.move
-                |> Control.map (.selected >> FromSwitch)
+                |> Control.set
+                    (control
+                        |> Nest.getSelectedAsPair
+                        |> Tuple.mapSecond (Maybe.map Tuple.first)
+                        |> FromChoice
+                    )
+                -- |> Control.move
+                -- |> Control.map (.selected >> FromChoice)
                 |> Nest.mapItems (Tuple.mapSecond reflect)
                 |> Choice focus shape
         Group focus shape control ->

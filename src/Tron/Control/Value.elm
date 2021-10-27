@@ -2,7 +2,6 @@ module Tron.Control.Value exposing
     ( Value(..)
     , encode
     , toString, getTypeString
-    , toggleToBool, toggleToString
     , fromNumber, fromXY, fromText, fromChoice, fromChoiceOf, fromColor, fromToggle, fromAction
     )
 
@@ -20,10 +19,6 @@ Used for converting values from controls to JSON;
 # Extract value
 
 @docs fromNumber, fromXY, fromText, fromChoice, fromChoiceOf, fromColor, fromToggle, fromAction
-
-# Extract Toggle value
-
-@docs toggleToBool, toggleToString
 -}
 
 import Array
@@ -31,13 +26,11 @@ import Color
 import Color exposing (Color)
 import Color.Convert as Color
 
-import Json.Decode as D
 import Json.Encode as E
 
---import Tron exposing (Tron)
-import Tron.Control as Control
+import Tron.Path as Path
 import Tron.Control.Impl.Nest as Nest exposing (ItemId)
-import Tron.Control.Impl.Toggle as Toggle exposing (ToggleState, toggleToBool, toggleToString)
+import Tron.Control.Impl.Toggle as Toggle
 import Tron.Control.Impl.XY as XY
 
 
@@ -46,11 +39,10 @@ type Value
     = FromSlider Float
     | FromXY ( Float, Float )
     | FromInput String
-    | FromChoice ItemId
+    | FromChoice ( ItemId, Maybe Path.Label )
     | FromColor Color
-    | FromToggle ToggleState
+    | FromToggle Bool
     | FromButton
-    | FromSwitch Int -- ( Int, String )
     | FromGroup
     | None
 
@@ -67,7 +59,14 @@ encode v =
                 , ( "y", E.float y )
                 ]
         FromInput t -> E.string t
-        FromChoice i -> E.int i
+        FromChoice ( i, s ) ->
+            E.object
+                [ ( "id", E.int i )
+                ,
+                    ( "selection"
+                    , Maybe.withDefault E.null <| Maybe.map E.string <| s
+                    )
+                ]
         FromColor c ->
             case Color.toRgba c of
                 { red, green, blue, alpha } ->
@@ -78,10 +77,9 @@ encode v =
                         , ( "alpha", E.float alpha )
                         , ( "css", E.string <| Color.colorToHexWithAlpha c )
                         ]
-        FromToggle t -> E.bool <| toggleToBool t
+        FromToggle b -> E.bool b
         FromButton -> E.string ""
         FromGroup -> E.string ""
-        FromSwitch i -> E.int i
         None -> E.null
 
 
@@ -95,18 +93,16 @@ toString v =
             String.fromFloat x ++ XY.separator ++ String.fromFloat y
         FromInput t ->
             t
-        FromChoice i ->
-            String.fromInt i
+        FromChoice ( i, s ) ->
+            String.fromInt i ++ Nest.separator ++ (Maybe.withDefault "" <| s)
         FromColor c ->
             Color.colorToHexWithAlpha c
-        FromToggle t ->
-            toggleToString t
+        FromToggle b ->
+            Toggle.boolToToggle b |> Toggle.toggleToString
         FromButton ->
             ""
         FromGroup ->
             ""
-        FromSwitch i ->
-            String.fromInt i
         None ->
             ""
 
@@ -141,21 +137,8 @@ getTypeString value =
         FromButton ->
             "button"
 
-        FromSwitch _ ->
-            "switch"
-
         FromGroup ->
             "nest"
-
-
-{-| -}
-toggleToBool : ToggleState -> Bool
-toggleToBool = Toggle.toggleToBool
-
-
-{-| -}
-toggleToString : ToggleState -> String
-toggleToString = Toggle.toggleToString
 
 
 {-| -}
@@ -183,10 +166,10 @@ fromText proxy =
 
 
 {-| -}
-fromChoice : Value -> Maybe ItemId
+fromChoice : Value -> Maybe ( ItemId, Maybe Path.Label )
 fromChoice proxy =
     case proxy of
-        FromChoice i -> Just i
+        FromChoice ( i, s ) -> Just ( i, s )
         _ -> Nothing
 
 
@@ -197,12 +180,13 @@ fromChoiceOf values =
         itemsArray = Array.fromList values
     in
         fromChoice
+            >> Maybe.map Tuple.first
             >> Maybe.andThen
                 (\id -> Array.get id itemsArray)
 
 
 {-| -}
-fromToggle : Value -> Maybe ToggleState
+fromToggle : Value -> Maybe Bool
 fromToggle proxy =
     case proxy of
         FromToggle state -> Just state
