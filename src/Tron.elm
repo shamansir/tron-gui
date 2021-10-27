@@ -41,6 +41,7 @@ import Tron.Tree.Paths as Tree
 import Tron.Path as Path exposing (Path)
 import Tron.Control.Value exposing (Value)
 import Tron.Tree.Expose.Data as Exp
+import Tron.Tree.Expose.Convert as Exp
 
 
 {-| `Tron a` is the tree of your controls or, recursively, any control in such tree.

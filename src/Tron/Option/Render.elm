@@ -6,7 +6,7 @@ module Tron.Option.Render exposing
 
 {-| The configuration of where to render Tron interface.
 
-@docs RenderTarget, hidden, toHtml, toVr, toDebug
+@docs Target, hidden, toHtml, toVr, toDebug
 -}
 
 
@@ -27,6 +27,7 @@ type Target
     | Aframe Theme
     | Debug Dock Theme
     | Nowhere
+
 
 {-| GUI is hidden. For example, for the case of `dat.gui`, where your interface is on the JS side, but uses Tron definition in Elm.
 

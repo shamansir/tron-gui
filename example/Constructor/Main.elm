@@ -1,7 +1,6 @@
 port module Constructor.Main exposing (..)
 
 
-import Browser exposing (Document)
 import Array
 import Json.Decode as D
 import Json.Encode as E
@@ -34,7 +33,6 @@ import WithTron.ValueAt as V
 import Tron.Style.PanelShape as PS
 import Tron.Style.CellShape as CS
 
-import Size
 import WithTron
 
 import Html exposing (Html)

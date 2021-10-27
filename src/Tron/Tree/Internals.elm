@@ -1,5 +1,6 @@
 module Tron.Tree.Internals exposing
     ( Tree(..), FocusAt(..), Shape, NestShape
+    , Update
     , empty
     , get, set, setAt, setAll, move, getValue
     , map, mapWithPath, mapWithValue
@@ -61,6 +62,13 @@ type Tree a
     | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Path.Label, Tree a ) a)
     | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Path.Label, Tree a ) a)
     | Live (Tree a)
+
+
+{- Value update with the control `Value`, already converted from JSON. -}
+type alias Update =
+    { path : List ( Path.Index, Path.Label )
+    , value : Value
+    }
 
 
 empty : Tree ()

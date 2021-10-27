@@ -16,7 +16,6 @@
         "Tron.Tree.Build.Any",
         "Tron.Tree.Build.Unit",
         "Tron.Tree.Expose.Data",
-        "Tron.Tree.Expose.Json",
         "Tron.Control.Value",
         "Tron.Style.Theme",
         "Tron.Style.Dock",

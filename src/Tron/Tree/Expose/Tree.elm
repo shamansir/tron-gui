@@ -10,8 +10,6 @@ import Tron.Control as Control exposing (..)
 import Tron.Control.Impl.Nest as Nest exposing (Form(..))
 import Tron.Control.Impl.Text as Text exposing (TextState(..))
 import Tron.Control.Impl.Toggle as Toggle exposing (ToggleState(..))
-import Tron.Control.Impl.Button as Button
-import Tron.Control.Impl.XY as XY
 import Tron.Path as Path exposing (Path)
 -- import Tron.Detach as Detach
 import Tron.Tree.Internals as Tree exposing (..)
@@ -68,7 +66,7 @@ runTree value property =
             Cmd.none
 
 
-run : Exp.Update -> Tree x -> Cmd x -- FIXME: looks close to `apply`
+run : Tree.Update -> Tree x -> Cmd x -- FIXME: looks close to `apply`
 run { path, value } prop =
     case path of
         [] ->
@@ -126,7 +124,7 @@ applyTree value prop =
             prop
 
 
-apply : Exp.Update -> Tree a -> Tree a
+apply : Tree.Update -> Tree a -> Tree a
 apply { path, value } prop =
     case path of
         [] ->
@@ -208,7 +206,8 @@ applyStringValue str prop =
     let
         helper typeStr maybeFn =
             str
-                |> Exp.fromString typeStr
+                |> Tuple.pair typeStr
+                |> Exp.fromStrings
                 |> Result.toMaybe
                 |> Maybe.andThen maybeFn
     in

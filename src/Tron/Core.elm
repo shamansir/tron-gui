@@ -455,7 +455,7 @@ handleKeyDown keyCode path state tree =
 
 expose : State -> Tree a -> Tree Exp.Out
 expose state =
-    Tree.expose
+    Exp.expose
         >> Tree.map
             ( (\val ->
                 { update = val

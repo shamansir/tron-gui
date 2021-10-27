@@ -5,9 +5,21 @@ module Tron.Option.Communication exposing
     )
 
 
-{-| The communication of the Tron interface.
+{-| The communication configuration for the `WithTron` interface.
 
-@docs Communication, map, noCommunication, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
+Ports are meant to connect with real ports of your app, with the help of `map` you may convert the data flow to anything you like.
+
+# Ports
+
+@docs Ports, map, none
+
+# Prepared configurations
+
+@docs sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
+
+# All the possible ports
+
+@docs connect
 -}
 
 import Tron.Tree.Expose.Data as Exp
@@ -32,6 +44,7 @@ type alias Ports msg =
     }
 
 
+{-| -}
 map : (msgA -> msgB) -> Ports msgA -> Ports msgB
 map f p =
     { ack = Maybe.map (\ack -> ack >> Cmd.map f) p.ack

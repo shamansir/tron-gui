@@ -1,4 +1,5 @@
-module Tron.Tree.Expose.Json exposing (..)
+module Tron.Tree.Expose.Json exposing
+    (decode, encode, fromStrings, valueByTypeDecoder)
 
 
 import Array as Array exposing (Array)
@@ -559,10 +560,10 @@ decodeCellUnit =
 
 
 
-valueDecoder :
+valueByTypeDecoder :
     String
     -> D.Decoder Value -- FIXME: move to Value
-valueDecoder type_ =
+valueByTypeDecoder type_ =
     case type_ of
         "none" ->
             D.succeed None
@@ -598,11 +599,10 @@ valueDecoder type_ =
             D.succeed None
 
 
-fromString
-    :  String
-    -> String
+fromStrings
+    :  ( String, String )
     -> Result String Value -- FIXME: move to Value
-fromString type_ str =
+fromStrings ( type_, str ) =
     case type_ of
         "none" ->
             Ok None
