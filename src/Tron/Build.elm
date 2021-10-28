@@ -3,7 +3,7 @@ module Tron.Build exposing
     , root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button, buttonWith
     , nest, choice, choiceBy, strings, labels, palette, buttons
-    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
+    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, useColor
     , live, toChoice, toSet, mapSet, handleWith, toSwitch, toKnob
     , expand, collapse, shape, cells
     )
@@ -121,7 +121,7 @@ For more information, see the `examples` folder in the source code.
 @docs buttons, useColor, face, Face
 
 # Icons
-@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+@docs Icon, icon, iconAt, themedIcon, themedIconAt
 
 # Force expand / collapse for nesting
 @docs expand, collapse
@@ -148,6 +148,7 @@ import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
 import Dict
+import Url exposing (Url)
 
 import Tron as Def exposing (Tron)
 import Tron.Path as Path
@@ -165,7 +166,7 @@ import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Impl.Text exposing (TextState(..))
-import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..), Url(..))
+import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..))
 import Tron.Control.Impl.Toggle
 import Tron.Control.Impl.Nest as Nest exposing (Form(..), ItemId)
 
@@ -434,7 +435,7 @@ iconAt = Button.iconAt >> WithIcon
         <| \theme ->
             makeUrl <| Url.relative [ "assets", "myicon_" ++ Theme.toString theme ++ ".svg" ] []
 -}
-themedIcon : (Theme -> Url) -> Face
+themedIcon : (Theme -> Maybe Url) -> Face
 themedIcon = Button.themedIcon >> WithIcon
 
 
@@ -445,12 +446,6 @@ themedIcon = Button.themedIcon >> WithIcon
 -}
 themedIconAt : (Theme -> List String) -> Face
 themedIconAt = Button.themedIconAt >> WithIcon
-
-
-{-| Make URL from String
--}
-makeUrl : String -> Url
-makeUrl = Button.makeUrl
 
 
 

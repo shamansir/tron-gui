@@ -14,6 +14,7 @@ import Random
 import Array exposing (Array)
 import Color exposing (Color)
 import Axis exposing (Axis)
+import Url exposing (Url)
 import Url.Builder as Url
 
 import Tron exposing (Tron)
@@ -333,27 +334,27 @@ toggle =
             )
 
 
-sourceOf : Icon -> Theme -> Button.Url
+sourceOf : Icon -> Theme -> Maybe Url
 sourceOf icon theme =
-    Button.makeUrl <|
-        Url.relative
-            [ "assets"
-            ,
-                ( case icon of
-                    Arm ->  "arm"
-                    Arrow -> "arrow"
-                    Export -> "export"
-                    Regenerate -> "regenerate"
-                    Goose -> "cai"
-                )
-            ++ "_" ++
-                ( case theme of
-                    Dark -> "dark"
-                    Light -> "light"
-                )
-            ++ ".svg"
-            ]
-            []
+    Url.relative
+        [ "assets"
+        ,
+            ( case icon of
+                Arm ->  "arm"
+                Arrow -> "arrow"
+                Export -> "export"
+                Regenerate -> "regenerate"
+                Goose -> "cai"
+            )
+        ++ "_" ++
+            ( case theme of
+                Dark -> "dark"
+                Light -> "light"
+            )
+        ++ ".svg"
+        ]
+        []
+    |> Url.fromString
 
 
 randomColor : Random.Generator Color

@@ -3,7 +3,7 @@ module Tron.Tree.Build.Any exposing
     , root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button, buttonWith
     , nest, choice, choiceBy, strings, labels, palette, buttons
-    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
+    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, useColor
     , live, toChoice, toSet, mapSet, toSwitch, toKnob
     , expand, collapse, shape, cells
     )
@@ -27,7 +27,7 @@ Using `Tron.lift` any `Tree a` may be lifted to `Tron a` (i.e. `Tree (Control.Va
 @docs root
 
 # Items
-@docs none, int, float, number, xy, coord, color, text, input, button, toggle, bool
+@docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, toggle, bool
 
 # Groups
 @docs nest, choice, choiceBy, strings, labels, palette
@@ -51,10 +51,8 @@ Usually in your `for` function you set the default value to the control, but if 
 @docs live
 
 # Conversion between types of controls + helpers
-@docs toChoice, toKnob, toSwitch, addLabels, handleWith
+@docs toChoice, toKnob, toSwitch
 
-# Add Path
-@docs addPath, addLabeledPath
 -}
 
 
@@ -62,6 +60,8 @@ import Array
 import Color exposing (Color)
 import Color.Convert as Color
 import Axis exposing (Axis)
+
+import Url exposing (Url)
 
 import Tron.Path as Path
 import Tron.Control exposing (..)
@@ -76,7 +76,7 @@ import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Impl.Text exposing (TextState(..))
-import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..), Url(..))
+import Tron.Control.Impl.Button as Button exposing (Face(..), Icon(..))
 import Tron.Control.Impl.Toggle exposing (boolToToggle)
 import Tron.Control.Impl.Nest as Nest exposing (Form(..))
 
@@ -214,7 +214,7 @@ iconAt = Button.iconAt >> WithIcon
 
 
 {-| -}
-themedIcon : (Theme -> Url) -> Face
+themedIcon : (Theme -> Maybe Url) -> Face
 themedIcon = Button.themedIcon >> WithIcon
 
 
@@ -222,9 +222,6 @@ themedIcon = Button.themedIcon >> WithIcon
 themedIconAt : (Theme -> List String) -> Face
 themedIconAt = Button.themedIconAt >> WithIcon
 
-
-makeUrl : String -> Url
-makeUrl = Button.makeUrl
 
 
 {-| -}

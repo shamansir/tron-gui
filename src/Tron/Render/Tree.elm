@@ -9,6 +9,7 @@ import Svg.Attributes as SA
 import Html
 import Html.Attributes as HA
 import Html.Events as HE
+import Url
 
 import Axis exposing (Axis)
 
@@ -20,7 +21,7 @@ import Tron.Focus exposing (Focused(..))
 import Tron.Control as Core exposing (Control(..))
 
 import Tron.Control.Impl.Text exposing (TextState(..))
-import Tron.Control.Impl.Button exposing (Face(..), Icon(..), urlToString)
+import Tron.Control.Impl.Button exposing (Face(..), Icon(..))
 import Tron.Control.Impl.Toggle exposing (ToggleState(..))
 import Tron.Control.Impl.Nest as Nest exposing (getForm, Form(..))
 import Tron.Control.Impl.Number as Number exposing (Control)
@@ -538,7 +539,7 @@ button theme ( ( _, _, selected ) as state ) face cellShape label bounds =
         WithIcon (Icon icon) ->
             let
                 iconUrl =
-                    icon theme |> urlToString
+                    icon theme |> Maybe.map Url.toString |> Maybe.withDefault ""
                     --"./assets/" ++ icon ++ "_" ++ Theme.toString theme ++ ".svg"
                 ( iconWidth, iconHeight ) = iconSize cellShape bounds
                 ( iconX, iconY ) =

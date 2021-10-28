@@ -3,7 +3,7 @@ module Tron.Tree.Build.Unit exposing
     , root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button, buttonWith
     , nest, choice, choiceBy, strings, labels, palette, buttons
-    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl, useColor
+    , face, Face, Icon, icon, iconAt, themedIcon, themedIconAt, useColor
     , live, toChoice, toSet, toSwitch, toKnob
     , expand, collapse, shape, cells
     )
@@ -39,7 +39,7 @@ You also get `Tree ()` as the storage for previous values in `for`, `update` and
 @docs buttons, useColor, face, Face
 
 # Icons
-@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+@docs Icon, icon, iconAt, themedIcon, themedIconAt
 
 # Force expand / collapse for nesting
 @docs expand, collapse
@@ -64,6 +64,8 @@ Usually in your `for` function you set the default value to the control, but if 
 import Color exposing (Color)
 import Axis exposing (Axis)
 
+import Url exposing (Url)
+
 import Tron.Path as Path
 import Tron.Control exposing (..)
 import Tron.Tree as T exposing (..)
@@ -75,7 +77,7 @@ import Tron.Style.Theme exposing (Theme)
 
 -- TODO: make controls init themselves, so get rid of these imports below
 import Tron.Control.Impl.Text exposing (TextState(..))
-import Tron.Control.Impl.Button exposing (Icon(..), Url(..))
+import Tron.Control.Impl.Button exposing (Icon(..))
 import Tron.Control.Impl.Button as Button exposing (Face)
 import Tron.Control.Impl.Nest exposing (Form(..))
 
@@ -177,17 +179,13 @@ iconAt = B.iconAt
 
 
 {-| -}
-themedIcon : (Theme -> Url) -> Face
+themedIcon : (Theme -> Maybe Url) -> Face
 themedIcon = B.themedIcon
 
 
 {-| -}
 themedIconAt : (Theme -> List String) -> Face
 themedIconAt = B.themedIconAt
-
-
-makeUrl : String -> Url
-makeUrl = B.makeUrl
 
 
 {-| -}

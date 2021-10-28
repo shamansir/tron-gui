@@ -8,6 +8,7 @@ import Json.Decode as D
 import Json.Encode as E
 import Color.Convert as Color
 import Maybe.Extra as Maybe
+import Url exposing (Url)
 
 
 import Tron.Control exposing (..)
@@ -426,10 +427,12 @@ encodeFace face =
             E.object
                 [ ( "kind", E.string "icon" )
                 , ( "dark", case fn Theme.Dark of
-                        (Button.Url path) -> E.string path
+                        Just url -> E.string <| Url.toString url
+                        Nothing -> E.null
                   )
                 , ( "light", case fn Theme.Light of
-                        (Button.Url path) -> E.string path
+                        Just url -> E.string <| Url.toString url
+                        Nothing -> E.null
                   )
                 ]
         Button.WithColor color ->
@@ -454,11 +457,11 @@ decodeFace =
                     D.map2
                         (\darkSrc lightSrc theme ->
                             case theme of
-                                Theme.Dark -> Button.Url darkSrc
-                                Theme.Light -> Button.Url lightSrc
+                                Theme.Dark -> darkSrc |> Maybe.andThen Url.fromString
+                                Theme.Light -> lightSrc |> Maybe.andThen Url.fromString
                         )
-                        (D.field "dark" D.string)
-                        (D.field "light" D.string)
+                        (D.field "dark" <| D.maybe D.string)
+                        (D.field "light" <| D.maybe D.string)
                         |> D.map (Button.Icon >> Button.WithIcon)
                 _ -> D.succeed Button.Default
         )
