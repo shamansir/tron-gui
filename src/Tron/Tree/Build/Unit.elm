@@ -24,13 +24,13 @@ You also get `Tree ()` as the storage for previous values in `for`, `update` and
 
 
 # Sets
-@docs Set, mapSet, toSet
+@docs Set, toSet
 
 # Root
 @docs root
 
 # Items
-@docs none, int, float, number, xy, coord, color, text, input, button, toggle, bool
+@docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, toggle, bool
 
 # Groups
 @docs nest, choice, choiceBy, strings, labels, palette
@@ -48,16 +48,12 @@ You also get `Tree ()` as the storage for previous values in `for`, `update` and
 @docs shape, cells
 
 # Live
-
 Usually in your `for` function you set the default value to the control, but if you change the control with `live`, then you'll be able to pass some dynamic value from your model to it.
 
 @docs live
 
 # Conversion between types of controls + helpers
-@docs toSet, toChoice, toKnob, toSwitch, addLabels, handleWith
-
-# Add Path
-@docs addPath, addLabeledPath
+@docs toChoice, toKnob, toSwitch
 -}
 
 

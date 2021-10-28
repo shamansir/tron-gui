@@ -85,11 +85,19 @@ Any `Tron a` can be converted to `Tron ( Path, Value )` using `Build.addPath`, `
 There is a special `Backed` program, that just stores the stringified values in the `Dict` and is able to send them to the JS, see [Backed](#Backed) section below.
 
 # Program
-
 @docs Program
 
-# Program Wrappers
+# Browser.* Wrappers
 @docs sandbox, element, document, application
+
+# Helpers to create configurations for `Browser.*`
+@docs overElement, overDocument, overApplication
+
+# Past dependent helpers
+@docs pastDependentOverElement, pastDependentOverDocument, pastDependentOverApplication
+
+# Just UI
+@docs justUi, justUiAndCommunication
 -}
 
 
@@ -111,7 +119,6 @@ import Tron.Tree.Controls as Tree
 import Tron.Tree.Values as Tree
 import Tron.Tree.Paths as Tree
 
-import WithTron.Logic as L
 import WithTron.Architecture as Arc
 
 
@@ -173,6 +180,12 @@ type alias DocumentDef flags model msg =
     }
 
 
+{-| Create the configuration that fits `Browser.element`.
+
+    Browser.element
+        <| WithTron.overElement
+            { ... }
+-}
 overElement
      : Render.Target
     -> Comm.Ports msg
@@ -196,6 +209,12 @@ overElement renderTarget ports def =
         }
 
 
+{-| Create the configuration that fits `Browser.element` with the ability to track the previous state of the values in the GUI (see `WithTron.ValueAt`).
+
+    Browser.element
+        <| WithTron.pastDependentOverElement
+            { ... }
+-}
 pastDependentOverElement
      : Render.Target
     -> Comm.Ports msg
@@ -219,6 +238,12 @@ pastDependentOverElement renderTarget ports def =
     }
 
 
+{-| Create the configuration that fits `Browser.application`.
+
+    Browser.application
+        <| WithTron.overApplication
+            { ... }
+-}
 overApplication
      : Render.Target
     -> Comm.Ports msg
@@ -246,6 +271,12 @@ overApplication renderTarget ports def =
         }
 
 
+{-| Create the configuration that fits `Browser.application` with the ability to track the previous state of the values in the GUI (see `WithTron.ValueAt`).
+
+    Browser.element
+        <| WithTron.pastDependentOverElement
+            { ... }
+-}
 pastDependentOverApplication
      : Render.Target
     -> Comm.Ports msg
@@ -295,6 +326,12 @@ pastDependentOverApplication renderTarget ports def =
     }
 
 
+{-| Create the configuration that fits `Browser.document`.
+
+    Browser.document
+        <| WithTron.overDocument
+            { ... }
+-}
 overDocument
      : Render.Target
     -> Comm.Ports msg
@@ -318,6 +355,12 @@ overDocument renderTarget ports def =
         }
 
 
+{-| Create the configuration that fits `Browser.application` with the ability to track the previous state of the values in the GUI (see `WithTron.ValueAt`).
+
+    Browser.document
+        <| WithTron.pastDependentOverDocument
+            { ... }
+-}
 pastDependentOverDocument
      : Render.Target
     -> Comm.Ports msg
@@ -361,14 +404,15 @@ For example:
 
     import Tron.Style.Theme as Theme exposing (Theme(..))
     import Tron.Style.Dock as Dock
-    import Tron.Option as Option
-    import WithTron exposing (ProgramWithTron)
+    import Tron.Option.Render as Render
+    import Tron.Option.Communication as Communication
+    import WithTron
 
-    main : ProgramWithTron () Example.Model Example.Msg
+    main : WithTron.Program () Example.Model Example.Msg
     main =
         WithTron.sandbox
-            (Option.toHtml Dock.center Theme.dark)
-            Option.noCommunication
+            (Render.toHtml Dock.center Theme.dark)
+            Communication.none
             { for = ExampleGui.for
             , init = Example.init
             , view = Example.view
@@ -404,19 +448,20 @@ Example from `Basic/Main.elm`
 
     import Tron.Style.Theme as Theme exposing (Theme(..))
     import Tron.Style.Dock as Dock
-    import Tron.Option as Option
-    import WithTron exposing (ProgramWithTron)
+    import Tron.Option.Render as Render
+    import Tron.Option.Communication as Communication
+    import WithTron
 
     import Example.Goose.Main as Example
     import Example.Goose.Model as Example
     import Example.Goose.Msg as Example
     import Example.Goose.Gui as ExampleGui
 
-    main : ProgramWithTron () Example.Model Example.Msg
+    main : WithTron.Program () Example.Model Example.Msg
     main =
         WithTron.element
-            (Option.toHtml Dock.center Theme.dark)
-            Option.noCommunication
+            (Render.toHtml Dock.center Theme.dark)
+            Communication.none
             { for = ExampleGui.for
             , init = always Example.init
             , view = Example.view
@@ -445,17 +490,19 @@ element renderTarget ports def =
 
 For example:
 
-    import WithTron exposing (ProgramWithTron)
+    import WithTron
     import Tron.Style.Theme as Theme exposing (Theme(..))
     import Tron.Style.Dock as Dock
     import Tron.Expose.Data as Exp
-    import Tron.Option as Option
+    import Tron.Option.Render as Render
+    import Tron.Option.Communication as Communication
+    import WithTron
 
-    main : ProgramWithTron () Example.Model Example.Msg
+    main : WithTron.Program () Example.Model Example.Msg
     main =
         WithTron.document
-            (Option.toHtml Dock.center Theme.light)
-            (Option.detachable
+            (Render.toHtml Dock.center Theme.light)
+            (Communication.detachable
                 { ack = ackToWs
                 , transmit = sendUpdateToWs
                 , receive = receieveUpdateFromWs identity
@@ -497,18 +544,20 @@ Example from `Detachable/Main.elm`:
     import Tron.Style.Theme as Theme exposing (Theme(..))
     import Tron.Style.Dock as Dock
     import Tron.Expose.Data as Exp
-    import Tron.Option as Option
+    import Tron.Option.Render as Render
+    import Tron.Option.Communication as Communication
+    import WithTron
 
     import Example.Goose.Main as Example
     import Example.Goose.Model as Example
     import Example.Goose.Msg as Example
     import Example.Goose.Gui as ExampleGui
 
-    main : ProgramWithTron () Example.Model Example.Msg
+    main : WithTron.Program () Example.Model Example.Msg
     main =
         WithTron.application
-            (Option.toHtml Dock.center Theme.light)
-            (Option.detachable
+            (Render.toHtml Dock.center Theme.light)
+            (Communication.detachable
                 { ack = ackToWs
                 , transmit = sendUpdateToWs
                 , receive = receieveUpdateFromWs identity
@@ -552,6 +601,7 @@ application renderTarget ports def =
         <| pastDependentOverApplication renderTarget ports def
 
 
+{-| -}
 justUi
     :  Render.Target
     -> (Tree -> Tree)
@@ -560,6 +610,7 @@ justUi renderTarget for =
     justUiAndCommunication renderTarget Comm.none for
 
 
+{-| -}
 justUiAndCommunication
     :  Render.Target
     -> Comm.Ports ()

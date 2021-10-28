@@ -108,11 +108,14 @@ For more information, see the `examples` folder in the source code.
             ++ (ModuleTwo.gui |> List.map (Tuple.mapSecond <| Build.map ToModuleTwo))
             ++ (ModuleThree.gui |> List.map (Tuple.mapSecond <| Build.map ToModuleThree))
 
+# Sets
+@docs Set, mapSet, toSet
+
 # Root
 @docs root
 
 # Items
-@docs none, int, float, number, xy, coord, color, text, input, button, toggle, bool
+@docs none, int, float, number, xy, coord, color, text, input, button, buttonWith, toggle, bool
 
 # Groups
 @docs nest, choice, choiceBy, strings, labels, palette
@@ -136,10 +139,7 @@ Usually in your `for` function you set the default value to the control, but if 
 @docs live
 
 # Conversion between types of controls + helpers
-@docs toSet, toChoice, toKnob, toSwitch, addLabels, handleWith
-
-# Add Path
-@docs addPath, addLabeledPath
+@docs toChoice, toKnob, toSwitch, handleWith
 -}
 
 
@@ -448,7 +448,8 @@ themedIconAt : (Theme -> List String) -> Face
 themedIconAt = Button.themedIconAt >> WithIcon
 
 
-
+{-| Create a button with a given face. Use `icon`, `iconAt`, `themedIcon`, `themedIconAt` to create faces.
+-}
 buttonWith : Face -> (() -> msg) -> Tron msg
 buttonWith face_ toMsg =
     B.buttonWith face_ <| Value.fromAction >> Maybe.map toMsg

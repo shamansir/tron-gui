@@ -36,7 +36,7 @@ Using `Tron.lift` any `Tree a` may be lifted to `Tron a` (i.e. `Tree (Control.Va
 @docs buttons, useColor, face, Face
 
 # Icons
-@docs Icon, icon, iconAt, themedIcon, themedIconAt, makeUrl
+@docs Icon, icon, iconAt, themedIcon, themedIconAt
 
 # Force expand / collapse for nesting
 @docs expand, collapse
