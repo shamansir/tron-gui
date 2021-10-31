@@ -17,7 +17,9 @@
     <meta name="theme-color" content="#000000">
 
     <link href="./Tron.css" rel="stylesheet" type="text/css">
-    <script src="./builder.js"></script>
+    <script>var exports = {"__esModule": true};</script>
+    <script src="./BuildFromJs/builder.js"></script>
+    <script src="./BuildFromJs/example.js"></script>
     <script src="./app.js"></script>
 
     <style type="text/css">
@@ -39,13 +41,20 @@
             node : document.getElementById("elm-node")
         });
 
+        //import buildExample from "example";
+
+        console.log(exports);
+
+        exports['buildExample'](app.ports);
+
+        /*
         app.ports.ack.subscribe((json) => {
             document.getElementById('information').innerHTML = JSON.stringify(json, null, 2);
         });
 
         app.ports.transmit.subscribe((json) => {
             document.getElementById('information').innerHTML = JSON.stringify(json, null, 2);
-        });
+        }); */
 
     </script>
 

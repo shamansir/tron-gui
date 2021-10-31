@@ -3,6 +3,7 @@ module Example.Unit.Gui exposing (..)
 
 import Color
 
+import Tron.Path as Path
 import Tron.Tree.Build.Unit as Tron
 import Tron.Style.PanelShape exposing (..)
 import Tron.Style.CellShape exposing (..)
@@ -110,7 +111,7 @@ colorNest =
             |> Tron.shape (cols 1)
 
 
-choiceToLabel : Choice -> Tron.Label
+choiceToLabel : Choice -> Path.Label
 choiceToLabel c =
     case c of
         A -> "The A"

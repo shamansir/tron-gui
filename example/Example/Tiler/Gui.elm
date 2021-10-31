@@ -3,7 +3,6 @@ module Example.Tiler.Gui exposing (gui)
 
 import Dict
 import Color exposing (Color)
-import Tron as Tron
 import Tron.Tree as T exposing (Tree)
 import Tron.Tree.Build.Unit as Gui
 import Tron.Style.PanelShape exposing (..)
@@ -15,8 +14,6 @@ import Example.Tiler.Product as Product exposing (Product)
 import Example.Tiler.Logic as Logic exposing (Model, Tileset, Tilesets, TilesetStatus, statusIcon)
 
 import WithTron.ValueAt as V
-
-import Tron.Control.Value as Proxy exposing (Value)
 
 
 type FullscreenStatus
@@ -94,7 +91,6 @@ loadActionType =
 isFullscreenEnabled : Tree () -> FullscreenStatus
 isFullscreenEnabled =
     V.ask (V.toggle [ "Sizes", "Fullscreen" ])
-        >> Maybe.map Proxy.toggleToBool
         >> Maybe.map (\v -> if v then Fullscreen else CustomSize)
         >> Maybe.withDefault Fullscreen
 
@@ -102,7 +98,6 @@ isFullscreenEnabled =
 isGradientEnabled : Tree () -> GradientStatus
 isGradientEnabled =
     V.ask (V.toggle [ "Randomness", "Gradient" ])
-        >> Maybe.map Proxy.toggleToBool
         >> Maybe.map (\v -> if v then Gradient else Discrete)
         >> Maybe.withDefault Discrete
 

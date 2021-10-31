@@ -1,6 +1,6 @@
 module Tron.Option.Communication exposing
     ( Ports, map
-    , none, sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
+    , none, sendJson, sendReceiveJson, receiveJson, sendStrings, detachable, withDatGui
     , connect
     )
 
@@ -15,7 +15,7 @@ Ports are meant to connect with real ports of your app, with the help of `map` y
 
 # Prepared configurations
 
-@docs sendJson, sendReceiveJson, sendStrings, detachable, withDatGui
+@docs sendJson, sendReceiveJson, receiveJson, sendStrings, detachable, withDatGui
 
 # All the possible ports
 
@@ -137,6 +137,30 @@ sendStrings { transmit } =
     , receive = Nothing
     , apply = Nothing
     , build = Nothing
+    }
+
+
+
+{-| Receive JSON tree and values and send updates using given ports:
+
+- `build` receives the tree structure to build UI from;
+- `transmit` sends the value and path to it to JS in JSON, when it was changed;
+- `apply` gets the list of label paths and values and tries to apply them to
+        the current state of the tree, if they match it;
+ -}
+receiveJson
+    :
+        { build : Sub Exp.Tree
+        , transmit : Exp.Out -> Cmd msg
+        , apply : Sub (List Exp.DeduceIn)
+        }
+    -> Ports msg
+receiveJson { build, transmit, apply } =
+    { ack = Nothing
+    , transmit = Just transmit
+    , receive = Nothing
+    , apply = Just apply
+    , build = Just build
     }
 
 

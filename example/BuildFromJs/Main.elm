@@ -18,6 +18,8 @@ port build : (Exp.Tree -> msg) -> Sub msg
 
 port apply : (List Exp.DeduceIn -> msg) -> Sub msg
 
+port transmit : Exp.Out -> Cmd msg
+
 
 main : WithTron.Program () () ()
 main =
@@ -27,6 +29,7 @@ main =
             (Communication.receiveJson
                 { build = build identity
                 , apply = apply identity
+                , transmit = transmit
                 }
             )
         <| always ExampleGui.gui

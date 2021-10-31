@@ -1,5 +1,5 @@
 module Tron.Tree.Build.Unit exposing
-    ( Set
+    ( Tree, Set
     , root
     , none, int, float, number, xy, coord, color, text, input, toggle, bool, button, buttonWith
     , nest, choice, choiceBy, strings, labels, palette, buttons
@@ -22,6 +22,9 @@ any `Tree ()` may be lifted to `Tron ()` (i.e. `Tree (Control.Value -> Maybe ())
 
 You also get `Tree ()` as the storage for previous values in `for`, `update` and `view` from `WithTron` definitions.
 
+
+# Tree
+@docs Tree
 
 # Sets
 @docs Set, toSet
@@ -79,6 +82,7 @@ import Tron.Control.Impl.Nest exposing (Form(..))
 
 
 
+{-| The alias to the _unit_ Tree: `Tron.Tree.Tree ()`. -}
 type alias Tree = T.Tree ()
 
 
