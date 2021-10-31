@@ -12,12 +12,27 @@ interface ChangeHandler {
 }
 
 
+interface SendTreePort {
+    (tree : Tron): void;
+}
+
+
+interface ReceiveValuePort {
+    (path : string[], value : Value, type : ControlType): void;
+}
+
+
+interface SendValuePort {
+    (control : Control): void;
+}
+
+
 class Control {
   readonly companionProperty? : string = undefined;
   readonly id? : string = undefined;
   readonly type : ControlType = "none";
-  readonly changeHandlers : ChangeHandler[] = [];
-  readonly finishChangeHandlers : ChangeHandler[] = [];
+  changeHandlers : ChangeHandler[] = [];
+  finishChangeHandlers : ChangeHandler[] = [];
   onChange(handler : ChangeHandler) : Control { return this; };
   onFinishChange(handler : ChangeHandler) : Control { return this; };
   sendChange(value: Value) : Control { return this; }
@@ -30,9 +45,21 @@ class Nest extends Control {
 }
 
 
-type Tron = Nest;
 
 
-function build(tron : Tron): void {
+export class Ports {
+    sendTree : SendTreePort;
+    sendValue : SendValuePort;
+    receiveValue : ReceiveValuePort;
+}
 
+
+export type Tron =
+    { ports : Ports
+    , root : Nest
+    };
+
+
+export function build(ports : Ports, root : Nest): Tron {
+    return { ports, root };
 }
