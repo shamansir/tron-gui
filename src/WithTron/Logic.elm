@@ -61,7 +61,7 @@ tryTransmitting { transmit } rawUpdate =
 
 
 addSubscriptionsOptions : Ports msg -> Tree () -> Sub Incoming
-addSubscriptionsOptions { apply, receive } tree =
+addSubscriptionsOptions { apply, receive, build } tree =
     Sub.batch
         [ apply
             |> Maybe.map (Sub.map (List.map <| Core.tryDeduce tree))
@@ -71,6 +71,9 @@ addSubscriptionsOptions { apply, receive } tree =
         , receive
             |> Maybe.map (Sub.map List.singleton)
             |> Maybe.map (Sub.map Updates)
+            |> Maybe.withDefault Sub.none
+        , build
+            |> Maybe.map (Sub.map (D.decodeValue Exp.decode >> FullTree))
             |> Maybe.withDefault Sub.none
         ]
 
