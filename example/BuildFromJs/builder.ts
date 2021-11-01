@@ -145,11 +145,10 @@ export class Ports {
 
 export class Tron extends Nest {
     constructor() { super('root'); }
-}
 
-
-export function run(ports : Ports, root : Tron): Tron {
-    // TODO: subscribe to changes before
-    ports.build.send(root.toJson());
-    return root;
+    run(ports : Ports): Tron {
+        console.log(this.toJson());
+        ports.build.send(this.toJson());
+        return this;
+    }
 }

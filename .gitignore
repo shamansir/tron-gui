@@ -11,5 +11,5 @@
 # /example/dat.gui.min.js
 example/Example/Goose/index.html
 example/Example/Goose/index.js
-example/BuildFromJs/*.js
+example/BuildFromJs/builder.js
 example/node_modules

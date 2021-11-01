@@ -11,9 +11,6 @@ import Tron.Option.Communication as Communication
 import Tron.Tree.Expose.Data as Exp
 
 
-import Example.Unit.Gui as ExampleGui
-
-
 port build : (Exp.Tree -> msg) -> Sub msg
 
 port apply : (List Exp.DeduceIn -> msg) -> Sub msg
@@ -32,4 +29,4 @@ main =
                 , transmit = transmit
                 }
             )
-        <| always ExampleGui.gui
+        <| identity

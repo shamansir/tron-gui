@@ -4,13 +4,14 @@ module WithTron.Architecture exposing (..)
 import Url exposing (Url)
 import Task
 import Html exposing (Html)
+import Json.Decode as D
 
 import Tron exposing (Tron)
 import Tron.Tree.Expose.Data as Exp
 import Tron.Tree.Expose.Convert as Exp
 import Tron.Tree.Expose.Tree as Exp
 import Tron.Detach as Detach
-import Tron.Core as Core exposing (State)
+import Tron.Core as Core exposing (State, Error)
 import Tron.Tree.Internals as Tree
 import Tron.Tree.Controls as Tree
 import Tron.Tree.Values as Tree
@@ -30,6 +31,8 @@ type WithTronMsg msg
     --| Ack Exp.Ack
     | SendUpdate Exp.Out
     | ReceiveRaw (List Exp.In)
+    | ReplaceTree Tree
+    | StoreError Error
     | SetClientId Detach.ClientId
     | UrlChange (Maybe msg) Url
 
@@ -93,10 +96,19 @@ subscriptions
     -> ( model, State, Tree )
     -> Sub (WithTronMsg msg)
 subscriptions userSubscriptions ports ( model, state, tree ) =
-    Sub.batch
+    let
+        convertIncoming incoming =
+            case incoming of
+                L.FullTree decodeResult ->
+                    case decodeResult of
+                        Ok newTree -> ReplaceTree newTree
+                        Err decodeError -> StoreError <| D.errorToString decodeError
+                L.Updates updates -> ReceiveRaw updates
+
+    in Sub.batch
         [ userSubscriptions tree model |> Sub.map ToUser
         , Core.subscriptions state |> Sub.map ToTron
-        , L.addSubscriptionsOptions ports tree |> Sub.map ReceiveRaw
+        , L.addSubscriptionsOptions ports tree |> Sub.map convertIncoming
         ]
 
 
@@ -235,6 +247,21 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
                         Nothing -> Cmd.none
                     ]
                 )
+
+        ReplaceTree nextTree ->
+            (
+                ( model
+                , state -- TODO : clear `detach` & `mouse`
+                    -- { state | mouse = Tron.Mouse.init }
+                , nextTree
+                )
+            , Cmd.none
+            )
+
+        StoreError error ->
+            ( ( model, { state | errors = error :: state.errors }, prevTree )
+            , Cmd.none
+            )
 
 
 -- FIXME: move to WithTron.Logic

@@ -143,6 +143,16 @@ sendStrings { transmit } =
 
 {-| Receive JSON tree and values and send updates using given ports:
 
+NB: for `build` port to work properly, you are required to set `for` to always return the previous tree,
+or at least the very same structure as the previous tree; E.g. if you use `WithTron.justUiAndCommunication`, just set `for` to `identity`:
+
+    WithTron.justUiAndCommunication
+        (Render.toHtml Dock.center Theme.light)
+        (Communication.receiveJson { build = build, transmit = transmit, apply = apply })
+        identity
+
+See `BuildFromJs` example for reference.
+
 - `build` receives the tree structure to build UI from;
 - `transmit` sends the value and path to it to JS in JSON, when it was changed;
 - `apply` gets the list of label paths and values and tries to apply them to
@@ -160,7 +170,7 @@ receiveJson { build, transmit, apply } =
     , transmit = Just transmit
     , receive = Nothing
     , apply = Just apply
-    , build = Just build
+    , build = Just build -- FIXME: find a way to disallow assign to `build`
     }
 
 
@@ -171,8 +181,8 @@ Only works with `.application` since needs URL access to store Client ID/Path:
     main : ProgramWithTron () Example.Model Example.Msg
     main =
         WithTron.application
-            (Option.toHtml Dock.center Theme.light)
-            (Option.detachable
+            (Render.toHtml Dock.center Theme.light)
+            (Communication.detachable
                 { ack = ack
                 , transmit = transmit
                 , receive = receieve identity

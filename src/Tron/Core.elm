@@ -1,5 +1,5 @@
 module Tron.Core exposing
-    ( State, Msg
+    ( State, Msg, Error
     , view, update, init, subscriptions, run
     , dock, reshape
     , applyRaw, tryDeduce
@@ -61,7 +61,11 @@ type alias State =
     , mouse : MouseState
     , detach : ( Maybe ClientId, Detach.State )
     , hidden : Bool
+    , errors : List Error
     }
+
+
+type alias Error = String
 
 
 type alias Msg = Msg_
@@ -88,6 +92,7 @@ init =
         , mouse = Tron.Mouse.init
         , detach = ( Nothing, Detached )
         , hidden = False
+        , errors = []
         }
     , run
     )

@@ -12,6 +12,7 @@ import Tron.Render.Layout as L
 import Tron.Tree exposing (Tree)
 import HashId
 
+import Json.Decode as D
 import Json.Encode as E
 
 import Html exposing (Html)
@@ -22,6 +23,14 @@ setDetachState detachState state =
     { state
     | detach = detachState
     } -}
+
+
+type Incoming
+    = FullTree (Result D.Error (Tree ()))
+    | Updates (List Exp.In)
+
+
+type DecodedTree = Result D.Error (Tree ())
 
 
 nextClientId : Cmd Detach.ClientId
@@ -51,15 +60,17 @@ tryTransmitting { transmit } rawUpdate =
         |> Maybe.withDefault Cmd.none
 
 
-addSubscriptionsOptions : Ports msg -> Tree () -> Sub (List Exp.In)
+addSubscriptionsOptions : Ports msg -> Tree () -> Sub Incoming
 addSubscriptionsOptions { apply, receive } tree =
     Sub.batch
         [ apply
             |> Maybe.map (Sub.map (List.map <| Core.tryDeduce tree))
             |> Maybe.map (Sub.map (List.filterMap identity))
+            |> Maybe.map (Sub.map Updates)
             |> Maybe.withDefault Sub.none
         , receive
             |> Maybe.map (Sub.map List.singleton)
+            |> Maybe.map (Sub.map Updates)
             |> Maybe.withDefault Sub.none
         ]
 
