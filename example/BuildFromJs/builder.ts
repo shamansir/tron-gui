@@ -12,6 +12,12 @@ interface ChangeHandler {
 }
 
 
+type Path = [ number, string ][]
+
+
+type LabelPath =  string[]
+
+
 type TreeJson = any;
 
 
@@ -19,7 +25,7 @@ type ValueJson = any;
 
 
 type PortValueIn =
-    { path : [ number, string ][]
+    { path : Path
     , value : ValueJson
     , stringValue : string
     , type_ : string
@@ -27,7 +33,7 @@ type PortValueIn =
 
 
 type PortValueOut =
-    { path : [ number, string ][]
+    { path : Path
     , value : ValueJson
     }
 
@@ -38,7 +44,7 @@ interface SendTreePort {
 
 
 interface ReceiveValuePort {
-    subscribe (callback: ({ clientId : string, value : PortValueIn }) => void): void;
+    subscribe (callback: ({ client : string, update : PortValueIn }) => void): void;
 }
 
 
@@ -73,10 +79,15 @@ export class Control {
             return this;
         };
     //onFinishChange(handler : ChangeHandler) : Control { return this; };
-    sendChange(value: Value) : Control {
+    handle(value: Value) : Control {
             for (const changeHandler in this.changeHandlers) {
                 this.changeHandlers[changeHandler](value);
             }
+            return this;
+        }
+
+    send(ports : Ports, value: Value) : Control
+        {
             return this;
         }
 
@@ -124,6 +135,50 @@ export class Nest extends Control {
     button(companion : any, companionPropety : string) : Control
         { return this.add(new Control("button", { }, companion, companionPropety)); };
 
+    find(path : LabelPath) : Control | null {
+        if (path.length > 0) {
+            let firstLabel = path[0];
+
+            for (let controlIdx in this.controls) {
+                if (this.controls[controlIdx].label == firstLabel) {
+                    if (path.length == 1) {
+                        return this.controls[controlIdx];
+                    } else {
+                        if (this.controls[controlIdx] instanceof Nest) {
+                            return (this.controls[controlIdx] as Nest).find(path.slice(1));
+                        } else {
+                            return null;
+                        }
+                    }
+
+                }
+            }
+            return null;
+        } else return null;
+    }
+    
+    findExact(path : Path) : Control | null {
+        if (path.length > 0) {
+            let [firstIdx, firstLabel] = path[0];
+
+            for (let controlIdx in this.controls) {
+                if ((parseInt(controlIdx) == firstIdx) && (this.controls[controlIdx].label == firstLabel)) {
+                    if (path.length == 1) {
+                        return this.controls[controlIdx];
+                    } else {
+                        if (this.controls[controlIdx] instanceof Nest) {
+                            return (this.controls[controlIdx] as Nest).findExact(path.slice(1));
+                        } else {
+                            return null;
+                        }
+                    }
+
+                }
+            }
+            return null;
+        } else return null;
+    }
+
     toJson() {
         return {
             type : "nest",
@@ -149,6 +204,9 @@ export class Tron extends Nest {
     run(ports : Ports): Tron {
         console.log(this.toJson());
         ports.build.send(this.toJson());
+        ports.transmit.subscribe(({ update }) => {
+            console.log('received', update);
+        })
         return this;
     }
 }
