@@ -12,18 +12,38 @@ interface ChangeHandler {
 }
 
 
+type TreeJson = any;
+
+
+type ValueJson = any;
+
+
+type PortValueIn =
+    { path : [ number, string ][]
+    , value : ValueJson
+    , stringValue : string
+    , type_ : string
+    }
+
+
+type PortValueOut =
+    { path : [ number, string ][]
+    , value : ValueJson
+    }
+
+
 interface SendTreePort {
-    (tree : Tron): void;
+    send(tree : TreeJson): void;
 }
 
 
 interface ReceiveValuePort {
-    (path : string[], value : Value, type : ControlType): void;
+    subscribe (callback: ({ clientId : string, value : PortValueIn }) => void): void;
 }
 
 
-interface SendValuePort {
-    (control : Control): void;
+interface SendValuesPort {
+    send(values : PortValueOut[]): void;
 }
 
 
@@ -60,7 +80,24 @@ export class Control {
             return this;
         }
 
-    toJson(): any { return {}; }
+    toJson(): any {
+        switch (this.type) {
+            case "num" :
+                return {
+                    type : "slider",
+                    min : this.props.min,
+                    max : this.props.max,
+                    step : this.props.step,
+                    current : this.companion && this.companionProperty ? this.companion[this.companionProperty] : null
+                };
+            case "button" :
+                return {
+                    type : "button"
+                };
+            default :
+                return {}
+        }
+    }
 }
 
 
@@ -86,13 +123,23 @@ export class Nest extends Control {
         { return this.add(new Control("num", { min, max, step }, companion, companionPropety)); };
     button(companion : any, companionPropety : string) : Control
         { return this.add(new Control("button", { }, companion, companionPropety)); };
+
+    toJson() {
+        return {
+            type : "nest",
+            nest : this.controls.map(
+                        (control, index) =>
+                            ({ property : control.toJson(), index: index, label : control.label })
+                    )
+        };
+    }
 }
 
 
 export class Ports {
-    sendTree : SendTreePort;
-    sendValue : SendValuePort;
-    receiveValue : ReceiveValuePort;
+    build : SendTreePort;
+    apply : SendValuesPort;
+    transmit : ReceiveValuePort;
 }
 
 
@@ -101,6 +148,8 @@ export class Tron extends Nest {
 }
 
 
-export function build(ports : Ports, root : Tron): Tron {
+export function run(ports : Ports, root : Tron): Tron {
+    // TODO: subscribe to changes before
+    ports.build.send(root.toJson());
     return root;
 }

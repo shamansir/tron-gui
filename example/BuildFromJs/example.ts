@@ -1,4 +1,4 @@
-import { Nest, Tron, Ports, build } from "./builder.js";
+import { Nest, Tron, Ports, run } from "./builder.js";
 
 export function buildExample(ports : Ports) : void {
 
@@ -11,5 +11,5 @@ export function buildExample(ports : Ports) : void {
     tron.num(companion, 'value', 0, 42).onChange((val) => { console.log(companion.value, val); });
     tron.button(companion, 'test');
 
-    build(ports, tron);
+    run(ports, tron);
 }
