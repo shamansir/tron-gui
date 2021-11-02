@@ -165,7 +165,7 @@ export class Control {
 export class Choice extends Control {
     options : Control[] = [];
 
-    constructor(label : string, companion? : any, companionProperty?: string) {
+    constructor(label : string, companion? : Companion, companionProperty?: string) {
         super("choice", {}, companion, companionProperty, label);
     }
 
@@ -191,7 +191,7 @@ export class Choice extends Control {
 export class Nest extends Control {
     controls : Control[] = [];
 
-    constructor(label : string, companion? : any, companionProperty?: string) {
+    constructor(label : string, companion? : Companion, companionProperty?: string) {
             super("nest", {}, companion, companionProperty, label);
         }
 

@@ -4,9 +4,11 @@
 /example/app.js
 /example/index.html
 /example/Tron.css
+/example/Tron.js
 /example/*.woff
 /example/*.woff2
 .idea
+Tron.js
 /index.html
 # /example/dat.gui.min.js
 example/Example/Goose/index.html

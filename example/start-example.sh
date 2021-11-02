@@ -2,6 +2,7 @@
 
 if [ "$1" ]; then
     cp ../src/Tron.css ./Tron.css
+    cp ../Tron.js ./Tron.js
 
     cp ./Example/Goose/JetBrainsMono-Regular.woff ./JetBrainsMono-Regular.woff
     cp ./Example/Goose/JetBrainsMono-Regular.woff2 ./JetBrainsMono-Regular.woff2
