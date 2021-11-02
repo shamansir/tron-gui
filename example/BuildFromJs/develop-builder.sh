@@ -1,0 +1,1 @@
+tsc ./builder.ts --watch

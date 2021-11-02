@@ -76,10 +76,19 @@ export class Control {
 
     onChange(handler : ChangeHandler) : Control {
             this.changeHandlers.push(handler);
+            console.log('add handler for ', this.label);
             return this;
         };
     //onFinishChange(handler : ChangeHandler) : Control { return this; };
     handle(value: Value) : Control {
+            if (this.companion && this.companionProperty && this.companion[this.companionProperty]) {
+                if (this.type == "button") {
+                    this.companion[this.companionProperty]();
+                } else {
+                    this.companion[this.companionProperty] = value;
+                }
+
+            }
             for (const changeHandler in this.changeHandlers) {
                 this.changeHandlers[changeHandler](value);
             }
@@ -122,9 +131,9 @@ export class Nest extends Control {
     add(control : Control) : Control
         {
             this.controls.push(control);
-            return this;
+            return control;
         };
-    addMany(controls : Control[]) : Control
+    addMany(controls : Control[]) : Nest
         {
             this.controls.concat(controls);
             return this;
@@ -156,7 +165,7 @@ export class Nest extends Control {
             return null;
         } else return null;
     }
-    
+
     findExact(path : Path) : Control | null {
         if (path.length > 0) {
             let [firstIdx, firstLabel] = path[0];
@@ -205,8 +214,11 @@ export class Tron extends Nest {
         console.log(this.toJson());
         ports.build.send(this.toJson());
         ports.transmit.subscribe(({ update }) => {
-            console.log('received', update);
-        })
+            let maybeControl = this.findExact(update.path);
+            if (maybeControl != null) {
+                maybeControl.handle(update.value);
+            }
+        });
         return this;
     }
 }
