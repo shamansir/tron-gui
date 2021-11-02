@@ -36,6 +36,7 @@
 
 * Current controls
 
+** TODO NEXTVER BUG Text editing is not finishing sometimes (see `BuildFromJs`); one needs to push the text control for it to save;
 ** TODO NEXTVER BUG The values of `Live` controls are fired but not seen while dragging;
 ** TODO Input box for the knobs;
 ** TODO Show the value on XY controllers as well;

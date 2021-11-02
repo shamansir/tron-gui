@@ -76,12 +76,11 @@ export class Control {
 
     onChange(handler : ChangeHandler) : Control {
             this.changeHandlers.push(handler);
-            console.log('add handler for ', this.label);
             return this;
         };
     //onFinishChange(handler : ChangeHandler) : Control { return this; };
     handle(value: Value) : Control {
-            if (this.companion && this.companionProperty && this.companion[this.companionProperty]) {
+            if (this.companion && this.companionProperty && (typeof this.companion[this.companionProperty] != 'undefined')) {
                 if (this.type == "button") {
                     this.companion[this.companionProperty]();
                 } else {
@@ -160,13 +159,38 @@ export class Control {
     }
 }
 
+export class Choice extends Control {
+    options : Control[] = [];
+
+    constructor(label : string, companion? : any, companionProperty?: string) {
+        super("choice", {}, companion, companionProperty, label);
+    }
+
+    addOption(companion : any, companionProperty? : string, label?: string) : Control
+        {
+            let option = new Control("button", { }, companion, companionProperty, label);
+            this.options.push(option);
+            return option;
+        };
+
+    toJson() {
+        return {
+            type : "choice",
+            options : this.options.map(
+                        (control, index) =>
+                            ({ property : control.toJson(), index: index, label : control.label })
+                    )
+        };
+    }
+}
+
 
 export class Nest extends Control {
     controls : Control[] = [];
 
     constructor(label : string, companion? : any, companionProperty?: string) {
-        super("nest", {}, companion, companionProperty, label);
-    }
+            super("nest", {}, companion, companionProperty, label);
+        }
 
     add(control : Control) : Control
         {
@@ -194,10 +218,22 @@ export class Nest extends Control {
         { return this.add(new Control("xy", { min, max, step }, companion, companionProperty)); };
     color(companion : any, companionProperty : string) : Control
         { return this.add(new Control("color", { }, companion, companionProperty)); };
-    choice(companion : any, companionProperty : string, items : string[]) : Control
-        { return this.add(new Control("choice", { }, companion, companionProperty)); };
-    buttons(companion : any, properties : string[]) : Control
-        { return this; /* FIXME: implement */ };
+    choice(companion : any, companionProperty : string, options : string[]) : Control
+        {
+            const choice = new Choice(companionProperty, companion, companionProperty);
+            for (let optionIdx in options) {
+                choice.addOption(companion, null, options[optionIdx]);
+            }
+            return this.add(choice);
+        };
+    buttons(companion : any, label : string, properties : string[]) : Nest
+        {
+            const nest = this.nest('buttons');
+            for (let propertyIdx in properties) {
+                nest.button(companion, properties[propertyIdx])
+            }
+            return nest;
+        };
     nest(label : string, companion? : any, companionProperty? : string) : Nest
         { return this.add(new Nest(label, companion, companionProperty)) as Nest; };
 
@@ -256,7 +292,6 @@ export class Nest extends Control {
     }
 }
 
-
 export class Ports {
     build : SendTreePort;
     apply : SendValuesPort;
@@ -266,6 +301,8 @@ export class Ports {
 
 export class Tron extends Nest {
     constructor() { super('root'); }
+
+    // TODO: `Tron.attach`
 
     run(ports : Ports): Tron {
         console.log(this.toJson());
