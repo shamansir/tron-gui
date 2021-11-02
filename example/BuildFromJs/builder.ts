@@ -100,6 +100,17 @@ export class Control {
             return this;
         }
 
+    get() : Value | null {
+            return this.companion && this.companionProperty ? this.companion[this.companionProperty] : null
+        }
+
+    live() : Control {
+            if (this.props) {
+                this.props.live = true;
+            }
+            return this;
+        }
+
     toJson(): any {
         switch (this.type) {
             case "num" :
@@ -108,14 +119,43 @@ export class Control {
                     min : this.props.min,
                     max : this.props.max,
                     step : this.props.step,
-                    current : this.companion && this.companionProperty ? this.companion[this.companionProperty] : null
+                    live : this.props.live,
+                    current : this.get()
+                };
+            case "toggle" :
+                return {
+                    type : "toggle",
+                    current : this.get() ? "on" : "off"
+                };
+            case "xy" :
+                return {
+                    type : "xy",
+                    minX : this.props.min.x,
+                    minY : this.props.min.y,
+                    maxX : this.props.max.x,
+                    maxY : this.props.max.y,
+                    stepX : this.props.step.x,
+                    stepY : this.props.step.y,
+                    live : this.props.live,
+                    current : this.get()
+                };
+            case "text" :
+                return {
+                    type : "text",
+                    current : this.get()
+                };
+            case "color" :
+                return {
+                    type : "color",
+                    live : this.props.live,
+                    currentRgba : this.get()
                 };
             case "button" :
                 return {
                     type : "button"
                 };
             default :
-                return {}
+                return { type : "none" }
         }
     }
 }
@@ -139,10 +179,27 @@ export class Nest extends Control {
             return this;
         };
 
-    num(companion : any, companionPropety : string, min : number = 0, max : number = 100, step : number = 1) : Control
-        { return this.add(new Control("num", { min, max, step }, companion, companionPropety)); };
-    button(companion : any, companionPropety : string) : Control
-        { return this.add(new Control("button", { }, companion, companionPropety)); };
+    num(companion : any, companionProperty : string, min : number = 0, max : number = 100, step : number = 1) : Control
+        { return this.add(new Control("num", { min, max, step }, companion, companionProperty)); };
+    button(companion : any, companionProperty : string) : Control
+        { return this.add(new Control("button", { }, companion, companionProperty)); };
+    toggle(companion : any, companionProperty : string) : Control
+        { return this.add(new Control("toggle", { }, companion, companionProperty)); };
+    text(companion : any, companionProperty : string) : Control
+        { return this.add(new Control("text", { }, companion, companionProperty)); };
+    xy(companion : any, companionProperty : string
+      , min : { x : number, y : number } = { x : 0, y : 0 }
+      , max : { x : number, y : number } = { x : 100, y : 100 }
+      , step : { x : number, y : number } = { x : 1, y : 1 }) : Control
+        { return this.add(new Control("xy", { min, max, step }, companion, companionProperty)); };
+    color(companion : any, companionProperty : string) : Control
+        { return this.add(new Control("color", { }, companion, companionProperty)); };
+    choice(companion : any, companionProperty : string, items : string[]) : Control
+        { return this.add(new Control("choice", { }, companion, companionProperty)); };
+    buttons(companion : any, properties : string[]) : Control
+        { return this; /* FIXME: implement */ };
+    nest(label : string, companion? : any, companionProperty? : string) : Nest
+        { return this.add(new Nest(label, companion, companionProperty)) as Nest; };
 
     find(path : LabelPath) : Control | null {
         if (path.length > 0) {

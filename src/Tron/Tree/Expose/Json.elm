@@ -692,7 +692,7 @@ decodeColor =
             (D.field "red" D.float)
             (D.field "green" D.float)
             (D.field "blue" D.float)
-            (D.field "alpha" D.float)
+            (D.map (Maybe.withDefault 1.0) <| D.maybe <| D.field "alpha" D.float)
         ]
 
 
