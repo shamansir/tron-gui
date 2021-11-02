@@ -1,0 +1,1 @@
+tsc ../../Tron.ts --outDir .. --watch

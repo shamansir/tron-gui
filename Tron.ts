@@ -1,10 +1,13 @@
 type Color = { hex : string } | { r : number, g : number, b : number, a : number } ;
 
 
-type ControlType = "none" | "num" | "xy" | "text" | "color" | "nest" | "choice" | "toggle" | "button" | "attachment";
+type ControlType = "none" | "slider" | "xy" | "text" | "color" | "nest" | "choice" | "toggle" | "button" | "attachment";
 
 
-type Value = string | number | [number, number] | Color;
+type ChoiceSelection = { selection : string, index : number };
+
+
+type Value = string | number | [number, number] | Color | ChoiceSelection;
 
 
 interface ChangeHandler {
@@ -89,6 +92,8 @@ export class Control {
         if (this.companion && this.companionProperty && (typeof this.companion[this.companionProperty] != 'undefined')) {
             if (type == "button") {
                 this.handleAction();
+            } else if (type == "choice") {
+                this.assignValue((value as ChoiceSelection).selection);
             } else {
                 this.assignValue(value);
             }
@@ -123,7 +128,7 @@ export class Control {
 
     toJson(): any {
         switch (this.type) {
-            case "num" :
+            case "slider" :
                 return {
                     type : "slider",
                     min : this.props.min,
@@ -215,7 +220,7 @@ export class Nest extends Control {
         };
 
     num(companionProperty : string, min : number = 0, max : number = 100, step : number = 1) : Control
-        { return this.add(new Control("num", { min, max, step }, this.companion, companionProperty)); };
+        { return this.add(new Control("slider", { min, max, step }, this.companion, companionProperty)); };
     button(companionProperty : string) : Control
         { return this.add(new Control("button", { }, this.companion, companionProperty)); };
     toggle(companionProperty : string) : Control
@@ -338,8 +343,16 @@ export class Tron extends Nest {
         return this;
     }
 
+    static pathAsString(path : Path) : string {
+        return path.map((i) => i[1]).join('/');
+    }
+
+    static labelPathAsString(path : LabelPath) : string {
+        return path.join('/');
+    }
+
     attach(companionProperty: string, path : LabelPath, handler?: ChangeHandler) : Control | null {
-        const pathAsString = path.join('/');
+        const pathAsString = Tron.labelPathAsString(path);
 
         if (!this.attachments[pathAsString]) {
             this.attachments[pathAsString] = new Control('attachment', {}, this.companion, companionProperty);
@@ -353,7 +366,8 @@ export class Tron extends Nest {
 
     listen() {
         this.ports.transmit.subscribe(({ update }) => {
-            const pathAsString = update.path.join('/');
+            const pathAsString = Tron.pathAsString(update.path);
+            console.log(pathAsString, update);
             const maybeControl = this.attachments[pathAsString];
 
             if (maybeControl != null) {
