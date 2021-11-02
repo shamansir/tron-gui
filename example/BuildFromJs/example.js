@@ -21,23 +21,23 @@ function buildExample(ports) {
         , innerKnobB : 30
         };
 
-    const tron = new Tron();
+    const tron = new Tron(ports, companion);
 
-    tron.num(companion, 'value', 0, 42).onChange((val) => { console.log(companion.value, val); });
-    tron.num(companion, 'live', 0, 42).live().onChange((val) => { console.log(companion.live, val); });
-    tron.button(companion, 'test');
-    tron.toggle(companion, 'toggle').onChange((val) => { console.log(companion.toggle, val); });
-    tron.text(companion, 'text').onChange((val) => { console.log(companion.text, val); });
-    tron.color(companion, 'colorA').onChange((val) => { console.log(companion.colorA, val); });
-    tron.color(companion, 'colorB').live().onChange((val) => { console.log(companion.colorB, val); });
-    tron.xy(companion, 'xy', { x : 0, y : 0 }, { x : 42, y : 42 }).onChange((val) => { console.log(companion.xy, val); });
-    tron.xy(companion, 'xy', { x : 0, y : 0 }, { x : 42, y : 42 }).live().onChange((val) => { console.log(companion.xy, val); });
-    tron.choice(companion, 'product', [ 'pycharm', 'idea', 'webstorm', 'rubymine' ]).onChange((val) => { console.log(companion.product, val); });
-    tron.buttons(companion, 'buttons', [ 'buttonA', 'buttonB', 'buttonC', 'buttonD' ]);
+    tron.num('value', 0, 42).onChange((val) => { console.log(companion.value, val); });
+    tron.num('live', 0, 42).live().onChange((val) => { console.log(companion.live, val); });
+    tron.button('test');
+    tron.toggle('toggle').onChange((val) => { console.log(companion.toggle, val); });
+    tron.text('text').onChange((val) => { console.log(companion.text, val); });
+    tron.color('colorA').onChange((val) => { console.log(companion.colorA, val); });
+    tron.color('colorB').live().onChange((val) => { console.log(companion.colorB, val); });
+    tron.xy('xy', { x : 0, y : 0 }, { x : 42, y : 42 }).onChange((val) => { console.log(companion.xy, val); });
+    tron.xy('xy', { x : 0, y : 0 }, { x : 42, y : 42 }).live().onChange((val) => { console.log(companion.xy, val); });
+    tron.choice('product', [ 'pycharm', 'idea', 'webstorm', 'rubymine' ]).onChange((val) => { console.log(companion.product, val); });
+    tron.buttons('buttons', [ 'buttonA', 'buttonB', 'buttonC', 'buttonD' ]);
 
     const nest = tron.nest('knobs');
-    nest.num(companion, 'innerKnobA', 0, 1000).onChange((val) => { console.log(companion.innerKnobA, val); });
-    nest.num(companion, 'innerKnobB', 0, 1000).onChange((val) => { console.log(companion.innerKnobB, val); });
+    nest.num('innerKnobA', 0, 1000).onChange((val) => { console.log(companion.innerKnobA, val); });
+    nest.num('innerKnobB', 0, 1000).onChange((val) => { console.log(companion.innerKnobB, val); });
 
-    tron.run(ports);
+    tron.run();
 }

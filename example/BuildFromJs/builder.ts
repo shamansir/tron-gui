@@ -24,6 +24,9 @@ type TreeJson = any;
 type ValueJson = any;
 
 
+type Companion = any;
+
+
 type PortValueIn =
     { path : Path
     , value : ValueJson
@@ -54,14 +57,14 @@ interface SendValuesPort {
 
 
 export class Control {
-    readonly companion? : any;
+    readonly companion? : Companion;
     readonly companionProperty? : string;
     label? : string;
     readonly type : ControlType;
     readonly props : any;
     //readonly path : string[];
 
-    constructor(type: ControlType, props : any, companion? : any, companionProperty?: string, label?: string) {
+    constructor(type: ControlType, props : any, companion? : Companion, companionProperty?: string, label?: string) {
         this.type = type;
         this.props = props;
         this.companion = companion;
@@ -166,9 +169,9 @@ export class Choice extends Control {
         super("choice", {}, companion, companionProperty, label);
     }
 
-    addOption(companion : any, companionProperty? : string, label?: string) : Control
+    addOption(companionProperty? : string, label?: string) : Control
         {
-            let option = new Control("button", { }, companion, companionProperty, label);
+            let option = new Control("button", { }, this.companion, companionProperty, label);
             this.options.push(option);
             return option;
         };
@@ -203,39 +206,39 @@ export class Nest extends Control {
             return this;
         };
 
-    num(companion : any, companionProperty : string, min : number = 0, max : number = 100, step : number = 1) : Control
-        { return this.add(new Control("num", { min, max, step }, companion, companionProperty)); };
-    button(companion : any, companionProperty : string) : Control
-        { return this.add(new Control("button", { }, companion, companionProperty)); };
-    toggle(companion : any, companionProperty : string) : Control
-        { return this.add(new Control("toggle", { }, companion, companionProperty)); };
-    text(companion : any, companionProperty : string) : Control
-        { return this.add(new Control("text", { }, companion, companionProperty)); };
-    xy(companion : any, companionProperty : string
+    num(companionProperty : string, min : number = 0, max : number = 100, step : number = 1) : Control
+        { return this.add(new Control("num", { min, max, step }, this.companion, companionProperty)); };
+    button(companionProperty : string) : Control
+        { return this.add(new Control("button", { }, this.companion, companionProperty)); };
+    toggle(companionProperty : string) : Control
+        { return this.add(new Control("toggle", { }, this.companion, companionProperty)); };
+    text(companionProperty : string) : Control
+        { return this.add(new Control("text", { }, this.companion, companionProperty)); };
+    xy(companionProperty : string
       , min : { x : number, y : number } = { x : 0, y : 0 }
       , max : { x : number, y : number } = { x : 100, y : 100 }
       , step : { x : number, y : number } = { x : 1, y : 1 }) : Control
-        { return this.add(new Control("xy", { min, max, step }, companion, companionProperty)); };
-    color(companion : any, companionProperty : string) : Control
-        { return this.add(new Control("color", { }, companion, companionProperty)); };
-    choice(companion : any, companionProperty : string, options : string[]) : Control
+        { return this.add(new Control("xy", { min, max, step }, this.companion, companionProperty)); };
+    color(companionProperty : string) : Control
+        { return this.add(new Control("color", { }, this.companion, companionProperty)); };
+    choice(companionProperty : string, options : string[]) : Control
         {
-            const choice = new Choice(companionProperty, companion, companionProperty);
+            const choice = new Choice(companionProperty, this.companion, companionProperty);
             for (let optionIdx in options) {
-                choice.addOption(companion, null, options[optionIdx]);
+                choice.addOption(null, options[optionIdx]);
             }
             return this.add(choice);
         };
-    buttons(companion : any, label : string, properties : string[]) : Nest
+    buttons(label : string, properties : string[]) : Nest
         {
-            const nest = this.nest('buttons');
+            const nest = this.nest(label);
             for (let propertyIdx in properties) {
-                nest.button(companion, properties[propertyIdx])
+                nest.button(properties[propertyIdx])
             }
             return nest;
         };
-    nest(label : string, companion? : any, companionProperty? : string) : Nest
-        { return this.add(new Nest(label, companion, companionProperty)) as Nest; };
+    nest(label : string, companionProperty? : string) : Nest
+        { return this.add(new Nest(label, this.companion, companionProperty)) as Nest; };
 
     find(path : LabelPath) : Control | null {
         if (path.length > 0) {
@@ -300,14 +303,19 @@ export class Ports {
 
 
 export class Tron extends Nest {
-    constructor() { super('root'); }
+    readonly ports : Ports;
+
+    constructor(ports : Ports, companion : Companion)
+        { super('root', companion);
+          this.ports = ports;
+        }
 
     // TODO: `Tron.attach`
 
-    run(ports : Ports): Tron {
+    run(): Tron {
         console.log(this.toJson());
-        ports.build.send(this.toJson());
-        ports.transmit.subscribe(({ update }) => {
+        this.ports.build.send(this.toJson());
+        this.ports.transmit.subscribe(({ update }) => {
             let maybeControl = this.findExact(update.path);
             if (maybeControl != null) {
                 maybeControl.handle(update.value);
