@@ -1,7 +1,7 @@
 type Color = { hex : string } | { r : number, g : number, b : number, a : number } ;
 
 
-type ControlType = "none" | "num" | "xy" | "text" | "color" | "nest" | "choice" | "toggle" | "button";
+type ControlType = "none" | "num" | "xy" | "text" | "color" | "nest" | "choice" | "toggle" | "button" | "attachment";
 
 
 type Value = string | number | [number, number] | Color;
@@ -31,7 +31,7 @@ type PortValueIn =
     { path : Path
     , value : ValueJson
     , stringValue : string
-    , type_ : string
+    , type_ : ControlType
     }
 
 
@@ -83,24 +83,32 @@ export class Control {
         };
     //onFinishChange(handler : ChangeHandler) : Control { return this; };
     handle(value: Value) : Control {
-            if (this.companion && this.companionProperty && (typeof this.companion[this.companionProperty] != 'undefined')) {
-                if (this.type == "button") {
-                    this.companion[this.companionProperty]();
-                } else {
-                    this.companion[this.companionProperty] = value;
-                }
-
+        return this.handleAs(this.type, value);
+    }
+    handleAs(type : ControlType, value: Value) : Control {
+        if (this.companion && this.companionProperty && (typeof this.companion[this.companionProperty] != 'undefined')) {
+            if (type == "button") {
+                this.handleAction();
+            } else {
+                this.assignValue(value);
             }
-            for (const changeHandler in this.changeHandlers) {
-                this.changeHandlers[changeHandler](value);
-            }
-            return this;
-        }
 
-    send(ports : Ports, value: Value) : Control
-        {
-            return this;
         }
+        for (const changeHandler in this.changeHandlers) {
+            this.changeHandlers[changeHandler](value);
+        }
+        return this;
+    }
+    handleAction() : void {
+        this.companion[this.companionProperty]();
+    }
+    assignValue(value : Value) : void {
+        this.companion[this.companionProperty] = value;
+    }
+
+    send(ports : Ports, value: Value) : Control {
+        return this; // TODO
+    }
 
     get() : Value | null {
             return this.companion && this.companionProperty ? this.companion[this.companionProperty] : null
@@ -302,8 +310,14 @@ export class Ports {
 }
 
 
+interface Attachments {
+    [index : string]: Control
+}
+
+
 export class Tron extends Nest {
     readonly ports : Ports;
+    attachments : Attachments = {};
 
     constructor(ports : Ports, companion : Companion)
         { super('root', companion);
@@ -316,9 +330,34 @@ export class Tron extends Nest {
         console.log(this.toJson());
         this.ports.build.send(this.toJson());
         this.ports.transmit.subscribe(({ update }) => {
-            let maybeControl = this.findExact(update.path);
+            const maybeControl = this.findExact(update.path);
             if (maybeControl != null) {
                 maybeControl.handle(update.value);
+            }
+        });
+        return this;
+    }
+
+    attach(companionProperty: string, path : LabelPath, handler?: ChangeHandler) : Control | null {
+        const pathAsString = path.join('/');
+
+        if (!this.attachments[pathAsString]) {
+            this.attachments[pathAsString] = new Control('attachment', {}, this.companion, companionProperty);
+        };
+        const attachment = this.attachments[pathAsString];
+        if (handler) {
+            attachment.onChange(handler);
+        }
+        return attachment;
+    }
+
+    listen() {
+        this.ports.transmit.subscribe(({ update }) => {
+            const pathAsString = update.path.join('/');
+            const maybeControl = this.attachments[pathAsString];
+
+            if (maybeControl != null) {
+                maybeControl.handleAs(update.type_, update.value);
             }
         });
         return this;
