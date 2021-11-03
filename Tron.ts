@@ -65,9 +65,10 @@ export class Control {
     label? : string;
     readonly type : ControlType;
     readonly props : any;
-    //readonly path : string[];
+    readonly path : Path;
 
-    constructor(type: ControlType, props : any, companion? : Companion, companionProperty?: string, label?: string) {
+    constructor(parentPath : Path, index : number, type: ControlType, props : any, companion? : Companion, companionProperty?: string, label?: string) {
+        this.path = parentPath.concat([ [ index, label || companionProperty ] ]);
         this.type = type;
         this.props = props;
         this.companion = companion;
@@ -112,7 +113,16 @@ export class Control {
     }
 
     send(ports : Ports, value: Value) : Control {
-        return this; // TODO
+        ports.apply.send([ { path : this.path, value : value }]); // TODO
+        return this;
+    }
+
+    sendCurrent(ports : Ports) : Control {
+        let maybeValue = this.get();
+        if (maybeValue != null) {
+            this.send(ports, maybeValue);
+        }
+        return this;
     }
 
     get() : Value | null {
@@ -125,6 +135,9 @@ export class Control {
             }
             return this;
         }
+
+    getPath() : Path
+        { return this.path; }
 
     toJson(): any {
         switch (this.type) {
@@ -178,13 +191,17 @@ export class Control {
 export class Choice extends Control {
     options : Control[] = [];
 
-    constructor(label : string, companion? : Companion, companionProperty?: string) {
-        super("choice", {}, companion, companionProperty, label);
+    constructor(parentPath : Path, index : number, label : string, companion? : Companion, companionProperty?: string) {
+        super(parentPath, index,  "choice", {}, companion, companionProperty, label);
+    }
+
+    getOptionsCount() : number {
+        return this.options.length;
     }
 
     addOption(companionProperty? : string, label?: string) : Control
         {
-            let option = new Control("button", { }, this.companion, companionProperty, label);
+            let option = new Control(this.path, this.getOptionsCount(), "button", { }, this.companion, companionProperty, label);
             this.options.push(option);
             return option;
         };
@@ -204,9 +221,13 @@ export class Choice extends Control {
 export class Nest extends Control {
     controls : Control[] = [];
 
-    constructor(label : string, companion? : Companion, companionProperty?: string) {
-            super("nest", {}, companion, companionProperty, label);
+    constructor(parentPath : Path, index : number, label : string, companion? : Companion, companionProperty?: string) {
+            super(parentPath, index, "nest", {}, companion, companionProperty, label);
         }
+
+    getItemsCount() : number {
+            return this.controls.length;
+        };
 
     add(control : Control) : Control
         {
@@ -220,23 +241,23 @@ export class Nest extends Control {
         };
 
     num(companionProperty : string, min : number = 0, max : number = 100, step : number = 1) : Control
-        { return this.add(new Control("slider", { min, max, step }, this.companion, companionProperty)); };
+        { return this.add(new Control(this.path, this.getItemsCount(), "slider", { min, max, step }, this.companion, companionProperty)); };
     button(companionProperty : string) : Control
-        { return this.add(new Control("button", { }, this.companion, companionProperty)); };
+        { return this.add(new Control(this.path, this.getItemsCount(), "button", { }, this.companion, companionProperty)); };
     toggle(companionProperty : string) : Control
-        { return this.add(new Control("toggle", { }, this.companion, companionProperty)); };
+        { return this.add(new Control(this.path, this.getItemsCount(), "toggle", { }, this.companion, companionProperty)); };
     text(companionProperty : string) : Control
-        { return this.add(new Control("text", { }, this.companion, companionProperty)); };
+        { return this.add(new Control(this.path, this.getItemsCount(), "text", { }, this.companion, companionProperty)); };
     xy(companionProperty : string
       , min : { x : number, y : number } = { x : 0, y : 0 }
       , max : { x : number, y : number } = { x : 100, y : 100 }
       , step : { x : number, y : number } = { x : 1, y : 1 }) : Control
-        { return this.add(new Control("xy", { min, max, step }, this.companion, companionProperty)); };
+        { return this.add(new Control(this.path, this.getItemsCount(), "xy", { min, max, step }, this.companion, companionProperty)); };
     color(companionProperty : string) : Control
-        { return this.add(new Control("color", { }, this.companion, companionProperty)); };
+        { return this.add(new Control(this.path, this.getItemsCount(), "color", { }, this.companion, companionProperty)); };
     choice(companionProperty : string, options : string[]) : Control
         {
-            const choice = new Choice(companionProperty, this.companion, companionProperty);
+            const choice = new Choice(this.path, this.getItemsCount(), companionProperty, this.companion, companionProperty);
             for (let optionIdx in options) {
                 choice.addOption(null, options[optionIdx]);
             }
@@ -251,7 +272,7 @@ export class Nest extends Control {
             return nest;
         };
     nest(label : string, companionProperty? : string) : Nest
-        { return this.add(new Nest(label, this.companion, companionProperty)) as Nest; };
+        { return this.add(new Nest(this.path, this.getItemsCount(), label, this.companion, companionProperty)) as Nest; };
 
     find(path : LabelPath) : Control | null {
         if (path.length > 0) {
@@ -325,7 +346,7 @@ export class Tron extends Nest {
     attachments : Attachments = {};
 
     constructor(ports : Ports, companion : Companion)
-        { super('root', companion);
+        { super([], 0, 'root', companion);
           this.ports = ports;
         }
 
@@ -355,7 +376,8 @@ export class Tron extends Nest {
         const pathAsString = Tron.labelPathAsString(path);
 
         if (!this.attachments[pathAsString]) {
-            this.attachments[pathAsString] = new Control('attachment', {}, this.companion, companionProperty);
+            this.attachments[pathAsString] =
+                new Control(this.path, this.getItemsCount(), 'attachment', {}, this.companion, companionProperty);
         };
         const attachment = this.attachments[pathAsString];
         if (handler) {
