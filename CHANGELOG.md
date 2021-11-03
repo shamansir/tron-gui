@@ -2,7 +2,8 @@
 
 #### Done
 
-* Fixed reporting `Live` controls;
+* Fix reporting `Live` controls;
+* Fix encoding and decoding `Live` controls;
 * JS Companion for building Tron UI entirely from JavaScript;
     * With the ability to subscribe to control changes from the UI being created;
     * With the ability to subscribe to control changes from the UI that was built in Elm;
