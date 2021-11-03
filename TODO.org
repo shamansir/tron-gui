@@ -56,6 +56,7 @@
     - [ ] ...
 ** TODO NEXTVER Separate controls rendering in sub-modules;
 ** TODO NEXTVER Transfer `transient` states to the controls as well;
+** TODO Move encoding/decoding controls inside their own modules;
 ** TODO Don't init as _(0, 0)_, rather something?
 ** TODO BREAKING `Tron.Tree.Expose` -> `Tron.Expose`?
 ** TODO Consider this module to use for `Tree`: https://package.elm-lang.org/packages/tomjkidd/elm-multiway-tree-zipper/latest/MultiwayTreeZipper

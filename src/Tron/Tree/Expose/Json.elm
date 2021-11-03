@@ -32,6 +32,21 @@ import Tron.Style.CellShape as CS
 
 decode : D.Decoder (Tree ())
 decode =
+    D.map2
+        Tuple.pair
+        (D.field "type" D.string)
+        (D.map (Maybe.withDefault False) <| D.maybe <| D.field "live" D.bool)
+    |> D.andThen
+        (\(typeStr, isLive) ->
+            if not isLive then
+                decodeByTypeString typeStr
+            else
+                decodeByTypeString typeStr |> D.map Live
+        )
+
+
+decodeByTypeString : String -> D.Decoder (Tree ())
+decodeByTypeString typeStr =
     let
         faceAndShape maybeShape maybeFace prop =
             case ( maybeShape, maybeFace ) of
@@ -49,145 +64,142 @@ decode =
                         |> Tree.setFace face
                 ( Nothing, Nothing ) -> prop
     in
-    D.field "type" D.string
-    |> D.andThen
-        (\typeStr ->
-            case typeStr of
-                "none" -> D.succeed <| Nil ()
-                "slider" ->
-                    D.map4
-                        (\min max step current ->
-                            Number
-                                <| Control
-                                    { min = min
-                                    , max = max
-                                    , step = step
-                                    }
-                                    ( Nothing, current )
-                                    ()
-                        )
-                        (D.field "min" D.float)
-                        (D.field "max" D.float)
-                        (D.field "step" D.float)
-                        (D.field "current" D.float)
-                "xy" ->
-                    D.map7
-                        (\minX maxX stepX minY maxY stepY current ->
-                            Coordinate
-                                <| Control
-                                    (
-                                        { min = minX
-                                        , max = maxX
-                                        , step = stepX
-                                        }
-                                    ,
-                                        { min = minY
-                                        , max = maxY
-                                        , step = stepY
-                                        }
-                                    )
-                                    ( Nothing, current )
-                                    ()
-                        )
-                        (D.field "minX" D.float)
-                        (D.field "maxX" D.float)
-                        (D.field "stepX" D.float)
-                        (D.field "minY" D.float)
-                        (D.field "maxY" D.float)
-                        (D.field "stepY" D.float)
-                        (D.field "current" <|
-                            D.map2
-                                Tuple.pair
-                                (D.field "x" D.float)
-                                (D.field "y" D.float)
-                        )
-                "text" ->
-                    D.field "current" D.string
-                        |> D.map
-                            (\current ->
-                                Text <|
-                                    Control
-                                        ()
-                                        ( Ready, current )
-                                        ()
-                            )
-                "color" ->
-                    D.field "currentRgba" decodeColor
-                        |> D.map
-                            (\current ->
-                                Color <|
-                                    Control
-                                        ()
-                                        ( Nothing, current )
-                                        ()
-                            )
-
-                "toggle" ->
-                    D.field "current" decodeToggle
-                        |> D.map
-                            (\current ->
-                                Toggle <|
-                                    Control
-                                        ()
-                                        current
-                                        ()
-                            )
-
-                "button" ->
-                    ( D.succeed
-                        <| Action
+    case typeStr of
+        "none" -> D.succeed <| Nil ()
+        "slider" ->
+            D.map4
+                (\min max step current ->
+                    Number
                         <| Control
-                            Button.Default
+                            { min = min
+                            , max = max
+                            , step = step
+                            }
+                            ( Nothing, current )
                             ()
-                            () )
-                    |> D.map2
-                        (\maybeFace button ->
-                            maybeFace
-                                |> Maybe.map (\face -> Tree.setFace face button)
-                                |> Maybe.withDefault button
-                        )
-                        (D.maybe <| D.field "face" decodeFace)
-
-                "nest" ->
-                    D.field "nest"
-                        (D.array
-                            <| D.map2
-                                Tuple.pair
-                                (D.field "label" D.string)
-                                (D.field "property" decode)
-                        )
-                        |> D.map
-                            (\items -> Nest.createGroup items ())
-                        |> D.map (Group Nothing Tree.defaultNestShape)
-                        |> D.map3 faceAndShape
-                            (D.maybe <| D.field "shape" decodeShape)
-                            (D.maybe <| D.field "face" decodeFace)
-
-                "choice" ->
-                    D.field "options"
-                        (D.array
-                            <| D.map2
-                                Tuple.pair
-                                (D.field "label" D.string)
-                                (D.field "property" decode)
-                        )
-                        |> D.map
-                            (\items -> Nest.createChoice items ())
-                        |> D.map2
-                            (\maybeMode control ->
-                                case maybeMode of
-                                    Just mode -> control |> Nest.setChoiceMode mode
-                                    Nothing -> control
+                )
+                (D.field "min" D.float)
+                (D.field "max" D.float)
+                (D.field "step" D.float)
+                (D.field "current" D.float)
+        "xy" ->
+            D.map7
+                (\minX maxX stepX minY maxY stepY current ->
+                    Coordinate
+                        <| Control
+                            (
+                                { min = minX
+                                , max = maxX
+                                , step = stepX
+                                }
+                            ,
+                                { min = minY
+                                , max = maxY
+                                , step = stepY
+                                }
                             )
-                            (D.maybe <| D.field "mode" decodeChoiceMode)
-                        |> D.map (Choice Nothing Tree.defaultNestShape)
-                        |> D.map3 faceAndShape
-                            (D.maybe <| D.field "shape" decodeShape)
-                            (D.maybe <| D.field "face" decodeFace)
+                            ( Nothing, current )
+                            ()
+                )
+                (D.field "minX" D.float)
+                (D.field "maxX" D.float)
+                (D.field "stepX" D.float)
+                (D.field "minY" D.float)
+                (D.field "maxY" D.float)
+                (D.field "stepY" D.float)
+                (D.field "current" <|
+                    D.map2
+                        Tuple.pair
+                        (D.field "x" D.float)
+                        (D.field "y" D.float)
+                )
+        "text" ->
+            D.field "current" D.string
+                |> D.map
+                    (\current ->
+                        Text <|
+                            Control
+                                ()
+                                ( Ready, current )
+                                ()
+                    )
+        "color" ->
+            D.field "currentRgba" decodeColor
+                |> D.map
+                    (\current ->
+                        Color <|
+                            Control
+                                ()
+                                ( Nothing, current )
+                                ()
+                    )
+
+        "toggle" ->
+            D.field "current" decodeToggle
+                |> D.map
+                    (\current ->
+                        Toggle <|
+                            Control
+                                ()
+                                current
+                                ()
+                    )
+
+        "button" ->
+            ( D.succeed
+                <| Action
+                <| Control
+                    Button.Default
+                    ()
+                    () )
+            |> D.map2
+                (\maybeFace button ->
+                    maybeFace
+                        |> Maybe.map (\face -> Tree.setFace face button)
+                        |> Maybe.withDefault button
+                )
+                (D.maybe <| D.field "face" decodeFace)
+
+        "nest" ->
+            D.field "nest"
+                (D.array
+                    <| D.map2
+                        Tuple.pair
+                        (D.field "label" D.string)
+                        (D.field "property" decode)
+                )
+                |> D.map
+                    (\items -> Nest.createGroup items ())
+                |> D.map (Group Nothing Tree.defaultNestShape)
+                |> D.map3 faceAndShape
+                    (D.maybe <| D.field "shape" decodeShape)
+                    (D.maybe <| D.field "face" decodeFace)
+
+        "choice" ->
+            D.field "options"
+                (D.array
+                    <| D.map2
+                        Tuple.pair
+                        (D.field "label" D.string)
+                        (D.field "property" decode)
+                )
+                |> D.map
+                    (\items -> Nest.createChoice items ())
+                |> D.map2
+                    (\maybeMode control ->
+                        case maybeMode of
+                            Just mode -> control |> Nest.setChoiceMode mode
+                            Nothing -> control
+                    )
+                    (D.maybe <| D.field "mode" decodeChoiceMode)
+                |> D.map (Choice Nothing Tree.defaultNestShape)
+                |> D.map3 faceAndShape
+                    (D.maybe <| D.field "shape" decodeShape)
+                    (D.maybe <| D.field "face" decodeFace)
 
 
-                _ -> D.succeed <| Nil () -- or fail?
-        )
+        _ -> D.succeed <| Nil () -- or fail?
+
 
 
 encodeRawPath : List ( Path.Index, Path.Label ) -> E.Value
