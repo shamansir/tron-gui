@@ -367,7 +367,6 @@ export class Tron extends Nest {
     listen() {
         this.ports.transmit.subscribe(({ update }) => {
             const pathAsString = Tron.pathAsString(update.path);
-            console.log(pathAsString, update);
             const maybeControl = this.attachments[pathAsString];
 
             if (maybeControl != null) {

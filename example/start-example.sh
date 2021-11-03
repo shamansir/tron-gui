@@ -20,5 +20,10 @@ else
     echo "Constructor — constructor for the interface"
     echo "AFrame — render to virtual reality using A-Frame (currently, the early draft)"
     echo "ReportToJs — a demonstration of sending any value update to port as JSON,"
-    echo "             as well as the complete GUI structure"
+    echo "             from Tron to JS, as well as the complete GUI structure"
+    echo "BuildFromJs — a demonstration of building the complete interface in JS"
+    echo "              using 'Tron.ts' helper, and listening to its changes"
+    echo "              (similarly to 'dat.gui')"
+    echo "ListenFromJs — a demonstration of listening to all the changes in the UI"
+    echo "               using 'Tron.ts' helper and the companion object"
 fi

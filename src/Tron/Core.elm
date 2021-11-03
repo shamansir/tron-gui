@@ -362,7 +362,7 @@ handleMouse mouseAction state tree =
 
         forceIfLive property = -- FIXME: should be forces in the `update` code for any `Live` property, not only regading the mouse events
             case property of
-                Live liveProp -> liveProp |> Tree.set A.Fire
+                Live liveProp -> liveProp |> Tree.set A.Fire |> Live
                 _ -> property
 
         nextTree =

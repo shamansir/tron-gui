@@ -53,8 +53,8 @@ loadValueFrom from to =
             Choice focus shape <| Control.setValue (Control.getValue controlA) <| controlB
         (Group _ _ controlA, Group focus shape controlB) ->
             Group focus shape <| Control.setValue (Control.getValue controlA) <| controlB
-        (Live _, Live _) -> to
-            -- Number <| Control.setValue (Control.getValue controlB) <| controlA
+        (Live propA, Live propB) ->
+            Live <| loadValueFrom propA propB
         (_, _) -> to
 
 

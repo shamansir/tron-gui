@@ -31,6 +31,13 @@ gui =
                     0
             )
         ,
+            ( "int live"
+            , Tron.int
+                    { min = -20, max = 20, step = 5 }
+                    0
+                    |> Tron.live
+            )
+        ,
             ( "float"
             , Tron.float
                 { min = -10.5, max = 10.5, step = 0.5 }

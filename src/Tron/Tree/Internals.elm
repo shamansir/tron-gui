@@ -695,4 +695,4 @@ update action prop =
                 |> swap
                 |> Nest.mapItems (Tuple.mapSecond <| map <| always A.Stay)
                 |> (Group focus shape)
-        Live innerProp -> innerProp |> update action |> set A.Fire |> Live
+        Live innerProp -> innerProp |> update action |> Live

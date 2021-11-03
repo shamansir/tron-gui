@@ -259,7 +259,7 @@ update ( userUpdate, userFor ) ports withTronMsg ( model, state, prevTree ) =
             )
 
         StoreError error ->
-            ( ( model, { state | errors = (Debug.log "error" error) :: state.errors }, prevTree )
+            ( ( model, { state | errors = error :: state.errors }, prevTree )
             , Cmd.none
             )
 
