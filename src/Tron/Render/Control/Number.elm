@@ -8,16 +8,19 @@ import Tron.Control exposing (Control(..))
 import Tron.Control.Impl.Number as Number
 
 import Tron.Style.Theme exposing (Theme)
-import Tron.Render.Util exposing (State, resetTransform, describeArc, describeMark)
+import Tron.Render.Context as Context exposing (Context)
+import Tron.Render.Util exposing (resetTransform, describeArc, describeMark)
 import Tron.Style.Coloring as Coloring exposing (..)
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
 
 
-view : Theme -> State -> BoundsF -> Number.Control a -> Svg msg
-view theme state bounds (Control { min, max } ( _, srcValue ) _)  =
+view : Theme -> Context -> Number.Control a -> Svg msg
+view theme ctx (Control { min, max } ( _, srcValue ) _)  =
     let
+        style = Context.styleDef ctx
+        bounds = ctx.bounds
         value = if srcValue < min then min
                    else if srcValue > max then max
                    else srcValue
@@ -48,21 +51,21 @@ view theme state bounds (Control { min, max } ( _, srcValue ) _)  =
     in
         Svg.g
             [ resetTransform ]
-            [ path (Coloring.lines theme state |> Color.toCssString)
+            [ path (Coloring.lines theme style |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = minAngle
                     , to = valueAngle
                     }
-            , path (Coloring.secondaryLines theme state |> Color.toCssString)
+            , path (Coloring.secondaryLines theme style |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
                     { from = valueAngle
                     , to = maxAngle
                     }
-            , path (Coloring.lines theme state |> Color.toCssString)
+            , path (Coloring.lines theme style |> Color.toCssString)
                 <| describeMark
                     { x = cx, y = cy }
                     { radiusA = radiusA, radiusB = radiusB }
@@ -72,7 +75,7 @@ view theme state bounds (Control { min, max } ( _, srcValue ) _)  =
                 , SA.y <| String.fromFloat cy
                 , SA.class "knob__value"
                 , SA.style "pointer-events: none"
-                , SA.fill <| Color.toCssString <| Coloring.text theme state
+                , SA.fill <| Color.toCssString <| Coloring.text theme style
                 ]
                 [ Svg.text <| String.fromFloat roundedValue ]
             ]

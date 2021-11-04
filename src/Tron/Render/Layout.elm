@@ -2,15 +2,13 @@ module Tron.Render.Layout exposing (..)
 
 
 import Array exposing (..)
-import Html exposing (Html, text, div, span, input, br)
+import Html exposing (Html, div)
 import Html.Attributes as HA
 import Svg exposing (Svg)
 import Svg as S exposing (..)
 import Svg.Attributes as SA exposing (..)
 import Html.Events as HE
 import Json.Decode as Json
-import Dict
-import Url exposing (Url)
 
 import Bounds exposing (..)
 import Bounds as B exposing (..)
@@ -22,28 +20,29 @@ import Tron.Tree.Paths as Tree
 import Tron.Tree.Controls as Tree
 import Tron.Msg exposing (..)
 import Tron.Layout exposing (..)
-import Tron.Layout as Layout exposing (fold)
+import Tron.Layout as Layout
 import Tron.Focus exposing (Focused(..))
-import Tron.Focus as Focus exposing (toString)
+import Tron.Focus as Focus
 import Tron.FocusLogic as Focus exposing (focused)
 import Tron.Detach as Detach exposing (Ability(..))
 import Tron.Pages as Pages
 import Size exposing (Size(..))
 
+import Tron.Render.Context exposing (Context)
 import Tron.Render.Util exposing (..)
-import Tron.Render.Util as Svg exposing (none)
+import Tron.Render.Util as Svg
 import Tron.Render.Debug exposing (..)
 import Tron.Render.Tree as Tree exposing (..)
 import Tron.Render.Plate as Plate exposing (..)
 
-import Tron.Style.Logic as Style exposing (..)
-import Tron.Style.Logic as Dock exposing (firstCellAt, boundsFromSize)
+import Tron.Style.Logic exposing (..)
+import Tron.Style.Logic as Dock
 import Tron.Style.CellShape exposing (CellShape)
 import Tron.Style.CellShape as CS exposing (..)
 import Tron.Style.Theme exposing (Theme)
-import Tron.Style.Theme as Theme exposing (toString)
+import Tron.Style.Theme as Theme
 import Tron.Style.Dock exposing (Dock)
-import Tron.Style.Dock as Dock exposing (toString)
+import Tron.Style.Dock as Dock
 import Tron.Style.Placement exposing (Placement(..))
 import Tron.Style.Selected exposing (Selected(..))
 import Tron.Style.Cell as Cell
@@ -65,23 +64,19 @@ type Mode
 viewTree
     :  Mode
     -> Theme
-    -> State
+    -> Context
     -> Path
-    -> BoundsF
     -> Maybe ( Path.Label, Tree a )
-    -> CellShape
     -> ( Path.Label, Tree a )
     -> Svg Msg_
 viewTree
     mode
     theme
-    ( ( _, focus, selected ) as state )
+    ( { focused, selected } as ctx )
     path
-    pixelBounds
     maybeSelectedInside
-    cellShape
     ( label, prop ) =
-    positionAt_ pixelBounds <|
+    positionAt_ ctx.bounds <|
         case mode of
             Debug ->
                 S.g
@@ -89,9 +84,9 @@ viewTree
                     , HE.onClick <| Click path
                     ]
                     <| List.map (Svg.map <| always NoOp)
-                    <| [ rect_ "white" pixelBounds
-                    , boundsDebug pixelBounds -- FIXME: were in cells before, not in pixels
-                    , textAt 5 20 <| Focus.toString focus
+                    <| [ rect_ "white" ctx.bounds
+                    , boundsDebug ctx.bounds -- FIXME: were in cells before, not in pixels
+                    , textAt 5 20 <| Focus.toString focused
                     , case selected of
                         Usual -> Svg.none
                         Selected -> textAt 5 55 "selected"
@@ -101,11 +96,9 @@ viewTree
             Fancy ->
                 Tree.view
                     theme
-                    state
+                    ctx
                     path
-                    pixelBounds
                     maybeSelectedInside
-                    cellShape
                     ( label, prop )
 
 
@@ -347,22 +340,24 @@ view mode theme dock bounds detach getDetachAbility root layout =
                     viewTree
                         mode
                         theme
-                        ( if (Path.sub rootPath cell.path |> Path.howDeep) == 1
+                        { focused = focused root cell.path
+                        , placement =
+                            if (Path.sub rootPath cell.path |> Path.howDeep) == 1
                             then AtRoot
                             else OnAPlate
-                        , focused root cell.path
-                        , if Maybe.map2 Tree.isSelected cell.parent (Path.lastIndex cell.path)
+                        , selected =
+                            if Maybe.map2 Tree.isSelected cell.parent (Path.lastIndex cell.path)
                             |> Maybe.withDefault False
                             then Selected
                             else Usual
-                        )
-                        cell.path
-                        cell.bounds
-                        (Tree.getSelected cell.source)
-                        ( cell.parent
+                        , bounds = cell.bounds
+                        , cellShape =
+                            cell.parent
                             |> Maybe.andThen Tree.getCellShape
                             |> Maybe.withDefault CS.default
-                        )
+                        }
+                        cell.path
+                        (Tree.getSelected cell.source)
                         ( cell.path |> Path.lastLabel |> Maybe.withDefault "?"
                         , cell.source
                         )

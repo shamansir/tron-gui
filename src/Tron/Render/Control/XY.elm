@@ -1,14 +1,14 @@
 module Tron.Render.Control.XY exposing (..)
 
 
-import Bounds exposing (BoundsF)
 import Color as Color exposing (..)
 
 import Tron.Control exposing (Control(..))
 import Tron.Control.Impl.XY as XY
 
+import Tron.Render.Context as Context exposing (Context)
+import Tron.Render.Util exposing (resetTransform)
 import Tron.Style.Theme exposing (Theme)
-import Tron.Render.Util exposing (State, resetTransform, describeArc, describeMark)
 import Tron.Style.Coloring as Coloring exposing (..)
 import Tron.Style.Cell as Cell
 
@@ -16,9 +16,10 @@ import Svg exposing (Svg)
 import Svg.Attributes as SA
 
 
-view : Theme -> State -> BoundsF -> XY.Control a -> Svg msg
-view theme state bounds (Control _ ( _, ( valueX, valueY ) ) _) =
+view : Theme -> Context -> XY.Control a -> Svg msg
+view theme ctx (Control _ ( _, ( valueX, valueY ) ) _) =
     let
+        bounds = ctx.bounds
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
         ( left, top ) = ( Cell.gap / 2, Cell.gap / 2 )
         ( right, bottom ) =
@@ -37,7 +38,7 @@ view theme state bounds (Control _ ( _, ( valueX, valueY ) ) _) =
             , SA.y1 <| String.fromFloat cy
             , SA.x2 <| String.fromFloat right
             , SA.y2 <| String.fromFloat cy
-            , SA.stroke <| Color.toCssString <| Coloring.lines theme state
+            , SA.stroke <| Color.toCssString <| Coloring.lines theme <| Context.styleDef ctx
             , SA.opacity "0.2"
             , SA.strokeWidth "1"
             , SA.strokeLinecap "round"
@@ -48,7 +49,7 @@ view theme state bounds (Control _ ( _, ( valueX, valueY ) ) _) =
             , SA.y1 <| String.fromFloat top
             , SA.x2 <| String.fromFloat cx
             , SA.y2 <| String.fromFloat bottom
-            , SA.stroke <| Color.toCssString <| Coloring.lines theme state
+            , SA.stroke <| Color.toCssString <| Coloring.lines theme <| Context.styleDef ctx
             , SA.opacity "0.2"
             , SA.strokeWidth "1"
             , SA.strokeLinecap "round"
@@ -57,9 +58,9 @@ view theme state bounds (Control _ ( _, ( valueX, valueY ) ) _) =
         , Svg.circle
             [ SA.cx <| String.fromFloat circleX
             , SA.cy <| String.fromFloat circleY
-            , SA.fill <| Color.toCssString <| Coloring.lines theme state
+            , SA.fill <| Color.toCssString <| Coloring.lines theme <| Context.styleDef ctx
             , SA.fill "none"
-            , SA.stroke <| Color.toCssString <| Coloring.lines theme state
+            , SA.stroke <| Color.toCssString <| Coloring.lines theme <| Context.styleDef ctx
             , SA.strokeWidth "2"
             , SA.r <| String.fromFloat circleRadius
             ]

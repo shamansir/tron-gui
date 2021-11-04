@@ -2,18 +2,18 @@ module Tron.Render.Plate exposing (..)
 
 
 import Color
-import Url exposing (Url)
 import Bounds exposing (..)
 
 import Tron.Path as Path exposing (Path)
 import Tron.Msg exposing (Msg_(..))
 import Tron.Pages as Pages
-import Tron.Detach as Detach exposing (Ability(..), ClientId, localUrlToString, LocalUrl)
+import Tron.Detach as Detach exposing (Ability(..), localUrlToString, LocalUrl)
 import Tron.Tree exposing (Tree)
 
 import Tron.Render.Transform exposing (rotate, scale)
-import Tron.Render.Util exposing (arrow, State)
-import Tron.Render.Util as Svg exposing (none)
+import Tron.Render.Context exposing (StyleDef)
+import Tron.Render.Util exposing (arrow)
+import Tron.Render.Util as Svg
 
 import Tron.Focus exposing (Focused(..))
 import Tron.Style.Logic exposing (..)
@@ -26,11 +26,10 @@ import Tron.Style.Theme as Theme exposing (Theme)
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
-import Html.Attributes as HA
 import Html.Events as HE
 
 
-state : State
+state : StyleDef
 state = ( AtRoot, NotFocused, Usual )
 
 

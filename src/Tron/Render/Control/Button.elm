@@ -9,14 +9,15 @@ import Tron.Path as Path
 import Tron.Control exposing (Control(..))
 import Tron.Control.Impl.Button as Button
 
-import Tron.Style.Theme as Theme exposing (Theme)
+import Tron.Style.Theme exposing (Theme)
 import Tron.Style.Coloring as Coloring exposing (..)
 import Tron.Style.Cell as Cell
 import Tron.Style.CellShape as CS exposing (CellShape)
 import Tron.Style.Selected exposing (Selected(..))
 
-import Tron.Render.Util exposing (State, resetTransform, describeArc, describeMark, arrow)
-import Tron.Render.Util as Svg exposing (none)
+import Tron.Render.Context as Context exposing (Context)
+import Tron.Render.Util exposing (resetTransform, arrow)
+import Tron.Render.Util as Svg
 import Tron.Render.Transform as T
 import Tron.Render.Control.Color as Color
 
@@ -25,18 +26,19 @@ import Svg.Attributes as SA
 
 
 -- view : Theme -> State -> BoundsF -> Toggle.Control a -> Svg msg
-view : Theme -> State -> Button.Control a -> CellShape -> Path.Label -> BoundsF -> Svg msg
-view theme state (Control face _ _) cellShape label bounds =
-    viewFace theme state face cellShape label bounds
+view : Theme -> Context -> Button.Control a -> Path.Label -> Svg msg
+view theme ctx (Control face _ _) label =
+    viewFace theme ctx face label
 
 
-viewFace : Theme -> State -> Button.Face -> CellShape -> Path.Label -> BoundsF -> Svg msg
-viewFace theme ( ( _, _, selected ) as state ) face cellShape label bounds =
+viewFace : Theme -> Context -> Button.Face -> Path.Label -> Svg msg
+viewFace theme ctx face label =
     let
 
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
+        bounds = ctx.bounds
         ( labelX, labelY ) =
-            if CS.isHorizontal cellShape
+            if CS.isHorizontal ctx.cellShape
                 then
                     case face of
                         Button.Default -> ( 30, cy + 4 )
@@ -48,9 +50,9 @@ viewFace theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                 [ SA.x <| String.fromFloat labelX
                 , SA.y <| String.fromFloat labelY
                 , SA.class "button__label"
-                , SA.fill <| Color.toCssString <| Coloring.text theme state
+                , SA.fill <| Color.toCssString <| Coloring.text theme <| Context.styleDef ctx
                 , SA.mask <|
-                    if not <| CS.isHorizontal cellShape
+                    if not <| CS.isHorizontal ctx.cellShape
                         then "url(#button-text-mask)"
                         else "url(#button-text-mask-wide)"
                 ]
@@ -59,8 +61,8 @@ viewFace theme ( ( _, _, selected ) as state ) face cellShape label bounds =
     in case face of
 
         Button.Default ->
-            if CS.isHorizontal cellShape
-                then case selected of
+            if CS.isHorizontal ctx.cellShape
+                then case ctx.selected of
                     Selected ->
                         Svg.g
                             [ resetTransform ]
@@ -69,7 +71,7 @@ viewFace theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                                     "transform: "
                                         ++ "translate(" ++ String.fromFloat Cell.gap ++ "px,"
                                                         ++ String.fromFloat (cy - 4) ++ "px)" ]
-                                [ arrow (Coloring.text theme state) (T.scale 0.5) (T.rotate 90)
+                                [ arrow (Coloring.text theme <| Context.styleDef ctx) (T.scale 0.5) (T.rotate 90)
                                 ]
                             -- , textLabel ( bounds.width / 2.25 + gap, cy )
                             , textLabel ()
@@ -82,9 +84,9 @@ viewFace theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                 iconUrl =
                     icon theme |> Maybe.map Url.toString |> Maybe.withDefault ""
                     --"./assets/" ++ icon ++ "_" ++ Theme.toString theme ++ ".svg"
-                ( iconWidth, iconHeight ) = iconSize cellShape bounds
+                ( iconWidth, iconHeight ) = iconSize ctx.cellShape bounds
                 ( iconX, iconY ) =
-                    if CS.isHorizontal cellShape
+                    if CS.isHorizontal ctx.cellShape
                         then
                             ( -20, cy - iconHeight / 2 + 1 )
                         else
@@ -102,23 +104,25 @@ viewFace theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                         , SA.y <| String.fromFloat iconY
                         ]
                         []
-                    , if CS.isHorizontal cellShape
+                    , if CS.isHorizontal ctx.cellShape
                         then textLabel ()
                         else Svg.none
                     ]
 
         Button.WithColor theColor ->
-            case CS.units cellShape of
+            case CS.units ctx.cellShape of
                 ( CS.Single, CS.Single ) ->
-                    Color.viewValue theme state bounds theColor
+                    Color.viewValue theme ctx theColor
                 ( CS.Twice, _ ) ->
                     Svg.g
                         []
                         [ Color.viewValue
                             theme
-                            state
-                            { bounds
-                            | width = bounds.height
+                            { ctx
+                            | bounds =
+                                { bounds
+                                | width = bounds.height
+                                }
                             }
                             theColor
                         , textLabel ()

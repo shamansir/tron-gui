@@ -8,14 +8,6 @@ import Url exposing (Url)
 
 import Tron.Render.Transform exposing (..)
 
-import Tron.Style.Theme exposing (Theme)
-import Tron.Style.Selected exposing (Selected)
-import Tron.Style.Placement exposing (Placement)
-import Tron.Focus exposing (Focused)
-
-
-type alias State = ( Placement, Focused, Selected )
-
 
 none : Svg msg
 none = Svg.text ""

@@ -1,24 +1,21 @@
 module Tron.Render.Control.Toggle exposing (..)
 
-
-import Bounds exposing (BoundsF)
 import Color as Color exposing (..)
 
 import Tron.Control exposing (Control(..))
 import Tron.Control.Impl.Toggle as Toggle
 
+import Tron.Render.Context exposing (Context)
 import Tron.Style.Theme as Theme exposing (Theme)
-import Tron.Render.Util exposing (State, resetTransform, describeArc, describeMark)
-import Tron.Style.Coloring as Coloring exposing (..)
-import Tron.Style.Cell as Cell
 
 import Svg exposing (Svg)
 import Svg.Attributes as SA
 
 
-view : Theme -> State -> BoundsF -> Toggle.Control a -> Svg msg
-view theme state bounds (Control _ tstate _) =
+view : Theme -> Context -> Toggle.Control a -> Svg msg
+view theme ctx (Control _ tstate _) =
     let
+        bounds = ctx.bounds
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) )
         ( rectX, rectY ) = ( cx - 36 / 2, cy - 20 / 2 )
         circleRadius = 8

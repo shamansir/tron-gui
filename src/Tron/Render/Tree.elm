@@ -22,6 +22,7 @@ import Tron.Control.Impl.Nest as Nest exposing (Form(..))
 import Tron.Render.Transform exposing (..)
 import Tron.Render.Util exposing (..)
 import Tron.Render.Util as Svg
+import Tron.Render.Context as Context exposing (Context)
 
 import Tron.Render.Control.Number as Number
 import Tron.Render.Control.XY as XY
@@ -43,59 +44,55 @@ import Tron.Style.Cell as Cell
 
 view
      : Theme
-    -> State
+    -> Context
     -> Path
-    -> BoundsF
     -> Maybe ( Path.Label, Tree a )
-    -> CellShape
     -> ( Path.Label, Tree a )
     -> Svg Msg_
-view theme state path bounds maybeSelectedInside cellShape ( label, prop ) =
+view theme ctx path maybeSelectedInside ( label, prop ) =
     Svg.g
         [ HE.onClick <| Click path
-        , SA.class <| makeClass cellShape <| prop
+        , SA.class <| makeClass ctx.cellShape <| prop
         ]
         [ Svg.rect
             [ SA.fill
                 <| Color.toCssString
-                <| Coloring.back theme state
+                <| Coloring.back theme <| Context.styleDef ctx
             , SA.x <| String.fromFloat (Cell.gap / 2)
             , SA.y <| String.fromFloat (Cell.gap / 2)
             , SA.rx <| String.fromFloat Cell.borderRadius
             , SA.ry <| String.fromFloat Cell.borderRadius
-            , SA.width <| String.fromFloat (bounds.width - Cell.gap) ++ "px"
-            , SA.height <| String.fromFloat (bounds.height - Cell.gap) ++ "px"
+            , SA.width <| String.fromFloat (ctx.bounds.width - Cell.gap) ++ "px"
+            , SA.height <| String.fromFloat (ctx.bounds.height - Cell.gap) ++ "px"
             , SA.strokeWidth
-                <| String.fromInt (strokeWidthFor state <| isExpanded prop) ++ "px"
+                <| String.fromInt (strokeWidthFor ctx <| isExpanded prop) ++ "px"
             , SA.stroke
                 <| Color.toCssString
-                <| Coloring.border theme state <| isExpanded prop
+                <| Coloring.border theme (Context.styleDef ctx) <| isExpanded prop
             --, SA.strokeDasharray <| strokeDashFor state
             ]
             []
         , viewTree
-            theme state path bounds maybeSelectedInside cellShape ( label, prop )
+            theme ctx path maybeSelectedInside ( label, prop )
         , {- case prop of
             Action _ -> Svg.none
-            _ -> -} viewLabel theme state cellShape bounds label
+            _ -> -} viewLabel theme ctx label
         ]
 
 
 viewLabel
     :  Theme
-    -> State
-    -> CellShape
-    -> BoundsF
+    -> Context
     -> Path.Label
     -> Svg msg
-viewLabel theme state cellShape bounds label =
-    if CS.isSquare cellShape
+viewLabel theme ctx label =
+    if CS.isSquare ctx.cellShape
         then
             Svg.text_
                 [ SA.class "cell__label"
-                , SA.x <| String.fromFloat (bounds.width / 2)
-                , SA.y <| String.fromFloat (bounds.height / 5 * 4)
-                , SA.fill <| Color.toCssString <| Coloring.text theme state
+                , SA.x <| String.fromFloat (ctx.bounds.width / 2)
+                , SA.y <| String.fromFloat (ctx.bounds.height / 5 * 4)
+                , SA.fill <| Color.toCssString <| Coloring.text theme <| Context.styleDef ctx
                 ]
                 [ Svg.text label ]
         else Svg.none
@@ -103,43 +100,39 @@ viewLabel theme state cellShape bounds label =
 
 viewTree
      : Theme
-    -> State
+    -> Context
     -> Path
-    -> BoundsF
     -> Maybe ( Path.Label, Tree a )
-    -> CellShape
     -> ( Path.Label, Tree a )
     -> Svg Msg_
 viewTree
     theme
-    ( ( placement, focus, _ ) as state )
+    ctx
     path
-    bounds
     maybeSelectedInside
-    cellShape
     ( label, prop ) =
     case prop of
 
         Number control ->
 
-            Number.view theme state bounds control
+            Number.view theme ctx control
 
         Coordinate control ->
 
-            XY.view theme state bounds control
+            XY.view theme ctx control
 
         Text control ->
 
-            Text.view theme state bounds control
+            Text.view theme ctx control
                 |> Svg.map (TextInput path)
 
         Toggle control ->
 
-            Toggle.view theme state bounds control
+            Toggle.view theme ctx control
 
         Action control ->
 
-            Button.view theme state control cellShape label bounds
+            Button.view theme ctx control label
 
         {- Switch (Control items ( _, value ) _) ->
 
@@ -147,32 +140,28 @@ viewTree
 
         Color control ->
 
-            Color.view theme state bounds control
+            Color.view theme ctx control
 
         Choice _ _ control ->
 
             Nest.viewChoice
                 (viewTree
                     theme
-                    ( placement, focus, Selected )
+                    { ctx | selected = Selected }
                     path
-                    bounds
                     Nothing
-                    cellShape
-                ) theme state bounds cellShape label control maybeSelectedInside
+                ) theme ctx label control maybeSelectedInside
 
         Group _ _ control ->
 
-            Nest.viewGroup theme state bounds cellShape label control
+            Nest.viewGroup theme ctx label control
 
         Live innerProp ->
             viewTree
                 theme
-                state
+                ctx
                 path
-                bounds
                 maybeSelectedInside
-                cellShape
                 ( label, innerProp )
 
         _ -> Svg.none
@@ -202,8 +191,8 @@ makeClass shape prop =
 
 
 
-strokeWidthFor : State -> Maybe Nest.Form -> Int
-strokeWidthFor ( placement, focused, selected ) maybeCollapsed =
+strokeWidthFor : Context -> Maybe Nest.Form -> Int
+strokeWidthFor { focused, selected } maybeCollapsed =
     case maybeCollapsed of
         Just Nest.Expanded -> 1
         _ ->
@@ -215,8 +204,8 @@ strokeWidthFor ( placement, focused, selected ) maybeCollapsed =
                         _ -> 0
 
 
-strokeDashFor : State -> String
-strokeDashFor ( _, focused , _ ) =
+strokeDashFor : Context -> String
+strokeDashFor { focused } =
     case focused of
         FocusedBy _ -> "5,1"
         NotFocused -> ""

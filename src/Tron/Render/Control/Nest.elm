@@ -11,11 +11,11 @@ import Tron.Render.Control.Button as Button
 import Tron.Tree exposing (Tree)
 
 import Tron.Style.Theme exposing (Theme)
-import Tron.Render.Util as Util exposing (State, resetTransform, describeArc, describeMark)
+import Tron.Render.Context as Context exposing (Context, StyleDef)
+import Tron.Render.Util as Util exposing (resetTransform, describeArc, describeMark)
 import Tron.Render.Transform as T
 import Tron.Style.Coloring as Coloring exposing (..)
-import Tron.Style.Cell as Cell
-import Tron.Style.CellShape exposing (CellShape)
+-- import Tron.Style.Cell as Cell
 import Tron.Path as Path
 
 import Svg exposing (Svg)
@@ -26,18 +26,16 @@ import Svg.Attributes as SA
 viewChoice
      : (( Path.Label, Tree a ) -> Svg msg)
     -> Theme
-    -> State
-    -> BoundsF
-    -> CellShape
+    -> Context
     -> Path.Label
     -> Nest.ChoiceControl ( Path.Label, item ) a
     -> Maybe ( Path.Label, Tree a )
     -> Svg msg
-viewChoice viewPropAtPlace theme state bounds cellShape label ( Control items { form, face, mode, selected } _) maybeSelectedInside =
+viewChoice viewPropAtPlace theme ctx label ( Control items { form, face, mode, selected } _) maybeSelectedInside =
     case ( mode, face, maybeSelectedInside ) of
 
         ( _, Just buttonFace, _ ) ->
-            Button.viewFace theme state buttonFace cellShape label bounds
+            Button.viewFace theme ctx buttonFace label
 
         ( Nest.Pages, Nothing, Just theSelectedProp ) ->
             viewPropAtPlace
@@ -50,31 +48,31 @@ viewChoice viewPropAtPlace theme state bounds cellShape label ( Control items { 
         ( Nest.Knob, Nothing, _ ) ->
             knobSwitch
                 theme
-                state
-                bounds
+                (Context.styleDef ctx)
+                ctx.bounds
                 (items |> Array.map Tuple.first)
                 selected
 
         ( Nest.SwitchThrough, Nothing, Nothing ) ->
-            arrow theme state form bounds
+            arrow theme (Context.styleDef ctx) form ctx.bounds
 
         ( Nest.Pages, Nothing, Nothing ) ->
-            arrow theme state form bounds
+            arrow theme (Context.styleDef ctx) form ctx.bounds
 
 
-viewGroup : Theme -> State -> BoundsF -> CellShape -> Path.Label -> Nest.GroupControl items a -> Svg msg
-viewGroup theme state bounds cellShape label ( Control _ { form, face } _) =
+viewGroup : Theme -> Context -> Path.Label -> Nest.GroupControl items a -> Svg msg
+viewGroup theme ctx label ( Control _ { form, face } _) =
 
     case face of
         Just buttonFace ->
 
-            Button.viewFace theme state buttonFace cellShape label bounds
+            Button.viewFace theme ctx buttonFace label
 
-        Nothing -> arrow theme state form bounds
+        Nothing -> arrow theme (Context.styleDef ctx) form ctx.bounds
 
 
 
-knobSwitch : Theme -> State -> BoundsF -> Array String -> Int -> Svg msg
+knobSwitch : Theme -> StyleDef -> BoundsF -> Array String -> Int -> Svg msg
 knobSwitch theme state bounds items curItemId =
     let
         toAngle v = (-120) + (v * 120 * 2)
@@ -122,7 +120,7 @@ knobSwitch theme state bounds items curItemId =
 
 
 
-arrow : Theme -> State -> Nest.Form -> BoundsF -> Svg msg
+arrow : Theme -> StyleDef -> Nest.Form -> BoundsF -> Svg msg
 arrow theme state form bounds =
     let
         center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }

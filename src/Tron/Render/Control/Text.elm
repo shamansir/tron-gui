@@ -1,14 +1,13 @@
 module Tron.Render.Control.Text exposing (..)
 
 
-import Bounds exposing (BoundsF)
 import Color as Color exposing (..)
 
 import Tron.Control exposing (Control(..))
 import Tron.Control.Impl.Text as Text
 
+import Tron.Render.Context as Context exposing (Context)
 import Tron.Style.Theme exposing (Theme)
-import Tron.Render.Util exposing (State, resetTransform, describeArc, describeMark)
 import Tron.Style.Coloring as Coloring exposing (..)
 import Tron.Style.Cell as Cell
 
@@ -19,9 +18,10 @@ import Html.Attributes as HA
 import Html.Events as HE
 
 
-view : Theme -> State -> BoundsF -> Text.Control a -> Svg String
-view theme state bounds (Control _ ( editing, value ) _) =
+view : Theme -> Context -> Text.Control a -> Svg String
+view theme ctx (Control _ ( editing, value ) _) =
     let
+        bounds = ctx.bounds
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
         fontSize = (min bounds.width bounds.height) / 6
         lineHeight = fontSize * 1.6
@@ -34,7 +34,7 @@ view theme state bounds (Control _ ( editing, value ) _) =
                 , SA.x <| String.fromFloat cx
                 , SA.y <| String.fromFloat <| cy + 1
                 , SA.class "text--ready"
-                , SA.fill <| Color.toCssString <| Coloring.lines theme state
+                , SA.fill <| Color.toCssString <| Coloring.lines theme <| Context.styleDef ctx
                 --, SA.mask "url(#button-text-mask)"
                 ]
                 [ Svg.text <|
@@ -62,7 +62,7 @@ view theme state bounds (Control _ ( editing, value ) _) =
                         -- , HA.style "left" <| String.fromFloat Cell.gap ++ "px"
                         -- , HA.style "top" <| String.fromFloat topShift ++ "px"
                         , HA.style "font-size" <| String.fromFloat fontSize ++ "px"
-                        , HA.style "color" <| Color.toCssString <| Coloring.text theme state
+                        , HA.style "color" <| Color.toCssString <| Coloring.text theme <| Context.styleDef ctx
                         , HA.style "position" "initial"
                         , HA.type_ "text"
                         , HA.placeholder "input"
