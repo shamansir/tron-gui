@@ -25,9 +25,15 @@ import Svg.Attributes as SA
 
 
 -- view : Theme -> State -> BoundsF -> Toggle.Control a -> Svg msg
-view : Theme -> State -> Button.Face -> CellShape -> Path.Label -> BoundsF -> Svg msg
-view theme ( ( _, _, selected ) as state ) face cellShape label bounds =
+view : Theme -> State -> Button.Control a -> CellShape -> Path.Label -> BoundsF -> Svg msg
+view theme state (Control face _ _) cellShape label bounds =
+    viewFace theme state face cellShape label bounds
+
+
+viewFace : Theme -> State -> Button.Face -> CellShape -> Path.Label -> BoundsF -> Svg msg
+viewFace theme ( ( _, _, selected ) as state ) face cellShape label bounds =
     let
+
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
         ( labelX, labelY ) =
             if CS.isHorizontal cellShape
@@ -49,7 +55,9 @@ view theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                         else "url(#button-text-mask-wide)"
                 ]
                 [ Svg.text label ]
+
     in case face of
+
         Button.Default ->
             if CS.isHorizontal cellShape
                 then case selected of
@@ -68,6 +76,7 @@ view theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                             ]
                     Usual -> textLabel ()
                 else textLabel ()
+
         Button.WithIcon (Button.Icon icon) ->
             let
                 iconUrl =
@@ -97,6 +106,7 @@ view theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                         then textLabel ()
                         else Svg.none
                     ]
+
         Button.WithColor theColor ->
             case CS.units cellShape of
                 ( CS.Single, CS.Single ) ->
@@ -129,7 +139,6 @@ view theme ( ( _, _, selected ) as state ) face cellShape label bounds =
                             ]
                             [
                             ]
-
 
 iconSize : CellShape -> BoundsF -> ( Float, Float )
 iconSize cs bounds =

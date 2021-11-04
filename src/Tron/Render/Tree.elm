@@ -2,34 +2,26 @@ module Tron.Render.Tree exposing (..)
 
 
 import Bounds exposing (..)
+import Color as Color exposing (..)
 
-import Array exposing (Array)
 import Svg exposing (Svg)
 import Svg.Attributes as SA
-import Html
-import Html.Attributes as HA
 import Html.Events as HE
-import Url
-
-import Axis exposing (Axis)
 
 import Tron.Tree.Internals exposing (..)
 import Tron.Tree.Controls exposing (..)
 import Tron.Path as Path exposing (Path)
 import Tron.Msg exposing (Msg_(..))
 import Tron.Focus exposing (Focused(..))
-import Tron.Control as Core exposing (Control(..))
 
 import Tron.Control.Impl.Text exposing (TextState(..))
 import Tron.Control.Impl.Button exposing (Face(..), Icon(..))
 import Tron.Control.Impl.Toggle exposing (ToggleState(..))
-import Tron.Control.Impl.Nest as Nest exposing (getForm, Form(..))
-import Tron.Control.Impl.Number as Number exposing (Control)
+import Tron.Control.Impl.Nest as Nest exposing (Form(..))
 
 import Tron.Render.Transform exposing (..)
 import Tron.Render.Util exposing (..)
-import Tron.Render.Util as Svg exposing (none)
-import Tron.Render.Util as Util exposing (arrow)
+import Tron.Render.Util as Svg
 
 import Tron.Render.Control.Number as Number
 import Tron.Render.Control.XY as XY
@@ -37,6 +29,7 @@ import Tron.Render.Control.Text as Text
 import Tron.Render.Control.Toggle as Toggle
 import Tron.Render.Control.Color as Color
 import Tron.Render.Control.Button as Button
+import Tron.Render.Control.Nest as Nest
 
 import Tron.Style.Logic exposing (..)
 import Tron.Style.CellShape exposing (CellShape)
@@ -44,13 +37,8 @@ import Tron.Style.CellShape as CS exposing (..)
 
 import Tron.Style.Coloring as Coloring exposing (..)
 import Tron.Style.Theme exposing (Theme(..))
-import Tron.Style.Theme as Theme exposing (toString)
-import Tron.Style.Placement exposing (Placement)
 import Tron.Style.Selected exposing (Selected(..))
 import Tron.Style.Cell as Cell
-
-import Color as Color exposing (..)
-import Url
 
 
 view
@@ -149,9 +137,9 @@ viewTree
 
             Toggle.view theme state bounds control
 
-        Action (Control face _ _) ->
+        Action control ->
 
-            Button.view theme state face cellShape label bounds
+            Button.view theme state control cellShape label bounds
 
         {- Switch (Control items ( _, value ) _) ->
 
@@ -161,55 +149,21 @@ viewTree
 
             Color.view theme state bounds control
 
-        Choice _ _ ( Control items { form, face, mode, selected } _) ->
+        Choice _ _ control ->
 
-            case ( mode, face, maybeSelectedInside ) of
+            Nest.viewChoice
+                (viewTree
+                    theme
+                    ( placement, focus, Selected )
+                    path
+                    bounds
+                    Nothing
+                    cellShape
+                ) theme state bounds cellShape label control maybeSelectedInside
 
-                ( _, Just buttonFace, _ ) ->
-                    Button.view theme state buttonFace cellShape label bounds
+        Group _ _ control ->
 
-                ( Nest.Pages, Nothing, Just theSelectedProp ) ->
-                    viewTree
-                        theme
-                        ( placement, focus, Selected )
-                        path
-                        bounds
-                        Nothing
-                        cellShape
-                        theSelectedProp
-
-                ( Nest.SwitchThrough, Nothing, Just theSelectedProp ) ->
-                    viewTree
-                        theme
-                        ( placement, focus, Selected )
-                        path
-                        bounds
-                        Nothing
-                        cellShape
-                        theSelectedProp
-
-                ( Nest.Knob, Nothing, _ ) ->
-                    knobSwitch
-                        theme
-                        state
-                        bounds
-                        (items |> Array.map Tuple.first)
-                        selected
-
-                ( Nest.SwitchThrough, Nothing, Nothing ) ->
-                    arrow theme state form bounds
-
-                ( Nest.Pages, Nothing, Nothing ) ->
-                    arrow theme state form bounds
-
-        Group _ _ ( Control _ { form, face } _) ->
-
-            case face of
-                Just buttonFace ->
-
-                    Button.view theme state buttonFace cellShape label bounds
-
-                Nothing -> arrow theme state form bounds
+            Nest.viewGroup theme state bounds cellShape label control
 
         Live innerProp ->
             viewTree
@@ -222,72 +176,6 @@ viewTree
                 ( label, innerProp )
 
         _ -> Svg.none
-
-
-knobSwitch : Theme -> State -> BoundsF -> Array String -> Int -> Svg msg
-knobSwitch theme state bounds items curItemId =
-    let
-        toAngle v = (-120) + (v * 120 * 2)
-        path stroke d =
-            Svg.path
-                [ SA.d d
-                , SA.fill "none"
-                , SA.stroke stroke
-                , SA.strokeWidth "2"
-                , SA.strokeLinecap "round"
-                ]
-                []
-        radiusA = (bounds.width * 0.27) - 1
-        radiusB = bounds.height * 0.27
-        ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
-        curItem = items |> Array.get curItemId |> Maybe.withDefault "?"
-        relValue = Basics.toFloat curItemId / Basics.toFloat (Array.length items)
-    in
-        Svg.g
-            [ resetTransform ]
-            [ path (Coloring.lines theme state |> Color.toCssString)
-                <| describeArc
-                    { x = cx, y = cy }
-                    { radiusA = radiusA, radiusB = radiusB }
-                    { from = toAngle 0, to = toAngle relValue }
-            , path (Coloring.secondaryLines theme state |> Color.toCssString)
-                <| describeArc
-                    { x = cx, y = cy }
-                    { radiusA = radiusA, radiusB = radiusB }
-                    { from = toAngle relValue, to = toAngle 1 }
-            , path (Coloring.lines theme state |> Color.toCssString)
-                <| describeMark
-                    { x = cx, y = cy }
-                    { radiusA = radiusA, radiusB = radiusB }
-                    (toAngle relValue)
-            , Svg.text_
-                [ SA.x <| String.fromFloat cx
-                , SA.y <| String.fromFloat cy
-                , SA.class "knob__value"
-                , SA.style "pointer-events: none"
-                , SA.fill <| Color.toCssString <| Coloring.text theme state
-                ]
-                [ Svg.text curItem ]
-            ]
-
-
-arrow : Theme -> State -> Form -> BoundsF -> Svg msg
-arrow theme state form bounds =
-    let
-        center = { x = bounds.width / 2, y = (bounds.height / 2) - 3 }
-        scaleV = (min bounds.width bounds.height) / 127
-    in Svg.g
-        [ SA.style <|
-            "transform: "
-                ++ "translate(" ++ String.fromFloat (center.x - (14 * scaleV)) ++ "px,"
-                                ++ String.fromFloat (center.y - (14 * scaleV)) ++ "px)"
-        ]
-        [ Util.arrow (Coloring.lines theme state) (scale scaleV)
-            <| case form of
-                Expanded -> rotate 180
-                Detached -> rotate 45
-                Collapsed -> rotate 0
-        ]
 
 
 makeClass : CellShape -> Tree a -> String
