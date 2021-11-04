@@ -17,7 +17,7 @@ import Svg.Attributes as SA
 
 
 view : Theme -> Context -> XY.Control a -> Svg msg
-view theme ctx (Control _ ( _, ( valueX, valueY ) ) _) =
+view theme ctx (Control ( xAxis, yAxis ) ( _, ( valueX, valueY ) ) _) =
     let
         bounds = ctx.bounds
         ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
@@ -25,10 +25,14 @@ view theme ctx (Control _ ( _, ( valueX, valueY ) ) _) =
         ( right, bottom ) =
             ( bounds.width - Cell.gap / 2, bounds.height - Cell.gap / 2 )
         circleRadius = (min bounds.width bounds.height) / 18
+        ( relValueX, relValueY ) =
+            ( (valueX - xAxis.min) / (xAxis.max - xAxis.min)
+            , (valueY - yAxis.min) / (yAxis.max - yAxis.min)
+            )
         innerGap = circleRadius * 2
         ( circleX, circleY ) =
-            ( left + innerGap + (valueX * (right - left - innerGap * 2))
-            , top + innerGap + (valueY * (bottom - top - innerGap * 2))
+            ( left + innerGap + (relValueX * (right - left - innerGap * 2))
+            , top + innerGap + (relValueY * (bottom - top - innerGap * 2))
             )
     in
     Svg.g

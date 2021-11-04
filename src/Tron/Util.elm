@@ -22,6 +22,11 @@ align v =
         else v
 
 
+relative : { a | min : Float, max : Float } -> Float -> Float
+relative { min, max } value =
+    value * (max - min)
+
+
 alter : { a | min : Float, max : Float, step : Float } -> Float -> Float -> Float
 alter { min, max, step } amount startedFrom =
     let

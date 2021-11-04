@@ -7,7 +7,10 @@ type ControlType = "none" | "slider" | "xy" | "text" | "color" | "nest" | "choic
 type ChoiceSelection = { selection : string, index : number };
 
 
-type Value = string | number | [number, number] | Color | ChoiceSelection;
+type XYValue = { x : number, y : number };
+
+
+type Value = string | number | XYValue | Color | ChoiceSelection;
 
 
 interface ChangeHandler {
@@ -113,7 +116,7 @@ export class Control {
     }
 
     send(ports : Ports, value: Value) : Control {
-        ports.apply.send([ { path : this.path, value : value }]); // TODO
+        ports.apply.send([ { path : this.path, value : value }]);
         return this;
     }
 
