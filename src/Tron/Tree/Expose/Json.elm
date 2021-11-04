@@ -8,7 +8,6 @@ import Json.Decode as D
 import Json.Encode as E
 import Color.Convert as Color
 import Maybe.Extra as Maybe
-import Url exposing (Url)
 
 
 import Tron.Control exposing (..)
@@ -16,7 +15,17 @@ import Tron.Control.Impl.Nest as Nest exposing (Form(..))
 import Tron.Control.Impl.Text exposing (TextState(..))
 import Tron.Control.Impl.Toggle as Toggle exposing (ToggleState(..))
 import Tron.Control.Impl.Button as Button
+import Tron.Control.Json.Text as Text
 import Tron.Control.Impl.XY as XY
+
+import Tron.Control.Json.Nest as Nest
+-- import Tron.Control.Json.Text exposing (TextState(..))
+import Tron.Control.Json.Toggle as Toggle
+import Tron.Control.Json.Button as Button
+import Tron.Control.Json.Number as Number
+import Tron.Control.Json.Color as Color
+import Tron.Control.Json.XY as XY
+
 import Tron.Path as Path exposing (Path)
 -- import Tron.Detach as Detach
 import Tron.Tree.Internals as Tree exposing (..)
@@ -25,7 +34,6 @@ import Tron.Tree.Paths as Tree
 import Tron.Tree.Expose.Data as Exp
 import Tron.Control.Value exposing (Value(..))
 -- import Tron.Expose.Convert as Exp
-import Tron.Style.Theme as Theme
 import Tron.Style.PanelShape as PS
 import Tron.Style.CellShape as CS
 
@@ -48,155 +56,45 @@ decode =
 decodeByTypeString : String -> D.Decoder (Tree ())
 decodeByTypeString typeStr =
     let
-        faceAndShape maybeShape maybeFace prop =
-            case ( maybeShape, maybeFace ) of
-                ( Just ( panelShape, cellShape ), Just face ) ->
-                    prop
-                        |> Tree.setFace face
-                        |> Tree.setPanelShape panelShape
-                        |> Tree.setCellShape cellShape
-                ( Just ( panelShape, cellShape ), Nothing ) ->
-                    prop
-                        |> Tree.setPanelShape panelShape
-                        |> Tree.setCellShape cellShape
-                ( Nothing, Just face ) ->
-                    prop
-                        |> Tree.setFace face
-                ( Nothing, Nothing ) -> prop
+        decodeItem =
+            D.map2
+                Tuple.pair
+                (D.field "label" D.string)
+                (D.field "property" decode)
     in
     case typeStr of
-        "none" -> D.succeed <| Nil ()
+        "none" ->
+            D.succeed <| Nil ()
         "slider" ->
-            D.map4
-                (\min max step current ->
-                    Number
-                        <| Control
-                            { min = min
-                            , max = max
-                            , step = step
-                            }
-                            ( Nothing, current )
-                            ()
-                )
-                (D.field "min" D.float)
-                (D.field "max" D.float)
-                (D.field "step" D.float)
-                (D.field "current" D.float)
+            Number.decode |> D.map Number
         "xy" ->
-            D.map7
-                (\minX maxX stepX minY maxY stepY current ->
-                    Coordinate
-                        <| Control
-                            (
-                                { min = minX
-                                , max = maxX
-                                , step = stepX
-                                }
-                            ,
-                                { min = minY
-                                , max = maxY
-                                , step = stepY
-                                }
-                            )
-                            ( Nothing, current )
-                            ()
-                )
-                (D.field "minX" D.float)
-                (D.field "maxX" D.float)
-                (D.field "stepX" D.float)
-                (D.field "minY" D.float)
-                (D.field "maxY" D.float)
-                (D.field "stepY" D.float)
-                (D.field "current" <|
-                    D.map2
-                        Tuple.pair
-                        (D.field "x" D.float)
-                        (D.field "y" D.float)
-                )
+            XY.decode |> D.map Coordinate
         "text" ->
-            D.field "current" D.string
-                |> D.map
-                    (\current ->
-                        Text <|
-                            Control
-                                ()
-                                ( Ready, current )
-                                ()
-                    )
+            Text.decode |> D.map Text
         "color" ->
-            D.field "currentRgba" decodeColor
-                |> D.map
-                    (\current ->
-                        Color <|
-                            Control
-                                ()
-                                ( Nothing, current )
-                                ()
-                    )
-
+            Color.decode |> D.map Color
         "toggle" ->
-            D.field "current" decodeToggle
-                |> D.map
-                    (\current ->
-                        Toggle <|
-                            Control
-                                ()
-                                current
-                                ()
-                    )
-
+            Toggle.decode |> D.map Toggle
         "button" ->
-            ( D.succeed
-                <| Action
-                <| Control
-                    Button.Default
-                    ()
-                    () )
-            |> D.map2
-                (\maybeFace button ->
-                    maybeFace
-                        |> Maybe.map (\face -> Tree.setFace face button)
-                        |> Maybe.withDefault button
-                )
-                (D.maybe <| D.field "face" decodeFace)
+            Button.decode |> D.map Action
 
         "nest" ->
-            D.field "nest"
-                (D.array
-                    <| D.map2
-                        Tuple.pair
-                        (D.field "label" D.string)
-                        (D.field "property" decode)
-                )
-                |> D.map
-                    (\items -> Nest.createGroup items ())
-                |> D.map (Group Nothing Tree.defaultNestShape)
-                |> D.map3 faceAndShape
-                    (D.maybe <| D.field "shape" decodeShape)
-                    (D.maybe <| D.field "face" decodeFace)
+            Nest.decodeGroup
+                decodeItem
+                |> D.map2
+                    (Group Nothing)
+                    (D.map (Maybe.withDefault Tree.defaultNestShape)
+                        <| D.maybe
+                        <| D.field "shape" decodeShape)
 
         "choice" ->
-            D.field "options"
-                (D.array
-                    <| D.map2
-                        Tuple.pair
-                        (D.field "label" D.string)
-                        (D.field "property" decode)
-                )
-                |> D.map
-                    (\items -> Nest.createChoice items ())
+            Nest.decodeChoice
+                decodeItem
                 |> D.map2
-                    (\maybeMode control ->
-                        case maybeMode of
-                            Just mode -> control |> Nest.setChoiceMode mode
-                            Nothing -> control
-                    )
-                    (D.maybe <| D.field "mode" decodeChoiceMode)
-                |> D.map (Choice Nothing Tree.defaultNestShape)
-                |> D.map3 faceAndShape
-                    (D.maybe <| D.field "shape" decodeShape)
-                    (D.maybe <| D.field "face" decodeFace)
-
+                    (Choice Nothing)
+                    (D.map (Maybe.withDefault Tree.defaultNestShape)
+                        <| D.maybe
+                        <| D.field "shape" decodeShape)
 
         _ -> D.succeed <| Nil () -- or fail?
 
@@ -221,140 +119,55 @@ encodeTreeAt path property =
                 , ( "path", encodePath path )
                 ]
 
-        Number (Control { min, max, step } ( _, val ) _) ->
-            E.object
+        Number control ->
+            E.object <|
                 [ ( "type", E.string "slider" )
                 , ( "path", encodePath path )
-                , ( "current", E.float val )
-                , ( "min", E.float min )
-                , ( "max", E.float max )
-                , ( "step", E.float step )
-                ]
+                ] ++ Number.encode control
 
-        Coordinate (Control ( xSpec, ySpec ) ( _, ( x, y ) ) _) ->
-            E.object
+        Coordinate control ->
+            E.object <|
                 [ ( "type", E.string "xy" )
                 , ( "path", encodePath path )
-                , ( "current"
-                  , E.object
-                        [ ( "x", E.float x )
-                        , ( "y", E.float y )
-                        ]
-                  )
-                , ( "minX", E.float xSpec.min )
-                , ( "maxX", E.float xSpec.max )
-                , ( "stepX", E.float xSpec.step )
-                , ( "minY", E.float ySpec.min )
-                , ( "maxY", E.float ySpec.max )
-                , ( "stepY", E.float ySpec.step )
-                ]
+                ] ++ XY.encode control
 
-        Text (Control _ ( _, val ) _) ->
-            E.object
+        Text control ->
+            E.object <|
                 [ ( "type", E.string "text" )
                 , ( "path", encodePath path )
-                , ( "current", E.string val )
-                ]
+                ] ++ Text.encode control
 
-        Color (Control _ ( _, val ) _) ->
-            E.object
+        Color control ->
+            E.object <|
                 [ ( "type", E.string "color" )
                 , ( "path", encodePath path )
-                , ( "current", encodeColor val )
-                , ( "currentRgba", encodeRgba val )
-                ]
+                ] ++ Color.encode control
 
-        Toggle (Control _ val _) ->
-            E.object
+        Toggle control ->
+            E.object <|
                 [ ( "type", E.string "toggle" )
                 , ( "path", encodePath path )
-                , ( "current"
-                  , E.string <|
-                        case val of
-                            TurnedOn ->
-                                "on"
+                ] ++ Toggle.encode control
 
-                            TurnedOff ->
-                                "off"
-                  )
-                ]
-
-        Action (Control face _ _) ->
-            E.object
+        Action control ->
+            E.object <|
                 [ ( "type", E.string "button" )
                 , ( "path", encodePath path )
-                , ( "face", encodeFace face )
-                ]
+                ] ++ Button.encode control
 
-        Choice _ shape (Control items { face, form, selected, mode } _) ->
-            E.object
+        Choice _ shape control ->
+            E.object <|
                 [ ( "type", E.string "choice" )
                 , ( "path", encodePath path )
-                , ( "current"
-                  , E.int selected
-                  )
-                , ( "expanded"
-                  , E.bool <|
-                        case form of
-                            Expanded ->
-                                True
-
-                            Collapsed ->
-                                False
-
-                            Detached ->
-                                False
-                  )
-                , ( "detached"
-                  , E.bool <|
-                        case form of
-                            Detached ->
-                                True
-
-                            Collapsed ->
-                                False
-
-                            Expanded ->
-                                False
-                  )
-                , ( "options", encodeNested path items )
-                , ( "face", face |> Maybe.map encodeFace |> Maybe.withDefault E.null )
                 , ( "shape", encodeShape shape )
-                , ( "mode", encodeChoiceMode mode )
-                ]
+                ] ++ Nest.encodeChoice (encodeNested path) control
 
-        Group _ shape (Control items { face, form } _) ->
-            E.object
+        Group _ shape control ->
+            E.object <|
                 [ ( "type", E.string "nest" )
                 , ( "path", encodePath path )
-                , ( "expanded"
-                  , E.bool <|
-                        case form of
-                            Expanded ->
-                                True
-
-                            Collapsed ->
-                                False
-
-                            Detached ->
-                                False
-                  )
-                , ( "detached"
-                  , E.bool <|
-                        case form of
-                            Detached ->
-                                True
-
-                            Collapsed ->
-                                False
-
-                            Expanded ->
-                                False
-                  )
-                , ( "nest", encodeNested path items )
-                , ( "face", face |> Maybe.map encodeFace |> Maybe.withDefault E.null )
                 , ( "shape", encodeShape shape )
-                ]
+                ] ++ Nest.encodeGroup (encodeNested path) control
 
         Live innerProp ->
             encodeTreeAt path innerProp
@@ -383,124 +196,6 @@ encode : Tree a -> Exp.Tree
 encode =
     encodeTreeAt Path.start
 
-
-{-
-   encodeUpdate : Maybe HashId -> Path -> Tree a -> RawUpdate
-   encodeUpdate maybeClient path prop =
-       let
-           ( type_, value ) =
-               case prop of
-                   Nil ->
-                       ( "none", E.null )
-                   Number ( Control _ val _ ) ->
-                       ( "slider", E.float val )
-                   Coordinate ( Control _ ( x, y ) _ ) ->
-                       ( "xy"
-                       , E.string <| String.fromFloat x ++ XY.separator ++ String.fromFloat y
-                       )
-                   Text ( Control _ ( _, val ) _ ) ->
-                       ( "text", E.string val )
-                   Color ( Control _ val _ ) ->
-                       ( "color", encodeColor val )
-                   Toggle ( Control _ val _ ) ->
-                       ( "toggle"
-                       , E.string
-                           <| case val of
-                               TurnedOn -> "on"
-                               TurnedOff -> "off"
-                       )
-                   Action _ ->
-                       ( "button"
-                       , E.null
-                       )
-                   Choice _ _ control ->
-                       ( "choice"
-                       , E.int <| Nest.whichSelected control
-                       )
-                   Group _ _ _ ->
-                       ( "nest"
-                       , E.null
-                       )
-       in
-           { path = Path.toList path
-           , value = value
-           , type_ = type_
-           , client = encodeClientId maybeClient
-           }
--}
--- select : Path -> Model msg -> Model msg
--- select selector gui = gui
-
-encodeFace : Button.Face -> E.Value
-encodeFace face =
-    case face of
-        Button.Default -> E.object [ ( "kind", E.string "default" ) ]
-        Button.WithIcon (Button.Icon fn) ->
-            E.object
-                [ ( "kind", E.string "icon" )
-                , ( "dark", case fn Theme.Dark of
-                        Just url -> E.string <| Url.toString url
-                        Nothing -> E.null
-                  )
-                , ( "light", case fn Theme.Light of
-                        Just url -> E.string <| Url.toString url
-                        Nothing -> E.null
-                  )
-                ]
-        Button.WithColor color ->
-            E.object
-                [ ( "kind", E.string "color" )
-                , ( "color", encodeColor color )
-                ]
-
-
-decodeFace : D.Decoder Button.Face
-decodeFace =
-    D.field "kind" D.string
-    |> D.andThen
-        (\kind ->
-            case kind of
-                "default" ->
-                    D.succeed Button.Default
-                "color" ->
-                    D.field "color" decodeColor
-                        |> D.map Button.WithColor
-                "icon" ->
-                    D.map2
-                        (\darkSrc lightSrc theme ->
-                            case theme of
-                                Theme.Dark -> darkSrc |> Maybe.andThen Url.fromString
-                                Theme.Light -> lightSrc |> Maybe.andThen Url.fromString
-                        )
-                        (D.field "dark" <| D.maybe D.string)
-                        (D.field "light" <| D.maybe D.string)
-                        |> D.map (Button.Icon >> Button.WithIcon)
-                _ -> D.succeed Button.Default
-        )
-
-
-encodeChoiceMode : Nest.ChoiceMode -> E.Value
-encodeChoiceMode face =
-    case face of
-        Nest.Pages -> E.object [ ( "kind", E.string "pages" ) ]
-        Nest.SwitchThrough -> E.object [ ( "kind", E.string "switch" ) ]
-        Nest.Knob -> E.object [ ( "kind", E.string "knob" ) ]
-
-
-decodeChoiceMode : D.Decoder Nest.ChoiceMode
-decodeChoiceMode =
-    D.field "kind" D.string
-    |> D.andThen
-        (\kind ->
-            case kind of
-                "pages" ->
-                    D.succeed Nest.Pages
-                "switch" ->
-                    D.succeed Nest.SwitchThrough
-                "knob" ->
-                    D.succeed Nest.Knob
-                _ -> D.succeed Nest.Pages
-        )
 
 
 encodeShape : Tree.NestShape -> E.Value
@@ -590,19 +285,19 @@ valueByTypeDecoder type_ =
             D.float |> D.map FromSlider
 
         "xy" ->
-            decodeCoord |> D.map FromXY
+            XY.decodeCoord |> D.map FromXY
 
         "text" ->
             D.string |> D.map FromInput
 
         "color" ->
-            decodeColor |> D.map FromColor
+            Color.decodeColor |> D.map FromColor
 
         "choice" ->
-            decodeChoice |> D.map FromChoice
+            Nest.decodeSelected |> D.map FromChoice
 
         "toggle" ->
-            decodeToggle |> D.map (Toggle.toggleToBool >> FromToggle)
+            Toggle.decodeToggle |> D.map (Toggle.toggleToBool >> FromToggle)
 
         "button" ->
             D.succeed FromButton
@@ -651,7 +346,7 @@ fromStrings ( type_, str ) =
 
         "choice" ->
             str
-                |> D.decodeString (decodeChoice |> D.map FromChoice)
+                |> D.decodeString (Nest.decodeSelected |> D.map FromChoice)
                 |> Result.mapError D.errorToString
 
         "toggle" ->
@@ -670,130 +365,9 @@ fromStrings ( type_, str ) =
             Err str
 
 
-encodeColor : Color -> E.Value
-encodeColor =
-    E.string << Color.colorToHexWithAlpha
-
-
-encodeRgba : Color -> E.Value
-encodeRgba color =
-    case Color.toRgba color of
-        { red, green, blue, alpha } ->
-            E.object
-                [ ( "red", E.float red )
-                , ( "green", E.float green )
-                , ( "blue", E.float blue )
-                , ( "alpha", E.float alpha )
-                ]
-
-
-decodeColor : D.Decoder Color
-decodeColor =
-    D.oneOf
-        [ D.string
-            |> D.andThen
-                (\str ->
-                    str
-                        |> Color.hexToColor
-                        |> Result.map D.succeed
-                        |> Result.withDefault (D.fail <| "failed to parse color: " ++ str)
-                )
-        -- FIXME: use either one in the corresponding place
-        , D.map4
-            Color.rgba
-            (D.field "red" D.float)
-            (D.field "green" D.float)
-            (D.field "blue" D.float)
-            (D.map (Maybe.withDefault 1.0) <| D.maybe <| D.field "alpha" D.float)
-        ]
-
-
-decodeChoice : D.Decoder ( Int, Maybe Path.Label )
-decodeChoice =
-    D.oneOf
-        [ D.string
-            |> D.andThen
-            (\str ->
-                case str |> String.split Nest.separator of
-                    v1 :: "" :: _ ->
-                        String.toInt v1
-                            |> Maybe.map (\n -> (n, Nothing))
-                            |> Maybe.map D.succeed
-                            |> Maybe.withDefault (D.fail <| "failed to parse choice value: " ++ str)
-                    v1 :: v2 :: _ ->
-                        String.toInt v1
-                            |> Maybe.map (\n -> (n, Just v2))
-                            |> Maybe.map D.succeed
-                            |> Maybe.withDefault (D.fail <| "failed to parse choice value: " ++ str)
-                    v1 :: _ ->
-                        String.toInt v1
-                            |> Maybe.map (\n -> (n, Nothing))
-                            |> Maybe.map D.succeed
-                            |> Maybe.withDefault (D.fail <| "failed to parse choice value: " ++ str)
-                    _ ->
-                        D.fail <| "failed to parse coord: " ++ str
-            )
-        -- FIXME: use either one in the corresponding place
-        , D.map2
-            Tuple.pair
-            (D.field "id" D.int)
-            (D.field "selection" <| D.maybe D.string)
-        ]
-
-
-decodeCoord : D.Decoder ( Float, Float )
-decodeCoord =
-    D.oneOf
-        [ D.string
-            |> D.andThen
-            (\str ->
-                case str |> String.split XY.separator of
-                    v1 :: v2 :: _ ->
-                        Maybe.map2
-                            Tuple.pair
-                            (String.toFloat v1)
-                            (String.toFloat v2)
-                            |> Maybe.map D.succeed
-                            |> Maybe.withDefault (D.fail <| "failed to parse coord: " ++ str)
-
-                    _ ->
-                        D.fail <| "failed to parse coord: " ++ str
-            )
-        -- FIXME: use either one in the corresponding place
-        , D.map2
-            Tuple.pair
-            (D.field "x" D.float)
-            (D.field "y" D.float)
-        ]
-
-
-decodeToggle : D.Decoder ToggleState
-decodeToggle =
-    D.oneOf
-        [ D.bool
-            |> D.map
-                (\bool ->
-                    if bool then TurnedOn else TurnedOff
-                )
-        -- FIXME: use either one in the corresponding place
-        , D.string
-            |> D.map (\str ->
-                case str of
-                    "on" ->
-                        TurnedOn
-
-                    "off" ->
-                        TurnedOff
-
-                    _ ->
-                        TurnedOff
-            )
-        ]
-
-
-encodeAck : Exp.Ack -> E.Value
-encodeAck { client, tree } =
-    E.object
-        [ ( "client", client )
-        , ( "tree", tree )
-        ]
+-- encodeAck : Exp.Ack -> E.Value
+-- encodeAck { client, tree } =
+--     E.object
+--         [ ( "client", client )
+--         , ( "tree", tree )
+--         ]

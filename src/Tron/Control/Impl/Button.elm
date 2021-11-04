@@ -9,7 +9,6 @@ import Url.Builder as Url
 import Tron.Control as Core exposing (Control)
 import Tron.Control.Action as A
 
-
 type Icon = Icon (Theme -> Maybe Url)
 
 
