@@ -4,6 +4,8 @@ Tron is the web UI for any graphical web playground, such as processing.js sketc
 
 We in [Computational Arts Initiative](https://cai.jetbrains.com) use Tron to control our generative graphics and tools. 
 
+// TODO: examples of the usage.
+
 # Tron. The Idea
 
 The core idea of Tron project is to have UI controls laid out in the rectangular grid and at the same time be structured as a tree.
@@ -63,20 +65,20 @@ The project with Tron UI has six pillars to build it over (because it is much mo
 
 #### Pillar I. `Tron.Tree a`
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Tree))
 
 `Tron.Tree a`, is the complete tree structure of your controls , and every control or nesting in it holds the value of type `a` inside; the latter fact is usually irrelevant to you, but just so you know.
 
 #### Pillar II. `Tron msg`
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron))
 
 `Tron msg` which is the same as `Tree (Control.Value -> msg)`, so it is the `Tree` where every control may produce some particular message in response to its current value;
 
 
 #### Pillar III. `for` function
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron))
 
 `for` function, which we kindly ask you to define, produces `Tron msg` from the model of your program and also gets the previous state of the controls represented as `Tree ()` in case you would ever need those previous values; 
 
@@ -85,21 +87,21 @@ for : Tree () -> model -> Tron msg
 ```
 
 
-#### Pillar IV. `Builder`
+#### Pillar IV. `Build`
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Build))
 
-`Builder` that helps you build the structure of your interface, we have one for [`Tron msg`](https://package.elm-lang.org/packages/shamansir/tron-gui/13.0.0/Tron-Build), one for [`Tree ()`](https://package.elm-lang.org/packages/shamansir/tron-gui/13.0.0/Tron-Tree-Build-Unit) and one for [`Tree a`](https://package.elm-lang.org/packages/shamansir/tron-gui/13.0.0/Tron-Tree-Build-Any) ;
+`Build` module helps you build the structure of your interface, we have one for [`Tron msg`](https://package.elm-lang.org/packages/shamansir/tron-gui/13.0.0/Tron-Build), one for [`Tree ()`](https://package.elm-lang.org/packages/shamansir/tron-gui/13.0.0/Tron-Tree-Build-Unit) and one for [`Tree a`](https://package.elm-lang.org/packages/shamansir/tron-gui/13.0.0/Tron-Tree-Build-Any) , but please stick to the `Tron.Build` one;
 
 #### Pillar V. `WithTron.*`
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron))
 
 `WithTron` helpers over `Browser.*` definitions, they help you to attach your Tron interface to the application with common `init`, `update`, `view` and `subscriptions` , but also these functions get the latest state of the `Tree` for your pleasure;
 
 #### Pillar VI. `WithTron.ValueAt`
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron-ValueAt))
 
 `WithTron.ValueAt` helpers which allow you to extract previous values from the previous `Tree ()` when you need them, they take the path to the control and return `Maybe x` , where `x` is `Float` for numbers, `( Float, Float )` for XY, `( Path.Label, Int )` for choices & so on;    
 
@@ -197,7 +199,7 @@ WithTron.element
 
 #### Render targets
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option-Render))
 
 Wether you want the UI be hidden or render it to Html or to VR (it’s not yet working well, but it’s in the development, so the option is there), or show the Debug version of Tron, this is where you decide.
 
@@ -207,7 +209,7 @@ Theme indeed may be `Theme.dark` or `Theme.light`. Someday some `Theme.nostalgic
 
 #### Communication
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option-Communication))
 
 Communication with JS is done using ports, if you don’t want to connect to JS in any way (don’t tell it to the folks reading the other paragraph), just set it to `Communication.none`.
 
@@ -431,7 +433,7 @@ TODO
 
 ###### _Panel shapes_
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Style-PanelShape))
 
 Panel shape is how many cells the panel takes in the GUI grid (it is automatically calculated considering the fact that cells inside could be halflings or giants, see _Cell shape_ below).
 
@@ -450,7 +452,7 @@ Tron.nest ... |> Tron.shape (PS.by 5 5 |> PS.singlePage)
 
 ###### _Cell shapes_
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Style-CellShape))
 
 For now, all the cells (controls) on one panel should have the same shape. But, it could be any supported shape and inner panels may have any other cell shape. So, cell shape is defined for the whole panel:
 
@@ -478,7 +480,7 @@ Considering the default shape as 1x1 (`single`), the meaning of each value is:
 
 ###### _Pagination_
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Style-PanelShape#distribute))
 
 If the items you’ve added to the panel don’t fit the requested panel shape (see _Panel Shapes_ above), they’re split into pages. But you may force pagination to be disabled:
 
@@ -501,7 +503,7 @@ Tron.nest ... |> Tron.collapse
 
 ###### Nest
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Build#nest))
 
 Nesting is just the separation of the controls in the panel with no special logic:
 
@@ -546,7 +548,7 @@ Tron.nest
 
 ###### Choice
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Build#choice))
 
 Choice is a special nesting panel (not obligatory a panel, see below) which sends the value of the control clicked inside this panel with the message. Since it shows its current value on the button that expands the panel, all the controls inside have to be buttons:
 
@@ -564,7 +566,27 @@ Tron.choice
 
 But that also gives you power to add icons or controls there, just as with separate buttons (see _Many faces of the button_):
 
-TODO
+```haskell
+productIcon : Product -> Tron.Face
+productIcon product =
+	Tron.iconAt 
+	   [ "assets"
+       , "icons"
+       , Product.getName product ++ ".svg"
+	   ]
+
+
+Tron.choiceBy
+    (Product.all
+        |> List.filter Product.hasIcon
+        |> Tron.buttons
+        |> List.map (Tron.with (Tron.face << productIcon))
+        |> Tron.toSet Product.getName
+    )
+    Product.default
+    Product.compare
+|> Tron.shape (rows 3)
+```
 
 There are several wrappers over `Tron.choice` to help you create choice controls with specific types:
 
@@ -629,6 +651,7 @@ Also, any nest with buttons can be converted to the choice:
 type WaveShape = Sine | Square | Triangle | Saw
 type Msg = ChangeWaveShape WaveShape | NoOp
 
+
 waveToLabel : WaveShape -> String
 waveToLabel = ...
 
@@ -643,7 +666,7 @@ Tron.nest
 
 #### Using `ValueAt`
 
-(docs)
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron-ValueAt))
 
 In your `for`, `update`, `subscriptions` and `view` functions, you get the previous state of the tree as `Tree ()`, the values are there, and the tools to extract them are the helpers in the `ValueAt` module.
 
@@ -687,11 +710,13 @@ TODO
 
 # Tron. Follow ups
 
-## Detachable Tron
+## Tron. Detachable.
 
-To make your Tron interface detachable, you need to start the WebSocket server that receives JSONs of the tree parts and the updates.
+To make your Tron interface detachable, you need to start the WebSocket server that receives JSONs with the tree parts and the updates.
 
 TODO.
+
+## Tron. Constructor.
 
 # Tron. Development
 
