@@ -4,8 +4,6 @@ Tron is the web UI for any graphical web playground, such as processing.js sketc
 
 We in [Computational Arts Initiative](https://cai.jetbrains.com) use Tron to control our generative graphics and tools. 
 
-// TODO: examples of the usage.
-
 # Tron. The Idea
 
 The core idea of Tron project is to have UI controls laid out in the rectangular grid and at the same time be structured as a tree.

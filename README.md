@@ -22,7 +22,7 @@ Group and choice controls support _pagination_ if the items doesn't fit;
 
 The whole interface or its parts can be _"detached"_ to another browser window or even device. This feature requires a simple WebSocket server though, so it's optional, but we provide a full example of such feature; see it buy running `./example/start-example.sh Detachable` with `elm-live`, the sources for this example are in `example/Detachable` folder.
 
-The encoders and decoders for JSON are included, so all the structure can be transferred to JavaScript, all the values updates are easily encoded back and forth as well, this gives you the ability to easily replace the rendered GUI with some JS implementation, [`dat.gui`](https://github.com/dataarts/dat.gui), for example — while keeping the structure define in typed Elm and your messages connected.
+The encoders and decoders for JSON are included, so all the structure can be transferred to JavaScript, the tree itself and all the values updates are easily encoded back and forth as well, this gives you the ability to easily replace the rendered GUI with some JS implementation, [`dat.gui`](https://github.com/dataarts/dat.gui), for example — while keeping the structure define in typed Elm and your messages connected.
 
 Next major features planned are:
 
@@ -36,11 +36,18 @@ See `CHANGELOG.md` for the list of all the changes through versions.
 
 Huge thanks to @imilman for the design/UX and priceless help through development.
 
+## Tutorial
+
+See [TUTORIAL](https://github.com/shamansir/tron-gui/blob/main/Tutorial.md) 
+
+<!-- 
 ## Screenshots
 
 <img src="https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-light.png" width="549" height="497" alt="Light Theme" />
 
-<img src="https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-dark.png" width="549" height="515" alt="Dark Theme" />
+<img src="https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-dark.png" width="549" height="515" alt="Dark Theme" /> 
+
+-->
 
 ## Adding to your Elm application
 
@@ -54,8 +61,9 @@ _Tron_ provides the `WithTron` helper which wraps the core `Browser....` functio
 
 * [`WithTron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron) documentation;
 * [`Tron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron) documentation;
-* [`Tron.Builder`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Builder) documentation;
-* [`Tron.Option`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option) documentation;
+* [`Tron.Build`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Build) documentation;
+* [`Tron.Option.Render`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option) documentation;
+* [`Tron.Option.Communication`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option) documentation;
 
 See some example usages of `WithTron` below.
 
@@ -72,9 +80,9 @@ There is the `start-example.sh` script that helps to run every one of them, just
 * `OneKnob` — only one control and its value, nothing else; also gives the example of the minimal Elm application with Tron GUI, where everything is defined in one module (really doesn't require a lot of code!);
 * `Random` — random interface by a click of a button;
 * `AFrame` — render to virtual reality using A-Frame (currently, the early draft);
-* `ReportToJsBacked` — an example to use when connecting Tron to JS application;
-* `ReportToJsJson` — a demonstration of sending any value update to port as JSON, as well as the complete GUI structure;
-* `ReportToJsString` — a demonstration of sending any value update to port as labeled path and string value;
+* `BuldFromJs` — an example of building the complete UI from JavaScript;
+* `ListenFromJs` — listen for updates from JS;
+* `ReportToJs` — report values ;
 
 **NB**: The _Tron_ GUI is not designed to support all the above features at once, so please consider that `Everything` is not a good example of using Tron API, while _all others_ for sure are.
 
@@ -96,16 +104,17 @@ Soon, there will be the ability to run specific example in Docker using environm
 From `example/Example/OneKnob/Main.elm`, similar to `example/Example/Basic/Main.elm`:
 
 ```elm
-import WithTron exposing (ProgramWithTron)
-import Tron.Option as Option
+import WithTron
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
 
-main : ProgramWithTron () Model Msg
+main : WithTron.Program () Model Msg
 main =
     WithTron.element
-        (Option.toHtml Dock.center Theme.dark)
-        Option.noCommunication
+        (Render.toHtml Dock.center Theme.dark)
+        Communication.none
         { for = for -- `for :: Model -> Tron msg`, see examples below
         , init = init -- your usual `init` function
         , view = view -- your usual `view` function
@@ -119,16 +128,18 @@ main =
 From `example/Example/ReportToJsJson/Main.elm`:
 
 ```elm
-import WithTron exposing (ProgramWithTron)
-import Tron.Option as Option
+import WithTron
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
+import Tron.Tree.Expose.Data as Exp
 
-main : ProgramWithTron () Example.Model Example.Msg
+main : WithTron.Program () Example.Model Example.Msg
 main =
     WithTron.element
-        (Option.toHtml Dock.middleRight Theme.dark)
-        (Option.sendJson
+        (Render.toHtml Dock.middleRight Theme.dark)
+        (Communication.sendJson
             { ack = initGui
             , transmit = sendUpdate
             }
@@ -141,9 +152,9 @@ main =
         }
 
 
-port sendUpdate : Exp.RawOutUpdate -> Cmd msg
+port sendUpdate : Exp.Out -> Cmd msg
 
-port initGui : Exp.RawTree -> Cmd msg
+port initGui : Exp.Tree -> Cmd msg
 ```
 
 ### Detachable
@@ -151,17 +162,19 @@ port initGui : Exp.RawTree -> Cmd msg
 From `example/Example/Detachable/Main.elm`:
 
 ```elm
-import WithTron exposing (ProgramWithTron)
-import Tron.Option as Option
+import WithTron
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
 import Tron.Style.Theme as Theme
 import Tron.Style.Dock as Dock
-import Tron.Builder as Builder
+import Tron.Tree.Expose.Data as Exp
 
-main : ProgramWithTron () Example.Model Example.Msg
+
+main : WithTron.Program () Example.Model Example.Msg
 main =
     WithTron.application
-        (Option.toHtml Dock.center Theme.light)
-        (Option.detachable
+        (Render.toHtml Dock.center Theme.light)
+        (Communication.detachable
             { ack = ackToWs
             , transmit = sendUpdateToWs
             , receive = receieveUpdateFromWs identity
@@ -181,9 +194,9 @@ main =
         }
 
 
-port receieveUpdateFromWs : (Exp.RawInUpdate -> msg) -> Sub msg
+port receieveUpdateFromWs : (Exp.In -> msg) -> Sub msg
 
-port sendUpdateToWs : Exp.RawOutUpdate -> Cmd msg
+port sendUpdateToWs : Exp.Out -> Cmd msg
 
 port ackToWs : Exp.Ack -> Cmd msg
 ```
@@ -198,40 +211,40 @@ From `example/Example/Default/Gui.elm`:
 
 ```elm
 import Tron exposing (Tron)
-import Tron.Builder as Gui
+import Tron.Build as Tron
 
 
 for : Model -> Tron Msg
 for model =
-    Gui.root
-        [ ( "ghost", Gui.none )
+    Tron.root
+        [ ( "ghost", Tron.none )
         , ( "int",
-                Gui.int
+                Tron.int
                     { min = -20, max = 20, step = 5 }
                     model.int
                     ChangeInt )
         , ( "float",
-                Gui.float
+                Tron.float
                     { min = -10.5, max = 10.5, step = 0.5 }
                     model.float
                     ChangeFloat )
         , ( "xy",
-                Gui.xy
+                Tron.xy
                     ( { min = -20, max = 20, step = 5 }
                     , { min = -20, max = 20, step = 5 }
                     )
                     model.xy
                     ChangeXY )
         , ( "text",
-                Gui.text
+                Tron.text
                     model.string
                     ChangeString )
         , ( "color",
-                Gui.color
+                Tron.color
                     model.color
                     ChangeColor )
         , ( "choice",
-                Gui.choice
+                Tron.choice
                     choiceToLabel
                     choices
                     model.choice
@@ -241,8 +254,8 @@ for model =
                 nestedButtons model.buttonPressed
           )
         , ( "button",
-                Gui.buttonWith
-                    (Gui.iconAt [ "assets", "export.svg" ])
+                Tron.button
+                    (Tron.face <| Tron.iconAt [ "assets", "export.svg" ])
                     (always NoOp)
           )
         , ( "toggle",
@@ -255,16 +268,14 @@ for model =
 
 nestedButtons : Choice -> Tron Msg
 nestedButtons curChoice =
-    Gui.nestIn
-        ( rows 2 )
-        Full
+    Tron.nest
         [ ( "a", Gui.button <| always <| Pressed A )
         , ( "b", Gui.button <| always <| Pressed B )
         , ( "c", Gui.button <| always <| Pressed C )
         , ( "d", Gui.button <| always <| Pressed D )
         , ( "color", colorNest )
         ]
-
+        |> Tron.shape (Tron.rows 2)
 
 colorNest : Tron Msg
 colorNest =
@@ -275,13 +286,12 @@ colorNest =
                 0
                 msg
     in
-        Gui.nestIn
-            ( cols 1 )
-            Full
+        Tron.nest
             [ ( "red", colorCompKnob ChangeRed )
             , ( "green", colorCompKnob ChangeGreen )
             , ( "blue", colorCompKnob ChangeBlue )
             ]
+            |> Tron.shape (Tron.cols 1)            
 
 
 choiceToLabel : Choice -> Path.Label
@@ -299,16 +309,16 @@ From `example/Example/Default/Goose.elm`:
 
 ```elm
 import Tron exposing (Tron)
-import Tron.Builder as Gui
+import Tron.Build as Tron
 
 
 for : Model -> Tron Msg
 for model =
-    Gui.root
+    Tron.root
         [
             ( "honk on"
             ,
-                Gui.toggle
+                Tron.toggle
                     (Tuple.first model.honk)
                     (\v -> if v then HonkOn else HonkOff)
             )
@@ -318,8 +328,8 @@ for model =
                 if Tuple.first model.honk then
                     Tuple.second model.honk
                         |> honkGui
-                        |> Gui.expand
-                else Gui.none
+                        |> Tron.expand
+                else Tron.none
             )
         ,
             ( "eye"
@@ -328,9 +338,7 @@ for model =
         ,
             ( "look at"
             ,
-                Gui.choice
-                    ( Shape.auto )
-                    Cell.single
+                Tron.choice
                     (\v ->
                         case v of
                             Left -> "left"
@@ -343,7 +351,7 @@ for model =
         ,
             ( "punk on"
             ,
-                Gui.toggle
+                Tron.toggle
                     model.punk
                     (\v -> if v then PunkOn else PunkOff)
             )
@@ -354,7 +362,7 @@ for model =
         ,
             ( "boots on"
             ,
-                Gui.toggle
+                Tron.toggle
                     (
                         case model.shoes of
                             None -> False
@@ -367,9 +375,7 @@ for model =
 
 honkGui : HonkConfig -> Tron Msg
 honkGui config =
-    Gui.nest
-        ( cols 2 )
-        Cell.single
+    Tron.nest
         [
             ( "position"
             ,
@@ -403,13 +409,12 @@ honkGui config =
                     ChangeHonkTextColor
             )
         ]
+        |> Tron.shape (Tron.cols 2)
 
 
 eyeGui : EyeConfig -> Tron Msg
 eyeGui config =
     Gui.nest
-        ( cols 1 )
-        Cell.single
         [
             ( "position"
             ,
@@ -428,13 +433,12 @@ eyeGui config =
                     ChangeEyeSize
             )
         ]
+        |> Tron.shape (Tron.cols 1)        
 
 
 colorsGui : Bool -> Colors -> Tron Msg
 colorsGui isPunk colors =
     Gui.nest
-        ( cols 2 )
-        Cell.single
         [ ( "eye", Gui.color colors.eye ChangeEyeColor )
         , ( "feathers", Gui.color colors.feathers ChangeFeathersColor )
         , ( "skin", Gui.color colors.skin ChangeSkinColor )
@@ -446,49 +450,44 @@ colorsGui isPunk colors =
                 else Gui.none
             )
         ]
+        |> Tron.shape (Tron.cols 2)           
 ```
 
 ## Special Builders
 
-When you don't have any _messages_ or you want to define GUI only to pass it to JavaScript side, you may use other Builders which don't require specifying messages and convert their values automatically:
+When you don't have any _messages_ or you want to define GUI only to pass it to JavaScript side, you may use other Builders which don't require specifying messages and convert their values automatically using `Tree.map`:
 
-- `Tron.Builder.Unit` which provides `Tron ()`;
-- `Tron.Builder.String` which provides `Tron (List String, String)` and so converts any value to the pair of the labeled path (such as `"honk/color"`, in the case of the _Goose_ example) and stringified value;
-- `Tron.Builder.Proxy` which provides `Tron ProxyValue` and so converts any value to the special `ProxyValue` which is a data type representing the type of value and its contents, such as `Color (Rgba 0.5 0.5 0.7 1.0)` or `XY -2.5 -2.5` & s.o.;
-
-Using functions from `Tron.Expose.Convert`, any of these `Tron`s, or your own `Tron`, may be converted to `Tron (RawOutValue, msg)` or simlar, so that it will carry the port-&-JSON-friendly version of the value along with the messages. Use `Tron.map Tuple.first` on such, to ignore the messages at all.
-
-The example with `Tron.Builder.Unit` (from `example/Example/Default/Goose.elm`):
-
-*NB*: Notice that defining controls this way doesn't require you to specify any message, plus in this case it is just `Tron ()` rather than `Tron Msg`, but still it is easy to replace one with another just by changing import and adding/removing messages at the end of the calls:
+- `Tron.Tree.Build.Unit` which provides `Tree ()`;
+- `Tron.Tree.Build.Any` which provides `Tree a`;
 
 ### `Tron ()` example
 
 ```elm
-import Tron exposing (Tron)
-import Tron.Builder.Unit as Gui
+import Tron exposing (Tree)
+import Tron.Tree.Build.Unit as Tron
 
-gui : Tron ()
+
+gui : Tree
 gui =
-    Gui.root
-        [ ( "ghost", Gui.none )
+    Tron.root
+        [ ( "ghost", Tron.none )
         ,
             ( "int"
             ,
-                Gui.int
+                Tron.int
                     { min = -20, max = 20, step = 5 }
                     0
             )
         ,
             ( "float"
             ,
-                Gui.float
+                Tron.float
                     { min = -10.5, max = 10.5, step = 0.5 }
                     0.0
             )
         ,
             ( "xy",
-                Gui.xy
+                Tron.xy
                     ( { min = -20, max = 20, step = 5 }
                     , { min = -20, max = 20, step = 5 }
                     )
@@ -496,67 +495,65 @@ gui =
             )
         ,
             ( "text"
-            , Gui.text "foobar"
+            , Tron.text "foobar"
             )
         ,
             ( "color",
-                Gui.color
+                Tron.color
                     <| Color.rgb255 255 194 0
             )
         ,
             ( "choice",
-                Gui.choice
-                    ( cols 3 )
-                    single
+                Tron.choice
                     choiceToLabel
                     choices
                     A
                     compareChoices
-                    |> Gui.expand
+                    |> Tron.expand
+                    |> Tron.shape (Tron.cols 3)
             )
         ,
             ( "nest", nestedButtons C )
         ,
             ( "button"
             ,
-                Gui.buttonWith
-                    <| Gui.themedIconAt
+                Tron.button
+                    <| Tron.face
+                    <| Tron.themedIconAt
                         (\theme ->
                             [ "assets", "export_" ++ Theme.toString theme ++ ".svg" ]
                         )
             )
 
         ,
-            ( "toggle", Gui.toggle False )
+            ( "toggle", Tron.toggle False )
         ]
 
 
-nestedButtons : Choice -> Tron ()
+nestedButtons : Choice -> Tree 
 nestedButtons curChoice =
-    Gui.nest
-        ( cols 2 )
-        single
-        [ ( "a", Gui.button )
-        , ( "b", Gui.button )
-        , ( "c", Gui.button )
-        , ( "d", Gui.button )
+    Tron.nest
+        [ ( "a", Tron.button )
+        , ( "b", Tron.button )
+        , ( "c", Tron.button )
+        , ( "d", Tron.button )
         , ( "color", colorNest )
         ]
+        |> Tron.shape (Tron.cols 3)
 
 
-colorNest : Tron ()
+colorNest : Tree
 colorNest =
     let
         colorCompKnob =
-            Gui.float
+            Tron.float
                 { min = 0, max = 255, step = 1 }
                 0
     in
-        Gui.nest
-            ( cols 1 )
-            single
+        Tron.nest
             [ ( "red", colorCompKnob )
             , ( "green", colorCompKnob )
             , ( "blue", colorCompKnob )
             ]
+            |> Tron.shape (Tron.cols 2)
 ```
