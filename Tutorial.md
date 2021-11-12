@@ -1,8 +1,8 @@
 # Tron. Introduction
 
-Tron is the web UI for any graphical web playground, such as processing.js sketches, WebGL, [hydra](https://hydra-book.glitch.me/), shaders, etc., powered by the advantages of the Elm language. If your application is written in Elm, it is native to plug the Tron interface in. If it’s in JavaScript, we provide the friendly JS API (written with the help of TypeScript), which makes it also quite easy to define your UI and plug it from outside. 
+Tron is the web UI for any graphical web playground, such as processing.js sketches, WebGL, [hydra](https://hydra-book.glitch.me/), shaders, etc., powered by the advantages of the Elm language. If your application is written in Elm, it is native to plug the Tron interface in. If it’s in JavaScript, we provide the friendly JS API (written with the help of TypeScript), which makes it also quite easy to define your UI and plug it from outside.
 
-We in [Computational Arts Initiative](https://cai.jetbrains.com) use Tron to control our generative graphics and tools. 
+We in [Computational Arts Initiative](https://cai.jetbrains.com) use Tron to control our generative graphics and tools.
 
 // TODO: examples of the usage.
 
@@ -20,7 +20,7 @@ The feature we keep in mind, but not yet developed, is to support VR rendering o
 
 And yes, of course, its design is inspired by the Tron movie. Which one of those two, you decide.
 
-For now, we have some controls prepared for you: 
+For now, we have some controls prepared for you:
 
 * Button, for user to press;
 * The number, integer or float, either as a slider or some kind of knob;
@@ -46,7 +46,7 @@ npm install -g elm
 If what you have is JS project, initialise the Elm application in it:
 
 ```bash
-elm init 
+elm init
 ```
 
 In any way, add the Tron package to your project:
@@ -80,10 +80,10 @@ The project with Tron UI has six pillars to build it over (because it is much mo
 
 ([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron))
 
-`for` function, which we kindly ask you to define, produces `Tron msg` from the model of your program and also gets the previous state of the controls represented as `Tree ()` in case you would ever need those previous values; 
+`for` function, which we kindly ask you to define, produces `Tron msg` from the model of your program and also gets the previous state of the controls represented as `Tree ()` in case you would ever need those previous values;
 
 ```haskell
-for : Tree () -> model -> Tron msg		
+for : Tree () -> model -> Tron msg
 ```
 
 
@@ -103,31 +103,31 @@ for : Tree () -> model -> Tron msg
 
 ([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron-ValueAt))
 
-`WithTron.ValueAt` helpers which allow you to extract previous values from the previous `Tree ()` when you need them, they take the path to the control and return `Maybe x` , where `x` is `Float` for numbers, `( Float, Float )` for XY, `( Path.Label, Int )` for choices & so on;    
+`WithTron.ValueAt` helpers which allow you to extract previous values from the previous `Tree ()` when you need them, they take the path to the control and return `Maybe x` , where `x` is `Float` for numbers, `( Float, Float )` for XY, `( Path.Label, Int )` for choices & so on;
 
 ### Applying the pillars.
 
 In short, it is:
 
 * Choose `WithTron.*` helper which fits you;
-	* Specify where to dock and the theme you like;
-		* Add communication by taste;
-	* Structure your interface (with the help of `Tron.Build` and optionally `WithTron.ValueAt`) by your implementation of `for : Model -> Tree -> Tron Msg`;
-	* Proceed with `init` / `update` / `view` / … as usual;
-	* …That’s it!
-	* … … Oh, and please don’t forget to copy `Tron.css` to your application from `./src`, we truly hope it is a temporary and minor inconvenience;
+    * Specify where to dock and the theme you like;
+    * Add communication by taste;
+* Structure your interface (with the help of `Tron.Build` and optionally `WithTron.ValueAt`) by your implementation of `for : Model -> Tree -> Tron Msg`;
+* Proceed with `init` / `update` / `view` / … as usual;
+* …That’s it!
+* … … Oh, and please don’t forget to copy `Tron.css` to your application from `./src`, we truly hope it is a temporary and minor inconvenience;
 
 In long:
 
 To add Tron to your application, choose one of `WithTron.application`, `WithTron.element`, `WithTron.document` or `WithTron.sandbox` functions.
 
-They are similar to the `Browser.*` helpers they wrap, with a few subtle differences: 
+They are similar to the `Browser.*` helpers they wrap, with a few subtle differences:
 
 * You are asked to specify `for` function, which is expected to return `Tron msg` (built with the help of `Tron.Build.*` functions);
-	* Every function except `init` gets `Tree ()` as the previous state of the UI — use `WithTron.ValueAt.*` helpers if you want to extract the previous values from UI (for example, to show/hide some parts of the UI on the toggle);
+* Every function except `init` gets `Tree ()` as the previous state of the UI — use `WithTron.ValueAt.*` helpers if you want to extract the previous values from UI (for example, to show/hide some parts of the UI on the toggle);
 
 See `Main.elm` in any of the `example/*` folders for the reference.
- 
+
 Here is the code from `OneKnob/Main.elm`, which uses `.sandbox`, because it does not depend on the past:
 
 ```haskell
@@ -192,8 +192,8 @@ WithTron.element
         { for = always for
         , init = always ( init, Cmd.none )
         , view = always view
-        , update = \msg _ model 
-				-> ( update msg model, Cmd.none )
+        , update = \msg _ model
+                -> ( update msg model, Cmd.none )
         , subscriptions = \_ _ -> Sub.none
         }
 ```
@@ -233,13 +233,13 @@ for : Model -> Tree -> Tron Msg
 for model _ =
     Tron.root
         [ ( "control-1", ... control-1 ... )
-		, ( "control-2", ... control-2 ... )
-		, ( "control-3", ... control-3 ... )
-		, ...
+        , ( "control-2", ... control-2 ... )
+        , ( "control-3", ... control-3 ... )
+        , ...
         ]
 ```
 
-In all the examples below we use: 
+In all the examples below we use:
 
 ```haskell
 import Tron.Build as Tron
@@ -254,13 +254,13 @@ No doubts, in some future you would like to hide some control, or even a group o
 To let you do it, there is `Tron.none` helper, same as with `Cmd.none` or `Sub.none`, you may use it in conditionals or cases or any language constructs:
 
 ```haskell
-if not user.isAdmin then 
-	Tron.none 
-else 
-	Tron.button |> Tron.withFace Color.red
+if not user.isAdmin then
+    Tron.none
+else
+    Tron.button |> Tron.withFace Color.red
 ```
 
-##### Buttons 
+##### Buttons
 
 Button is the simplest thing, it just produces some message on click:
 
@@ -278,8 +278,8 @@ The buttons have a feature of having icons though, if you want to assign some, u
 
 ```haskell
 Tron.button ...
-	|> Tron.face
-		(Tron.iconAt [ "assets", "subfolder", "smiley.png" ])
+    |> Tron.face
+        (Tron.iconAt [ "assets", "subfolder", "smiley.png" ])
 
 ```
 
@@ -287,23 +287,23 @@ Or, if your icon depends on the current theme:
 
 ```haskell
 Tron.button ...
-	|> Tron.face 
-		(Tron.themedIconAt 
-			\theme -> 
-				[ "assets"
-				, case theme of 
-					Theme.Dark -> "dark" 
-					Theme.Light -> "light" 
-				, "smiley.png"
-				]
-		)
+    |> Tron.face
+        (Tron.themedIconAt
+            \theme ->
+                [ "assets"
+                , case theme of
+                    Theme.Dark -> "dark"
+                    Theme.Light -> "light"
+                , "smiley.png"
+                ]
+        )
 ```
 
 The button may have a coloured circle over it:
 
 ```haskell
-Tron.button ... 
-	|> Tron.face (Tron.useColor Color.magenta)
+Tron.button ...
+    |> Tron.face (Tron.useColor Color.magenta)
 ```
 
 ##### Numbers
@@ -319,7 +319,7 @@ Creates the knob with the minimum value of `0` and the maximum of `100`, and onl
 If you would like to produce the message even _during_ the dragging process, just redirect it to `Tron.live`:
 
 ```haskell
-Tron.int {...} ... OneSmallStep |> Tron.live 
+Tron.int {...} ... OneSmallStep |> Tron.live
 ```
 
 The `Tron.float` function lets you define the knob producing the floating point numbers:
@@ -328,17 +328,17 @@ The `Tron.float` function lets you define the knob producing the floating point 
 Tron.float { min = -1.0, max = 5.0, step = 0.5 } 0.0 OneSmallFloatingStep
 ```
 
-##### Coordinates 
+##### Coordinates
 
 Now we have two axes to define, although it is not very different from what we did with numbers:
 
 ```haskell
 type Msg = MoveTo ( Float, Float )
 
-Tron.xy 
-	( { min = -1.0, max = 5.0, step = 0.5 } 
-    , { min = 0.0, max = 10.0, step = 0.2 }  
-	)
+Tron.xy
+    ( { min = -1.0, max = 5.0, step = 0.5 }
+    , { min = 0.0, max = 10.0, step = 0.2 }
+    )
     ( 0.0, 0.0 )
     MoveTo
 ```
@@ -403,7 +403,7 @@ Build.nest ...
 Build.choice ...
     |> Tron.face (Tron.useColor Color.magenta)
 ```
- 
+
 ###### _Sets_
 
 Sets are just labels paired with corresponding controls:
@@ -417,10 +417,10 @@ You are requested to pass a set of controls to any nesting control, such as `Tro
 There is a helper to covert a list of controls holding some value to the `Set`:
 
 ```haskell
-Tron.toSet : (a -> String) -> List (Tron a) -> Set a 
+Tron.toSet : (a -> String) -> List (Tron a) -> Set a
 ```
 
-Also, there is a `Tron.mapSet` helper to convert sets to different types: 
+Also, there is a `Tron.mapSet` helper to convert sets to different types:
 
 ```haskell
 Tron.mapSet : (a -> b) -> Set a -> Set b
@@ -464,7 +464,7 @@ Tron.nest ... |> Tron.cells CS.<the-shape-you-want>
 
 Tron.nest ... |> Tron.cells CS.single
 
-Tron.choice ... |> Tron.cells CS.halfByOne 
+Tron.choice ... |> Tron.cells CS.halfByOne
 ```
 
 Sometimes controls change the way they look with different shapes.
@@ -493,7 +493,7 @@ Tron.nest ... |> Tron.shape (PS.by 5 5 |> PS.singlePage)
 Tron.choice ... |> Tron.shape (PS.cols 6 |> PS.singlePage)
 ```
 
-###### Expanding 
+###### Expanding
 
 If you want to expand or collapse a panel, just do it:
 
@@ -542,7 +542,7 @@ Tron.nest
     ([ Sine, Square, Triangle, Saw ]
         |> Tron.buttons
         |> Tron.toSet waveToLabel
-		|> Tron.handleWith ChangeWaveShape -- no "global message" as with `choice`
+        |> Tron.handleWith ChangeWaveShape -- no "global message" as with `choice`
     )
 ```
 
@@ -570,11 +570,11 @@ But that also gives you power to add icons or controls there, just as with separ
 ```haskell
 productIcon : Product -> Tron.Face
 productIcon product =
-	Tron.iconAt 
-	   [ "assets"
+    Tron.iconAt
+       [ "assets"
        , "icons"
        , Product.getName product ++ ".svg"
-	   ]
+       ]
 
 
 Tron.choiceBy
@@ -646,7 +646,7 @@ Or as a knob to switch between values (showing labels):
 Tron.choice ... |> Tron.toKnob
 ```
 
-Also, any nest with buttons can be converted to the choice: 
+Also, any nest with buttons can be converted to the choice:
 
 ```haskell
 type WaveShape = Sine | Square | Triangle | Saw
@@ -692,7 +692,7 @@ tree |> ask (color [ "Feather", "Color" ]) -- returns `Maybe Color`
     -- and so on...
 ```
 
-*NB*: Notice that for `choiceOf` it is important to pass the very same list of values you passed to the corresponding control _last time_. Usually there should be no problem here, but if in your `for` function you have filtered some values from the choice in a different way than on the previous iteration, just remember that you are asking the _previous_ tree for the value, where choice values were filtered differently. 
+*NB*: Notice that for `choiceOf` it is important to pass the very same list of values you passed to the corresponding control _last time_. Usually there should be no problem here, but if in your `for` function you have filtered some values from the choice in a different way than on the previous iteration, just remember that you are asking the _previous_ tree for the value, where choice values were filtered differently.
 
 ## JavaScript way
 
@@ -722,4 +722,3 @@ TODO.
 # Tron. Development
 
 TODO.
-
