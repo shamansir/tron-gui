@@ -107,6 +107,17 @@ for : Tree () -> model -> Tron msg
 
 ### Applying the pillars.
 
+In short, it is:
+
+* Choose `WithTron.*` helper which fits you;
+	* Specify where to dock and the theme you like;
+		* Add communication by taste;
+	* Structure your interface (with the help of `Tron.Build` and optionally `WithTron.ValueAt`) by your implementation of `for : Model -> Tree -> Tron Msg`;
+	* Proceed with `init` / `update` / `view` / … as usual;
+	* …That’s it!
+
+In long:
+
 To add Tron to your application, choose one of `WithTron.application`, `WithTron.element`, `WithTron.document` or `WithTron.sandbox` functions.
 
 They are similar to the `Browser.*` helpers they wrap, with a few subtle differences: 
@@ -258,26 +269,41 @@ type Msg = OhMyGoshIAmPushed
 Tron.button <| always OhMyGoshIAmPushed
 ```
 
+###### Many faces of the button
+
+By default the button only shows its label.
+
 The buttons have a feature of having icons though, if you want to assign some, use one of `Tron.icon`, `Tron.iconAt`,`Tron.themedIcon`, or `Tron.themedIconAt`:
 
 ```haskell
 Tron.button ...
-	|> Tron.iconAt [ "assets", "subfolder", "smiley.png" ]
+	|> Tron.face
+		(Tron.iconAt [ "assets", "subfolder", "smiley.png" ])
 
--- or ...
-
-Tron.button ...
-	|> Tron.themedIconAt 
-		\theme -> 
-			[ "assets"
-			, case theme of 
-				Theme.Dark -> "dark" 
-				Theme.Light -> "light" 
-			, "smiley.png"
-			]
 ```
 
-###### Many buttons’ faces 
+Or, if your icon depends on the current theme:
+
+```haskell
+Tron.button ...
+	|> Tron.face 
+		(Tron.themedIconAt 
+			\theme -> 
+				[ "assets"
+				, case theme of 
+					Theme.Dark -> "dark" 
+					Theme.Light -> "light" 
+				, "smiley.png"
+				]
+		)
+```
+
+The button may have a coloured circle over it:
+
+```haskell
+Tron.button ... 
+	|> Tron.face (Tron.useColor Color.magenta)
+```
 
 ##### Numbers
 
@@ -348,9 +374,36 @@ type Msg = ToggleFreedomOfSpeech Bool
 Tron.toggle False ToggleFreedomOfSpeech
 ```
 
-##### Nested controls
+##### _Live controls_
 
-###### Sets
+Some controls like _knobs_ don’t send any values to your `update` function while being dragged, by default—only when user releases the mouse or trackpad, the last value is sent into the application cycle; If you want to receive values even while user drags the value, just convert them to `.live` controls:
+
+```haskell
+Tron.int ... |> Tron.live
+
+Tron.float ... |> Tron.live
+
+Tron.xy ... |> Tron.live
+Tron.choice ... |> Tron.asSwitch |> Tron.live
+```
+
+##### _Nested controls_
+
+Nested controls hold and/or operate several components inside. They’re usually panels with other controls inside.
+
+[`Tron.nest`](#Nest) and [`Tron.choice`](#Choice) are the only implementations of nested components for the moment, considering `Tron.root` being a custom `Tron.nest` under the hood, and `Tron.buttons` & `Tron.labels` & `Tron.palette` being the helpers over `Tron.choice`.
+
+Since any nesting or choice is hidden under a button, you may change its face (see _Many faces of the button_):
+
+```haskell
+Build.nest ...
+    |> Tron.face (Tron.iconAt [ .... ])
+
+Build.choice ...
+    |> Tron.face (Tron.useColor Color.magenta)
+```
+ 
+###### _Sets_
 
 Sets are just labels paired with corresponding controls:
 
@@ -378,33 +431,271 @@ These helpers could be useful, for example, when you define a list of buttons ba
 TODO
 ```
 
-###### Panel shapes
+###### _Panel shapes_
 
 (docs)
 
-###### Cell shapes
+Panel shape is how many cells the panel takes in the GUI grid (it is automatically calculated considering the fact that cells inside could be halflings or giants, see _Cell shape_ below).
+
+You are not required to specify both sides, just use `.rows` or ``.`cols`` helpers to say how many rows or columns you want in the panel and other side will be calculated automatically. Or even use `.auto` and both sides will be suggested, but this usually doesn't look good. To specify both sides manually, use `.by`.
+
+```haskell
+import Tron.Style.PanelShape as PS
+
+Tron.nest ... |> Tron.shape (PS.by 5 6)
+Tron.nest ... |> Tron.shape (PS.cols 3)
+Tron.nest ... |> Tron.shape (PS.rows 2)
+Tron.choice ... |> Tron.shape (PS.rows 2)
+Tron.choice ... |> Tron.shape (PS.by 3 3 |> PS.manyPages)
+Tron.nest ... |> Tron.shape (PS.by 5 5 |> PS.singlePage)
+```
+
+###### _Cell shapes_
 
 (docs)
+
+For now, all the cells (controls) on one panel should have the same shape. But, it could be any supported shape and inner panels may have any other cell shape. So, cell shape is defined for the whole panel:
+
+```
+import Tron.Style.CellShape as CS
+
+Tron.nest ... |> Tron.cells CS.<the-shape-you-want>
+
+Tron.nest ... |> Tron.cells CS.single
+
+Tron.choice ... |> Tron.cells CS.halfByOne 
+```
+
+Sometimes controls change the way they look with different shapes.
+
+Considering the default shape as 1x1 (`single`), the meaning of each value is:
+
+* `.single` — `1x1`
+* `.half` — `0.5x0.5`
+* `.halfByOne` — `0.5x1`
+* `.oneByHalf` — `1x0.5`
+* `.twiceByHalf` — `2x0.5`
+* `.halfByTwice` — `0.5x2`
+* `.twiceByTwice` - `2x2`
+
+###### _Pagination_
+
+(docs)
+
+If the items you’ve added to the panel don’t fit the requested panel shape (see _Panel Shapes_ above), they’re split into pages. But you may force pagination to be disabled:
+
+```haskell
+import Tron.Style.PanelShape as PS
+
+Tron.nest ... |> Tron.shape (PS.by 5 5 |> PS.singlePage)
+
+Tron.choice ... |> Tron.shape (PS.cols 6 |> PS.singlePage)
+```
+
+###### Expanding 
+
+If you want to expand or collapse a panel, just do it:
+
+```haskell
+Tron.nest ... |> Tron.expand
+Tron.nest ... |> Tron.collapse
+```
 
 ###### Nest
 
 (docs)
 
+Nesting is just the separation of the controls in the panel with no special logic:
+
 ```haskell
-Tron.nest []
+type Component = Red | Green | Blue
+
+type Msg = AdjustColor Component Float
+
+Tron.nest
+    [
+        ( "red"
+        , Build.float { min = 0, max = 255, step = 0.1 } model.red <| AdjustColor Red
+        )
+    ,
+        ( "green"
+        , Build.float { min = 0, max = 255, step = 0.1 } model.blue <| AdjustColor Green
+        )
+    ,
+        ( "blue"
+        , Build.float { min = 0, max = 255, step = 0.1 } model.blue <| AdjustColor Blue
+        )
+    ]
 ```
+
+However, you may use the helpers like `.buttons` to fill the panels with the buttons.
+
+```haskell
+type WaveShape = Sine | Square | Triangle | Saw
+type Msg = ChangeWaveShape WaveShape
+
+waveToLabel : WaveShape -> String
+waveToLabel = ...
+
+Tron.nest
+    ([ Sine, Square, Triangle, Saw ]
+        |> Tron.buttons
+        |> Tron.toSet waveToLabel
+		|> Tron.handleWith ChangeWaveShape -- no "global message" as with `choice`
+    )
+```
+
 
 ###### Choice
 
 (docs)
 
-Sjjjsj
+Choice is a special nesting panel (not obligatory a panel, see below) which sends the value of the control clicked inside this panel with the message. Since it shows its current value on the button that expands the panel, all the controls inside have to be buttons:
+
+```haskell
+type Msg = ChangeBitrate Int
+
+Tron.choice
+    ([ 128, 256, 512 ]
+        |> Tron.buttons
+        |> Tron.toSet String.fromInt
+    )
+    model.bitrate
+    ChangeBitrate
+```
+
+But that also gives you power to add icons or controls there, just as with separate buttons (see _Many faces of the button_):
+
+TODO
+
+There are several wrappers over `Tron.choice` to help you create choice controls with specific types:
+
+Any enumeration (requires comparison function since you know… Elm has no typeclasses :) ):
+
+```haskell
+type WaveShape = Sine | Square | Triangle | Saw
+type Msg = ChangeWaveShape WaveShape
+
+waveToLabel : WaveShape -> String
+waveToLabel = ...
+
+Tron.choiceBy
+    ([ Sine, Square, Triangle, Saw ]
+        |> Tron.buttons
+        |> Tron.toSet waveToLabel
+    )
+    model.waveShape
+    compareWaves -- sometimes just (==) works, but it's better not to rely on it
+    ChangeWaveShape
+```
+
+For lists of strings:
+
+```haskell
+greekChildrenNames = [ '...', '...', ... ]
+
+type Msg = SuggestChildName String
+
+Tron.strings
+    greekChildrenNames
+    model.currentChildName
+    SuggestChildName
+```
+
+For lists of colours:
+
+```haskell
+type Msg = RepaintIceCream Color
+
+Tron.palette
+    [ Color.aqua, Color.rouge, Color.vanilla ]
+    model.iceCreamColor
+    RepaintIceCream
+```
+
+Additionally, choice is not restricted to be a panel of things, it may also be represented as a button to switch between options (since they’re buttons inside):
+
+```haskell
+Tron.choice ... |> Tron.toSwitch
+```
+
+Or as a knob to switch between values (showing labels):
+
+```haskell
+Tron.choice ... |> Tron.toKnob
+```
+
+Also, any nest with buttons can be converted to the choice: 
+
+```haskell
+type WaveShape = Sine | Square | Triangle | Saw
+type Msg = ChangeWaveShape WaveShape | NoOp
+
+waveToLabel : WaveShape -> String
+waveToLabel = ...
+
+Tron.nest
+    ([ Sine, Square, Triangle, Saw ]
+        |> Tron.buttons
+        |> Tron.toSet waveToString
+        |> Tron.handleWith (always NoOp)
+    )
+|> Tron.toChoice ChangeShapeById
+```
 
 #### Using `ValueAt`
 
+(docs)
+
+In your `for`, `update`, `subscriptions` and `view` functions, you get the previous state of the tree as `Tree ()`, the values are there, and the tools to extract them are the helpers in the `ValueAt` module.
+
+They are all meant to have similar format:
+
+```haskell
+<control-name> : List Label -> Tree () -> Maybe <type-of-value>
+```
+
+Where `List Label` is the path to the control in the tree and `Tree ()` is current tree, and `Maybe` holds the value if some control was found at the path **and** its type matches the requested value. I.e. even if there is a _toggle_ at the given path, but you’ve asked for the value from a _knob_, `Maybe` won’t hold a number, since it is impossible to convert one to another.
+
+So there are several `Decoder`s for every control that have the similar signature for you to use;
+
+To get some value from the previous state of a control, use `ask` function, pass the corresponding decoder to it, then pass the path and the current state of the tree:
+
+```haskell
+tree |> ask (toggle [ "Goose", "Punk" ]) -- returns `Maybe Bool`
+tree |> ask (choice [ "Color Scheme", "Product" ]) -- returns `Maybe (ItemId, Path.Label)`
+tree |> ask (choiceOf Products.all [ "Color Scheme", "Product" ]) -- returns `Maybe Product`
+-- NB: Just ensure to use the very same list you used for creating the `choice` in this case
+tree |> ask (color [ "Feather", "Color" ]) -- returns `Maybe Color`
+    -- and so on...
+```
+
+*NB*: Notice that for `choiceOf` it is important to pass the very same list of values you passed to the corresponding control _last time_. Usually there should be no problem here, but if in your `for` function you have filtered some values from the choice in a different way than on the previous iteration, just remember that you are asking the _previous_ tree for the value, where choice values were filtered differently. 
+
 ## JavaScript way
 
+### The interface is defined in Elm
+
+TODO
+
 ```Elm
-foo : Maybe a 
+
 
 ```
+
+### You define the interface in JavaScript
+
+TODO
+
+# Tron. Follow ups
+
+## Detachable Tron
+
+To make your Tron interface detachable, you need to start the WebSocket server that receives JSONs of the tree parts and the updates.
+
+TODO.
+
+# Tron. Development
+
+TODO.
+
