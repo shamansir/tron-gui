@@ -50,7 +50,8 @@ view theme ctx (Control { min, max } ( _, srcValue ) _)  =
             else toAngle relValue
     in
         Svg.g
-            [ resetTransform ]
+            [ resetTransform
+            ]
             [ path (Coloring.lines theme style |> Color.toCssString)
                 <| describeArc
                     { x = cx, y = cy }

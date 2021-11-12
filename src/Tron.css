@@ -53,6 +53,13 @@
     pointer-events: none;
 }
 
+.cell.cell--number {
+    cursor: row-resize;
+}
+
+.cell.cell--coord {
+    cursor: move;
+}
 
 .gui.--light .cell--button .button__icon,
 .gui.--light .cell--choice .button__icon {
