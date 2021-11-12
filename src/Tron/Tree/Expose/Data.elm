@@ -7,6 +7,8 @@ module Tron.Tree.Expose.Data exposing
 
 {-| The types which are used to communicate b/w Tron and ports (and so JS and WebSockets and `dat.gui`).
 
+See [`Option.Communication`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option-Communication) module for the usage.
+
 # Packages for ports
 
 @docs Ack, In, Out, DeduceIn, Tree

@@ -9,6 +9,10 @@ module Tron.Option.Communication exposing
 
 Ports are meant to connect with real ports of your app, with the help of `map` you may convert the data flow to anything you like.
 
+See [`Tron.Tree.Expose.Data`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Tree-Expose-Data) for the types that are transferred here, such as `Exp.Out`, `Exp.In`, `Exp.Tree`, etc.
+
+    import Tron.Tree.Expose.Data as Exp
+
 # Ports
 
 @docs Ports, map, none
@@ -30,10 +34,12 @@ import Tron.Msg exposing (Msg_(..))
 {-| If the GUI communicates with outside world using ports
 
 - It doesn't;
-- It sends JSON values to the given ports: see `example/ReportToJsJson` and `Tron.Tree.Expose.*` modules' documentation for details;
-- It sends stringified to the given ports: see `example/ReportToJsString` and `Tron.Tree.Expose.*` modules' documentation for details;
+- It sends JSON values to the given ports: see `example/ReportToJs` and `Tron.Tree.Expose.Data` module documentation for details;
+- It listens in JS for the updates: see `example/ListenFromJs` and `Tron.Tree.Expose.Data` module documentation for details;
+- It loads the UI definition from the given ports: see `example/BuildFromJs` and `Tron.Tree.Expose.Data` module documentation for details;
 - It is _detachable_, so part of the GUI may be moved to another tab/browser/device and they communicate using WebSocket server using given ports: see `example/Detachable` for details, ensure to run `example/start-server.sh` before running `start-example Detachable`;
 - It communicates with `dat.gui` using given ports: see `example/DatGui`for details;
+- ...
 -}
 type alias Ports msg =
     { ack : Maybe (Exp.Ack -> Cmd msg)
@@ -178,7 +184,7 @@ receiveJson { build, transmit, apply } =
 
 Only works with `.application` since needs URL access to store Client ID/Path:
 
-    main : ProgramWithTron () Example.Model Example.Msg
+    main : WithTron.Program () Example.Model Example.Msg
     main =
         WithTron.application
             (Render.toHtml Dock.center Theme.light)
@@ -202,9 +208,9 @@ Only works with `.application` since needs URL access to store Client ID/Path:
             }
 
 
-    port receive : (Exp.RawInUpdate -> msg) -> Sub msg
+    port receive : (Exp.In -> msg) -> Sub msg
 
-    port transmit : Exp.RawOutUpdate -> Cmd msg
+    port transmit : Exp.Out -> Cmd msg
 
     port ack : Exp.Ack -> Cmd msg
 

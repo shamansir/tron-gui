@@ -11,6 +11,8 @@ module Tron exposing
 {-| This is the `Tron msg`, which is, similarly to `Html msg` or `Svg msg`, may send your messages into the lifecycle of your application.
 In this case, it represents the tree of your components with the associated handlers that produce messages.
 
+See [Tutorial](https://github.com/shamansir/tron-gui/blob/main/Tutorial.md) for the details on how to use it.
+
 To use Tron in your application, you'll need to specify this function:
 
     for : Model -> Tron Msg
@@ -19,7 +21,7 @@ See `Tron.Build` for the helpers to define your own interface.
 
 See `WithTron` for the ways to add `Tron` to your applcation.
 
-`Tron msg` is the same as `Tree (Control.Value -> Maybe msg)`, so it stores the value handler together with every control.
+`Tron msg` is the same as `Tron.Tree (Control.Value -> Maybe msg)`, so it stores the value handler together with every control.
 
 # Tron
 
@@ -89,7 +91,7 @@ andThen f prop =
             |> List.filter Product.hasIcon
             |> Tron.buttons
             |> List.map (Tron.with (Tron.face << productIcon))
-            |> Tron.addLabels Product.getName
+            |> Tron.toSet Product.getName
         )
         Product.default
         Product.compare
@@ -101,11 +103,11 @@ with f prop = andThen (\a -> f a prop) prop
 
 {-| The usual `map` function which allows you to substitute the messages sent through the components in a `Set`. For example, implementation of `Tron.Build.palette`:
 
-    Build.choiceBy
+    Tron.choiceBy
         (options
-            |> Build.buttons
-            |> List.map (Tron.with (Build.face << Build.useColor << Tuple.second))
-            |> addLabels Tuple.first
+            |> Tron.buttons
+            |> List.map (Tron.with (Tron.face << Tron.useColor << Tuple.second))
+            |> Tron.toSet Tuple.first
             |> Tron.mapSet Tuple.second
         )
         current
@@ -133,7 +135,7 @@ toUnit =
     map <| always ()
 
 
-{-| convert usual `Tron a` to `Tron.OfValue a`. Please prefer the one from the `Tron.OfValue` module. -}
+{-| lift `Tree a` to `Tree (Control.Value -> Maybe a)`, which is the alias of `Tron a`.-}
 lift : Tree a -> Tron a
 lift =
     Tree.map (always << Just)

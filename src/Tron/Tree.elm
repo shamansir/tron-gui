@@ -18,6 +18,8 @@ so that you may get their previos values using `WithTron.ValueAt`.
 `Tron msg`, on the other side, is just `Tree (Control.Value -> Maybe msg)`, so every control strores the handler that convers its value to the messages.
 It is the structure you return from `for` function so that the system knows what messages to produce in response.
 
+See also: [`WithTron.ValueAt`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron-ValueAt).
+
 # Types
 
 @docs Tree

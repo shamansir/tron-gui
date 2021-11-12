@@ -115,6 +115,7 @@ In short, it is:
 	* Structure your interface (with the help of `Tron.Build` and optionally `WithTron.ValueAt`) by your implementation of `for : Model -> Tree -> Tron Msg`;
 	* Proceed with `init` / `update` / `view` / … as usual;
 	* …That’s it!
+	* … … Oh, and please don’t forget to copy `Tron.css` to your application from `./src`, we truly hope it is a temporary and minor inconvenience;
 
 In long:
 

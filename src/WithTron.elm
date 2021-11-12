@@ -10,11 +10,14 @@ module WithTron exposing
 {-| `WithTron` is the set of functions which wrap Elm `Browser.*` helpers and so
 let you easily add your GUI to the usual Elm-driven flow.
 
+See [Tutorial](https://github.com/shamansir/tron-gui/blob/main/Tutorial.md) for the details on how to use it.
+
 Here is the `OneKnob` example:
 
 The only things that is different from usual `Elm` application is `for` function which allows you to build the Tron GUI using current state of the model:
 
-    import WithTron exposing (ProgramWithTron)
+    import WithTron
+    import Tron.Tree exposing (Tree)
 
     type alias Amount = Float
 
@@ -23,8 +26,8 @@ The only things that is different from usual `Elm` application is `for` function
 
     type alias Model = Amount
 
-    for : Model -> Tron Msg
-    for amount =
+    for : Tree () -> Model -> Tron Msg
+    for _ amount =
         Build.root
             [
                 ( "amount"
@@ -38,11 +41,11 @@ The only things that is different from usual `Elm` application is `for` function
     init _ =
         ( 0, Cmd.none )
 
-    view amount =
+    view _ amount =
         Html.text
             <| String.fromFloat amount
 
-    update msg curAmount =
+    update msg _ curAmount =
         case msg of
 
             AmountChanged newAmount ->
@@ -52,11 +55,11 @@ The only things that is different from usual `Elm` application is `for` function
 
     subscriptions _ = Sub.none
 
-    main : ProgramWithTron () Model Msg
+    main : WithTron.Program () Model Msg
     main =
         WithTron.element
-            (Option.toHtml Dock.center Theme.dark)
-            Option.noCommunication
+            (Render.toHtml Dock.center Theme.dark)
+            Communication.none
             { for = for
             , init = init
             , view = view
@@ -66,23 +69,11 @@ The only things that is different from usual `Elm` application is `for` function
 
 *NB*: Please don't forget to add a copy of `src/Tron.css` to your application, or refer to one hosted at GitHub.
 
-For help on how to define your interface with `for` function, see the detailed `Tron.Builder` documentation.
-
-Sometimes  you don't even need the `init`/`view`/`update`, for example to connect GUI to the JavaScript or something remote. In this case the `backed` function lets you define the application which just stores the path-to-value map and nothing else.
+For help on how to define your interface with `for` function, see the detailed `Tron.Build` documentation.
 
 More examples are in the `README`, and in the `example/*/Main.elm` modules.
 
-See also: `Tron.Option`, `Tron.Builder`, `Tron.Build.*`.
-
-There are some special types of GUI Builders that can come in handy if you don't want to use messages, but get them as the type-value pairs or add paths to them or just skip them. All of them doesn't require you to specify handling message so, every function from such `Builder` has one argument less:
-
-- `Tron ()` (`Tron.Build.Unit`) — do not expose values (keeps them inside);
-- `Tron Value` (`Tron.Build.Proxy`) — store values as a type-value data, see `Tron.Control.Value` for more info;
-- `Tron String` (`Tron.Build.String`) — store value stringified;
-
-Any `Tron a` can be converted to `Tron ( Path, Value )` using `Build.addPath`, `Build.addLabeledPath` and/or `Tron.Expose.Convert` helpers.
-
-There is a special `Backed` program, that just stores the stringified values in the `Dict` and is able to send them to the JS, see [Backed](#Backed) section below.
+See also: `Tron.Option.Render`, `Tron.Option.Communication`, `Tron.Build`.
 
 # Program
 @docs Program

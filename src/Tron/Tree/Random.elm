@@ -1,13 +1,13 @@
 module Tron.Tree.Random exposing (generator)
 
 
-{-| Using this module, you may generate the random UI structure if you would ever want to, for testing purposes, for example.
+{-| Using this module, you may generate the random UI structure if you would ever want to. For testing purposes, for example.
 
 # Generate random UI
 
 @docs generator
 
-See also: `Tron.OfValue`, `WithTron.for`, `Tron.OfValue.lift`
+See also: `Tron.Tree`, `Tron.Tree.lift`, `Tron.Tree.Build.Unit`
 -}
 
 import Random

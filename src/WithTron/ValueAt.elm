@@ -23,6 +23,8 @@ And get `Maybe (Float, Float)` in response. Same works for any of the decoders b
 
 For the example of such, see `example/ForTiler`, where the structure/state of GUI is dependent on current values, but also doesn't store them in its own model, since mostly connects to JavaScript.
 
+See also: [`Tron.Tree`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Tree).
+
 # Asking values at path
 
 @docs at
@@ -57,7 +59,7 @@ import Tron.Tree.Paths as Tree
 
 {-| The decoder that knows how to extract a value at the certain path.
 -}
-type Decoder a
+type Decoder a -- `Search a` or `Query a` are may be some better names
     = Decoder (Control.Value -> Maybe a) (List Path.Label)
 
 
@@ -190,3 +192,14 @@ atColor : Color -> List Path.Label -> Tree x -> Color
 atColor default path =
     ask (color path)
         >> Maybe.withDefault default
+
+
+{-
+type SearchError
+    = NothingAt (List Path.Label)
+    | TypeMismatch Control.Value
+
+
+type ErrDecoder a
+    = ErrDecoder (Control.Value -> Result SearchError a) (List Path.Label)
+-}

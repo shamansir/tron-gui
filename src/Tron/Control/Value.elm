@@ -10,6 +10,9 @@ module Tron.Control.Value exposing
 
 Used for converting values from controls to JSON;
 
+Use `Tron.proxify` or `Tree.proxify` function to make any GUI store its current values as the subjects. 
+Since in case of `Tron.proxify` it is a function (`Just` is stored inside), `proxify` is safe in that sense, but keep in mind that for `Tree.proxify => Tree Control.Value` those values don't change, if one changes the inner control value after that.
+
 @docs Value
 
 # Encode and convert

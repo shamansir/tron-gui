@@ -38,7 +38,7 @@ Huge thanks to @imilman for the design/UX and priceless help through development
 
 ## Tutorial
 
-See [TUTORIAL](https://github.com/shamansir/tron-gui/blob/main/Tutorial.md) 
+See [TUTORIAL](https://github.com/shamansir/tron-gui/blob/main/Tutorial.md) for the detailed guide on using Tron. 
 
 <!-- 
 ## Screenshots
