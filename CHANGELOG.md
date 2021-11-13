@@ -2,16 +2,18 @@
 
 #### Done
 
-* Fix reporting `Live` controls;
-* Fix encoding and decoding `Live` controls;
+* Fix showing icons on the buttons, due to the swicth to `Url` usage, it was broken;
+* `Live` controls:
+    * Fix reporting `Live` controls;
+    * Fix `Live` controls to display value while being dragged;
+    * Fix encoding and decoding `Live` controls;
 * JS Companion for building Tron UI entirely from JavaScript;
     * With the ability to subscribe to control changes from the UI being created;
     * With the ability to subscribe to control changes from the UI that was built in Elm;
     * With the ability to send value changes;
 
-### In progress
+#### In progress
 
-* JS helpers for the ease of building the UI and subscribing to its changes from JS;
 * Moving CSS into the code, so no `Tron.css` would be required;
 * Detailed and friendly documentation;
 

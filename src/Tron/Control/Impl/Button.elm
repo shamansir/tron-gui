@@ -30,6 +30,18 @@ update action control =
             ( control, A.Stay )
 
 
+{-type alias Transient = ()
+
+
+getTransientState : Control a -> Transient
+getTransientState control = ()
+
+
+restoreTransientState : Control a -> Transient -> Control a
+restoreTransientState control state = control
+-}
+
+
 withIcon : Icon -> Face
 withIcon = WithIcon
 

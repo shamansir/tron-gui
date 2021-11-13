@@ -69,5 +69,13 @@ view theme ctx (Control ( xAxis, yAxis ) ( _, ( valueX, valueY ) ) _) =
             , SA.r <| String.fromFloat circleRadius
             ]
             []
+        , Svg.text_
+            [ SA.x <| String.fromFloat <| circleX + circleRadius * 1.5
+            , SA.y <| String.fromFloat <| circleY + circleRadius * 1.5
+            , SA.fill <| Color.toCssString <| Coloring.lines theme <| Context.styleDef ctx
+            --, SA.fill <| Color.toCssString <| Coloring.text theme <| Context.styleDef ctx
+            , SA.fontSize "7px"
+            ]
+            [ Svg.text <| "(" ++ String.fromFloat valueX ++ "," ++ String.fromFloat valueY ++ ")" ]
         ]
 -- 5 30 10 30 10 30 10 30 5
