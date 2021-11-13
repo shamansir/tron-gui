@@ -2,7 +2,16 @@
 
 #### Done
 
-* Fix showing icons on the buttons, due to the swicth to `Url` usage, it was broken;
+#### In progress
+
+* Moving CSS into the code, so no `Tron.css` would be required;
+* Detailed and friendly documentation;
+
+### 13.1.0
+
+* Fix showing icons on the buttons, due to the switch to `Url` usage, it was broken;
+* Fix altering coordinates in XY control when dragging;
+* Show current value on X/Y controls;
 * `Live` controls:
     * Fix reporting `Live` controls;
     * Fix `Live` controls to display value while being dragged;
@@ -11,11 +20,6 @@
     * With the ability to subscribe to control changes from the UI being created;
     * With the ability to subscribe to control changes from the UI that was built in Elm;
     * With the ability to send value changes;
-
-#### In progress
-
-* Moving CSS into the code, so no `Tron.css` would be required;
-* Detailed and friendly documentation;
 
 ### 13.0.0
 

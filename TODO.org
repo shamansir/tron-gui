@@ -11,8 +11,8 @@
 ** TODO BREAKING? for choice, give user option either to show icon on the button, or the label, even if the items in the choice have icons;
 ** DONE BUG selecting item on the second page of the choice control could make other panels content disappear; (Tiler: selecting _Tile/Tileset_ breaks _Color Scheme/BG Color_)
     *** It seems `[0, 2]` and `[2, 0]` are conflicting in this case;
-** TODO NEXTVER `Builder.noPaging`
-** TODO NEXTVER The companion helper for building interface from JS;
+** DONE NEXTVER `Builder.noPaging`
+** DONE NEXTVER The companion helper for building interface from JS;
 ** TODO BREAKING `buttons` and stuff should all be able to be appended using a single function, at least in default case;
 ** TODO NEXTVER BUG Nesting is not visible when it has no shape;
 
@@ -37,7 +37,7 @@
 * Current controls
 
 ** TODO NEXTVER BUG Text editing is not finishing sometimes (see `BuildFromJs`); one needs to push the text control for it to save;
-** TODO NEXTVER BUG The values of `Live` controls are fired but not seen while dragging;
+** DONE NEXTVER BUG The values of `Live` controls are fired but not seen while dragging;
 ** TODO Input box for the knobs;
 ** TODO Show the value on XY controllers as well;
 ** TODO What the axes center actually is? move (0,0) to the place where it is?;
@@ -54,7 +54,7 @@
     - [ ] Detachable;
     - [ ] Sending updates from/to JS;
     - [ ] ...
-** TODO NEXTVER Separate controls rendering in sub-modules;
+** DONE NEXTVER Separate controls rendering in sub-modules;
 ** TODO NEXTVER Transfer `transient` states to the controls as well;
 ** TODO Move encoding/decoding controls inside their own modules;
 ** TODO Don't init as _(0, 0)_, rather something?
@@ -64,7 +64,7 @@
 ** DONE Store a value even in `Nil` `Property`, so that property would always have some value, no `Maybe`s, it is easier to `map` the `Property` and always have some value inside; Rename `Nil` to `Ghost`; on the other hand `Ghost`s do not need paths or produce messages.... maybe... maybe `Tron msg` could be `Property (Maybe msg)`;
 ** TODO NEXTVER BUG sending value from JS to the choice is not switching it to the corresponding page;
 ** TODO Store pages inside nesting controls, do not redistribute every time;
-** TODO NEXTVER Max cols / Max rows should not be needed (replace by enabling/disabling paging);
+** DONE NEXTVER Max cols / Max rows should not be needed (replace by enabling/disabling paging);
 ** DONE Too many `fold`s in `Property`; Split things into modules;
 ** DONE Events for `Controls` and Controls' `update`/`view` should be inside the module;
 ** TODO Abstract `Layout.view` to `Html ((Path, Maybe a) -> Msg)`:
