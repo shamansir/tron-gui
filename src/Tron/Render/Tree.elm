@@ -93,6 +93,7 @@ viewLabel theme ctx label =
                 , SA.x <| String.fromFloat (ctx.bounds.width / 2)
                 , SA.y <| String.fromFloat (ctx.bounds.height / 5 * 4)
                 , SA.fill <| Color.toCssString <| Coloring.text theme <| Context.styleDef ctx
+                , SA.style "pointer-events: none"
                 ]
                 [ Svg.text label ]
         else Svg.none

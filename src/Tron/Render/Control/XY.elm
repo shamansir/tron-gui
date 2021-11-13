@@ -75,6 +75,7 @@ view theme ctx (Control ( xAxis, yAxis ) ( _, ( valueX, valueY ) ) _) =
             , SA.fill <| Color.toCssString <| Coloring.lines theme <| Context.styleDef ctx
             --, SA.fill <| Color.toCssString <| Coloring.text theme <| Context.styleDef ctx
             , SA.fontSize "7px"
+            , SA.style "pointer-events: none"
             ]
             [ Svg.text <| "(" ++ String.fromFloat valueX ++ "," ++ String.fromFloat valueY ++ ")" ]
         ]

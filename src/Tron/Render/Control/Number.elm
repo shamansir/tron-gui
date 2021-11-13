@@ -17,7 +17,69 @@ import Svg.Attributes as SA
 
 
 view : Theme -> Context -> Number.Control a -> Svg msg
-view theme ctx (Control { min, max } ( _, srcValue ) _)  =
+-- view = viewAsSlider
+view = viewAsKnob
+
+
+viewAsSlider : Theme -> Context -> Number.Control a -> Svg msg
+viewAsSlider theme ctx (Control { min, max } ( _, srcValue ) _)  =
+    let
+        style = Context.styleDef ctx
+        bounds = ctx.bounds
+        value = if srcValue < min then min
+                   else if srcValue > max then max
+                   else srcValue
+        relValue = if srcValue < min then 0
+                   else if srcValue > max then 1
+                   else (srcValue - min) / (max - min)
+        roundedValue = Basics.toFloat (floor (value * 100)) / 100
+        gap = 8
+        ( rectX, rectY ) = ( gap, gap )
+        ( rectWidth, rectHeight ) = ( bounds.width - gap * 2, bounds.height - gap * 2 )
+        ( cx, cy ) = ( bounds.width / 2, bounds.height / 2 )
+    in
+        Svg.g
+            [ --resetTransform
+            ]
+            [ Svg.rect
+                [ SA.x <| String.fromFloat rectX
+                , SA.y <| String.fromFloat rectY
+                , SA.rx "8"
+                , SA.ry "8"
+                , SA.width <| (String.fromFloat rectWidth) ++ "px"
+                , SA.height <| (String.fromFloat rectHeight) ++ "px"
+                , SA.fill "none"
+                , SA.stroke (Coloring.secondaryLines theme style |> Color.toCssString)
+                , SA.strokeWidth "1px"
+                ]
+                []
+            , Svg.rect
+                [ SA.x <| String.fromFloat rectX
+                , SA.y <| String.fromFloat <| rectY + (rectHeight * (1.0 - relValue))
+                , SA.rx "4"
+                , SA.ry "4"
+                , SA.width <| (String.fromFloat rectWidth) ++ "px"
+                , SA.height <| (String.fromFloat <| rectHeight - (rectHeight * (1.0 - relValue))) ++ "px"
+                , SA.fill "rgba(60%,60%,60%,0.4)"
+                , SA.stroke (Coloring.secondaryLines theme style |> Color.toCssString)
+                , SA.strokeWidth "1px"
+                ]
+                []
+            , Svg.text_
+                [ SA.x <| String.fromFloat cx
+                , SA.y <| String.fromFloat cy
+                , SA.class "knob__value"
+                , SA.style "pointer-events: none"
+                , SA.fontSize "12"
+                , SA.fill "white"
+                -- , SA.fill <| Color.toCssString <| Coloring.text theme style
+                ]
+                [ Svg.text <| String.fromFloat roundedValue ]
+            ]
+
+
+viewAsKnob : Theme -> Context -> Number.Control a -> Svg msg
+viewAsKnob theme ctx (Control { min, max } ( _, srcValue ) _)  =
     let
         style = Context.styleDef ctx
         bounds = ctx.bounds
