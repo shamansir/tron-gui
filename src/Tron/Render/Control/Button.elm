@@ -82,7 +82,7 @@ viewFace theme ctx face label =
         Button.WithIcon (Button.Icon icon) ->
             let
                 iconUrl =
-                    icon theme |> Maybe.map Url.toString |> Maybe.withDefault ""
+                    icon theme |> Maybe.map Button.maybeLocalUrlToString |> Maybe.withDefault ""
                     --"./assets/" ++ icon ++ "_" ++ Theme.toString theme ++ ".svg"
                 ( iconWidth, iconHeight ) = iconSize ctx.cellShape bounds
                 ( iconX, iconY ) =

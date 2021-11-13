@@ -50,19 +50,72 @@ iconAt : List String -> Icon
 iconAt path =
     Icon
         (always
-        <| Url.fromString
-        <| Url.relative path [])
+        <| Just
+        <| toLocalUrl
+        <| path
+        )
 
 
 themedIconAt : (Theme -> List String) -> Icon
 themedIconAt f =
     themedIcon
         <| \theme ->
-            Url.fromString
-            <| Url.relative (f theme) []
+            Just
+            <| toLocalUrl
+            <| f theme
 
 
 
 setFace : Face -> Control a -> Control a
 setFace face (Core.Control _ val handler) =
     Core.Control face val handler
+
+
+-- https://github.com/elm/url/issues/10
+-- We would like to use `Url` for icons, but it doesn't support local files,
+-- so here we have some dirty hacks;
+
+
+localMarker : String
+localMarker = "@@@@____local___@@@@"
+
+
+toLocalUrl : List String -> Url
+toLocalUrl path =
+    toLocalUrl_ <| Url.relative path []
+
+
+toLocalUrl_ : String -> Url
+toLocalUrl_ path =
+    { protocol = Url.Https
+    , host = localMarker
+    , port_ = Nothing
+    , path = path
+    , query = Nothing
+    , fragment = Nothing
+    }
+
+
+encodeMaybeLocalUrl : Url -> String
+encodeMaybeLocalUrl url =
+    if url.host == localMarker then
+        localMarker ++ url.path
+    else
+        Url.toString url
+
+
+decodeMaybeLocalUrl : String -> Maybe Url
+decodeMaybeLocalUrl str =
+    if String.startsWith localMarker str then
+        String.dropLeft (String.length localMarker) str
+            |> toLocalUrl_
+            |> Just
+    else Url.fromString str
+
+
+maybeLocalUrlToString : Url -> String
+maybeLocalUrlToString url =
+    if url.host == localMarker then
+        "./" ++ url.path
+    else
+        Url.toString url

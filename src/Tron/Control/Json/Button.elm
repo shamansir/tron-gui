@@ -38,11 +38,11 @@ encodeFace face =
             E.object
                 [ ( "kind", E.string "icon" )
                 , ( "dark", case fn Theme.Dark of
-                        Just url -> E.string <| Url.toString url
+                        Just url -> E.string <| Button.encodeMaybeLocalUrl url
                         Nothing -> E.null
                   )
                 , ( "light", case fn Theme.Light of
-                        Just url -> E.string <| Url.toString url
+                        Just url -> E.string <| Button.encodeMaybeLocalUrl url
                         Nothing -> E.null
                   )
                 ]
@@ -68,8 +68,8 @@ decodeFace =
                     D.map2
                         (\darkSrc lightSrc theme ->
                             case theme of
-                                Theme.Dark -> darkSrc |> Maybe.andThen Url.fromString
-                                Theme.Light -> lightSrc |> Maybe.andThen Url.fromString
+                                Theme.Dark -> darkSrc |> Maybe.andThen Button.decodeMaybeLocalUrl
+                                Theme.Light -> lightSrc |> Maybe.andThen Button.decodeMaybeLocalUrl
                         )
                         (D.field "dark" <| D.maybe D.string)
                         (D.field "light" <| D.maybe D.string)
