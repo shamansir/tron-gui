@@ -19,6 +19,70 @@ view theme ctx (Control _ ( _, value ) _) =
     viewValue theme ctx value
 
 
+type alias ColorParam =
+    { label : String
+    , stops : List String
+    }
+
+
+colorParams : List ColorParam
+colorParams =
+    [ { label = "Hue", stops = [ "hsla(0deg,   100%,  50%, 1)", "hsla(359deg, 100%,  50%, 1)" ] }
+    , { label = "Sat", stops = [ "hsla(360deg, 0%,    50%, 1)", "hsla(360deg, 100%,  50%, 1)" ] }
+    , { label = "Val", stops = [ "hsla(360deg, 100%,   0%, 1)", "hsla(360deg, 100%, 100%, 1)" ] }
+    , { label = "Alf", stops = [ "hsla(360deg, 100%, 100%, 0)", "hsla(360deg, 100%, 100%, 1)" ] }
+    ]
+
+
+viewSliders : Theme -> Context -> Color -> Svg msg
+viewSliders theme ctx value =
+    let
+        bounds = ctx.bounds
+        gap = 10.0
+        hsla = Color.toHsla value
+        ( paramWidth, paramHeight ) = ( bounds.width - gap * 2, bounds.height / 4 )
+        paramBox index param =
+            Svg.g
+                []
+                [ Svg.defs
+                    []
+                    [ Svg.linearGradient
+                        [ SA.id <| "fill" ++ String.fromInt index
+                        ]
+                        <| List.indexedMap
+                            (\stopId stop ->
+                                Svg.stop
+                                    [ SA.offset <| (String.fromFloat <| Basics.toFloat stopId / (Basics.toFloat <| List.length param.stops - 1) * 100) ++ "%"
+                                    , SA.stopColor stop
+                                    ]
+                                    []
+                            )
+                        <| param.stops
+                    ]
+                , Svg.rect
+                    [ SA.x <| String.fromFloat <| gap
+                    , SA.y <| String.fromFloat <| Basics.toFloat index * paramHeight
+                    , SA.width <| String.fromFloat paramWidth
+                    , SA.height <| String.fromFloat paramHeight
+                    , SA.fill <| "url(#fill" ++ String.fromInt index ++ ")"
+                    ]
+                    []
+                , Svg.text_
+                    [ SA.fontSize <| (String.fromFloat 9.0 ++ "px")
+                    , SA.x <| String.fromFloat <| gap
+                    , SA.y <| String.fromFloat <| Basics.toFloat index * paramHeight
+                    ]
+                    [ Svg.text param.label
+                    ]
+                ]
+                -- [ SA.transform |> positionAt ]
+    in Svg.g
+        []
+        <| List.indexedMap paramBox
+        <| colorParams
+
+
+
 viewValue : Theme -> Context -> Color -> Svg msg
 viewValue theme ctx value =
     let
