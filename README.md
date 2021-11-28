@@ -38,14 +38,14 @@ Huge thanks to @imilman for the design/UX and priceless help through development
 
 ## Tutorial
 
-See [TUTORIAL](https://github.com/shamansir/tron-gui/blob/main/Tutorial.md) for the detailed guide on using Tron. 
+See [TUTORIAL](https://github.com/shamansir/tron-gui/blob/main/Tutorial.md) for the detailed guide on using Tron.
 
-<!-- 
+<!--
 ## Screenshots
 
 <img src="https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-light.png" width="549" height="497" alt="Light Theme" />
 
-<img src="https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-dark.png" width="549" height="515" alt="Dark Theme" /> 
+<img src="https://raw.githubusercontent.com/shamansir/tron-gui/79875cc096b0c16c669c8b83dca8d6e5593433fa/tron-example-dark.png" width="549" height="515" alt="Dark Theme" />
 
 -->
 
@@ -60,10 +60,11 @@ _Tron_ provides the `WithTron` helper which wraps the core `Browser....` functio
 - specify the way Tron communicates with JS, if it needs to, but usually the communication is off — but, if you want _detachable_ functionality, you'll need to start WebSocket server, all the required code is provided for that and requires minimum actions;
 
 * [`WithTron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/WithTron) documentation;
+    * [`Tron.Option.Render`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option) documentation;
+    * [`Tron.Option.Communication`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option) documentation;
+
 * [`Tron`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron) documentation;
 * [`Tron.Build`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Build) documentation;
-* [`Tron.Option.Render`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option) documentation;
-* [`Tron.Option.Communication`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Option) documentation;
 
 See some example usages of `WithTron` below.
 
@@ -291,7 +292,7 @@ colorNest =
             , ( "green", colorCompKnob ChangeGreen )
             , ( "blue", colorCompKnob ChangeBlue )
             ]
-            |> Tron.shape (Tron.cols 1)            
+            |> Tron.shape (Tron.cols 1)
 
 
 choiceToLabel : Choice -> Path.Label
@@ -433,7 +434,7 @@ eyeGui config =
                     ChangeEyeSize
             )
         ]
-        |> Tron.shape (Tron.cols 1)        
+        |> Tron.shape (Tron.cols 1)
 
 
 colorsGui : Bool -> Colors -> Tron Msg
@@ -450,7 +451,7 @@ colorsGui isPunk colors =
                 else Gui.none
             )
         ]
-        |> Tron.shape (Tron.cols 2)           
+        |> Tron.shape (Tron.cols 2)
 ```
 
 ## Special Builders
@@ -530,7 +531,7 @@ gui =
         ]
 
 
-nestedButtons : Choice -> Tree 
+nestedButtons : Choice -> Tree
 nestedButtons curChoice =
     Tron.nest
         [ ( "a", Tron.button )

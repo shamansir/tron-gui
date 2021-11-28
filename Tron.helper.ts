@@ -88,10 +88,12 @@ export class Control {
             this.changeHandlers.push(handler);
             return this;
         };
+
     //onFinishChange(handler : ChangeHandler) : Control { return this; };
     handle(value: Value) : Control {
         return this.handleAs(this.type, value);
     }
+
     handleAs(type : ControlType, value: Value) : Control {
         if (this.companion && this.companionProperty && (typeof this.companion[this.companionProperty] != 'undefined')) {
             if (type == "button") {
@@ -108,9 +110,11 @@ export class Control {
         }
         return this;
     }
+
     handleAction() : void {
         this.companion[this.companionProperty]();
     }
+
     assignValue(value : Value) : void {
         this.companion[this.companionProperty] = value;
     }

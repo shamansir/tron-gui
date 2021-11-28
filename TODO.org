@@ -13,8 +13,11 @@
     *** It seems `[0, 2]` and `[2, 0]` are conflicting in this case;
 ** DONE NEXTVER `Builder.noPaging`
 ** DONE NEXTVER The companion helper for building interface from JS;
-** TODO BREAKING `buttons` and stuff should all be able to be appended using a single function, at least in default case;
+** TODO NEXTVER BREAKING? `buttons` and stuff should all be able to be appended using a single function, at least in default case;
+** TODO NEXTVER BREAKING? `choices` and stuff should all be able to be appended using a single function, at least in default case;
 ** TODO NEXTVER BUG Nesting is not visible when it has no shape;
+** TODO NEXTVER BREAKING `choiceBy` should accept the `Set a` as the last arguments, for the sake of chaining;
+** TODO BUG NEXTVER JS `choice` as switch is not sending updates from buttons to JS;
 
 * UX / Design
 

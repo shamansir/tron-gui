@@ -1,3 +1,4 @@
+.DS_Store
 /elm-stuff
 /node_modules
 /example/elm-stuff
@@ -8,10 +9,11 @@
 /example/*.woff
 /example/*.woff2
 .idea
-Tron.js
+Tron.helper.js
 /index.html
 # /example/dat.gui.min.js
 example/Example/Goose/index.html
 example/Example/Goose/index.js
 example/BuildFromJs/builder.js
 example/node_modules
+.#*
