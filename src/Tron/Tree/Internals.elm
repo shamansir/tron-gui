@@ -684,10 +684,19 @@ update action prop =
         Toggle control -> control |> Toggle.update action |> swap |> Toggle
         Action control -> control |> Button.update action |> swap |> Action
         Choice focus shape control ->
-            control
-                |> Nest.updateChoice action
-                |> swap
-                |> Nest.mapItems (Tuple.mapSecond <| map <| always A.Stay)
+            let
+                nextChoice =
+                    control
+                      |> Nest.updateChoice action
+                      |> swap
+                      |> Nest.mapItems (Tuple.mapSecond <| map <| always A.Stay)
+                      |> (Choice focus shape)
+            in
+                (case Nest.ifPostUpdateSelected nextChoice of
+                    Just ( itemAction, itemChange ) ->
+                        nextChoice
+                        |> Nest.withItem (\item -> update action item)
+                    Nothing -> nextChoice)
                 |> (Choice focus shape)
         Group focus shape control ->
             control

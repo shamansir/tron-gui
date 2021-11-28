@@ -101,6 +101,7 @@ updateGroup action control =
             ( control, A.Stay )
 
 
+
 updateChoice : A.Action -> ChoiceControl item a -> ( ChoiceControl item a, A.Change )
 updateChoice action control =
     case action of
@@ -161,6 +162,17 @@ updateChoice action control =
             )
         _ ->
             ( control, A.Stay )
+
+
+ifPostUpdateSelected : A.Action -> ChoiceControl item a -> Maybe ( A.Action, A.Change )
+ifPostUpdateSelected action control =
+    case action of
+        A.Execute ->
+            case getChoiceMode control of
+                Knob -> Just ( A.Execute, A.Fire )
+                SwitchThrough -> Just ( A.Execute, A.Fire )
+                Pages -> Nothing
+        _ -> Nothing
 
 
 -- updateChoiceItem : A.Action -> ( ChoiceControl item a, Index ) -> ( ChoiceControl item a, A.Change )
@@ -376,6 +388,11 @@ withItemAt label f (( Core.Control items state handler ) as control) =
         )
         state
         handler
+
+
+withSelectedItem : (item -> item) -> ChoiceControl item a -> ChoiceControl item a
+withSelectedItem f control =
+    withItem (whichSelected control) f control
 
 
 getPage : Core.Control setup { r | page : PageNum } a -> PageNum
