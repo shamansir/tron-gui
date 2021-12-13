@@ -4,8 +4,6 @@ Tron is the web UI for any graphical web playground, such as processing.js sketc
 
 We in [Computational Arts Initiative](https://cai.jetbrains.com) use Tron to control our generative graphics and tools.
 
-// TODO: examples of the usage.
-
 # Tron. The Idea
 
 The core idea of Tron project is to have UI controls laid out in the rectangular grid and at the same time be structured as a tree.
@@ -110,8 +108,8 @@ for : Tree () -> model -> Tron msg
 In short, it is:
 
 * Choose `WithTron.*` helper which fits you;
-    * Specify where to dock and the theme you like;
-    * Add communication by taste;
+	* Specify where to dock and the theme you like;
+	* Add communication by taste;
 * Structure your interface (with the help of `Tron.Build` and optionally `WithTron.ValueAt`) by your implementation of `for : Model -> Tree -> Tron Msg`;
 * Proceed with `init` / `update` / `view` / … as usual;
 * …That’s it!
@@ -696,19 +694,248 @@ tree |> ask (color [ "Feather", "Color" ]) -- returns `Maybe Color`
 
 ## JavaScript way
 
+There are a lot of generative animation applications written in processing.js or three.js or something similar. To make connecting with them easier, there is the way to listen for the updates happened in Tron UI on the JavaScript side. There’s even the way to build the whole Tron interface from JavaScript!
+
+### `Tron.helper.ts`
+
+`Tron.helper.ts` is the optional-to-use helper written in TypeScript, it provides you both with the functions to build your interface (less functionality than in Elm, though, at least as of version 13.1.0) from JS and to listen for the updates coming from ports. If you want to use it, you’ll need to compile it to JS first and the include in the `index.html` the same way you do with other scripts.
+
+You may get the latest compiled-to-JS version of it at Tron GitHub page: [https://github.com/shamansir/tron-gui/releases/](#).
+
+If you want to build it yourself, follow these two steps:
+
+Install TypeScript:
+
+```bash
+npm install -g typescript
+```
+
+Build the JavaScript API:
+
+```bash
+tsc ../tron-gui/Tron.helper.ts --target es2017 --esModuleInterop --module commonjs --outDir ./<target-dir>
+```
+
+The command is tricky, because we need to compile the single TypeScript module directly to a browser-friendly JavaScript source, and TypeScript is (usually) not intended for that purpose, rather to be later built with babel or bundled with webpack etc.
+
+Now we have a JavaScript file, include it into your `index.html` or whichever HTML file where you include the Elm application with Tron.
+
+```bash
+<script>var exports = {"__esModule": true};</script>
+<script src="./tron.helper.js"></script>
+```
+
+The first `script` tag is another trick needed to be done following the same reasons to make TS-compiled code work in the browser.
+
 ### The interface is defined in Elm
 
-TODO
+([example](# "example"))
 
-```Elm
+Since there’s a high chance all the logic of your application is also happening in JS, you may omit defining messages and the model (a.k.a. _The Elm Architecture_) completely and just stick to defining your UI structure in Elm. No need in those `update` and `init` and `view`, what a relief ;) !
 
+`WithTron.justUiAndComminication` lets you specify just the `for` function, define how you would like Tron to be rendered, and specify the ports to communicate with JS (more below), and that should be enough for almost anything!
+
+In this case, your `for` function would return the `Tree ()` instead of `Tron msg`. There’s a `Tron.Tree.Build.Unit` builder to help you in that. It is almost the same as `Tron.Build`, the set of functions is the same, but they all require one argument less — the message is not needed anymore.
+
+```haskell
+port module ListenFromJs.Main exposing (..)
+
+
+import WithTron
+import Browser
+
+import Tron.Style.Theme as Theme
+import Tron.Style.Dock as Dock
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
+import Tron.Tree.Expose.Data as Exp
+
+import Example.Unit.Gui as ExampleGui
+
+
+port ack : Exp.Tree -> Cmd msg
+
+
+port transmit : Exp.Out -> Cmd msg
+
+
+main : WithTron.Program () () ()
+main =
+    Browser.element
+        <| WithTron.justUiAndCommunication
+            (Render.toHtml Dock.middleRight Theme.dark)
+            (Communication.sendJson
+                 { ack = ack
+                 , transmit = transmit
+                 })
+        <| always ExampleGui.gui
 
 ```
 
+You would need the way to determine to which control belongs the value that was updated, for that we provide you with the _path_ to the control: which is just the sequence of pairs containing the integer index and the string label; every next item in the sequence means that user got deeper in the Tron tree at the previous point and chose the given element (by index and label) in the nesting.
+
+* `Communication.sendStrings` to send pairs of the path to the updated control and the new value stringified.
+* `Communication.sendJson` to send the JS objects with all the required data for the update — the complete path, value in the proper type, the type of the value as a string, etc.
+* `Communication.sendReceiveJson` if in addition to the `sendJson` you would like to send updates to the interface from JS.
+
+Now in your HTML file you need to connect to the corresponding port.
+
+`Tron.helper.ts` provides you with helpers to subscribe for the updates.
+
+Now, the easiest part, connect to the interface:
+
+```js
+const companion = {...};
+
+const myApp = Elm.Main.init({ node : ... });
+
+const tron = new Tron(myApp.ports, companion);
+
+tron.attach('product', [ 'product' ]);
+tron.attach('blend', [ 'blend' ],
+        (value) => {
+            p.toggleCentered(value);
+            p.layer.blendMode(value.selection);
+            s.draw();
+        });
+tron.attach('amount', [ 'amount' ],
+        (value) => {
+            p.blobs = [...new Array(+value)].map(
+                () => {
+                    const b = new Blob(s, params);
+                    b.setup();
+                    return b;
+                });
+            p.toggleCentered();
+            p.blobs.forEach(blob => blob.setColors());
+            s.draw();
+        });
+tron.attach('isGradient', [ 'gradient' ],
+        (value) => {
+            p.blobs.forEach(blob => blob.setGradient());
+            s.draw();
+        });
+tron.attach('isCentered', [ 'center' ],
+        (value) => {
+            p.toggleCentered(value);
+            s.draw();
+        });
+    //tron.attach('play', [ 'animation', 'play' ]);
+    //tron.attach('pause', [ 'animation', 'pause' ]);
+tron.attach('regenerate', [ 'regenerate' ]);
+tron.attach('random', [ 'make magic' ]);
+tron.attach('export', [ 'export' ]);
+tron.attach('state', [ 'animation' ],
+        (value) => {
+            if (value.selection == 'play')
+                { s.noLoop(); }
+            else
+                { s.loop(); }
+        });
+
+tron.listen();
+
+```
+
+
+Please ensure that your output port in Elm is named `transmit` for this to work, I mean the one that sends `Exp.Out` s outside.
+
+Also, it is important to call `tron.listen` after executing the complete `attach` sequence.
+
+So,... every `attach` function takes the name of the field in the companion object to be updated on every change, as the first argument. The second argument is the path to the control in Tron GUI of where to take this value from. For example, ` [‘blob’, ‘color’] ` if the ‘color’ control is placed inside the ‘blob’ nesting. The optional third argument is the callback to be called after the change. That’s it.
+
+All the Tron controls define some way to convert their values to JavaScript, i.e. toggle becomes boolean value, color becomes a CSS-friendly string with color definition, knob becomes numeric value and so on. This value is written directly in the given property of the companion object.
+
+The companion object doesn’t have any requirements, just to have these fields free to be assigned. It can be your P5.js sketch instance or just some plain JS object.
+
+You may recognize this technique if you ever used `dat.gui` as it was inspired exactly by the simplicity of this GUI.
+
+TODO: sending updates with `sendReceiveJson`.
+
 ### You define the interface in JavaScript
 
-TODO
+The concept of `Tron. helper.ts` is based on the expectation that you have some JS object with the values representing knobs, toggles & s.o. and functions to handle button clicks or choices. We call this object _the companion_.
 
+This concept was inherited from `dat.gui` which in its turn was the inspiration for the Tron GUI itself.
+
+```js
+function buildExample(ports) {
+
+    const companion =
+        { value : 42
+        , live : 14
+        , test : () => { console.log('test'); }
+        , toggle : false
+        , text : 'aaa'
+        , xy : { x: 20, y : 13 }
+        , colorA : { red: 0.8, green : 0, blue : 0.5, alpha : 0.5 } // '#ff6633'
+        , colorB : { red: 0.2, green : 0.3, blue : 0.4 }
+        , product : 'idea'
+        , buttonA : () => { console.log('A'); }
+        , buttonB : () => { console.log('B'); }
+        , buttonC : () => { console.log('C'); }
+        , buttonD : () => { console.log('D'); }
+        , innerKnobA : 200
+        , innerKnobB : 30
+        };
+
+    const tron = new Tron(ports, companion);
+
+    tron.num('value', 0, 42).onChange((val) => { console.log(companion.value, val); });
+    tron.num('live', 0, 42).live().onChange((val) => { console.log(companion.live, val); });
+    tron.button('test');
+    tron.toggle('toggle').onChange((val) => { console.log(companion.toggle, val); });
+    tron.text('text').onChange((val) => { console.log(companion.text, val); });
+    tron.color('colorA').onChange((val) => { console.log(companion.colorA, val); });
+    tron.color('colorB').live().onChange((val) => { console.log(companion.colorB, val); });
+    tron.xy('xy', { x : 0, y : 0 }, { x : 42, y : 42 }).onChange((val) => { console.log(companion.xy, val); });
+    tron.xy('xy', { x : 0, y : 0 }, { x : 42, y : 42 }).live().onChange((val) => { console.log(companion.xy, val); });
+    tron.choice('product', [ 'pycharm', 'idea', 'webstorm', 'rubymine' ]).onChange((val) => { console.log(companion.product, val); });
+    tron.buttons('buttons', [ 'buttonA', 'buttonB', 'buttonC', 'buttonD' ]);
+
+    const nest = tron.nest('knobs');
+    nest.num('innerKnobA', 0, 1000).onChange((val) => { console.log(companion.innerKnobA, val); });
+    nest.num('innerKnobB', 0, 1000).onChange((val) => { console.log(companion.innerKnobB, val); });
+
+    tron.run();
+}
+```
+
+
+```haskell
+port module BuildFromJs.Main exposing (..)
+
+
+import WithTron
+import Browser
+
+import Tron.Style.Theme as Theme
+import Tron.Style.Dock as Dock
+import Tron.Option.Render as Render
+import Tron.Option.Communication as Communication
+import Tron.Tree.Expose.Data as Exp
+
+
+port build : (Exp.Tree -> msg) -> Sub msg
+
+port apply : (List Exp.DeduceIn -> msg) -> Sub msg
+
+port transmit : Exp.Out -> Cmd msg
+
+
+main : WithTron.Program () () ()
+main =
+    Browser.element
+        <| WithTron.justUiAndCommunication
+            (Render.toHtml Dock.middleRight Theme.dark)
+            (Communication.receiveJson
+                { build = build identity
+                , apply = apply identity
+                , transmit = transmit
+                }
+            )
+        <| identity
+```
 # Tron. Follow ups
 
 ## Tron. Detachable.
