@@ -13,11 +13,17 @@
     *** It seems `[0, 2]` and `[2, 0]` are conflicting in this case;
 ** DONE NEXTVER `Builder.noPaging`
 ** DONE NEXTVER The companion helper for building interface from JS;
-** TODO NEXTVER BREAKING? `buttons` and stuff should all be able to be appended using a single function, at least in default case;
-** TODO NEXTVER BREAKING? `choices` and stuff should all be able to be appended using a single function, at least in default case;
+** TODO NEXTVER BREAKING `Exp.DeduceIn` should not require indices in the path; These paths are used for detachable interface, but the user of JS API is not able to determine indices without using `ack` port;
+** TODO NEXTVER BREAKING `buttons` and stuff should all be able to be appended using a single function, at least in default case;
+    *** Also, the set of controls should come as the last arguments for the purpose of chaining : `[ Some, Items ] |> buttons`
+** TODO NEXTVER BREAKING `choices` and stuff should all be able to be appended using a single function, at least in default case;
+    *** Also, the set of controls should come as the last arguments for the purpose of chaining : `[ Some, Items ] |> buttons |> choice Some toMsg |> toSwitch`
 ** TODO NEXTVER BUG Nesting is not visible when it has no shape;
 ** TODO NEXTVER BREAKING `choiceBy` should accept the `Set a` as the last arguments, for the sake of chaining;
 ** TODO BUG NEXTVER JS `choice` as switch is not sending updates from buttons to JS;
+** TODO Controls should have some `toCode : Control ... -> String` function inside their respective modules, for the `Constructor` to use, or else it will be always outdated;
+** TODO BUG NEXTVER if the list of options is not defined at the start of the UI, they are sent as empty list;
+** TODO some incoming port to request the latest state of GUI;
 
 * UX / Design
 

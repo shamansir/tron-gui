@@ -854,6 +854,8 @@ TODO: sending updates with `sendReceiveJson`.
 
 ### You define the interface in JavaScript
 
+([example](# "example"))
+
 The concept of `Tron. helper.ts` is based on the expectation that you have some JS object with the values representing knobs, toggles & s.o. and functions to handle button clicks or choices. We call this object _the companion_.
 
 This concept was inherited from `dat.gui` which in its turn was the inspiration for the Tron GUI itself.
@@ -881,21 +883,33 @@ function buildExample(ports) {
 
     const tron = new Tron(ports, companion);
 
-    tron.num('value', 0, 42).onChange((val) => { console.log(companion.value, val); });
-    tron.num('live', 0, 42).live().onChange((val) => { console.log(companion.live, val); });
+    tron.num('value', 0, 42).onChange((val) =>
+       { console.log(companion.value, val); });
+    tron.num('live', 0, 42).live().onChange((val) =>
+       { console.log(companion.live, val); });
     tron.button('test');
-    tron.toggle('toggle').onChange((val) => { console.log(companion.toggle, val); });
-    tron.text('text').onChange((val) => { console.log(companion.text, val); });
-    tron.color('colorA').onChange((val) => { console.log(companion.colorA, val); });
-    tron.color('colorB').live().onChange((val) => { console.log(companion.colorB, val); });
-    tron.xy('xy', { x : 0, y : 0 }, { x : 42, y : 42 }).onChange((val) => { console.log(companion.xy, val); });
-    tron.xy('xy', { x : 0, y : 0 }, { x : 42, y : 42 }).live().onChange((val) => { console.log(companion.xy, val); });
-    tron.choice('product', [ 'pycharm', 'idea', 'webstorm', 'rubymine' ]).onChange((val) => { console.log(companion.product, val); });
-    tron.buttons('buttons', [ 'buttonA', 'buttonB', 'buttonC', 'buttonD' ]);
+    tron.toggle('toggle').onChange((val) =>
+       { console.log(companion.toggle, val); });
+    tron.text('text').onChange((val) =>
+       { console.log(companion.text, val); });
+    tron.color('colorA').onChange((val) =>
+       { console.log(companion.colorA, val); });
+    tron.color('colorB').live().onChange((val) =>
+       { console.log(companion.colorB, val); });
+    tron.xy('xy', { x : 0, y : 0 }, { x : 42, y : 42 }).onChange((val) =>
+       { console.log(companion.xy, val); });
+    tron.xy('xy', { x : 0, y : 0 }, { x : 42, y : 42 }).live().onChange((val) =>
+       { console.log(companion.xy, val); });
+    tron.choice('product', [ 'pycharm', 'idea', 'webstorm', 'rubymine' ]).onChange((val) =>
+       { console.log(companion.product, val); });
+    tron.buttons('buttons',
+       [ 'buttonA', 'buttonB', 'buttonC', 'buttonD' ]);
 
     const nest = tron.nest('knobs');
-    nest.num('innerKnobA', 0, 1000).onChange((val) => { console.log(companion.innerKnobA, val); });
-    nest.num('innerKnobB', 0, 1000).onChange((val) => { console.log(companion.innerKnobB, val); });
+    nest.num('innerKnobA', 0, 1000).onChange((val) =>
+       { console.log(companion.innerKnobA, val); });
+    nest.num('innerKnobB', 0, 1000).onChange((val) =>
+       { console.log(companion.innerKnobB, val); });
 
     tron.run();
 }
@@ -938,13 +952,45 @@ main =
 ```
 # Tron. Follow ups
 
+## Examples
+
+([examples](# "example"))
+
+We have a lot of examples in the repository source code, please use them in case if you want to find out the way how the particular feature works;
+
+There is a helper script to run any of the example using one command, i.e. to run `ListenFromJs`, try:
+
+```bash
+> cd ./examples
+> sh ./start-example.sh ListenFromJs
+```
+
+NB: The `Detachable` example requires running `./start-server.sh` first.
+
+To list all of the examples, run `./start-example.sh` without any arguments.
+
 ## Tron. Detachable.
 
+([example](# "example"))
+
+```bash
+> cd ./examples
+> npm install -g web-socket-server
+> sh ./start-server.sh
+> sh ./start-example.sh Detachable
+```
+
 To make your Tron interface detachable, you need to start the WebSocket server that receives JSONs with the tree parts and the updates.
+
+See the source code of the example;
 
 TODO.
 
 ## Tron. Constructor.
+
+([example](# "example"))
+
+The Tron Constructor allows you to build the interface using some friendly GUI;
 
 # Tron. Development
 
