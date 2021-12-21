@@ -5,7 +5,7 @@
 /example/app.js
 /example/index.html
 /example/Tron.css
-/example/Tron.js
+/example/Tron.helper.js
 /example/*.woff
 /example/*.woff2
 .idea

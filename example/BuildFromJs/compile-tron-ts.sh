@@ -1,1 +1,1 @@
-tsc ../../Tron.ts --outDir ..
+tsc ../../Tron.helper.ts --outDir ..

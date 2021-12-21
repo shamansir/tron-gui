@@ -22,14 +22,14 @@ RUN chmod -f +rx ./elm-stuff/0.19.1/d.dat || true
 
 # RUN cd ./example
 
-RUN node_modules/typescript/bin/tsc ./Tron.ts
+RUN node_modules/typescript/bin/tsc ./Tron.helper.ts
 RUN cd ./example && ../node_modules/elm/bin/elm make ./$EXAMPLE/Main.elm --output=./app.js
 
 FROM nginx:1.15
 
 ARG EXAMPLE=Everything
 
-COPY --from=0 /app/Tron.js /usr/share/nginx/html
+COPY --from=0 /app/Tron.helper.js /usr/share/nginx/html
 COPY --from=0 /app/example/app.js /usr/share/nginx/html
 COPY --from=0 /app/example/dat.gui.min.js /usr/share/nginx/html
 COPY --from=0 /app/src/Tron.css /usr/share/nginx/html

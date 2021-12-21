@@ -2,7 +2,7 @@
 
 if [ "$1" ]; then
     cp ../src/Tron.css ./Tron.css
-    cp ../Tron.js ./Tron.js
+    cp ../Tron.helper.js ./Tron.helper.js
 
     cp ./Example/Goose/JetBrainsMono-Regular.woff ./JetBrainsMono-Regular.woff
     cp ./Example/Goose/JetBrainsMono-Regular.woff2 ./JetBrainsMono-Regular.woff2
@@ -22,8 +22,8 @@ else
     echo "ReportToJs — a demonstration of sending any value update to port as JSON,"
     echo "             from Tron to JS, as well as the complete GUI structure"
     echo "BuildFromJs — a demonstration of building the complete interface in JS"
-    echo "              using 'Tron.ts' helper, and listening to its changes"
+    echo "              using 'Tron.helper.ts' helper, and listening to its changes"
     echo "              (similarly to 'dat.gui')"
     echo "ListenFromJs — a demonstration of listening to all the changes in the UI"
-    echo "               using 'Tron.ts' helper and the companion object"
+    echo "               using 'Tron.helper.ts' helper and the companion object"
 fi

@@ -1,1 +1,1 @@
-tsc ../../Tron.ts --outDir .. --watch
+tsc ../../Tron.helper.ts --outDir .. --watch
