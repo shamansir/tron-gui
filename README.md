@@ -5,6 +5,8 @@
 
 Tron GUI is a minimal interface for your web application.
 
+[THE DEMO](https://tron.labs.jb.gg/).
+
 It provides the friendly API for you to easily describe your interface using a mimimal number of smartly picked and designed controls and by nesting them.
 
 For the moment, the provided controls are:

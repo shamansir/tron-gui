@@ -220,6 +220,8 @@ See the examples in documentation and in the `examples/` directory.
 
 #### Building your UI
 
+([docs](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Build))
+
 To build your interface, define how it depends on your `Model` in your `for : Model -> Tree () -> Tron Msg` function.
 
 It is quite easy, with the help of `Tron.Build as Tron` . As with `Html msg` or `Svg msg`, it produces `Tron msg` which is changed to the exact type of your message as `Tron Msg`.
@@ -390,7 +392,7 @@ Tron.choice ... |> Tron.asSwitch |> Tron.live
 
 Nested controls hold and/or operate several components inside. They’re usually panels with other controls inside.
 
-[`Tron.nest`](#Nest) and [`Tron.choice`](#Choice) are the only implementations of nested components for the moment, considering `Tron.root` being a custom `Tron.nest` under the hood, and `Tron.buttons` & `Tron.labels` & `Tron.palette` being the helpers over `Tron.choice`.
+[`Tron.nest`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Build#nest) and [`Tron.choice`](https://package.elm-lang.org/packages/shamansir/tron-gui/latest/Tron-Build#choice) are the only implementations of nested components for the moment, considering `Tron.root` being a custom `Tron.nest` under the hood, and `Tron.buttons` & `Tron.labels` & `Tron.palette` being the helpers over `Tron.choice`.
 
 Since any nesting or choice is hidden under a button, you may change its face (see _Many faces of the button_):
 
@@ -700,7 +702,7 @@ There are a lot of generative animation applications written in processing.js or
 
 `Tron.helper.ts` is the optional-to-use helper written in TypeScript, it provides you both with the functions to build your interface (less functionality than in Elm, though, at least as of version 13.1.0) from JS and to listen for the updates coming from ports. If you want to use it, you’ll need to compile it to JS first and the include in the `index.html` the same way you do with other scripts.
 
-You may get the latest compiled-to-JS version of it at Tron GitHub page: [https://github.com/shamansir/tron-gui/releases/](#).
+You may get the latest compiled-to-JS version of it at Tron GitHub page: [https://github.com/shamansir/tron-gui/releases/](https://github.com/shamansir/tron-gui/releases/).
 
 If you want to build it yourself, follow these two steps:
 
@@ -716,20 +718,20 @@ Build the JavaScript API:
 tsc ../tron-gui/Tron.helper.ts --target es2017 --esModuleInterop --module commonjs --outDir ./<target-dir>
 ```
 
-The command is tricky, because we need to compile the single TypeScript module directly to a browser-friendly JavaScript source, and TypeScript is (usually) not intended for that purpose, rather to be later built with babel or bundled with webpack etc.
+The command is tricky, because we need to compile the single TypeScript module directly to a browser-friendly JavaScript source, and TypeScript is (usually) not intended for that purpose, rather to be later built with babel or bundled with `webpack` etc.
 
 Now we have a JavaScript file, include it into your `index.html` or whichever HTML file where you include the Elm application with Tron.
 
 ```bash
 <script>var exports = {"__esModule": true};</script>
-<script src="./tron.helper.js"></script>
+<script src="./Tron.helper.js"></script>
 ```
 
 The first `script` tag is another trick needed to be done following the same reasons to make TS-compiled code work in the browser.
 
 ### The interface is defined in Elm
 
-([example](# "example"))
+([example](https://github.com/computational-arts-initiative/tron-gui/tree/main/example/ListenFromJs))
 
 Since there’s a high chance all the logic of your application is also happening in JS, you may omit defining messages and the model (a.k.a. _The Elm Architecture_) completely and just stick to defining your UI structure in Elm. No need in those `update` and `init` and `view`, what a relief ;) !
 
@@ -854,7 +856,7 @@ TODO: sending updates with `sendReceiveJson`.
 
 ### You define the interface in JavaScript
 
-([example](# "example"))
+([example](https://github.com/computational-arts-initiative/tron-gui/tree/main/example/BuildFromJs))
 
 The concept of `Tron. helper.ts` is based on the expectation that you have some JS object with the values representing knobs, toggles & s.o. and functions to handle button clicks or choices. We call this object _the companion_.
 
@@ -954,7 +956,7 @@ main =
 
 ## Examples
 
-([examples](# "example"))
+([examples](https://github.com/computational-arts-initiative/tron-gui/tree/main/example))
 
 We have a lot of examples in the repository source code, please use them in case if you want to find out the way how the particular feature works;
 
@@ -971,7 +973,7 @@ To list all of the examples, run `./start-example.sh` without any arguments.
 
 ## Tron. Detachable.
 
-([example](# "example"))
+([example](https://github.com/computational-arts-initiative/tron-gui/tree/main/example/Detachable))
 
 ```bash
 > cd ./examples
@@ -988,7 +990,7 @@ TODO.
 
 ## Tron. Constructor.
 
-([example](# "example"))
+([example](https://github.com/computational-arts-initiative/tron-gui/tree/main/example/Constructor))
 
 The Tron Constructor allows you to build the interface using some friendly GUI;
 
