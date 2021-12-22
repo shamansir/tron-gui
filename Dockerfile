@@ -14,6 +14,15 @@ RUN npm install
 
 RUN npm install elm
 
+#RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
+#RUN gunzip elm.gz
+#RUN ls -laF .
+#RUN ls -laF elm
+#RUN chmod +x elm
+#RUN mkdir ./node_modules && mkdir ./node_modules/elm && mkdir ./node_modules/elm/bin
+#RUN mv elm /usr/local/bin/
+#RUN mv elm ./node_modules/elm/bin/
+
 RUN npm install typescript
 
 RUN chmod +x ./node_modules/typescript/bin/tsc
@@ -22,8 +31,9 @@ RUN chmod -f +rx ./elm-stuff/0.19.1/d.dat || true
 
 # RUN cd ./example
 
-RUN node_modules/typescript/bin/tsc ./Tron.helper.ts
+RUN node_modules/typescript/bin/tsc --target es2017 --esModuleInterop --module commonjs --outDir . ./Tron.helper.ts
 RUN cd ./example && ../node_modules/elm/bin/elm make ./$EXAMPLE/Main.elm --output=./app.js
+#RUN cd ./example && ../elm make ./$EXAMPLE/Main.elm --output=./app.js
 
 FROM nginx:1.15
 
