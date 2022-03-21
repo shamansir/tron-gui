@@ -11,5 +11,8 @@
   "dependencies": {
     "websocket": "^1.0.34",
     "ws": "^7.4.6"
+  },
+  "devDependencies": {
+    "es5-ext": "0.10.53"
   }
 }
