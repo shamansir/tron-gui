@@ -3,6 +3,7 @@ module Constructor.ToBuilder exposing (..)
 
 import Array
 import Color exposing (Color)
+import Url exposing (Url)
 
 import Tron exposing (Tron)
 
@@ -11,6 +12,7 @@ import Tron.Control exposing (..)
 import Tron.Control.Value as V
 import Tron.Control.Impl.Button as Button
 import Tron.Control.Impl.Nest as Nest
+import Tron.Control.Impl.Toggle as Toggle
 import Tron.Style.Theme as Theme
 import Tron.Style.PanelShape as PS
 import Tron.Style.CellShape as CS
@@ -83,7 +85,7 @@ propToLines prop =
         Toggle (Control _ value _) ->
             [
                 "Tron.toggle "
-                    ++ if V.toggleToBool value then "True" else "False"
+                    ++ if Toggle.toggleToBool value then "True" else "False"
             ]
 
         Action (Control face _ _) ->
@@ -244,14 +246,9 @@ quote str =
     "\"" ++ str ++ "\""
 
 
-iconUrlToString : Button.Url -> String
+iconUrlToString : Maybe Url -> String
 iconUrlToString url =
     case url of
-        Button.Url theUrl ->
-            "["
-            ++ (theUrl
-                |> String.split "/"
-                |> List.map quote
-                |> List.intersperse " , "
-                |> String.join "")
-            ++ "]"
+        Just theUrl ->
+            Button.maybeLocalUrlToString theUrl
+        Nothing -> "[None]"

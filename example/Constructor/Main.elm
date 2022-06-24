@@ -397,7 +397,7 @@ editorFor path prop =
                 , viewIconSelector
                     (case face of
                         Just (Button.WithIcon (Button.Icon iconFn)) ->
-                            Just <| iconFn Theme.Dark
+                            iconFn Theme.Dark
                         _ -> Nothing
                     )
                     (E.list E.string >> Edit "icon")

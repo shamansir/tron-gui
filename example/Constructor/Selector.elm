@@ -1,6 +1,8 @@
 module Constructor.Selector exposing (..)
 
 
+import Url exposing (Url)
+
 import Html exposing (Html)
 import Html.Attributes as Html
 import Html.Events as Html
@@ -31,7 +33,7 @@ iconSource icon =
     [ "assets", "tiler", "light-stroke", icon ++ ".svg" ]
 
 
-viewIconSelector : Maybe Button.Url -> (List String -> msg) -> Html msg
+viewIconSelector : Maybe Url -> (List String -> msg) -> Html msg
 viewIconSelector maybeCurrent onSelect =
     case iconSelector of
         Selector icons_ ->
@@ -44,8 +46,8 @@ viewIconSelector maybeCurrent onSelect =
                             [ Html.src <| String.join "/" iconSrc
                             , Html.onClick <| onSelect iconSrc
                             , Html.class <| case maybeCurrent of
-                                Just (Button.Url currentUrl) ->
-                                    if String.join "/" iconSrc == currentUrl then "current" else ""
+                                Just currentUrl ->
+                                    if String.join "/" iconSrc == Button.maybeLocalUrlToString currentUrl then "current" else ""
                                 Nothing -> ""
                             ]
                             []
