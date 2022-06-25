@@ -1,4 +1,4 @@
-module Tron.Tree.Expose.GenUI exposing (..)
+module Tron.Tree.Expose.GenUI exposing (to, from)
 
 
 import GenUI exposing (GenUI)

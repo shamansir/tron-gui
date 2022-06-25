@@ -35,6 +35,21 @@ import Tron.Style.CellShape as CS
 
 import WithTron
 
+import Tron.Tree.Expose.GenUI as GenUI
+
+import GenUI
+import GenUI.Json.Encode as GJSONE
+import GenUI.Yaml.Encode as GYAMLE
+import GenUI.Descriptive.Encode as GDESC
+import GenUI.ToGraph as GGRAPH
+
+import Json.Encode as JE
+import Json.Decode as JD
+import Yaml.Encode as YE
+import Yaml.Decode as YD
+
+import Graph
+
 import Html exposing (Html)
 import Html.Attributes as Html
 import Html.Events as Html
@@ -72,6 +87,15 @@ type Type
     | Group
 
 
+type Output
+    = Builder
+    | Json
+    | Yaml
+    | Graph
+    -- | TronGraph
+    | Descriptive
+
+
 types : List Type
 types =
     [ Knob
@@ -89,6 +113,7 @@ type alias Model =
     { current : Maybe ( Path, Tree Type )
     , expands : Dict (List Path.Index) Bool
     , tree : Tree ()
+    , output : Output
     }
 
 
@@ -111,6 +136,7 @@ type Msg
     | FromLocalStorage (Tree ())
     | ExpandOrCollapse Path
     | TogglePagination
+    | ChangeOutput Output
 
 
 for : Model -> Tron Msg
@@ -130,6 +156,7 @@ init =
     , expands =
         Dict.empty
             |> Dict.insert [] True
+    , output = Builder
     }
 
 
@@ -283,6 +310,11 @@ update msg model =
                         )
             }
 
+        ChangeOutput output ->
+            { model
+            | output =  output
+            }
+
 
 view : Model -> Html Msg
 view model =
@@ -319,7 +351,20 @@ view model =
                 , Html.button [ Html.onClick <| ToLocalStorage ] [ Html.text "Save" ]
                 , Html.button [ Html.onClick <| TriggerFromLocalStorage ] [ Html.text "Load" ]
                 ]
-            , viewCode model.tree
+            , Html.div
+                [ Html.id "outputs" ]
+                <| List.map
+                    (\output ->
+                        Html.button
+                            [ Html.onClick <| ChangeOutput output
+                            , Html.classList [ ( "current-output", output == model.output ) ]
+                            ]
+                            [ Html.text <| outputName output
+                            ]
+                    )
+                <| [ Builder, Yaml, Json, Graph, Descriptive ]
+            , viewCode model.output model.tree
+
             ]
         ]
 
@@ -790,10 +835,22 @@ create s =
         _ -> Build.none
 
 
-viewCode : Tree () -> Html msg
-viewCode =
-    ToBuilder.toCodeLines
-        >> String.join "\n"
+renderOutput : Output -> Tree () -> String -- should be done in `update`
+renderOutput output tree =
+    case output of
+        Builder ->
+            ToBuilder.toCodeLines tree
+            |> String.join "\n"
+        Json ->
+            JE.encode 2 <| GJSONE.encode <| GenUI.to tree
+        Yaml -> YE.toString 2 <| GYAMLE.encode <| GenUI.to tree
+        Descriptive -> GDESC.toString <| GDESC.encode <| GenUI.to tree
+        Graph -> Graph.toString GGRAPH.nodeToString GGRAPH.edgeToString <| GGRAPH.toGraph <| GenUI.to tree
+
+
+viewCode : Output -> Tree () -> Html msg
+viewCode output =
+    renderOutput output
         >> Html.text
         >> List.singleton
         >> Html.textarea [ Html.id "builder-code" ]
@@ -836,6 +893,16 @@ typesDropdown currentType =
         (Just <| typeToString currentType)
 
 
+outputName : Output -> String
+outputName output =
+    case output of
+        Builder -> "Builder"
+        Json -> "JSON"
+        Yaml -> "YAML"
+        Descriptive -> "Descriptive"
+        Graph -> "Graph"
+
+
 main : WithTron.Program () Model Msg
 main =
     WithTron.element
@@ -860,6 +927,8 @@ main =
                     ToLocalStorage ->
                         sendToLocalStorage <| Exp.encode <| nextModel.tree
                     FromLocalStorage _ ->
+                        updateCodeMirror ()
+                    ChangeOutput _ ->
                         updateCodeMirror ()
                     _ -> Cmd.none
                 )

@@ -277,3 +277,16 @@ body {
     background-color: #efefef;
     color: black;
 }
+
+#outputs {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+
+}
+
+#outputs button.current-output {
+    /* background-color: charcoal; */
+    font-weight: bold;
+}
