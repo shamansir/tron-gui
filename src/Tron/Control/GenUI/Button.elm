@@ -16,7 +16,7 @@ to (Core.Control face _ _) =
         { face =
             case face of
                 Button.Default -> GenUI.Default
-                Button.WithIcon icon -> GenUI.Icon <| Maybe.withDefault "" <| Maybe.map Button.maybeLocalUrlToString <| icon Theme.Light
+                Button.WithIcon (Button.Icon iconFn) -> GenUI.Icon <| Maybe.withDefault "" <| Maybe.map Button.maybeLocalUrlToString <| iconFn Theme.Light
                 Button.WithColor color -> GenUI.OfColor <| Color.toCssString color
         }
 
@@ -25,12 +25,12 @@ to (Core.Control face _ _) =
 from : GenUI.Def -> Maybe (Control ())
 from def =
     case def of
-        Action actionDef ->
+        GenUI.Action actionDef ->
             Just <|
                 Core.Control
                     (case actionDef.face of
                         GenUI.Default -> Button.Default
-                        GenUI.Icon icon -> Button.WithIcon <| always <| Just <| Button.toLocalUrl_ icon
+                        GenUI.Icon icon -> Button.WithIcon <| Button.Icon <| always <| Just <| Button.toLocalUrl_ icon
                         GenUI.OfColor colorStr -> Button.WithColor <| Color.darkBlue -- FIXME
                     )
                     ()
