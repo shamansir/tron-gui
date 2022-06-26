@@ -87,7 +87,7 @@ choiceFrom toItem def =
                             Core.Control
                                 (Array.fromList passedItems)
                                 { form = Nest.Collapsed -- FIXME
-                                , face = Just <| Button.faceFrom selectDef.face
+                                , face = Nothing -- FIXME -- Just <| Button.faceFrom selectDef.face
                                 , mode = Nest.Pages -- FIXME
                                 , prevSelected = Nothing
                                 , selected = 0 -- FIXME
