@@ -32,9 +32,15 @@ treeToGenUI t =
         Text text -> makeProp "text" <| Text.to text
         Toggle toggle -> makeProp "toggle" <| Toggle.to toggle
         Color color -> makeProp "toggle" <| Color.to color
-        Choice focus shape prop -> GenUI.root -- FIXME
-        Group focus shape prop -> GenUI.root -- FIXME
-        Live prop -> GenUI.root -- FIXME
+        Choice focus shape control -> makeProp "choice" <| Nest.choiceTo (always Nothing) control
+        Group focus shape control -> makeProp "group" <| Nest.groupTo (Tuple.second >> treeToGenUI) control
+        Live tree ->
+            let
+                prop = treeToGenUI tree
+            in
+                { prop
+                | live = True
+                }
 
 
 to : Tree a -> GenUI
