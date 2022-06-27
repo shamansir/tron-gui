@@ -1,10 +1,10 @@
-module Tron.Control.GenUI.Button exposing (to, from, faceTo, faceFrom)
+module Tron.Control.GenUI.Button exposing (to, from, faceTo, faceFrom, toSelectItem)
 
 
 import GenUI
 import Color
 
-
+import Tron.Path as Path
 import Tron.Control as Core
 import Tron.Control.Impl.Button as Button exposing (Control)
 import Tron.Style.Theme as Theme
@@ -44,3 +44,11 @@ from def =
                     ()
                     ()
         _ -> Nothing
+
+
+toSelectItem : Path.Label -> Control a -> GenUI.SelectItem
+toSelectItem value (Core.Control face _ _) =
+    { face = faceTo face
+    , value = value
+    , name = Nothing
+    }
