@@ -290,3 +290,10 @@ body {
     /* background-color: charcoal; */
     font-weight: bold;
 }
+
+#graph {
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    background: white;
+}

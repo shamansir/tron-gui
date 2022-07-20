@@ -66,6 +66,8 @@ import Example.Tiler.Gui as Example_Tiler
 import Example.Tiler.Logic as Example_Tiler
 
 
+import IntDict as ID
+
 import Constructor.ToBuilder as ToBuilder
 import Constructor.Selector exposing (..)
 
@@ -858,19 +860,45 @@ renderOutput output tree =
 renderGraph : Tree () -> Html msg
 renderGraph tree =
     let
-        renderNode pos nodes node =
+        size = { width = 120, height = 40 }
+        renderNode pos nodes { node, outgoing } =
             Svg.g
-                [ Svg.transform <| "translate(" ++ String.fromFloat pos.x ++ "," ++ String.fromFloat pos.y ++ ")" ]
-                [ Svg.text_
-                    [ Svg.dominantBaseline "hanging"
+                []
+                <| Svg.text_
+                    [ Svg.transform <|
+                         "translate(" ++ (String.fromFloat (pos.x + size.width / 2)) ++ ","
+                                      ++ (String.fromFloat (pos.y + size.height / 2)) ++ ")"
+                    , Svg.dominantBaseline "hanging"
+                    , Svg.textAnchor "middle"
                     , Svg.fontSize "10px"
                     ]
-                    [ Html.text <| Maybe.withDefault "?" <| GGRAPH.nodeToString node.node.label ]
-                ]
+                    [ Html.text <| Maybe.withDefault "?" <| GGRAPH.nodeToString node.label ]
+                :: renderEdges pos nodes outgoing
+                :: []
+        --renderEdges : Geom.Position -> Render.NodesPositions -> G.Adjacency () -> Svg msg
+        renderEdges from nodesPositions =
+            Svg.g [] << List.map Tuple.second << ID.toList << ID.map
+                (\otherNodeId _ ->
+                    case ID.get otherNodeId nodesPositions of
+                        Just otherNodePos ->
+                            let
+                                otherNodeSize = size
+                            in Svg.line
+                                [ Svg.x1 <| String.fromFloat (from.x + size.width / 2)
+                                , Svg.y1 <| String.fromFloat (from.y + size.height / 2)
+                                , Svg.x2 <| String.fromFloat (otherNodePos.x + otherNodeSize.width / 2)
+                                , Svg.y2 <| String.fromFloat (otherNodePos.y + otherNodeSize.height / 2)
+                                , Svg.stroke "black"
+                                , Svg.strokeWidth "2"
+                                ]
+                                []
+                        Nothing ->
+                            Svg.g [] []
+                )
     in Render.graph
         Geom.defaultWay
         renderNode
-        (always { width = 120, height = 40 })
+        (always size)
         <| GGRAPH.toGraph <| GenUI.to tree
 
 
