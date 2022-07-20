@@ -297,4 +297,5 @@ body {
     left: 10%;
     background: white;
     z-index: 10000;
+    zoom: 0.4;
 }

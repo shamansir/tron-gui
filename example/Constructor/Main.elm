@@ -54,6 +54,12 @@ import Yaml.Decode as YD
 
 import Graph
 
+{- elm-dagre -}
+import Render as R
+import Render.StandardDrawers as RSD
+import Render.StandardDrawers.Attributes as RSDA
+import Render.StandardDrawers.Types as RSDT
+
 import Html exposing (Html)
 import Html.Attributes as Html
 import Html.Events as Html
@@ -866,6 +872,16 @@ renderOutput output tree =
 
 renderGraph : Tree () -> Html msg
 renderGraph tree =
+    R.draw
+        [ ]
+        [ R.nodeDrawer <| RSD.svgDrawNode [ RSDA.label (.label >> .name) ]
+        , R.style "height: 100vh;"
+        ]
+        <| GGRAPH.toGraph <| GenUI.to tree
+
+
+{- renderGraph : Tree () -> Html msg
+renderGraph tree =
     let
         size = { width = 80, height = 40 }
         renderNode pos nodes { node, outgoing } =
@@ -906,7 +922,7 @@ renderGraph tree =
         Geom.defaultWay
         renderNode
         (always size)
-        <| GGRAPH.toGraph <| GenUI.to tree
+        <| GGRAPH.toGraph <| GenUI.to tree -}
 
 
 viewCode : Output -> Tree () -> Html msg
