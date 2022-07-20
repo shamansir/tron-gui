@@ -92,6 +92,15 @@ localMarker : String
 localMarker = "@@@@____local___@@@@"
 
 
+isLocal : Url -> Bool
+isLocal url = url.host == localMarker
+
+
+getLocalPath : Url -> Maybe String
+getLocalPath url =
+    if isLocal url then Just url.path else Nothing
+
+
 toLocalUrl : List String -> Url
 toLocalUrl path =
     toLocalUrl_ <| Url.relative path []
@@ -110,7 +119,7 @@ toLocalUrl_ path =
 
 encodeMaybeLocalUrl : Url -> String
 encodeMaybeLocalUrl url =
-    if url.host == localMarker then
+    if isLocal url then
         localMarker ++ url.path
     else
         Url.toString url

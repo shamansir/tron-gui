@@ -11,16 +11,17 @@ import Tron.Control.GenUI.Button as Button
 
 
 groupTo : (item -> GenUI.Property) -> GroupControl item a -> GenUI.Def
-groupTo toProp (Core.Control items { form, face } _) =
+groupTo toProp (Core.Control items { form, face, page } _) =
     GenUI.Nest
         { children = Array.toList <| Array.map toProp items
-        , expand =
+        , form =
             case form of
-                Nest.Expanded -> True
-                _ -> False
+                Nest.Expanded -> GenUI.Expanded
+                _ -> GenUI.Collapsed
         , nestAt = Nothing
         , face = Maybe.withDefault GenUI.Default <| Maybe.map Button.faceTo face
         , shape = { cols = -1, rows = -1, pages = 1 } -- FIXME
+        , page = page
         }
 
 
@@ -34,9 +35,12 @@ groupFrom toItem def =
                     (\items ->
                         Core.Control
                             (Array.fromList items)
-                            { form = if nestDef.expand then Nest.Expanded else Nest.Collapsed
+                            { form =
+                                case nestDef.form of
+                                    GenUI.Expanded -> Nest.Expanded
+                                    GenUI.Collapsed -> Nest.Collapsed
                             , face = Just <| Button.faceFrom nestDef.face
-                            , page = 0
+                            , page = nestDef.page
                             }
                             ()
                     )
@@ -51,29 +55,29 @@ choiceTo toSelectItem (Core.Control items { form, face, mode, selected } _) =
         Ok values ->
             GenUI.Select
                 { values = values
-                -- , expand =
-                --     case form of
-                --         Nest.Expanded -> True
-                --         _ -> False
                 , nestAt = Nothing
-                -- , face = Maybe.withDefault GenUI.Default <| Maybe.map Button.faceTo face
-                , shape = { cols = -1, rows = -1, pages = 1 } -- FIXME
-                , current = "" -- FIXME
+                , current =
+                    items
+                        |> Array.get selected
+                        |> Maybe.andThen (toSelectItem >> Maybe.map .value)
+                        |> Maybe.withDefault ""
                 , kind =
                      case mode of
                         Nest.Pages ->
                             GenUI.Choice
                                 { face = Maybe.withDefault GenUI.Default <| Maybe.map Button.faceTo face
-                                , expand = case form of
-                                    Nest.Expanded -> True
-                                    _ -> False
+                                , form = case form of
+                                    Nest.Expanded -> GenUI.Expanded
+                                    _ -> GenUI.Collapsed
+                                , page = 1 -- FIXME
+                                , shape = { cols = -1, rows = -1, pages = 1 } -- FIXME
                                 }
                         Nest.Knob ->
                             GenUI.Knob
                         Nest.SwitchThrough ->
                             GenUI.Switch
                 }
-        Err _ -> GenUI.Root -- FIXME
+        Err _ -> GenUI.Ghost -- FIXME
 
 
 
