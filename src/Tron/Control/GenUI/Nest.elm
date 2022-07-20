@@ -68,7 +68,8 @@ choiceTo toSelectItem (Core.Control items { form, face, mode, selected } _) =
                                 { face = Maybe.withDefault GenUI.Default <| Maybe.map Button.faceTo face
                                 , form = case form of
                                     Nest.Expanded -> GenUI.Expanded
-                                    _ -> GenUI.Collapsed
+                                    Nest.Collapsed -> GenUI.Collapsed
+                                    Nest.Detached -> GenUI.Collapsed
                                 , page = 1 -- FIXME
                                 , shape = { cols = -1, rows = -1, pages = 1 } -- FIXME
                                 }
@@ -80,9 +81,8 @@ choiceTo toSelectItem (Core.Control items { form, face, mode, selected } _) =
         Err _ -> GenUI.Ghost -- FIXME
 
 
-
-choiceFrom : (GenUI.SelectItem -> Maybe item) -> GenUI.Def -> Result (List GenUI.SelectItem) (ChoiceControl item ())
-choiceFrom toItem def =
+choiceFrom_ : (item -> String -> Bool) -> (GenUI.SelectItem -> Maybe item) -> GenUI.Def -> Result (List GenUI.SelectItem) (ChoiceControl item ())
+choiceFrom_ compare toItem def =
     case def of
         GenUI.Select selectDef ->
             adaptItems toItem selectDef.values
@@ -90,16 +90,42 @@ choiceFrom toItem def =
                         (\passedItems ->
                             Core.Control
                                 (Array.fromList passedItems)
-                                { form = Nest.Collapsed -- FIXME
-                                , face = Nothing -- FIXME -- Just <| Button.faceFrom selectDef.face
-                                , mode = Nest.Pages -- FIXME
+                                { form = case selectDef.kind of
+                                    GenUI.Choice { form } ->
+                                        case form of
+                                            GenUI.Expanded -> Nest.Expanded
+                                            GenUI.Collapsed -> Nest.Collapsed
+                                    GenUI.Knob -> Nest.Expanded
+                                    GenUI.Switch -> Nest.Expanded
+                                , face =
+                                    case selectDef.kind of
+                                        GenUI.Choice { face } -> Just <| Button.faceFrom face
+                                        GenUI.Knob -> Nothing
+                                        GenUI.Switch -> Nothing
+                                , mode =
+                                    case selectDef.kind of
+                                        GenUI.Choice _ -> Nest.Pages
+                                        GenUI.Knob -> Nest.Knob
+                                        GenUI.Switch -> Nest.SwitchThrough
                                 , prevSelected = Nothing
-                                , selected = 0 -- FIXME
-                                , page = 0
+                                , selected =
+                                    passedItems
+                                        |> List.indexedMap Tuple.pair
+                                        |> List.foldl (\(index, value) prev -> if compare value selectDef.current then index else prev) 0
+                                , page =
+                                    case selectDef.kind of
+                                        GenUI.Choice { page } -> page
+                                        GenUI.Knob -> 0
+                                        GenUI.Switch -> 0
                                 }
                                 ()
                         )
         _ -> Err []
+
+
+choiceFrom : (GenUI.SelectItem -> Maybe String) -> GenUI.Def -> Result (List GenUI.SelectItem) (ChoiceControl String ())
+choiceFrom = choiceFrom_ (==)
+
 
 
 adaptItems : (a -> Maybe b) -> List a -> Result (List a) (List b)

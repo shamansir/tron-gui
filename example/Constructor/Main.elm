@@ -53,6 +53,8 @@ import Graph
 import Html exposing (Html)
 import Html.Attributes as Html
 import Html.Events as Html
+import Svg
+import Svg.Attributes as Svg
 
 import Dropdown
 
@@ -66,6 +68,9 @@ import Example.Tiler.Logic as Example_Tiler
 
 import Constructor.ToBuilder as ToBuilder
 import Constructor.Selector exposing (..)
+
+import Graph.Geometry.Make as Geom
+import Graph.Render.Svg.Graph as Render
 
 
 type Example
@@ -363,8 +368,10 @@ view model =
                             ]
                     )
                 <| [ Builder, Yaml, Json, Graph, Descriptive ]
+            , case model.output of
+                Graph -> Html.div [ Html.id "graph" ] [ renderGraph model.tree ]
+                _ -> Html.div [] []
             , viewCode model.output model.tree
-
             ]
         ]
 
@@ -846,6 +853,25 @@ renderOutput output tree =
         Yaml -> YE.toString 2 <| GYAMLE.encode <| GenUI.to tree
         Descriptive -> GDESC.toString <| GDESC.encode <| GenUI.to tree
         Graph -> Graph.toString GGRAPH.nodeToString GGRAPH.edgeToString <| GGRAPH.toGraph <| GenUI.to tree
+
+
+renderGraph : Tree () -> Html msg
+renderGraph tree =
+    let
+        renderNode pos nodes node =
+            Svg.g
+                [ Svg.transform <| "translate(" ++ String.fromFloat pos.x ++ "," ++ String.fromFloat pos.y ++ ")" ]
+                [ Svg.text_
+                    [ Svg.dominantBaseline "hanging"
+                    , Svg.fontSize "10px"
+                    ]
+                    [ Html.text <| Maybe.withDefault "?" <| GGRAPH.nodeToString node.node.label ]
+                ]
+    in Render.graph
+        Geom.defaultWay
+        renderNode
+        (always { width = 120, height = 40 })
+        <| GGRAPH.toGraph <| GenUI.to tree
 
 
 viewCode : Output -> Tree () -> Html msg
