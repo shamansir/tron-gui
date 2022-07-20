@@ -39,7 +39,11 @@ import Tron.Tree.Expose.GenUI as GenUI
 
 import GenUI
 import GenUI.Json.Encode as GJSONE
+import GenUI.Json.ToValues as GJSONV
+import GenUI.Json.LoadValues as GJSONV
 import GenUI.Yaml.Encode as GYAMLE
+import GenUI.Yaml.ToValues as GYAMLV
+import GenUI.Yaml.LoadValues as GYAMLV
 import GenUI.Descriptive.Encode as GDESC
 import GenUI.ToGraph as GGRAPH
 
@@ -99,8 +103,9 @@ type Output
     | Json
     | Yaml
     | Graph
-    -- | TronGraph
     | Descriptive
+    | ValuesJson
+    | ValuesYaml
 
 
 types : List Type
@@ -369,7 +374,7 @@ view model =
                             [ Html.text <| outputName output
                             ]
                     )
-                <| [ Builder, Yaml, Json, Graph, Descriptive ]
+                <| [ Builder, Yaml, Json, Graph, Descriptive, ValuesJson, ValuesYaml ]
             , case model.output of
                 Graph -> Html.div [ Html.id "graph" ] [ renderGraph model.tree ]
                 _ -> Html.div [] []
@@ -855,12 +860,14 @@ renderOutput output tree =
         Yaml -> YE.toString 2 <| GYAMLE.encode <| GenUI.to tree
         Descriptive -> GDESC.toString <| GDESC.encode <| GenUI.to tree
         Graph -> Graph.toString GGRAPH.nodeToString GGRAPH.edgeToString <| GGRAPH.toGraph <| GenUI.to tree
+        ValuesJson -> JE.encode 2 <| GJSONV.toValues <| GenUI.to tree
+        ValuesYaml -> YE.toString 2 <| GYAMLV.toValues <| GenUI.to tree
 
 
 renderGraph : Tree () -> Html msg
 renderGraph tree =
     let
-        size = { width = 120, height = 40 }
+        size = { width = 80, height = 40 }
         renderNode pos nodes { node, outgoing } =
             Svg.g
                 []
@@ -955,6 +962,8 @@ outputName output =
         Yaml -> "YAML"
         Descriptive -> "Descriptive"
         Graph -> "Graph"
+        ValuesJson -> "Values (JSON)"
+        ValuesYaml -> "Values (YAML)"
 
 
 main : WithTron.Program () Model Msg

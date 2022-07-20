@@ -296,4 +296,5 @@ body {
     top: 10%;
     left: 10%;
     background: white;
+    z-index: 10000;
 }
