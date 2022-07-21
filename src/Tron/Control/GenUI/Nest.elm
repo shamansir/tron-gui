@@ -10,7 +10,7 @@ import Tron.Control.Impl.Nest as Nest exposing (GroupControl, ChoiceControl)
 import Tron.Control.GenUI.Button as Button
 
 
-groupTo : (item -> GenUI.Property) -> GroupControl item a -> GenUI.Def
+groupTo : (item -> GenUI.Property x) -> GroupControl item a -> GenUI.Def x
 groupTo toProp (Core.Control items { form, face, page } _) =
     GenUI.Nest
         { children = Array.toList <| Array.map toProp items
@@ -25,7 +25,7 @@ groupTo toProp (Core.Control items { form, face, page } _) =
         }
 
 
-groupFrom : (GenUI.Property -> Maybe item) -> GenUI.Def -> Result (List GenUI.Property) (GroupControl item ())
+groupFrom : (GenUI.Property x -> Maybe item) -> GenUI.Def x -> Result (List (GenUI.Property x)) (GroupControl item ())
 groupFrom toItem def =
     case def of
         GenUI.Nest nestDef ->
@@ -49,7 +49,7 @@ groupFrom toItem def =
 
 
 
-choiceTo : (item -> Maybe GenUI.SelectItem) -> ChoiceControl item a -> GenUI.Def
+choiceTo : (item -> Maybe GenUI.SelectItem) -> ChoiceControl item a -> GenUI.Def x
 choiceTo toSelectItem (Core.Control items { form, face, mode, selected } _) =
     case adaptItems toSelectItem <| Array.toList items of
         Ok values ->
@@ -81,7 +81,7 @@ choiceTo toSelectItem (Core.Control items { form, face, mode, selected } _) =
         Err _ -> GenUI.Ghost -- FIXME
 
 
-choiceFrom_ : (item -> String -> Bool) -> (GenUI.SelectItem -> Maybe item) -> GenUI.Def -> Result (List GenUI.SelectItem) (ChoiceControl item ())
+choiceFrom_ : (item -> String -> Bool) -> (GenUI.SelectItem -> Maybe item) -> GenUI.Def x -> Result (List GenUI.SelectItem) (ChoiceControl item ())
 choiceFrom_ compare toItem def =
     case def of
         GenUI.Select selectDef ->
@@ -123,7 +123,7 @@ choiceFrom_ compare toItem def =
         _ -> Err []
 
 
-choiceFrom : (GenUI.SelectItem -> Maybe String) -> GenUI.Def -> Result (List GenUI.SelectItem) (ChoiceControl String ())
+choiceFrom : (GenUI.SelectItem -> Maybe String) -> GenUI.Def x -> Result (List GenUI.SelectItem) (ChoiceControl String ())
 choiceFrom = choiceFrom_ (==)
 
 

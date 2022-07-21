@@ -53,7 +53,7 @@ faceFrom face =
         GenUI.OfColor color -> Button.WithColor <| ColorE.gColorToColor color
 
 
-to : Control a -> GenUI.Def
+to : Control a -> GenUI.Def x
 to (Core.Control face _ _) =
     GenUI.Action
         { face = faceTo face
@@ -61,7 +61,7 @@ to (Core.Control face _ _) =
 
 
 
-from : GenUI.Def -> Maybe (Control ())
+from : GenUI.Def x -> Maybe (Control ())
 from def =
     case def of
         GenUI.Action actionDef ->

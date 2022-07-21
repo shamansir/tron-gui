@@ -8,7 +8,7 @@ import Tron.Control as Core
 import Tron.Control.Impl.Number as Number exposing (Control)
 
 
-to : Control a -> GenUI.Def
+to : Control a -> GenUI.Def x
 to (Core.Control axis (_, current ) _) =
     GenUI.NumFloat
         { min = axis.min
@@ -18,7 +18,7 @@ to (Core.Control axis (_, current ) _) =
         }
 
 
-from : GenUI.Def -> Maybe (Control ())
+from : GenUI.Def a -> Maybe (Control ())
 from def =
     case def of
         GenUI.NumInt numDef ->

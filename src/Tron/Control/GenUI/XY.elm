@@ -8,7 +8,7 @@ import Tron.Control as Core
 import Tron.Control.Impl.XY as XY exposing (Control)
 
 
-to : Control a -> GenUI.Def
+to : Control a -> GenUI.Def x
 to (Core.Control ( xAxis, yAxis ) (_, ( currentX, currentY ) ) _) =
     GenUI.XY
         { x =
@@ -27,7 +27,7 @@ to (Core.Control ( xAxis, yAxis ) (_, ( currentX, currentY ) ) _) =
 
 
 
-from : GenUI.Def -> Maybe (Control ())
+from : GenUI.Def x -> Maybe (Control ())
 from def =
     case def of
         GenUI.XY xyDef ->

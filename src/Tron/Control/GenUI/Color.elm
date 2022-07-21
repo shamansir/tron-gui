@@ -21,7 +21,7 @@ colorToGColor : Color -> GColor.Color
 colorToGColor = Color.toRgba >> GColor.Rgba
 
 
-to : Control a -> GenUI.Def
+to : Control a -> GenUI.Def x
 to (Core.Control _ (_, current ) _) =
     GenUI.Color
         { current = colorToGColor current
@@ -29,7 +29,7 @@ to (Core.Control _ (_, current ) _) =
 
 
 
-from : GenUI.Def -> Maybe (Control ())
+from : GenUI.Def x -> Maybe (Control ())
 from def =
     case def of
         GenUI.Color colorDef ->

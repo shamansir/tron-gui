@@ -53,6 +53,7 @@ import Yaml.Encode as YE
 import Yaml.Decode as YD
 
 import Graph
+import Graph.DOT as DOT
 
 {- elm-dagre -}
 import Render as R
@@ -865,7 +866,7 @@ renderOutput output tree =
             JE.encode 2 <| GJSONE.encode <| GenUI.to tree
         Yaml -> YE.toString 2 <| GYAMLE.encode <| GenUI.to tree
         Descriptive -> GDESC.toString <| GDESC.encode <| GenUI.to tree
-        Graph -> Graph.toString GGRAPH.nodeToString GGRAPH.edgeToString <| GGRAPH.toGraph <| GenUI.to tree
+        Graph -> DOT.output GGRAPH.nodeToString GGRAPH.edgeToString <| GGRAPH.toGraph () <| GenUI.to tree
         ValuesJson -> JE.encode 2 <| GJSONV.toValues <| GenUI.to tree
         ValuesYaml -> YE.toString 2 <| GYAMLV.toValues <| GenUI.to tree
 
@@ -874,10 +875,10 @@ renderGraph : Tree () -> Html msg
 renderGraph tree =
     R.draw
         [ ]
-        [ R.nodeDrawer <| RSD.svgDrawNode [ RSDA.label (.label >> .name) ]
+        [ R.nodeDrawer <| RSD.svgDrawNode [ RSDA.label (.label >> Tuple.first >> .name) ]
         , R.style "height: 100vh;"
         ]
-        <| GGRAPH.toGraph <| GenUI.to tree
+        <| GGRAPH.toGraph () <| GenUI.to tree
 
 
 {- renderGraph : Tree () -> Html msg
