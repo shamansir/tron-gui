@@ -6,6 +6,7 @@ import GenUI exposing (GenUI)
 -- import Tron.Tree as Tree
 import Tron.Tree.Internals as Tree exposing (..)
 import Tron.Path as Path
+import Tron.Style.CellShape as CS exposing (CellShape)
 
 import Tron.Control.GenUI.Button as Button
 import Tron.Control.GenUI.Number as Number
@@ -15,19 +16,28 @@ import Tron.Control.GenUI.Toggle as Toggle
 import Tron.Control.GenUI.Color as Color
 import Tron.Control.GenUI.Nest as Nest
 
+import GenUI
+
 
 treeToGenUIAt : Path.Label -> Tree a -> GenUI.Property a
 treeToGenUIAt label t =
     let
-        makeProp name def =
+        makeProp =
+            makeProp_ Nothing
+        makePProp shape =
+            makeProp_ <| Just shape
+        makeProp_ maybeShape name def =
             (
                 { name = name
-                , shape = Nothing -- FIXME: where is the CellShape ?
+                , shape =
+                    maybeShape
+                        |> Maybe.map CS.numify
+                        |> Maybe.map (\(rows, cols) -> { rows = floor rows, cols = floor cols })
                 , def = def
                 , live = False
                 , property = Nothing
                 }
-            , Tree.get t
+            , get t
             )
     in case t of
         Nil a -> GenUI.root a -- FIXME
@@ -37,9 +47,9 @@ treeToGenUIAt label t =
         Text text -> makeProp label <| Text.to text
         Toggle toggle -> makeProp label <| Toggle.to toggle
         Color color -> makeProp label <| Color.to color
-        Choice focus ( panelShape, cellShape ) control -> -- FIMXE: use panelShape & cellShape
-            makeProp label
-                <| Nest.choiceTo
+        Choice _ ( panelShape, cellShape ) control ->
+            makePProp cellShape label
+                <| Nest.choiceTo panelShape
                     (\(valueLabel, innerTree) ->
                         case innerTree of
                             Action button ->
@@ -48,9 +58,9 @@ treeToGenUIAt label t =
                             _ -> Nothing
                     )
                     control
-        Group focus ( panelShape, cellShape ) control -> -- FIMXE: use panelShape & cellShape
-            makeProp label
-                <| Nest.groupTo
+        Group _ ( panelShape, cellShape ) control ->
+            makePProp cellShape label
+                <| Nest.groupTo panelShape
                     (\(innerLabel, innerTree) -> treeToGenUIAt innerLabel innerTree)
                     control
         Live tree ->
@@ -67,6 +77,30 @@ treeToGenUIAt label t =
 treeToGenUI : Tree a -> GenUI.Property a
 treeToGenUI =
    treeToGenUIAt "root"
+
+
+genUIToTree : GenUI.Property a -> Result String (Tree a)
+genUIToTree ( prop, a ) =
+    ( case prop.def of
+        GenUI.Ghost -> Ok <| Nil ()
+        GenUI.NumInt _ -> Result.fromMaybe "not a number prop" <| Maybe.map Number <| Number.from prop.def
+        GenUI.NumFloat _ -> Result.fromMaybe "not a number prop" <| Maybe.map Number <| Number.from prop.def
+        GenUI.XY _ -> Result.fromMaybe "not a XY prop" <| Maybe.map Coordinate <| XY.from prop.def
+        GenUI.Toggle _ -> Result.fromMaybe "not a toggle prop" <| Maybe.map Toggle <| Toggle.from prop.def
+        GenUI.Color _ -> Result.fromMaybe "not a color prop" <| Maybe.map Color <| Color.from prop.def
+        GenUI.Textual _ -> Result.fromMaybe "not a text prop" <| Maybe.map Text <| Text.from prop.def
+        GenUI.Action _ -> Result.fromMaybe "not an action prop" <| Maybe.map Action <| Button.from prop.def
+        -- GenUI.Select _ -> Result.fromMaybe "not an action prop" <| Maybe.map Choice <| Nest.choiceFrom "" prop.def
+        -- GenUI.Nest _ -> Result.fromMaybe "not an action prop" <| Maybe.map Group <| Nest.groupFrom "" prop.def
+
+        GenUI.Select _ -> Err "TODO" -- TODO
+        GenUI.Nest _ -> Err "TODO" -- TODO
+
+        GenUI.Gradient _ -> Err "gradient props are not yet supported" -- FIXME
+        GenUI.Progress _ -> Err "progress props are not yet supported" -- FIXME
+        GenUI.Zoom _ -> Err "zoom props are not yet supported" -- FIXME
+        -- TODO: live
+    ) |> Result.map (Tree.map <| always a)
 
 
 to : Tree a -> GenUI a

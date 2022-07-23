@@ -8,10 +8,21 @@ import Array exposing (Array)
 import Tron.Control as Core
 import Tron.Control.Impl.Nest as Nest exposing (GroupControl, ChoiceControl)
 import Tron.Control.GenUI.Button as Button
+import Tron.Style.PanelShape as PS exposing (PanelShape)
 
 
-groupTo : (item -> GenUI.Property x) -> GroupControl item a -> GenUI.Def x
-groupTo toProp (Core.Control items { form, face, page } _) =
+convertPanelShape : PanelShape -> { cols : Int, rows : Int, pages : Int }
+convertPanelShape pshape =
+    case PS.numify pshape of
+        ( cols, rows ) ->
+            { cols = cols
+            , rows = rows
+            , pages = if PS.pagesEnabled pshape then 1 else 0
+            }
+
+
+groupTo : PanelShape -> (item -> GenUI.Property x) -> GroupControl item a -> GenUI.Def x
+groupTo pshape toProp (Core.Control items { form, face, page } _) =
     GenUI.Nest
         { children = Array.toList <| Array.map toProp items
         , form =
@@ -20,7 +31,7 @@ groupTo toProp (Core.Control items { form, face, page } _) =
                 _ -> GenUI.Collapsed
         , nestAt = Nothing
         , face = Maybe.withDefault GenUI.Default <| Maybe.map Button.faceTo face
-        , shape = { cols = -1, rows = -1, pages = 1 } -- FIXME
+        , shape = convertPanelShape pshape
         , page = page
         }
 
@@ -49,8 +60,8 @@ groupFrom toItem def =
 
 
 
-choiceTo : (item -> Maybe GenUI.SelectItem) -> ChoiceControl item a -> GenUI.Def x
-choiceTo toSelectItem (Core.Control items { form, face, mode, selected } _) =
+choiceTo : PanelShape -> (item -> Maybe GenUI.SelectItem) -> ChoiceControl item a -> GenUI.Def x
+choiceTo pshape toSelectItem (Core.Control items { form, face, mode, selected, page } _) =
     case adaptItems toSelectItem <| Array.toList items of
         Ok values ->
             GenUI.Select
@@ -70,8 +81,8 @@ choiceTo toSelectItem (Core.Control items { form, face, mode, selected } _) =
                                     Nest.Expanded -> GenUI.Expanded
                                     Nest.Collapsed -> GenUI.Collapsed
                                     Nest.Detached -> GenUI.Collapsed
-                                , page = 1 -- FIXME
-                                , shape = { cols = -1, rows = -1, pages = 1 } -- FIXME
+                                , page = page
+                                , shape = convertPanelShape pshape
                                 }
                         Nest.Knob ->
                             GenUI.Knob
