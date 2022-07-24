@@ -6,6 +6,7 @@ import GenUI exposing (GenUI)
 -- import Tron.Tree as Tree
 import Tron.Tree.Internals as Tree exposing (..)
 import Tron.Path as Path
+import Tron.Style.PanelShape as PS exposing (PanelShape)
 import Tron.Style.CellShape as CS exposing (CellShape)
 
 import Tron.Control.GenUI.Button as Button
@@ -15,6 +16,8 @@ import Tron.Control.GenUI.Text as Text
 import Tron.Control.GenUI.Toggle as Toggle
 import Tron.Control.GenUI.Color as Color
 import Tron.Control.GenUI.Nest as Nest
+
+import Tron.Control.Impl.Button as B
 
 import GenUI
 
@@ -79,7 +82,7 @@ treeToGenUI =
    treeToGenUIAt "root"
 
 
-genUIToTree : GenUI.Property a -> Result String (Tree a)
+genUIToTree : GenUI.Property () -> Result String (Tree ())
 genUIToTree ( prop, a ) =
     ( case prop.def of
         GenUI.Ghost -> Ok <| Nil ()
@@ -90,17 +93,24 @@ genUIToTree ( prop, a ) =
         GenUI.Color _ -> Result.fromMaybe "not a color prop" <| Maybe.map Color <| Color.from prop.def
         GenUI.Textual _ -> Result.fromMaybe "not a text prop" <| Maybe.map Text <| Text.from prop.def
         GenUI.Action _ -> Result.fromMaybe "not an action prop" <| Maybe.map Action <| Button.from prop.def
-        -- GenUI.Select _ -> Result.fromMaybe "not an action prop" <| Maybe.map Choice <| Nest.choiceFrom "" prop.def
-        -- GenUI.Nest _ -> Result.fromMaybe "not an action prop" <| Maybe.map Group <| Nest.groupFrom "" prop.def
-
-        GenUI.Select _ -> Err "TODO" -- TODO
-        GenUI.Nest _ -> Err "TODO" -- TODO
-
+        GenUI.Select _ -> Result.mapError (always "not a select prop")
+                                -- <| Result.map ()
+                                <| Result.map (Choice Nothing ( Nest.loadPanelShape prop.def |> Maybe.withDefault PS.auto, {- FIXME: prop.shape |> Maybe.withDefault -} CS.default ))
+                                <| Nest.choiceFrom
+                                        (\(label, _ ) value -> label == value)
+                                        (\{ value, name, face } -> Just ( name |> Maybe.withDefault value, Action <| B.make () <| Button.faceFrom face ))
+                                        prop.def
+        GenUI.Nest _ -> Result.mapError (always "not a select prop")
+                                -- <| Result.map ()
+                                <| Result.map (Group Nothing ( Nest.loadPanelShape prop.def |> Maybe.withDefault PS.auto, {- FIXME: prop.shape |> Maybe.withDefault -} CS.default ))
+                                <| Nest.groupFrom
+                                        (\(prop_, a_) -> genUIToTree (prop_, a_) |> Result.toMaybe |> Maybe.map (Tuple.pair prop_.name))
+                                        prop.def
         GenUI.Gradient _ -> Err "gradient props are not yet supported" -- FIXME
         GenUI.Progress _ -> Err "progress props are not yet supported" -- FIXME
         GenUI.Zoom _ -> Err "zoom props are not yet supported" -- FIXME
         -- TODO: live
-    ) |> Result.map (Tree.map <| always a)
+    ) -- |> Result.map (Tree.map <| always a)
 
 
 to : Tree a -> GenUI a

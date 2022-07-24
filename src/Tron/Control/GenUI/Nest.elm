@@ -1,10 +1,11 @@
-module Tron.Control.GenUI.Nest exposing (groupTo, groupFrom, choiceTo, choiceFrom)
+module Tron.Control.GenUI.Nest exposing (groupTo, groupFrom, choiceTo, choiceFrom, loadPanelShape)
 
 
 import GenUI
 
 import Array exposing (Array)
 
+import Tron.Tree.Internals exposing (NestShape)
 import Tron.Control as Core
 import Tron.Control.Impl.Nest as Nest exposing (GroupControl, ChoiceControl)
 import Tron.Control.GenUI.Button as Button
@@ -92,8 +93,8 @@ choiceTo pshape toSelectItem (Core.Control items { form, face, mode, selected, p
         Err _ -> GenUI.Ghost -- FIXME
 
 
-choiceFrom_ : (item -> String -> Bool) -> (GenUI.SelectItem -> Maybe item) -> GenUI.Def x -> Result (List GenUI.SelectItem) (ChoiceControl item ())
-choiceFrom_ compare toItem def =
+choiceFrom : (item -> String -> Bool) -> (GenUI.SelectItem -> Maybe item) -> GenUI.Def x -> Result (List GenUI.SelectItem) (ChoiceControl item ())
+choiceFrom compare toItem def =
     case def of
         GenUI.Select selectDef ->
             adaptItems toItem selectDef.values
@@ -134,9 +135,27 @@ choiceFrom_ compare toItem def =
         _ -> Err []
 
 
-choiceFrom : (GenUI.SelectItem -> Maybe String) -> GenUI.Def x -> Result (List GenUI.SelectItem) (ChoiceControl String ())
-choiceFrom = choiceFrom_ (==)
+{- choiceFrom : (GenUI.SelectItem -> Maybe String) -> GenUI.Def x -> Result (List GenUI.SelectItem) (ChoiceControl String ())
+choiceFrom = choiceFrom_ (==) -}
 
+
+
+{- nestShapeFrom : ( Maybe GenUI.CellShape, GenUI.NestShape ) -> NestShape
+nestShapeFrom ( maybeCellShape, selectDef ) =
+    (
+    , maybeCellShape |> Maybe.withDefault { rows = }
+
+    ) -}
+
+loadPanelShape : GenUI.Def x -> Maybe PanelShape
+loadPanelShape def =
+    case def of
+        GenUI.Select selectDef ->
+             case selectDef.kind of
+                GenUI.Choice { shape } -> PS.create ( shape.cols, shape.rows ) |> Just
+                _ -> Nothing
+        GenUI.Nest { shape } ->  PS.create ( shape.cols, shape.rows ) |> Just
+        _ -> Nothing
 
 
 adaptItems : (a -> Maybe b) -> List a -> Result (List a) (List b)

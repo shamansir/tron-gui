@@ -42,6 +42,10 @@ restoreTransientState control state = control
 -}
 
 
+make : a -> Face -> Control a
+make a face = Core.Control face () a
+
+
 withIcon : Icon -> Face
 withIcon = WithIcon
 
