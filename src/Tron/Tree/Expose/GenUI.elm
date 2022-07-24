@@ -3,6 +3,7 @@ module Tron.Tree.Expose.GenUI exposing (to, from)
 
 import GenUI exposing (GenUI)
 
+import Tron.Path as Path
 -- import Tron.Tree as Tree
 import Tron.Control as Control
 import Tron.Tree.Internals as Tree exposing (..)
@@ -19,6 +20,8 @@ import Tron.Control.GenUI.Color as Color
 import Tron.Control.GenUI.Nest as Nest
 
 import Tron.Control.Impl.Button as B
+
+import Tron.Build as Build
 
 import GenUI
 
@@ -83,7 +86,7 @@ treeToGenUI =
    treeToGenUIAt "root"
 
 
-genUIToTree : GenUI.Property a -> Result String (Tree (Maybe a))
+genUIToTree : GenUI.Property a -> Result String (Path.Label, Tree (Maybe a))
 genUIToTree ( prop, a ) =
     let
         setToA = Tree.map <| always <| Just a
@@ -102,7 +105,7 @@ genUIToTree ( prop, a ) =
                                 <| Result.map (Choice Nothing ( Nest.loadPanelShape prop.def |> Maybe.withDefault PS.auto, {- FIXME: prop.shape |> Maybe.withDefault -} CS.default ))
                                 <| Result.map (Control.map <| always <| Just a)
                                 <| Nest.choiceFrom
-                                        (\(label, _ ) value -> label == value)
+                                        (\( label, _ ) value -> label == value)
                                         (\{ value, name, face } -> Just ( name |> Maybe.withDefault value, Action <| B.make Nothing <| Button.faceFrom face ))
                                         prop.def
         GenUI.Nest _ -> Result.map setToA
@@ -111,13 +114,19 @@ genUIToTree ( prop, a ) =
                                 <| Result.map (Group Nothing ( Nest.loadPanelShape prop.def |> Maybe.withDefault PS.auto, {- FIXME: prop.shape |> Maybe.withDefault -} CS.default ))
                                 <| Result.map (Control.map <| always <| Just a)
                                 <| Nest.groupFrom
-                                        (\(prop_, a_) -> genUIToTree (prop_, a_) |> Result.toMaybe |> Maybe.map (Tuple.pair prop_.name))
+                                        (\(prop_, a_) -> genUIToTree (prop_, a_) |> Result.toMaybe)
                                         prop.def
         GenUI.Gradient _ -> Err "gradient props are not yet supported" -- FIXME
         GenUI.Progress _ -> Err "progress props are not yet supported" -- FIXME
         GenUI.Zoom _ -> Err "zoom props are not yet supported" -- FIXME
-        -- TODO: live
-    ) -- |> Result.map (Tree.map <| always a)
+    )
+    |> Result.map (\tree -> ( prop.name, tree ))
+    |> if prop.live then identity else Result.map <| Tuple.mapSecond Live
+
+
+
+makeRoot : List ( Path.Label, Tree (Maybe a) ) -> Tree (Maybe a)
+makeRoot items = Nest.root items Nothing |> Group Nothing ( PS.auto, CS.default )
 
 
 to : Tree a -> GenUI a
@@ -127,5 +136,9 @@ to t =
     }
 
 
-from : GenUI a -> Result String (Tree a)
-from _ = Err "failed" -- FIXME
+from : GenUI a -> Result String (Tree (Maybe a))
+from g =
+    List.map genUIToTree g.root
+        |> List.filterMap Result.toMaybe
+        |> makeRoot
+        |> Ok -- FIXME: load errors of conversion

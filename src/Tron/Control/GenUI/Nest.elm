@@ -1,4 +1,4 @@
-module Tron.Control.GenUI.Nest exposing (groupTo, groupFrom, choiceTo, choiceFrom, loadPanelShape)
+module Tron.Control.GenUI.Nest exposing (groupTo, groupFrom, choiceTo, choiceFrom, loadPanelShape, root)
 
 
 import GenUI
@@ -179,3 +179,14 @@ adaptItems toItem items =
         if List.isEmpty failedProps then
             Ok passedItems
         else Err failedProps
+
+
+root : List item -> a -> (GroupControl item a)
+root items a =
+    Core.Control
+        (Array.fromList items)
+        { form = Nest.Expanded
+        , face = Nothing
+        , page = 0
+        }
+        a
