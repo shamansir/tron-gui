@@ -4,6 +4,7 @@ module Tron.Tree.Expose.GenUI exposing (to, from)
 import GenUI exposing (GenUI)
 
 -- import Tron.Tree as Tree
+import Tron.Control as Control
 import Tron.Tree.Internals as Tree exposing (..)
 import Tron.Path as Path
 import Tron.Style.PanelShape as PS exposing (PanelShape)
@@ -82,27 +83,33 @@ treeToGenUI =
    treeToGenUIAt "root"
 
 
-genUIToTree : GenUI.Property () -> Result String (Tree ())
+genUIToTree : GenUI.Property a -> Result String (Tree (Maybe a))
 genUIToTree ( prop, a ) =
+    let
+        setToA = Tree.map <| always <| Just a
+    in
     ( case prop.def of
-        GenUI.Ghost -> Ok <| Nil ()
-        GenUI.NumInt _ -> Result.fromMaybe "not a number prop" <| Maybe.map Number <| Number.from prop.def
-        GenUI.NumFloat _ -> Result.fromMaybe "not a number prop" <| Maybe.map Number <| Number.from prop.def
-        GenUI.XY _ -> Result.fromMaybe "not a XY prop" <| Maybe.map Coordinate <| XY.from prop.def
-        GenUI.Toggle _ -> Result.fromMaybe "not a toggle prop" <| Maybe.map Toggle <| Toggle.from prop.def
-        GenUI.Color _ -> Result.fromMaybe "not a color prop" <| Maybe.map Color <| Color.from prop.def
-        GenUI.Textual _ -> Result.fromMaybe "not a text prop" <| Maybe.map Text <| Text.from prop.def
-        GenUI.Action _ -> Result.fromMaybe "not an action prop" <| Maybe.map Action <| Button.from prop.def
+        GenUI.Ghost -> Ok <| Nil <| Just a
+        GenUI.NumInt _ -> Result.map setToA <| Result.fromMaybe "not a number prop" <| Maybe.map Number <| Number.from prop.def
+        GenUI.NumFloat _ -> Result.map setToA <| Result.fromMaybe "not a number prop" <| Maybe.map Number <| Number.from prop.def
+        GenUI.XY _ -> Result.map setToA <| Result.fromMaybe "not a XY prop" <| Maybe.map Coordinate <| XY.from prop.def
+        GenUI.Toggle _ -> Result.map setToA <| Result.fromMaybe "not a toggle prop" <| Maybe.map Toggle <| Toggle.from prop.def
+        GenUI.Color _ -> Result.map setToA <| Result.fromMaybe "not a color prop" <| Maybe.map Color <| Color.from prop.def
+        GenUI.Textual _ -> Result.map setToA <| Result.fromMaybe "not a text prop" <| Maybe.map Text <| Text.from prop.def
+        GenUI.Action _ -> Result.map setToA <| Result.fromMaybe "not an action prop" <| Maybe.map Action <| Button.from prop.def
         GenUI.Select _ -> Result.mapError (always "not a select prop")
                                 -- <| Result.map ()
                                 <| Result.map (Choice Nothing ( Nest.loadPanelShape prop.def |> Maybe.withDefault PS.auto, {- FIXME: prop.shape |> Maybe.withDefault -} CS.default ))
+                                <| Result.map (Control.map <| always <| Just a)
                                 <| Nest.choiceFrom
                                         (\(label, _ ) value -> label == value)
-                                        (\{ value, name, face } -> Just ( name |> Maybe.withDefault value, Action <| B.make () <| Button.faceFrom face ))
+                                        (\{ value, name, face } -> Just ( name |> Maybe.withDefault value, Action <| B.make Nothing <| Button.faceFrom face ))
                                         prop.def
-        GenUI.Nest _ -> Result.mapError (always "not a select prop")
+        GenUI.Nest _ -> Result.map setToA
+                                <| Result.mapError (always "not a select prop")
                                 -- <| Result.map ()
                                 <| Result.map (Group Nothing ( Nest.loadPanelShape prop.def |> Maybe.withDefault PS.auto, {- FIXME: prop.shape |> Maybe.withDefault -} CS.default ))
+                                <| Result.map (Control.map <| always <| Just a)
                                 <| Nest.groupFrom
                                         (\(prop_, a_) -> genUIToTree (prop_, a_) |> Result.toMaybe |> Maybe.map (Tuple.pair prop_.name))
                                         prop.def
