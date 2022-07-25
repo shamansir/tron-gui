@@ -294,8 +294,11 @@ body {
 #graph {
     position: absolute;
     top: 10%;
-    left: 10%;
-    background: white;
+    left: 0;
+    background: rgba(255,255,255,0.95);
     z-index: 10000;
-    zoom: 0.4;
+    zoom: 0.27;
+    max-width: 100%;
+    border: lightgray 3px solid;
+    border-radius: 5px;
 }

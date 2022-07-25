@@ -141,4 +141,7 @@ from g =
     List.map genUIToTree g.root
         |> List.filterMap Result.toMaybe
         |> makeRoot
-        |> Ok -- FIXME: load errors of conversion
+        |> Ok -- FIXME: load errors of conversion --> Tree (Result String a) ?
+
+
+-- TODO: load from URL

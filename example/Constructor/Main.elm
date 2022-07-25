@@ -110,6 +110,7 @@ type Output
     | Json
     | Yaml
     | Graph
+    | GraphImage
     | Descriptive
     | ValuesJson
     | ValuesYaml
@@ -381,9 +382,9 @@ view model =
                             [ Html.text <| outputName output
                             ]
                     )
-                <| [ Builder, Yaml, Json, Graph, Descriptive, ValuesJson, ValuesYaml ]
+                <| [ Builder, Yaml, Json, Graph, GraphImage, Descriptive, ValuesJson, ValuesYaml ]
             , case model.output of
-                Graph -> Html.div [ Html.id "graph" ] [ renderGraph model.tree ]
+                GraphImage -> Html.div [ Html.id "graph" ] [ renderGraph model.tree ]
                 _ -> Html.div [] []
             , viewCode model.output model.tree
             ]
@@ -856,26 +857,34 @@ create s =
         _ -> Build.none
 
 
-renderOutput : Output -> Tree () -> String -- should be done in `update`
+renderOutput : Output -> Tree () -> Maybe String -- should be done in `update`
 renderOutput output tree =
     case output of
         Builder ->
             ToBuilder.toCodeLines tree
-            |> String.join "\n"
+            |> String.join "\n" |> Just
         Json ->
-            JE.encode 2 <| GJSONE.encode <| GenUI.to tree
-        Yaml -> YE.toString 2 <| GYAMLE.encode <| GenUI.to tree
-        Descriptive -> GDESC.toString <| GDESC.encode <| GenUI.to tree
-        Graph -> DOT.output GGRAPH.nodeToString GGRAPH.edgeToString <| GGRAPH.toGraph () <| GenUI.to tree
-        ValuesJson -> JE.encode 2 <| GJSONV.toValues <| GenUI.to tree
-        ValuesYaml -> YE.toString 2 <| GYAMLV.toValues <| GenUI.to tree
+            Just <| JE.encode 2 <| GJSONE.encode <| GenUI.to tree
+        Yaml -> Just <| YE.toString 2 <| GYAMLE.encode <| GenUI.to tree
+        Descriptive -> Just <| GDESC.toString <| GDESC.encode <| GenUI.to tree
+        Graph -> Just <| DOT.output GGRAPH.nodeToString GGRAPH.edgeToString <| GGRAPH.toGraph () <| GenUI.to tree
+        GraphImage -> Nothing
+        ValuesJson -> Just <| JE.encode 2 <| GJSONV.toValues <| GenUI.to tree
+        ValuesYaml -> Just <| YE.toString 2 <| GYAMLV.toValues <| GenUI.to tree
 
 
 renderGraph : Tree () -> Html msg
 renderGraph tree =
     R.draw
         [ ]
-        [ R.nodeDrawer <| RSD.svgDrawNode [ RSDA.label (.label >> Tuple.first >> .name) ]
+        [ R.nodeDrawer <| RSD.svgDrawNode
+            [ RSDA.label (.label >> Tuple.first >> .name)
+            ]
+        , R.edgeDrawer <| RSD.svgDrawEdge
+            [ RSDA.arrowHead RSDT.Vee
+            --, RSDA.onClick (\e -> SelectEdge ( e.from, e.to ))
+            , RSDA.strokeWidth (\_ -> 4)
+            ]
         , R.style "height: 100vh;"
         ]
         <| GGRAPH.toGraph () <| GenUI.to tree
@@ -929,6 +938,7 @@ renderGraph tree =
 viewCode : Output -> Tree () -> Html msg
 viewCode output =
     renderOutput output
+        >> Maybe.withDefault ""
         >> Html.text
         >> List.singleton
         >> Html.textarea [ Html.id "builder-code" ]
@@ -979,6 +989,7 @@ outputName output =
         Yaml -> "YAML"
         Descriptive -> "Descriptive"
         Graph -> "Graph"
+        GraphImage -> "Graph (Image)"
         ValuesJson -> "Values (JSON)"
         ValuesYaml -> "Values (YAML)"
 
