@@ -37,7 +37,8 @@ RUN cd ./example && ../node_modules/elm/bin/elm make ./$EXAMPLE/Main.elm --outpu
 
 FROM nginx:1.15
 
-ARG EXAMPLE=Everything
+#ARG EXAMPLE=Everything
+ARG EXAMPLE=Constructor
 
 COPY --from=0 /app/Tron.helper.js /usr/share/nginx/html
 COPY --from=0 /app/example/app.js /usr/share/nginx/html
