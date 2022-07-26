@@ -6,6 +6,7 @@ import Json.Decode as D
 import Json.Encode as E
 import Color
 import Dict exposing (Dict)
+import Http
 
 import Tron exposing (Tron)
 import Tron.Tree.Build.Unit as Build
@@ -37,7 +38,8 @@ import WithTron
 
 import Tron.Tree.Expose.GenUI as GenUI
 
-import GenUI
+import GenUI exposing (GenUI)
+import GenUI.Json.Decode as GJSOND
 import GenUI.Json.Encode as GJSONE
 import GenUI.Json.ToValues as GJSONV
 import GenUI.Json.LoadValues as GJSONV
@@ -157,6 +159,8 @@ type Msg
     | ExpandOrCollapse Path
     | TogglePagination
     | ChangeOutput Output
+    | LoadFromUrl String
+    | ApplyFromUrl (GenUI ())
 
 
 for : Model -> Tron Msg
@@ -305,6 +309,20 @@ update msg model =
                 Tiler -> Example_Tiler.gui Tree.empty (Example_Tiler.init () |> Tuple.first) |> Tree.toUnit
             }
 
+        LoadFromUrl _ ->
+            model
+
+        ApplyFromUrl genui ->
+            case  GenUI.from genui of
+                Ok tree ->
+                    { model
+                    | current = Nothing
+                    , expands = Dict.empty |> Dict.insert [] True
+                    , tree = tree |> Tree.map (always ())
+                    }
+                Err _ ->
+                    model
+
         ToLocalStorage ->
             model
 
@@ -370,6 +388,7 @@ view model =
                 , Html.button [ Html.onClick <| LoadExample Default ] [ Html.text "Default" ]
                 , Html.button [ Html.onClick <| ToLocalStorage ] [ Html.text "Save" ]
                 , Html.button [ Html.onClick <| TriggerFromLocalStorage ] [ Html.text "Load" ]
+                , Html.input [ Html.type_ "text", Html.id "url", Html.onInput <| LoadFromUrl, Html.placeholder "From URL" ] [  ]
                 ]
             , Html.div
                 [ Html.id "outputs" ]
@@ -994,6 +1013,17 @@ outputName output =
         ValuesYaml -> "Values (YAML)"
 
 
+requestFromUrl : String -> Cmd Msg
+requestFromUrl url =
+    Http.get
+        { url = url
+        , expect =
+            Http.expectJson
+                (Result.map ApplyFromUrl >> Result.withDefault NoOp)
+                GJSOND.decode
+        }
+
+
 main : WithTron.Program () Model Msg
 main =
     WithTron.element
@@ -1020,6 +1050,10 @@ main =
                     FromLocalStorage _ ->
                         updateCodeMirror ()
                     ChangeOutput _ ->
+                        updateCodeMirror ()
+                    LoadFromUrl url ->
+                        requestFromUrl url
+                    ApplyFromUrl _ ->
                         updateCodeMirror ()
                     _ -> Cmd.none
                 )
