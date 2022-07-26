@@ -121,7 +121,7 @@ genUIToTree ( prop, a ) =
         GenUI.Zoom _ -> Err "zoom props are not yet supported" -- FIXME
     )
     |> Result.map (\tree -> ( prop.name, tree ))
-    |> if prop.live then identity else Result.map <| Tuple.mapSecond Live
+    |> if prop.live then Result.map <| Tuple.mapSecond Live else identity
 
 
 
