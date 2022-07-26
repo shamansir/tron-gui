@@ -152,9 +152,17 @@ loadPanelShape def =
     case def of
         GenUI.Select selectDef ->
              case selectDef.kind of
-                GenUI.Choice { shape } -> PS.create ( shape.cols, shape.rows ) |> Just
+                GenUI.Choice { shape } ->
+                    PS.create
+                        ( if shape.cols > 0 then shape.cols else -1
+                        , if shape.rows > 0 then shape.rows else -1
+                        ) |> Just
                 _ -> Nothing
-        GenUI.Nest { shape } ->  PS.create ( shape.cols, shape.rows ) |> Just
+        GenUI.Nest { shape } ->
+            PS.create
+                ( if shape.cols > 0 then shape.cols else -1
+                , if shape.rows > 0 then shape.rows else -1
+                ) |> Just
         _ -> Nothing
 
 
