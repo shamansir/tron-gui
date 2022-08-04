@@ -30,7 +30,7 @@ groupTo pshape toProp (Core.Control items { form, face, page } _) =
             { form = case form of
                 Nest.Expanded -> GenUI.Expanded
                 _ -> GenUI.Collapsed
-            , button = Maybe.withDefault GenUI.PanelExpandStatus <| Maybe.map Button.faceTo face
+            , button = Maybe.withDefault GenUI.ExpandCollapse <| Maybe.map Button.faceTo face
             , allOf = Nothing
             , page = GenUI.Page page
             , pages = convertPanelShape pshape
@@ -75,7 +75,6 @@ choiceTo pshape toSelectItem (Core.Control items { form, face, mode, selected, p
                         |> Array.get selected
                         |> Maybe.andThen (toSelectItem >> Maybe.map .value)
                         |> Maybe.withDefault ""
-                , allOf = Nothing
                 , kind =
                      case mode of
                         Nest.Pages ->
@@ -84,7 +83,7 @@ choiceTo pshape toSelectItem (Core.Control items { form, face, mode, selected, p
                                     Nest.Expanded -> GenUI.Expanded
                                     Nest.Collapsed -> GenUI.Collapsed
                                     Nest.Detached -> GenUI.Collapsed
-                                , button = Maybe.withDefault GenUI.PanelFocusedItem <| Maybe.map Button.faceTo face
+                                , button = Maybe.withDefault GenUI.Focus <| Maybe.map Button.faceTo face
                                 , allOf = Nothing
                                 , page = GenUI.Page page
                                 , pages = convertPanelShape pshape

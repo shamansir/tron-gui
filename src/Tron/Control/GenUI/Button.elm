@@ -41,8 +41,8 @@ faceTo face =
                         [ ]
         Button.WithColor color -> GenUI.OfColor <| ColorE.colorToGColor color
         Button.Title -> GenUI.Title
-        Button.Expand -> GenUI.PanelExpandStatus
-        Button.Focus -> GenUI.PanelFocusedItem
+        Button.Expand -> GenUI.ExpandCollapse
+        Button.Focus -> GenUI.Focus
 
 
 faceFrom : GenUI.Face -> Button.Face
@@ -75,8 +75,8 @@ faceFrom face =
         GenUI.OfIcon icons -> Button.WithIcon <| Button.Icon <| findIconByTheme icons
         GenUI.OfColor color -> Button.WithColor <| ColorE.gColorToColor color
         GenUI.Title -> Button.Title
-        GenUI.PanelFocusedItem -> Button.Focus
-        GenUI.PanelExpandStatus -> Button.Expand
+        GenUI.Focus -> Button.Focus
+        GenUI.ExpandCollapse -> Button.Expand
 
 
 to : Control a -> GenUI.Def x
