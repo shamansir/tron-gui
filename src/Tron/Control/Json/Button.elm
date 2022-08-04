@@ -18,7 +18,7 @@ decode =
         |> D.map
             (\maybeFace ->
                 Core.Control
-                    (maybeFace |> Maybe.withDefault Button.Default)
+                    (maybeFace |> Maybe.withDefault Button.Empty)
                     ()
                     ()
             )
@@ -33,7 +33,10 @@ encode (Core.Control face _ _) =
 encodeFace : Button.Face -> E.Value
 encodeFace face =
     case face of
-        Button.Default -> E.object [ ( "kind", E.string "default" ) ]
+        Button.Empty -> E.object [ ( "kind", E.string "empty" ) ]
+        Button.Title -> E.object [ ( "kind", E.string "title" ) ]
+        Button.Expand -> E.object [ ( "kind", E.string "expand" ) ]
+        Button.Focus -> E.object [ ( "kind", E.string "focus" ) ]
         Button.WithIcon (Button.Icon fn) ->
             E.object
                 [ ( "kind", E.string "icon" )
@@ -60,7 +63,15 @@ decodeFace =
         (\kind ->
             case kind of
                 "default" ->
-                    D.succeed Button.Default
+                    D.succeed Button.Empty
+                "empty" ->
+                    D.succeed Button.Empty
+                "title" ->
+                    D.succeed Button.Title
+                "focus" ->
+                    D.succeed Button.Focus
+                "expand" ->
+                    D.succeed Button.Expand
                 "color" ->
                     D.field "color" Color.decodeColor
                         |> D.map Button.WithColor
@@ -74,5 +85,5 @@ decodeFace =
                         (D.field "dark" <| D.maybe D.string)
                         (D.field "light" <| D.maybe D.string)
                         |> D.map (Button.Icon >> Button.WithIcon)
-                _ -> D.succeed Button.Default
+                _ -> D.succeed Button.Empty
         )

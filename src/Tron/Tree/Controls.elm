@@ -296,7 +296,7 @@ clearFace prop =
     case prop of
         Action control ->
             Action
-                <| Button.setFace Button.Default
+                <| Button.setFace Button.Empty
                 <| control
         Group focus shape control ->
             Group focus shape

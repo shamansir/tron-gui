@@ -41,7 +41,10 @@ viewFace theme ctx face label =
             if CS.isHorizontal ctx.cellShape
                 then
                     case face of
-                        Button.Default -> ( 30, cy + 4 )
+                        Button.Empty -> ( 30, cy + 4 )
+                        Button.Title -> ( 30, cy + 4 ) -- FIXME
+                        Button.Expand -> ( 30, cy + 4 ) -- FIXME
+                        Button.Focus -> ( 30, cy + 4 ) -- FIXME
                         Button.WithIcon _ -> ( 40, cy )
                         Button.WithColor _ -> ( 40, cy )
                 else ( cx, cy )
@@ -60,7 +63,7 @@ viewFace theme ctx face label =
 
     in case face of
 
-        Button.Default ->
+        Button.Empty ->
             if CS.isHorizontal ctx.cellShape
                 then case ctx.selected of
                     Selected ->
@@ -78,6 +81,15 @@ viewFace theme ctx face label =
                             ]
                     Usual -> textLabel ()
                 else textLabel ()
+
+        Button.Title ->
+            Svg.g [] [] -- FIXME
+
+        Button.Focus ->
+            Svg.g [] [] -- FIXME
+
+        Button.Expand ->
+            Svg.g [] [] -- FIXME
 
         Button.WithIcon (Button.Icon icon) ->
             let

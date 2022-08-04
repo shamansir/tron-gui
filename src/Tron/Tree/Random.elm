@@ -167,7 +167,7 @@ button =
                         >> Button.themedIcon
                         >> Button.WithIcon
                     )
-                >> Maybe.withDefault Default
+                >> Maybe.withDefault Title
                 )
         |> Random.map (\icon -> Control icon () ())
 

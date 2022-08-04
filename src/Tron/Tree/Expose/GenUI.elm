@@ -39,10 +39,12 @@ treeToGenUIAt label t =
                 , shape =
                     maybeShape
                         |> Maybe.map CS.numify
-                        |> Maybe.map (\(rows, cols) -> { rows = floor rows, cols = floor cols })
+                        |> Maybe.map (\(rows, cols) -> { horz = GenUI.Custom cols, vert = GenUI.Custom rows })
                 , def = def
                 , live = False
                 , property = Nothing
+                , triggerOn = Nothing
+                , statePath = Nothing
                 }
             , get t
             )

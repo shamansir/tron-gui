@@ -375,7 +375,7 @@ color value toMsg =
 -}
 button : (() -> msg) -> Tron msg
 button =
-    buttonWith Default
+    buttonWith Title
 
 
 {-| -}

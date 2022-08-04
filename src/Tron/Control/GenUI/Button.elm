@@ -24,7 +24,7 @@ faceTo face =
             else
                 GenUI.Remote <| Url.toString url
     in case face of
-        Button.Default -> GenUI.Default
+        Button.Empty -> GenUI.Empty
         Button.WithIcon (Button.Icon iconFn) ->
             GenUI.OfIcon <|
                 case Tuple.mapBoth (Maybe.map adaptUrl) (Maybe.map adaptUrl) ( iconFn Theme.Light, iconFn Theme.Dark ) of
@@ -40,17 +40,43 @@ faceTo face =
                     ( Nothing, Nothing ) ->
                         [ ]
         Button.WithColor color -> GenUI.OfColor <| ColorE.colorToGColor color
+        Button.Title -> GenUI.Title
+        Button.Expand -> GenUI.PanelExpandStatus
+        Button.Focus -> GenUI.PanelFocusedItem
 
 
 faceFrom : GenUI.Face -> Button.Face
 faceFrom face =
     let
+        adaptUrl url =
+            case url of
+                GenUI.Local localUrl -> Just <| Button.toLocalUrl_ localUrl
+                GenUI.Remote remoteUrl -> Url.fromString remoteUrl
+            {- if Button.isLocal url then
+                Button.getLocalPath url |> Maybe.withDefault "" |> GenUI.Local
+            else
+                GenUI.Remote <| Url.toString url -}
+
         findIconByTheme icons theme =
-            Nothing -- FIXME
+            List.foldl
+                (\icon maybePrev ->
+                    case maybePrev of
+                        Nothing ->
+                            case ( icon.theme, theme ) of
+                                ( GenUI.Dark, Theme.Dark ) -> adaptUrl icon.url
+                                ( GenUI.Light, Theme.Light ) -> adaptUrl icon.url
+                                _ -> Nothing
+                        Just p -> Just p
+                )
+                Nothing
+                icons
     in case face of
-        GenUI.Default -> Button.Default
+        GenUI.Empty -> Button.Empty
         GenUI.OfIcon icons -> Button.WithIcon <| Button.Icon <| findIconByTheme icons
         GenUI.OfColor color -> Button.WithColor <| ColorE.gColorToColor color
+        GenUI.Title -> Button.Title
+        GenUI.PanelFocusedItem -> Button.Focus
+        GenUI.PanelExpandStatus -> Button.Expand
 
 
 to : Control a -> GenUI.Def x

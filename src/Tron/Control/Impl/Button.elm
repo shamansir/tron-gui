@@ -13,9 +13,12 @@ type Icon = Icon (Theme -> Maybe Url)
 
 
 type Face
-    = Default
+    = Empty
     | WithIcon Icon
     | WithColor Color
+    | Title
+    | Expand
+    | Focus
 
 
 type alias Control a = Core.Control Face () a

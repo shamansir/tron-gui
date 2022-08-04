@@ -194,7 +194,7 @@ color value a =
 {-| -}
 button : a -> Tree a
 button =
-    buttonWith Default
+    buttonWith Title
 
 
 {-| -}
