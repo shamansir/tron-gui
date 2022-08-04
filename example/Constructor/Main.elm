@@ -833,7 +833,7 @@ editIcon value prop =
                 if List.length iconPath > 0 then
                     prop
                         |> Build.face (Build.iconAt iconPath)
-                else prop |> Tree.setFace Button.Default
+                else prop |> Tree.setFace Button.Empty
             )
             (D.list D.string)
             value

@@ -172,7 +172,10 @@ modeLines mode =
 faceLines : Maybe Button.Face -> List String
 faceLines face =
     case face of
-        Just Button.Default -> []
+        Just Button.Empty -> []
+        Just Button.Title -> [] -- FIXME
+        Just Button.Focus -> [] -- FIXME
+        Just Button.Expand -> [] -- FIXME
         Just (Button.WithIcon (Button.Icon fn)) ->
             [ "|> Tron.face"
             , "    (Tron.iconAt " ++ iconUrlToString (fn Theme.Dark) ++ ")" ]
