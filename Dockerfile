@@ -1,6 +1,7 @@
 FROM node:8
 
-ARG EXAMPLE=Everything
+#ARG EXAMPLE=Everything
+ARG EXAMPLE=Constructor
 
 RUN mkdir /app
 
