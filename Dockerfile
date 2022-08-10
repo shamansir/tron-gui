@@ -50,7 +50,7 @@ COPY --from=0 /app/example/ws-client.js /usr/share/nginx/html
 COPY --from=0 /app/example/$EXAMPLE/index.html /usr/share/nginx/html
 COPY --from=0 /app/example/Example/Goose/JetBrainsMono-Regular.woff /usr/share/nginx/html
 COPY --from=0 /app/example/Example/Goose/JetBrainsMono-Regular.woff2 /usr/share/nginx/html
-COPY --from=0 /app/example/Example/Constructor/Constructor.css /usr/share/nginx/html
+COPY --from=0 /app/example/Constructor/Constructor.css /usr/share/nginx/html
 COPY --from=0 /app/example/example.css /usr/share/nginx/html
 RUN mkdir /usr/share/nginx/html/assets
 COPY --from=0 /app/example/assets/ /usr/share/nginx/html/assets/
