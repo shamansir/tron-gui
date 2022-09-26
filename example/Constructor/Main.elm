@@ -87,6 +87,9 @@ import Constructor.Selector exposing (..)
 import Graph.Geometry.Make as Geom
 import Graph.Render.Svg.Graph as Render
 
+gradientDevUrl = "https://resources.jetbrains.com/cai/brand-data/genui/gui/gradient.dev.json"
+gradientUrl = "https://resources.jetbrains.com/cai/brand-data/genui/gui/gradient.json"
+
 
 type Example
     = Empty
@@ -386,9 +389,13 @@ view model =
                 , Html.button [ Html.onClick <| LoadExample Goose ] [ Html.text "Goose" ]
                 , Html.button [ Html.onClick <| LoadExample Tiler ] [ Html.text "Tiler" ]
                 , Html.button [ Html.onClick <| LoadExample Default ] [ Html.text "Default" ]
+                , Html.button [ Html.onClick <| LoadFromUrl gradientDevUrl ] [ Html.text "Gradient (Dev)" ]
+                , Html.button [ Html.onClick <| LoadFromUrl gradientUrl ] [ Html.text "Gradient" ]
+                , Html.input [ Html.type_ "text", Html.id "url", Html.onInput <| LoadFromUrl, Html.placeholder "Gen-UI JSON From URL" ] [  ]
+                , Html.br [] []
+                , Html.text "Local storage: "
                 , Html.button [ Html.onClick <| ToLocalStorage ] [ Html.text "Save" ]
                 , Html.button [ Html.onClick <| TriggerFromLocalStorage ] [ Html.text "Load" ]
-                , Html.input [ Html.type_ "text", Html.id "url", Html.onInput <| LoadFromUrl, Html.placeholder "From URL" ] [  ]
                 ]
             , Html.div
                 [ Html.id "outputs" ]

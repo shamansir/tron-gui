@@ -302,3 +302,11 @@ body {
     border: lightgray 3px solid;
     border-radius: 5px;
 }
+
+#examples {
+
+}
+
+#examples #url {
+    width: 100%;
+}
