@@ -26,6 +26,22 @@ type alias Count = Int
 type Pages a = Pages PageNum a (List a) -- i.e. NonEmpty array
 
 
+first : PageRef
+first = First
+
+
+last : PageRef
+last = Last
+
+
+current : PageRef
+current = CurrentFocus
+
+
+atPage : Int -> PageRef
+atPage = Page
+
+
 single : a -> Pages a
 single v = Pages 0 v []
 
@@ -76,7 +92,7 @@ fromList : List a -> Maybe (Pages a)
 fromList list =
     case list of
         [] -> Nothing
-        first::others -> Just <| Pages 0 first others
+        first_::others -> Just <| Pages 0 first_ others
 
 
 distributeBy : (List a -> a -> Bool) -> List a -> Pages (List a)
@@ -105,15 +121,17 @@ distribute maxItems = distributeBy (\list _ -> List.length list < maxItems)
 
 distributeOver : Count -> List a -> ( Int, Pages (List a) )
 distributeOver pagesCount all =
-    let
-        maxItems =
-            if List.length all // pagesCount * pagesCount == List.length all - 1
-            then List.length all // pagesCount
-            else (List.length all // pagesCount) + 1
-    in
-        ( maxItems
-        , all |> distributeBy (\list _ -> List.length list <= maxItems)
-        )
+    if (pagesCount <= 0) then ( 0, single [] )
+    else
+        let
+            maxItems =
+                if List.length all // pagesCount * pagesCount == List.length all - 1
+                then List.length all // pagesCount
+                else (List.length all // pagesCount) + 1
+        in
+            ( maxItems
+            , all |> distributeBy (\list _ -> List.length list <= maxItems)
+            )
 
 
 count : Pages a -> Count
@@ -122,5 +140,5 @@ count (Pages _ _ list) = List.length list + 1
 
 -- put all the items on the first page
 disable : Pages (List a) -> Pages (List a)
-disable (Pages _ first other) =
-    Pages 0 (List.concat <| first::other) []
+disable (Pages _ first_ other) =
+    Pages 0 (List.concat <| first_::other) []
