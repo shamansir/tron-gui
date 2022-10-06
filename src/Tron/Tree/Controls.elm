@@ -365,10 +365,6 @@ updateCellShape fn prop =
         _ -> prop
 
 
-togglePagination : Tree a -> Tree a
-togglePagination = updatePanelShape PS.togglePagination
-
-
 append : ( Path.Label, Tree a ) -> Tree a -> Tree a
 append ( label, prop ) toProp =
     case toProp of

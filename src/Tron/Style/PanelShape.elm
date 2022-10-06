@@ -3,7 +3,8 @@ module Tron.Style.PanelShape exposing
     , auto, rows, cols
     , by
     , singlePage, exact, pagesEnabled
-    , distribute --, numify, create
+    , distribute
+    , numify, create
     )
 
 
@@ -46,7 +47,7 @@ type PanelShape
 
 {-| -}
 type Pagination
-    = SinglePage
+    = SinglePage -- FIXME : == ExactPages 1
     -- Scroll
     | Distribute Paving
     | ExactPages Int
@@ -100,8 +101,9 @@ pagesEnabled (PanelShape pages) =
 
 
 {-| Get numeric size of a panel in cells, and a set of pages required, if there are overflows. Floats, since there could be half-cells. -}
-distribute : PanelShape -> CellShape -> List a -> PageRef -> ( Pages (List a), SizeF Cells )
-distribute (PanelShape paging) cellShape items ref =
+distribute : PanelShape -> CellShape -> PageRef -> List a ->  ( Pages (List a), SizeF Cells )
+distribute (PanelShape paging) cellShape ref items =
+    -- FIXME : use pageRef
     let
         itemCount = List.length items
         ( cellXMultiplier, cellYMultiplier ) =
@@ -231,33 +233,32 @@ distribute (PanelShape paging) cellShape items ref =
             ) -}
 
 
-{- Returns columns and rows to take, and -1 is the value should be auto-calculated.
--}
+type alias QuickDef = { pages : Int, cols : Int, rows : Int }
 
-{-
-numify : PanelShape -> ( Int, Int )
+
+{-| Returns columns and rows to take, and -1 is the value should be auto-calculated.
+-}
+numify : PanelShape -> QuickDef
 numify (PanelShape ps) =
     case ps of
-        SinglePage -> ( -1, -1 )
-        Auto -> ( -1, -1 )
-        Rows n -> ( -1, n )
-        Cols n -> ( n, -1 )
-        Shape nc nr -> ( nc, nr )
--}
+        SinglePage -> { pages = 1, cols = -1, rows = -1 }
+        ExactPages n -> { pages = n, cols = -1, rows = -1 }
+        Distribute paving ->
+            case paving of
+                Auto -> { pages = -1, cols = -1, rows = -1 }
+                Exact { maxInColumn, maxInRow } -> { pages = -1, cols = maxInColumn, rows = maxInRow }
+                ByRows { maxInColumn } -> { pages = -1, cols = maxInColumn, rows = -1 }
+                ByCols { maxInRow } -> { pages = -1, cols = -1, rows = maxInRow }
 
 
-{- Create panel shape from its numeric representation. Put -1 for auto calculation.
+{-| Create panel shape from its numeric representation. Put -1 for auto calculation.
 -}
-{-
-create : ( Int, Int ) -> PanelShape
-create ( nc, nr ) =
-    PanelShape ManyPages
-         <| if (nc == -1) && (nr == -1) then
-                Auto
-            else if (nc == -1) then
-                Rows nr
-            else if (nr == -1) then
-                Cols nc
-            else
-                Shape nc nr
--}
+create : { pages : Int, cols : Int, rows : Int } -> PanelShape
+create ps =
+    PanelShape <|
+        if ps.pages == 1 then SinglePage
+        else if ps.pages >= 0 then ExactPages ps.pages
+        else if (ps.cols == -1) && (ps.rows == -1) then Distribute Auto
+        else if (ps.cols == -1) then Distribute <| ByCols { maxInRow = ps.rows }
+        else if (ps.rows == -1) then Distribute <| ByRows { maxInColumn = ps.cols }
+        else Distribute <| Exact { maxInColumn = ps.cols, maxInRow = ps.rows }

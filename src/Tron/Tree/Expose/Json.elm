@@ -197,18 +197,17 @@ encode =
     encodeTreeAt Path.start
 
 
-
 encodeShape : Tree.NestShape -> E.Value
 encodeShape ( panelShape, cellShape ) =
     E.object
         [
             ( "panel"
             , case PS.numify panelShape of
-                ( cols, rows ) ->
+                { cols, rows, pages } ->
                     E.object
                         [ ( "cols", E.int cols )
                         , ( "rows", E.int rows )
-                        , ( "pages", E.bool <| PS.pagesEnabled panelShape )
+                        , ( "pages", E.int pages )
                         ]
             )
         ,
@@ -223,6 +222,7 @@ encodeShape ( panelShape, cellShape ) =
         ]
 
 
+
 decodeShape : D.Decoder NestShape
 decodeShape =
     D.map2
@@ -230,13 +230,13 @@ decodeShape =
         (D.field "panel"
             <| D.map3
                 (\cols rows pages ->
-                    PS.create ( cols, rows ) |> if pages then PS.manyPages else PS.singlePage
+                    PS.create { cols = cols, rows = rows, pages = pages }
                 )
                 (D.field "cols" D.int)
                 (D.field "rows" D.int)
-                (D.map (Maybe.withDefault True)
+                (D.map (Maybe.withDefault -1)
                     <| D.maybe
-                    <| D.field "pages" D.bool
+                    <| D.field "pages" D.int
                 )
         )
         (D.field "cell"

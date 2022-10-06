@@ -211,7 +211,7 @@ packItemsAtRoot dock size_ rp shape items =
                         |> List.head
                         |> Maybe.withDefault ( -1, "" )
                 ( itemsOverPages, SizeF ( pageWidthF, pageHeightF ) ) =
-                    PS.distribute panelShape cellShape
+                    PS.distribute panelShape cellShape Pages.First -- FIXME: use PageRef
                         <| Array.toList
                         <| Array.filter (Tuple.second >> Tuple.second >> isGhost >> not)
                         <| Array.indexedMap Tuple.pair
