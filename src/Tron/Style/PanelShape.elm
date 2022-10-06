@@ -1,9 +1,9 @@
 module Tron.Style.PanelShape exposing
-    ( PanelShape, Pagination, Grouping
+    ( PanelShape, Pagination, Paving
     , auto, rows, cols
     , by
-    , singlePage, manyPages, pagesEnabled, togglePagination
-    , distribute, numify, create
+    , singlePage, exact, pagesEnabled
+    , distribute --, numify, create
     )
 
 
@@ -30,83 +30,139 @@ You are not required to specify both sides, just use `rows` or `cols` helpers to
 
 
 import Tron.Style.CellShape as CS exposing (CellShape(..))
-import Tron.Pages as Pages exposing (Pages)
+import Tron.Pages as Pages exposing (Pages, PageRef)
 import Size exposing (..)
 
 
-maxCols = 3
+defaultMaxCols = 3
 
-maxRows = 3
+defaultMaxRows = 3
 
 
 {-| -}
 type PanelShape
-    = PanelShape Pagination Grouping
+    = PanelShape Pagination
 
 
 {-| -}
 type Pagination
     = SinglePage
-    | ManyPages
+    -- Scroll
+    | Distribute Paving
+    | ExactPages Int
 
 
 {-| -}
-type Grouping
-    = Auto
-    | Rows Int
-    | Cols Int
-    | Shape Int Int
+type Paving
+    = Auto -- { maxInColumn = 3, maxInRow = 3 }
+    | Exact { maxInColumn : Int, maxInRow : Int }
+    | ByRows { maxInColumn : Int }
+    | ByCols { maxInRow : Int }
 
 
 {-| Calculate both rows and column numbers automatically, based on the number of cells inside. -}
 auto : PanelShape
-auto = PanelShape ManyPages Auto
+auto = PanelShape <| Distribute Auto
 
 
 {-| Specify how many cell rows there should be in the panel, and calculate columns number automatically. -}
 rows : Int -> PanelShape
-rows = PanelShape ManyPages << Rows
+rows n = PanelShape <| Distribute <| ByRows { maxInColumn = n }
 
 
 {-| Specify how many cell columns there should be in the panel, and calculate rows number automatically. -}
 cols : Int -> PanelShape
-cols = PanelShape ManyPages << Cols
+cols n = PanelShape <| Distribute <| ByCols { maxInRow = n }
 
 
 {-| Specify panel size manually, i.e. how many cells horizontally and how many vertically. -}
 by : Int -> Int -> PanelShape
-by c r = PanelShape ManyPages <| Shape c r
+by c r = PanelShape <| Distribute <| Exact { maxInColumn = c, maxInRow = r }
 
 
 {-| Do not distribute items over pages -}
-singlePage : PanelShape -> PanelShape
-singlePage (PanelShape _ ps) = PanelShape SinglePage ps
+singlePage : PanelShape
+singlePage = PanelShape SinglePage
 
 
-{-| Distribute items over pages automatically (when number of columns / rows overflows 3). Default condition. -}
-manyPages : PanelShape -> PanelShape
-manyPages (PanelShape _ ps) = PanelShape ManyPages ps
+{-| Distribute items over an exact amount of pages -}
+exact : Int -> PanelShape
+exact = PanelShape << ExactPages
 
 
 {-| Check if pagination is enabled. -}
 pagesEnabled : PanelShape -> Bool
-pagesEnabled (PanelShape pages _) =
+pagesEnabled (PanelShape pages) =
     case pages of
         SinglePage -> False
-        ManyPages -> True
-
-
-{-| Turn pagination off or on. -}
-togglePagination : PanelShape -> PanelShape
-togglePagination (PanelShape pages ps) =
-    case pages of
-        SinglePage -> PanelShape ManyPages ps
-        ManyPages -> PanelShape SinglePage ps
+        Distribute _ -> True
+        ExactPages _ -> True
 
 
 {-| Get numeric size of a panel in cells, and a set of pages required, if there are overflows. Floats, since there could be half-cells. -}
-distribute : PanelShape -> CellShape -> List a -> ( Pages (List a), SizeF Cells )
-distribute (PanelShape pagination grouping) cellShape items =
+distribute : PanelShape -> CellShape -> List a -> PageRef -> ( Pages (List a), SizeF Cells )
+distribute (PanelShape paging) cellShape items ref =
+    let
+        itemCount = List.length items
+        ( cellXMultiplier, cellYMultiplier ) =
+            CS.numify cellShape
+        otherSide n =
+            if (n /= 0) && (modBy n itemCount) == 0
+                then itemCount // n
+                else itemCount // n + 1
+        default = ( Pages.single items, SizeF (0, 0) )
+        onAPage ( c, r ) =
+            ceiling
+                ( toFloat c * cellXMultiplier
+                * toFloat r * cellYMultiplier
+                )
+        pagesFor =
+            Pages.distribute << onAPage
+    in
+        case paging of
+            SinglePage ->
+                let oneSide = ceiling (toFloat itemCount / 2)
+                in
+                    ( Pages.single items
+                    , SizeF
+                        ( toFloat oneSide * cellXMultiplier
+                        , toFloat (otherSide oneSide) * cellYMultiplier
+                        )
+                    )
+
+            Distribute paving ->
+                case paving of
+                    Auto ->
+                        ( pagesFor ( defaultMaxCols, defaultMaxRows ) items
+                        , SizeF ( defaultMaxCols, defaultMaxRows )
+                        )
+                    Exact { maxInColumn, maxInRow } ->
+                        ( pagesFor ( maxInColumn, maxInRow ) items
+                        , SizeF ( toFloat maxInColumn, toFloat maxInRow )
+                        )
+                    ByCols { maxInRow } ->
+                        ( pagesFor ( otherSide maxInRow, maxInRow ) items
+                        , SizeF ( toFloat <| otherSide maxInRow, toFloat maxInRow )
+                        )
+                    ByRows { maxInColumn } ->
+                        ( pagesFor ( maxInColumn, otherSide maxInColumn ) items
+                        , SizeF ( toFloat maxInColumn, toFloat <| otherSide maxInColumn )
+                        )
+
+            ExactPages n ->
+                let
+                    ( maxOnAPage, pages )
+                        = Pages.distributeOver n items
+                    oneSide = ceiling (toFloat maxOnAPage / 2)
+                in
+                    ( pages
+                    , SizeF
+                        ( toFloat oneSide * cellXMultiplier
+                        , toFloat (otherSide oneSide) * cellYMultiplier
+                        )
+                    )
+
+    {-}
     let
         itemCount = List.length items
         ( cellXMultiplier, cellYMultiplier ) =
@@ -172,22 +228,27 @@ distribute (PanelShape pagination grouping) cellShape items =
                 (\c -> toFloat c * cellXMultiplier)
                 (\r -> toFloat r * cellYMultiplier)
                 >> SizeF
-            )
+            ) -}
 
 
-{-| Returns columns and rows to take, and -1 is the value should be auto-calculated.
+{- Returns columns and rows to take, and -1 is the value should be auto-calculated.
 -}
+
+{-
 numify : PanelShape -> ( Int, Int )
-numify (PanelShape _ ps) =
+numify (PanelShape ps) =
     case ps of
+        SinglePage -> ( -1, -1 )
         Auto -> ( -1, -1 )
         Rows n -> ( -1, n )
         Cols n -> ( n, -1 )
         Shape nc nr -> ( nc, nr )
-
-
-{-| Create panel shape from its numeric representation. Put -1 for auto calculation.
 -}
+
+
+{- Create panel shape from its numeric representation. Put -1 for auto calculation.
+-}
+{-
 create : ( Int, Int ) -> PanelShape
 create ( nc, nr ) =
     PanelShape ManyPages
@@ -199,3 +260,4 @@ create ( nc, nr ) =
                 Cols nc
             else
                 Shape nc nr
+-}

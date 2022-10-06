@@ -27,7 +27,7 @@ groupTo pshape toProp (Core.Control items { form, face, page } _) =
     GenUI.Nest
         { children = Array.toList <| Array.map toProp items
         , panel =
-            { form = case form of
+            { form = case Debug.log "group form (to)" form of
                 Nest.Expanded -> GenUI.Expanded
                 _ -> GenUI.Collapsed
             , button = Maybe.withDefault GenUI.ExpandCollapse <| Maybe.map Button.faceTo face
@@ -50,7 +50,7 @@ groupFrom toItem def =
                         Core.Control
                             (Array.fromList items)
                             { form =
-                                case nestDef.panel.form of
+                                case Debug.log "group form (from)" <| nestDef.panel.form of
                                     GenUI.Expanded -> Nest.Expanded
                                     GenUI.Collapsed -> Nest.Collapsed
                             , face = Just <| Button.faceFrom nestDef.panel.button
@@ -79,7 +79,7 @@ choiceTo pshape toSelectItem (Core.Control items { form, face, mode, selected, p
                      case mode of
                         Nest.Pages ->
                             GenUI.Choice
-                                { form = case form of
+                                { form = case Debug.log "choice form (to)" <| form of
                                     Nest.Expanded -> GenUI.Expanded
                                     Nest.Collapsed -> GenUI.Collapsed
                                     Nest.Detached -> GenUI.Collapsed
@@ -107,7 +107,7 @@ choiceFrom compare toItem def =
                                 (Array.fromList passedItems)
                                 { form = case selectDef.kind of
                                     GenUI.Choice { form } ->
-                                        case form of
+                                        case Debug.log "choice form (from)" form of
                                             GenUI.Expanded -> Nest.Expanded
                                             GenUI.Collapsed -> Nest.Collapsed
                                     GenUI.Knob -> Nest.Expanded
@@ -141,7 +141,7 @@ choiceFrom compare toItem def =
 
 adaptPage : GenUI.Page -> Int
 adaptPage page = -- FIXME
-    case page of -- FIXME
+    case Debug.log "adaptPage" page of -- FIXME
         GenUI.First -> 0
         GenUI.Last -> -1
         GenUI.ByCurrent -> -1
@@ -162,7 +162,7 @@ nestShapeFrom ( maybeCellShape, selectDef ) =
 
 adaptPages : GenUI.Pages -> PanelShape
 adaptPages p =
-    case p of
+    case Debug.log "adaptPages" p of
         GenUI.Auto -> PS.auto
         GenUI.Single ->  PS.auto |> PS.singlePage
         GenUI.Distribute { maxInRow, maxInColumn } -> PS.create ( maxInRow, maxInColumn )

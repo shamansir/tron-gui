@@ -8,6 +8,15 @@ import Array exposing (Array)
 import Size exposing (..)
 
 
+
+{-| -}
+type PageRef
+    = First
+    | Last
+    | CurrentFocus
+    | Page Int
+
+
 type alias PageNum = Int
 
 
@@ -94,14 +103,17 @@ distribute : Int -> List a -> Pages (List a)
 distribute maxItems = distributeBy (\list _ -> List.length list < maxItems)
 
 
-distributeOver : Count -> List a -> Pages (List a)
+distributeOver : Count -> List a -> ( Int, Pages (List a) )
 distributeOver pagesCount all =
     let
         maxItems =
             if List.length all // pagesCount * pagesCount == List.length all - 1
             then List.length all // pagesCount
             else (List.length all // pagesCount) + 1
-    in all |> distributeBy (\list _ -> List.length list <= maxItems)
+    in
+        ( maxItems
+        , all |> distributeBy (\list _ -> List.length list <= maxItems)
+        )
 
 
 count : Pages a -> Count

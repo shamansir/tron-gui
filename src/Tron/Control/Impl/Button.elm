@@ -17,8 +17,8 @@ type Face
     | WithIcon Icon
     | WithColor Color
     | Title
-    | Expand
-    | Focus
+    | Expand -- FIXME: contradicts with Panel rendering logic, not rendered in button renderer
+    | Focus -- FIXME: contradicts with Panel rendering logic, not rendered in button renderer
 
 
 type alias Control a = Core.Control Face () a

@@ -36,6 +36,7 @@ viewFace theme ctx face label =
     let
 
         ( cx, cy ) = ( bounds.width / 2, (bounds.height / 2) - 3 )
+        _ = Debug.log label ( face, ctx )
         bounds = ctx.bounds
         ( labelX, labelY ) =
             if CS.isHorizontal ctx.cellShape
@@ -49,6 +50,8 @@ viewFace theme ctx face label =
                         Button.WithColor _ -> ( 40, cy )
                 else ( cx, cy )
         textLabel _ =
+            centerText label
+        centerText text =
             Svg.text_
                 [ SA.x <| String.fromFloat labelX
                 , SA.y <| String.fromFloat labelY
@@ -59,16 +62,17 @@ viewFace theme ctx face label =
                         then "url(#button-text-mask)"
                         else "url(#button-text-mask-wide)"
                 ]
-                [ Svg.text label ]
+                [ Svg.text text ]
 
     in case face of
 
         Button.Empty ->
-            Svg.g [] []
+            centerText "empty"
+            -- Svg.g [] []
 
         Button.Title ->
             if CS.isHorizontal ctx.cellShape
-                then case ctx.selected of
+                 then case ctx.selected of
                     Selected ->
                         Svg.g
                             [ resetTransform ]
@@ -86,10 +90,14 @@ viewFace theme ctx face label =
                 else textLabel ()
 
         Button.Focus ->
-            Svg.g [] [] -- FIXME
+            -- textLabel ()
+            centerText "focus"
+            -- Svg.g [] [] -- FIXME
 
         Button.Expand ->
-            Svg.g [] [] -- FIXME
+            -- textLabel ()
+            centerText "expand"
+    --            Svg.g [] [ ] -- FIXME
 
         Button.WithIcon (Button.Icon icon) ->
             let

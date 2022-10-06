@@ -7,6 +7,7 @@ import Color as Color exposing (..)
 
 import Tron.Control exposing (Control(..))
 import Tron.Control.Impl.Nest as Nest
+import Tron.Control.Impl.Button as Button
 import Tron.Render.Control.Button as Button
 import Tron.Tree exposing (Tree)
 
@@ -33,6 +34,15 @@ viewChoice
     -> Svg msg
 viewChoice viewPropAtPlace theme ctx label ( Control items { form, face, mode, selected } _) maybeSelectedInside =
     case ( mode, face, maybeSelectedInside ) of
+
+        -- TODO: should be represented using button renderer
+        ( _, Just Button.Focus, Just theSelectedProp ) ->
+            viewPropAtPlace
+                theSelectedProp
+
+        -- TODO: should be represented using button renderer
+        ( _, Just Button.Expand, _ ) ->
+            arrow theme (Context.styleDef ctx) form ctx.bounds
 
         ( _, Just buttonFace, _ ) ->
             Button.viewFace theme ctx buttonFace label
@@ -64,8 +74,10 @@ viewGroup : Theme -> Context -> Path.Label -> Nest.GroupControl items a -> Svg m
 viewGroup theme ctx label ( Control _ { form, face } _) =
 
     case face of
-        Just buttonFace ->
+        Just Button.Expand ->
+            arrow theme (Context.styleDef ctx) form ctx.bounds
 
+        Just buttonFace ->
             Button.viewFace theme ctx buttonFace label
 
         Nothing -> arrow theme (Context.styleDef ctx) form ctx.bounds

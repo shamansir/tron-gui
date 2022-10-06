@@ -313,10 +313,14 @@ update msg model =
             }
 
         LoadFromUrl _ ->
-            model
+            { model
+            | current = Nothing
+            , expands = Dict.empty |> Dict.insert [] True
+            , tree = Build.root []
+            }
 
         ApplyFromUrl genui ->
-            case  GenUI.from genui of
+            case GenUI.from genui of
                 Ok tree ->
                     { model
                     | current = Nothing
