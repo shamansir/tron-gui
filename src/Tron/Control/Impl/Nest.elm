@@ -7,7 +7,7 @@ import Array.Extra as Array
 import Tron.Control as Core exposing (Control)
 import Tron.Control.Impl.Button as Button
 import Tron.Control.Action as A
-import Tron.Pages exposing (PageNum)
+import Tron.Pages as Pages exposing (PageNum, PageRef)
 import Tron.Util as U
 
 
@@ -45,7 +45,7 @@ type alias GroupControl item a
         item
         { form : Form
         , face : Maybe Button.Face
-        , page : PageNum
+        , page : PageNum -- TODO: `PageRef`?
         }
         a
 
@@ -57,7 +57,7 @@ type alias ChoiceControl item a =
         , face : Maybe Button.Face
         , selected : ItemId
         , prevSelected : Maybe ItemId -- FIXME: needed only for `Knob`
-        , page : PageNum
+        , page : PageNum -- TODO: `PageRef`?
         , mode : ChoiceMode
         }
         a
@@ -65,7 +65,7 @@ type alias ChoiceControl item a =
 
 type alias Transient =
     { form : Form
-    , page : PageNum
+    , page : PageNum -- TODO: `PageRef`?
     }
 
 
@@ -75,7 +75,7 @@ createGroup items =
         items
         { form = Collapsed
         , face = Nothing
-        , page = 0
+        , page = 0 -- TODO: Pages.first
         }
 
 
@@ -87,7 +87,7 @@ createChoice items =
         , face = Nothing
         , selected = 0
         , prevSelected = Nothing
-        , page = 0
+        , page = 0 -- TODO: Pages.first
         , mode = Pages
         }
 
@@ -390,13 +390,15 @@ switchTo pageNum (Core.Control setup state hanlder) =
     Core.Control
         setup
         { state | page = pageNum }
+        -- { state | page = Pages.Page pageNum }
         hanlder
 
 
 getTransientState
     : Core.Control
         setup
-        { r | form : Form
+        { r
+        | form : Form
         , page : PageNum
         }
         a

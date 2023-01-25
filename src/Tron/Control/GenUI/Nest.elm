@@ -10,13 +10,14 @@ import Tron.Control as Core
 import Tron.Control.Impl.Nest as Nest exposing (GroupControl, ChoiceControl)
 import Tron.Control.GenUI.Button as Button
 import Tron.Style.PanelShape as PS exposing (PanelShape(..), Pagination(..))
+import Tron.Pages as Pages
 
 
 convertPanelShape : PanelShape -> GenUI.Pages
 convertPanelShape pshape =
     if PS.pagesEnabled pshape then
         case PS.numify pshape of
-            ( cols, rows ) ->
+            { cols, rows, pages } ->
                 GenUI.Distribute { maxInRow = cols, maxInColumn = rows }
     else GenUI.Single
 
@@ -32,7 +33,7 @@ groupTo pshape toProp (Core.Control items { form, face, page } _) =
                 _ -> GenUI.Collapsed
             , button = Maybe.withDefault GenUI.ExpandCollapse <| Maybe.map Button.faceTo face
             , allOf = Nothing
-            , page = GenUI.Page page
+            , page = refToPage page
             , pages = convertPanelShape pshape
             }
         , nestAt = Nothing
@@ -85,7 +86,7 @@ choiceTo pshape toSelectItem (Core.Control items { form, face, mode, selected, p
                                     Nest.Detached -> GenUI.Collapsed
                                 , button = Maybe.withDefault GenUI.Focus <| Maybe.map Button.faceTo face
                                 , allOf = Nothing
-                                , page = GenUI.Page page
+                                , page = refToPage page
                                 , pages = convertPanelShape pshape
                                 }
                         Nest.Knob ->
@@ -131,21 +132,30 @@ choiceFrom compare toItem def =
                                     case selectDef.kind of
                                         GenUI.Choice { page } ->
                                             adaptPage page
-                                        GenUI.Knob -> 0
-                                        GenUI.Switch -> 0
+                                        GenUI.Knob -> Pages.first -- FIXME
+                                        GenUI.Switch -> Pages.first -- FIXME
                                 }
                                 ()
                         )
         _ -> Err []
 
 
-adaptPage : GenUI.Page -> Int
+adaptPage : GenUI.Page -> Pages.PageRef
 adaptPage page = -- FIXME
     case Debug.log "adaptPage" page of -- FIXME
-        GenUI.First -> 0
-        GenUI.Last -> -1
-        GenUI.ByCurrent -> -1
-        GenUI.Page n -> n
+        GenUI.First -> Pages.first
+        GenUI.Last -> Pages.last
+        GenUI.ByCurrent -> Pages.current
+        GenUI.Page n -> Pages.atPage n
+
+
+refToPage : Pages.PageRef -> GenUI.Page
+refToPage ref =
+    case ref of
+        Pages.First -> GenUI.First
+        Pages.Last -> GenUI.Last
+        Pages.CurrentFocus -> GenUI.ByCurrent
+        Pages.Page n -> GenUI.Page n
 
 {- choiceFrom : (GenUI.SelectItem -> Maybe String) -> GenUI.Def x -> Result (List GenUI.SelectItem) (ChoiceControl String ())
 choiceFrom = choiceFrom_ (==) -}
@@ -164,9 +174,9 @@ adaptPages : GenUI.Pages -> PanelShape
 adaptPages p =
     case Debug.log "adaptPages" p of
         GenUI.Auto -> PS.auto
-        GenUI.Single ->  PS.auto |> PS.singlePage
-        GenUI.Distribute { maxInRow, maxInColumn } -> PS.create ( maxInRow, maxInColumn )
-        GenUI.Exact n -> PS.auto -- FIXME
+        GenUI.Single ->  PS.singlePage
+        GenUI.Distribute { maxInRow, maxInColumn } -> PS.by maxInRow maxInColumn
+        GenUI.Exact n -> PS.exact n
 
 
 loadPanelShape : GenUI.Def x -> Maybe PanelShape
@@ -211,6 +221,6 @@ root items a =
         (Array.fromList items)
         { form = Nest.Expanded
         , face = Nothing
-        , page = 0
+        , page = Pages.First
         }
         a

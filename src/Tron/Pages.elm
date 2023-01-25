@@ -15,6 +15,7 @@ type PageRef
     | Last
     | CurrentFocus
     | Page Int
+    -- | Nonsence
 
 
 type alias PageNum = Int
@@ -68,6 +69,10 @@ switchTo newPage (Pages _ fst other) =
 
 getCurrentNum : Pages a -> PageNum
 getCurrentNum (Pages num _ _) = num
+
+
+getCurrentRef : Pages a -> PageRef
+getCurrentRef = getCurrentNum >> Page
 
 
 getCurrent : Pages a -> Maybe a
@@ -142,3 +147,12 @@ count (Pages _ _ list) = List.length list + 1
 disable : Pages (List a) -> Pages (List a)
 disable (Pages _ first_ other) =
     Pages 0 (List.concat <| first_::other) []
+
+
+refToNum : PageRef -> Int
+refToNum ref =
+    case ref of
+        First -> 0
+        Last -> -1
+        CurrentFocus -> -1
+        Page n -> n

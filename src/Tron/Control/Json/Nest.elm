@@ -2,6 +2,7 @@ module Tron.Control.Json.Nest exposing (..)
 
 
 import Tron.Path as Path
+import Tron.Pages as Pages
 import Tron.Control as Core
 import Tron.Control.Impl.Nest as Nest exposing (ChoiceControl, GroupControl)
 import Tron.Control.Json.Button as Button
@@ -22,7 +23,7 @@ decodeChoice decodeItem =
                 , face = maybeFace
                 , selected = 0
                 , prevSelected = Nothing
-                , page = 0
+                , page = 0 -- Pages.First -- FIXME
                 , mode = maybeMode |> Maybe.withDefault Nest.Pages
                 }
                 ()
@@ -75,7 +76,7 @@ decodeGroup decodeItem =
                 items
                 { form = Nest.Collapsed
                 , face = maybeFace
-                , page = 0
+                , page = 0 -- Pages.First -- FIXME
                 }
                 ()
         )

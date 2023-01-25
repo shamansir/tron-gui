@@ -57,8 +57,8 @@ type Pagination
 type Paving
     = Auto -- { maxInColumn = 3, maxInRow = 3 }
     | Exact { maxInColumn : Int, maxInRow : Int }
-    | ByRows { maxInColumn : Int }
-    | ByCols { maxInRow : Int }
+    | ByRows { maxInColumn : Int } -- , TODO: pages : Int
+    | ByCols { maxInRow : Int } -- , TODO: pages : Int
 
 
 {-| Calculate both rows and column numbers automatically, based on the number of cells inside. -}
