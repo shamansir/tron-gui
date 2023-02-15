@@ -119,7 +119,7 @@ distribute (PanelShape paging) cellShape ref items =
                 * toFloat r * cellYMultiplier
                 )
         pagesFor =
-            Pages.distribute << onAPage
+            Pages.distribute << Pages.Maximum << onAPage
     in
         case paging of
             SinglePage ->
@@ -154,7 +154,7 @@ distribute (PanelShape paging) cellShape ref items =
             ExactPages n ->
                 let
                     ( maxOnAPage, pages )
-                        = Pages.distributeOver n items
+                        = Pages.distributeOver (Pages.Count n) items
                     oneSide = ceiling (toFloat maxOnAPage / 2)
                 in
                     ( pages

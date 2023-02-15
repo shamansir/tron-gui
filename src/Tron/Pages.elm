@@ -11,24 +11,29 @@ import Size exposing (..)
 
 {-| -}
 type PageRef
-    = First
-    | Last
-    | CurrentFocus
-    | Page Int
+    = Last
+    | AtFocus
+    | Page_ Int
     -- | Nonsence
 
 
-type alias PageNum = Int
+type Pages a = Pages PageRef a (List a) -- i.e. NonEmpty array
 
 
-type alias Count = Int
+type Page = Page Int
 
 
-type Pages a = Pages PageNum a (List a) -- i.e. NonEmpty array
+type Count = Count Int
+
+
+type Maximum = Maximum Int
+
+
+type Selected = Selected Int
 
 
 first : PageRef
-first = First
+first = at <| page 0
 
 
 last : PageRef
@@ -36,15 +41,23 @@ last = Last
 
 
 current : PageRef
-current = CurrentFocus
+current = AtFocus
 
 
-atPage : Int -> PageRef
-atPage = Page
+selFirst : Selected
+selFirst = Selected 0
+
+
+at : Page -> PageRef
+at (Page n) = Page_ n
+
+
+page : Int -> Page
+page = Page
 
 
 single : a -> Pages a
-single v = Pages 0 v []
+single v = Pages (Page_ 0) v []
 
 
 map : (a -> b) -> Pages a -> Pages b
@@ -62,26 +75,75 @@ toList : Pages a -> List a
 toList (Pages _ fst other) = fst :: other
 
 
-switchTo : PageNum -> Pages a -> Pages a
+switchTo : PageRef -> Pages a -> Pages a
 switchTo newPage (Pages _ fst other) =
     Pages newPage fst other
 
 
-getCurrentNum : Pages a -> PageNum
-getCurrentNum (Pages num _ _) = num
+getCurrentPage : Pages a -> Maybe Page
+getCurrentPage (Pages ref _ others) =
+    case ref of
+        Page_ n -> Just <| Page n
+        Last -> Just <| Page <| List.length others
+        AtFocus -> Nothing
 
 
 getCurrentRef : Pages a -> PageRef
-getCurrentRef = getCurrentNum >> Page
+getCurrentRef (Pages ref _ _) = ref
 
 
-getCurrent : Pages a -> Maybe a
-getCurrent pages =
-    get (getCurrentNum pages) pages
+getCurrent : Selected -> Pages (List a) -> Maybe (List a)
+getCurrent selected pages =
+    getAt selected (getCurrentRef pages) pages
 
 
-get : PageNum -> Pages a -> Maybe a
-get num (Pages _ fst other) =
+
+whereIs : Selected -> Pages (List a) -> Maybe Page
+whereIs (Selected idx) (Pages _ fst other) =
+    (fst :: other)
+        |> List.indexedMap Tuple.pair
+        |> List.foldl
+            (\(pageNum, pageList) ( index, foundBefore ) ->
+                ( index - List.length pageList
+                , case foundBefore of
+                    Just _ ->
+                        foundBefore
+                    Nothing ->
+                        if index < List.length pageList then
+                            Just pageNum
+                        else
+                            Nothing
+                )
+            )
+            ( idx, Nothing )
+        |> Tuple.second
+        |> Maybe.map Page
+
+
+getAt : Selected -> PageRef -> Pages (List a) -> Maybe (List a)
+getAt selected ref (Pages _ fst other as pages) =
+    case ref of
+        Page_ 0 -> Just fst
+        Page_ n ->
+            Array.fromList other
+                |> Array.get (n - 1)
+        Last ->
+            if List.length other > 0 then
+                Array.fromList other
+                    |> Array.get (List.length other - 1)
+            else
+                Just fst
+        AtFocus ->
+            pages
+                |> whereIs selected
+                |> Maybe.andThen
+                    (\page_ ->
+                        getAt selected (at page_) pages
+                    )
+
+
+get : Page -> Pages a -> Maybe a
+get (Page num) (Pages _ fst other) =
     case num of
         0 -> Just fst
         n ->
@@ -90,14 +152,14 @@ get num (Pages _ fst other) =
 
 
 create : a -> List a -> Pages a
-create = Pages 0
+create = Pages first
 
 
 fromList : List a -> Maybe (Pages a)
 fromList list =
     case list of
         [] -> Nothing
-        first_::others -> Just <| Pages 0 first_ others
+        first_::others -> Just <| Pages first first_ others
 
 
 distributeBy : (List a -> a -> Bool) -> List a -> Pages (List a)
@@ -120,12 +182,16 @@ distributeBy fits =
     >> Maybe.withDefault (create [] [[]])
 
 
-distribute : Int -> List a -> Pages (List a)
-distribute maxItems = distributeBy (\list _ -> List.length list < maxItems)
+distribute : Maximum -> List a -> Pages (List a)
+distribute (Maximum maxItems) = distributeBy (\list _ -> List.length list < maxItems)
+
+
+-- distributeInShape : ( Maximum, Maximum ) -> List a -> Pages (List a)
+-- distributeInShape _ _ = create [] [] -- TODO
 
 
 distributeOver : Count -> List a -> ( Int, Pages (List a) )
-distributeOver pagesCount all =
+distributeOver (Count pagesCount) all =
     if (pagesCount <= 0) then ( 0, single [] )
     else
         let
@@ -140,19 +206,21 @@ distributeOver pagesCount all =
 
 
 count : Pages a -> Count
-count (Pages _ _ list) = List.length list + 1
+count (Pages _ _ list) =
+    Count <| List.length list + 1
 
 
 -- put all the items on the first page
 disable : Pages (List a) -> Pages (List a)
 disable (Pages _ first_ other) =
-    Pages 0 (List.concat <| first_::other) []
+    Pages first (List.concat <| first_::other) []
 
 
+{-
 refToNum : PageRef -> Int
 refToNum ref =
     case ref of
-        First -> 0
         Last -> -1
-        CurrentFocus -> -1
-        Page n -> n
+        AtFocus -> -2
+        Page_ n -> n
+-}
