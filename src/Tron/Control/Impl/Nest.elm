@@ -7,7 +7,7 @@ import Array.Extra as Array
 import Tron.Control as Core exposing (Control)
 import Tron.Control.Impl.Button as Button
 import Tron.Control.Action as A
-import Tron.Pages as Pages exposing (PageNum, PageRef)
+import Tron.Pages as Pages exposing (Page, Ref)
 import Tron.Util as U
 
 
@@ -30,9 +30,6 @@ type ChoiceMode -- FIXME: can't be `Expanded` and `Knob` / `SwitchThrough` at th
     | Knob
 
 
-type alias ItemId = Int
-
-
 type alias NestControl item value a
     = Core.Control
         ( Array item )
@@ -45,7 +42,7 @@ type alias GroupControl item a
         item
         { form : Form
         , face : Maybe Button.Face
-        , page : PageNum -- TODO: `PageRef`?
+        , page : Pages.Page
         }
         a
 
@@ -55,9 +52,9 @@ type alias ChoiceControl item a =
         item
         { form : Form
         , face : Maybe Button.Face
-        , selected : ItemId
-        , prevSelected : Maybe ItemId -- FIXME: needed only for `Knob`
-        , page : PageNum -- TODO: `PageRef`?
+        , selected : Pages.Item
+        , prevSelected : Maybe Pages.Item -- FIXME: needed only for `Knob`
+        , page : Pages.Page -- TODO: Pages.Ref
         , mode : ChoiceMode
         }
         a
@@ -65,7 +62,7 @@ type alias ChoiceControl item a =
 
 type alias Transient =
     { form : Form
-    , page : PageNum -- TODO: `PageRef`?
+    , page : Int
     }
 
 
@@ -75,7 +72,7 @@ createGroup items =
         items
         { form = Collapsed
         , face = Nothing
-        , page = 0 -- TODO: Pages.first
+        , page = Pages.firstPage
         }
 
 
@@ -85,9 +82,9 @@ createChoice items =
         items
         { form = Collapsed
         , face = Nothing
-        , selected = 0
+        , selected = Pages.firstItem
         , prevSelected = Nothing
-        , page = 0 -- TODO: Pages.first
+        , page = Pages.firstPage
         , mode = Pages
         }
 
@@ -139,7 +136,7 @@ updateChoice action control =
                 Knob ->
                     let
                         items = getItems control
-                        valueToAlter = value.prevSelected |> Maybe.withDefault value.selected
+                        valueToAlter = value.prevSelected |> Maybe.withDefault value.selected |> Pages.numifyItem
                         --dY = distanceY knobDistance nextMouseState
                         nextVal =
                             U.alter
@@ -148,7 +145,7 @@ updateChoice action control =
                                 (toFloat valueToAlter)
                     in ( control
                         |> Core.update
-                            (\value_ -> { value_ | selected = floor nextVal })
+                            (\value_ -> { value_ | selected = Pages.item <| floor nextVal })
                         , A.Silent
                         )
                 _ -> ( control, A.Stay )
@@ -167,23 +164,23 @@ updateChoice action control =
 -- updateChoiceItem
 
 
-get : ItemId -> NestControl item value a -> Maybe item
-get n = getItems >> Array.get n
+get : Pages.Item -> NestControl item value a -> Maybe item
+get n = getItems >> Array.get (Pages.numifyItem n)
 
 
-find : comparable -> NestControl (comparable, item) value a -> Maybe ( ItemId, item )
+find : comparable -> NestControl (comparable, item) value a -> Maybe ( Pages.Item, item )
 find what =
     getItems
         >> Array.indexedMap Tuple.pair
         >> Array.findMap
             (\(index, (label, item)) ->
                 if label == what
-                    then Just (index, item)
+                    then Just ( Pages.item index, item)
                     else Nothing
             )
 
 
-select : ItemId -> ChoiceControl item a -> ChoiceControl item a
+select : Pages.Item -> ChoiceControl item a -> ChoiceControl item a
 select index (Core.Control setup state handler) =
     Core.Control setup { state | selected = index } handler
 
@@ -193,18 +190,18 @@ getSelected control =
     get (whichSelected control) control
 
 
-getSelectedAsPair : ChoiceControl item a -> ( ItemId, Maybe item )
+getSelectedAsPair : ChoiceControl item a -> ( Pages.Item, Maybe item )
 getSelectedAsPair control =
     ( whichSelected control
     , getSelected control
     )
 
 
-isSelected : ChoiceControl item a -> ItemId -> Bool
+isSelected : ChoiceControl item a -> Pages.Item -> Bool
 isSelected control n = whichSelected control == n
 
 
-whichSelected : ChoiceControl item a -> ItemId
+whichSelected : ChoiceControl item a -> Pages.Item
 whichSelected (Core.Control _ { selected } _) = selected
 
 
@@ -287,10 +284,11 @@ toNext (Core.Control items value a) =
         items
         { value
         | selected =
-            if value.selected >= Array.length items - 1 then
-                0
-            else
-                value.selected + 1
+            Pages.item <| -- TODO: move to Pages
+                if Pages.numifyItem value.selected >= Array.length items - 1 then
+                    0
+                else
+                    Pages.numifyItem value.selected + 1
         , prevSelected = Nothing
         }
         a
@@ -371,21 +369,21 @@ withItemAt label f (( Core.Control items state handler ) as control) =
         ( case find label control of
             Just ( id, item ) ->
                 items
-                |> Array.set id (label, f item)
+                |> Array.set (Pages.numifyItem id) (label, f item)
             Nothing -> items
         )
         state
         handler
 
 
-getPage : Core.Control setup { r | page : PageNum } a -> PageNum
+getPage : Core.Control setup { r | page : Pages.Page } a -> Pages.Page
 getPage (Core.Control _ { page } _) = page
 
 
 switchTo
-    :  PageNum
-    -> Core.Control setup { r | page : PageNum } a
-    -> Core.Control setup { r | page : PageNum } a
+    :  Pages.Page
+    -> Core.Control setup { r | page : Pages.Page } a
+    -> Core.Control setup { r | page : Pages.Page } a
 switchTo pageNum (Core.Control setup state hanlder) =
     Core.Control
         setup
@@ -399,13 +397,13 @@ getTransientState
         setup
         { r
         | form : Form
-        , page : PageNum
+        , page : Pages.Page
         }
         a
     -> Transient
 getTransientState (Core.Control _ state _) =
     { form = state.form
-    , page = state.page
+    , page = Pages.numifyPage state.page
     }
 
 
@@ -414,7 +412,7 @@ restoreTransientState
         setup
         { r
         | form : Form
-        , page : PageNum
+        , page : Pages.Page
         }
         a
     -> Transient
@@ -422,7 +420,7 @@ restoreTransientState
         setup
         { r
         | form : Form
-        , page : PageNum
+        , page : Pages.Page
         }
         a
 restoreTransientState (Core.Control setup state handler) src =
@@ -430,7 +428,7 @@ restoreTransientState (Core.Control setup state handler) src =
         setup
         { state
         | form = src.form
-        , page = src.page
+        , page = Pages.page src.page
         }
         handler
 
@@ -469,13 +467,14 @@ toChoice (Core.Control items { form, page, face } a) =
         { form = form
         , page = page
         , face = face
-        , selected = 0
+        , selected = Pages.firstItem
         , prevSelected = Nothing
         , mode = Pages
         }
         a
 
 
+-- FIXME: move to Pages?
 append : item -> NestControl item value a -> NestControl item value a
 append what (Core.Control items value a) =
     Core.Control
@@ -484,8 +483,9 @@ append what (Core.Control items value a) =
         a
 
 
-remove : ItemId -> NestControl item value a -> NestControl item  value a
-remove id (Core.Control items value a) =
+-- FIXME: move to Pages?
+remove : Pages.Item -> NestControl item value a -> NestControl item value a
+remove (Pages.Item id) (Core.Control items value a) =
     Core.Control
         (Array.append
             (items |> Array.slice 0 id)
@@ -495,8 +495,9 @@ remove id (Core.Control items value a) =
         a
 
 
-forward : ItemId -> NestControl item value a -> NestControl item  value a
-forward id (Core.Control items value a) =
+-- FIXME: move to Pages?
+forward : Pages.Item -> NestControl item value a -> NestControl item value a
+forward (Pages.Item id) (Core.Control items value a) =
     if (id >= Array.length items - 1) then Core.Control items value a
     else
         Core.Control
@@ -514,8 +515,9 @@ forward id (Core.Control items value a) =
             a
 
 
-backward : ItemId -> NestControl item value a -> NestControl item  value a
-backward id (Core.Control items value a) =
+-- FIXME: move to Pages?
+backward : Pages.Item -> NestControl item value a -> NestControl item  value a
+backward (Pages.Item id) (Core.Control items value a) =
     if (id <= 0) then Core.Control items value a
     else
         Core.Control

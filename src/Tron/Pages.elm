@@ -10,14 +10,14 @@ import Size exposing (..)
 
 
 {-| -}
-type PageRef
+type Ref
     = Last
     | AtFocus
     | Page_ Int
     -- | Nonsence
 
 
-type Pages a = Pages PageRef a (List a) -- i.e. NonEmpty array
+type Pages a = Pages Ref a (List a) -- i.e. NonEmpty array
 
 
 type Page = Page Int
@@ -29,26 +29,34 @@ type Count = Count Int
 type Maximum = Maximum Int
 
 
-type Selected = Selected Int
+type Item = Item Int
 
 
-first : PageRef
-first = at <| page 0
+first : Ref
+first = at firstPage
 
 
-last : PageRef
+last : Ref
 last = Last
 
 
-current : PageRef
+current : Ref
 current = AtFocus
 
 
-selFirst : Selected
-selFirst = Selected 0
+firstItem : Item
+firstItem = Item 0
 
 
-at : Page -> PageRef
+firstPage : Page
+firstPage = Page 0
+
+
+item : Int -> Item
+item = Item
+
+
+at : Page -> Ref
 at (Page n) = Page_ n
 
 
@@ -75,7 +83,7 @@ toList : Pages a -> List a
 toList (Pages _ fst other) = fst :: other
 
 
-switchTo : PageRef -> Pages a -> Pages a
+switchTo : Ref -> Pages a -> Pages a
 switchTo newPage (Pages _ fst other) =
     Pages newPage fst other
 
@@ -88,18 +96,18 @@ getCurrentPage (Pages ref _ others) =
         AtFocus -> Nothing
 
 
-getCurrentRef : Pages a -> PageRef
+getCurrentRef : Pages a -> Ref
 getCurrentRef (Pages ref _ _) = ref
 
 
-getCurrent : Selected -> Pages (List a) -> Maybe (List a)
+getCurrent : Item -> Pages (List a) -> Maybe (List a)
 getCurrent selected pages =
     getAt selected (getCurrentRef pages) pages
 
 
 
-whereIs : Selected -> Pages (List a) -> Maybe Page
-whereIs (Selected idx) (Pages _ fst other) =
+whereIs : Item -> Pages (List a) -> Maybe Page
+whereIs (Item idx) (Pages _ fst other) =
     (fst :: other)
         |> List.indexedMap Tuple.pair
         |> List.foldl
@@ -120,8 +128,8 @@ whereIs (Selected idx) (Pages _ fst other) =
         |> Maybe.map Page
 
 
-getAt : Selected -> PageRef -> Pages (List a) -> Maybe (List a)
-getAt selected ref (Pages _ fst other as pages) =
+getAt : Item -> Ref -> Pages (List a) -> Maybe (List a)
+getAt item_ ref (Pages _ fst other as pages) =
     case ref of
         Page_ 0 -> Just fst
         Page_ n ->
@@ -135,10 +143,10 @@ getAt selected ref (Pages _ fst other as pages) =
                 Just fst
         AtFocus ->
             pages
-                |> whereIs selected
+                |> whereIs item_ -- FIXME: if return to storing page number inside, then we may use `Pages a` instead of `Pages (List a)`
                 |> Maybe.andThen
                     (\page_ ->
-                        getAt selected (at page_) pages
+                        getAt item_ (at page_) pages
                     )
 
 
@@ -165,15 +173,15 @@ fromList list =
 distributeBy : (List a -> a -> Bool) -> List a -> Pages (List a)
 distributeBy fits =
     List.foldl
-        (\item pages ->
+        (\item_ pages ->
             case pages of
                 lastPage::prevPages ->
-                    if item |> fits lastPage then
-                        (item::lastPage)::prevPages
+                    if item_ |> fits lastPage then
+                        (item_::lastPage)::prevPages
                     else
-                        [item]::lastPage::prevPages
+                        [item_]::lastPage::prevPages
                 [] ->
-                    [[item]]
+                    [[item_]]
         )
         [[]]
     >> List.map List.reverse
@@ -216,8 +224,16 @@ disable (Pages _ first_ other) =
     Pages first (List.concat <| first_::other) []
 
 
+
+numifyItem : Item -> Int
+numifyItem (Item n) = n
+
+
+numifyPage : Page -> Int
+numifyPage (Page n) = n
+
 {-
-refToNum : PageRef -> Int
+refToNum : Ref -> Int
 refToNum ref =
     case ref of
         Last -> -1

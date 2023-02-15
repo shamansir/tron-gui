@@ -31,7 +31,7 @@ You are not required to specify both sides, just use `rows` or `cols` helpers to
 
 
 import Tron.Style.CellShape as CS exposing (CellShape(..))
-import Tron.Pages as Pages exposing (Pages, PageRef)
+import Tron.Pages as Pages exposing (Pages, Ref)
 import Size exposing (..)
 
 
@@ -101,7 +101,7 @@ pagesEnabled (PanelShape pages) =
 
 
 {-| Get numeric size of a panel in cells, and a set of pages required, if there are overflows. Floats, since there could be half-cells. -}
-distribute : PanelShape -> CellShape -> PageRef -> List a ->  ( Pages (List a), SizeF Cells )
+distribute : PanelShape -> CellShape -> Ref -> List a ->  ( Pages (List a), SizeF Cells )
 distribute (PanelShape paging) cellShape ref items =
     -- FIXME : use pageRef
     let

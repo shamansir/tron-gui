@@ -140,7 +140,7 @@ choiceFrom compare toItem def =
         _ -> Err []
 
 
-adaptPage : GenUI.Page -> Pages.PageRef
+adaptPage : GenUI.Page -> Pages.Ref
 adaptPage page = -- FIXME
     case Debug.log "adaptPage" page of -- FIXME
         GenUI.First -> Pages.first
@@ -149,7 +149,7 @@ adaptPage page = -- FIXME
         GenUI.Page n -> Pages.atPage n
 
 
-refToPage : Pages.PageRef -> GenUI.Page
+refToPage : Pages.Ref -> GenUI.Page
 refToPage ref =
     case ref of
         Pages.First -> GenUI.First

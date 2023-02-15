@@ -13,9 +13,9 @@ type Action
     | Dragging { dx : Float, dy : Float }
     | DragFinish
     | KeyDown Int
-    | Select Int
+    | Select Pages.Item
     | TextInput String
-    | SwitchPage Pages.PageNum
+    | SwitchPage Pages.Page
 
 
 type Change
