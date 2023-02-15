@@ -36,7 +36,7 @@ decodeChoice decodeItem =
 encodeChoice : (Array item -> E.Value) -> ChoiceControl item a -> List ( String, E.Value )
 encodeChoice encodeNested (Core.Control items { face, form, selected, mode } _) =
     [ ( "current"
-        , E.int selected
+        , E.int <| Pages.numifyItem selected
         )
     , ( "expanded"
         , E.bool <|

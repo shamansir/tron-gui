@@ -59,13 +59,15 @@ viewIconSelector maybeCurrent onSelect =
 possibleUnits = [ CS.Half, CS.Single, CS.Twice ]
 
 
-possibleShapes = cartesian possibleUnits possibleUnits
+possibleShapes =
+    cartesian possibleUnits possibleUnits
 
 
 possiblePanelSide = [ -1, 1, 2, 3, 4, 5 ]
 
 
-possiblePanelShapes = cartesian possiblePanelSide possiblePanelSide
+possiblePanelShapes =
+    cartesian possiblePanelSide possiblePanelSide
 
 
 cartesian : List a -> List b -> List (a,b)
@@ -86,16 +88,16 @@ unitToStr unit =
 panelShapeToString : PS.PanelShape -> String
 panelShapeToString ps =
     let
-        ( nc, nr ) = PS.numify ps
+        { rows, cols } = PS.numify ps
     in
-        if (nc == -1) && (nr == -1) then
+        if (cols == -1) && (rows == -1) then
             "auto"
-        else if (nc == -1) then
-            String.fromInt nr ++ " rows"
-        else if (nr == -1) then
-            String.fromInt nc ++ " cols"
+        else if (cols == -1) then
+            String.fromInt rows ++ " rows"
+        else if (rows == -1) then
+            String.fromInt cols ++ " cols"
         else
-            String.fromInt nr ++ " × " ++ String.fromInt nc
+            String.fromInt rows ++ " × " ++ String.fromInt cols
 
 
 viewCellShapeSelector : CS.CellShape -> (CS.CellShape -> msg) -> Html msg
@@ -133,12 +135,13 @@ viewPanelShapeSelector current onSelect =
                     [ Html.onClick <| onSelect panelShape
                     , Html.class
                         <| case ( PS.numify panelShape, PS.numify current ) of
-                            ( ( horzA, vertA ), ( horzB, vertB ) ) ->
-                                if horzA == horzB && vertA == vertB then "current"
+                            ( nPanel, nCurrent ) ->
+                                if nPanel.rows == nCurrent.rows && nPanel.cols == nCurrent.cols then "current"
                                 else ""
                     ]
                     [ Html.text <| panelShapeToString panelShape
                     ]
             )
         <| List.map PS.create
+        <| List.map (\( nr, nc ) -> { pages = -1, rows = nr, cols = nc })
         <| possiblePanelShapes

@@ -10,7 +10,7 @@ module Tron.Control.Value exposing
 
 Used for converting values from controls to JSON;
 
-Use `Tron.proxify` or `Tree.proxify` function to make any GUI store its current values as the subjects. 
+Use `Tron.proxify` or `Tree.proxify` function to make any GUI store its current values as the subjects.
 Since in case of `Tron.proxify` it is a function (`Just` is stored inside), `proxify` is safe in that sense, but keep in mind that for `Tree.proxify => Tree Control.Value` those values don't change, if one changes the inner control value after that.
 
 @docs Value
@@ -32,7 +32,8 @@ import Color.Convert as Color
 import Json.Encode as E
 
 import Tron.Path as Path
-import Tron.Control.Impl.Nest as Nest exposing (ItemId)
+import Tron.Pages as Pages
+import Tron.Control.Impl.Nest as Nest
 import Tron.Control.Impl.Toggle as Toggle
 import Tron.Control.Impl.XY as XY
 
@@ -42,7 +43,7 @@ type Value
     = FromSlider Float
     | FromXY ( Float, Float )
     | FromInput String
-    | FromChoice ( ItemId, Maybe Path.Label )
+    | FromChoice ( Pages.Item, Maybe Path.Label )
     | FromColor Color
     | FromToggle Bool
     | FromButton
@@ -64,7 +65,7 @@ encode v =
         FromInput t -> E.string t
         FromChoice ( i, s ) ->
             E.object
-                [ ( "id", E.int i )
+                [ ( "id", E.int <| Pages.numifyItem i )
                 ,
                     ( "selection"
                     , Maybe.withDefault E.null <| Maybe.map E.string <| s
@@ -97,7 +98,7 @@ toString v =
         FromInput t ->
             t
         FromChoice ( i, s ) ->
-            String.fromInt i ++ Nest.separator ++ (Maybe.withDefault "" <| s)
+            String.fromInt (Pages.numifyItem i) ++ Nest.separator ++ (Maybe.withDefault "" <| s)
         FromColor c ->
             Color.colorToHexWithAlpha c
         FromToggle b ->
@@ -169,7 +170,7 @@ fromText proxy =
 
 
 {-| -}
-fromChoice : Value -> Maybe ( ItemId, Maybe Path.Label )
+fromChoice : Value -> Maybe ( Pages.Item, Maybe Path.Label )
 fromChoice proxy =
     case proxy of
         FromChoice ( i, s ) -> Just ( i, s )
@@ -183,7 +184,7 @@ fromChoiceOf values =
         itemsArray = Array.fromList values
     in
         fromChoice
-            >> Maybe.map Tuple.first
+            >> Maybe.map (Tuple.first >> Pages.numifyItem)
             >> Maybe.andThen
                 (\id -> Array.get id itemsArray)
 
