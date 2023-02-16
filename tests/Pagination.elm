@@ -21,7 +21,7 @@ suite =
             [ test "distribution by 1"
                 <| \_ ->
                     Expect.equal
-                        (Pages.distribute 1 [ "A", "B", "C" ]
+                        (Pages.distribute (Pages.Maximum 1) [ "A", "B", "C" ]
                             |> Pages.toList
                         )
                         [ ["A"], ["B"], ["C"] ]
@@ -29,7 +29,7 @@ suite =
             , test "distribution by 3"
                 <| \_ ->
                     Expect.equal
-                        (Pages.distribute 3 [ "A", "B", "C" ]
+                        (Pages.distribute (Pages.Maximum 3) [ "A", "B", "C" ]
                             |> Pages.toList
                         )
                         [ [ "A", "B", "C" ] ]
@@ -37,7 +37,7 @@ suite =
             , test "distribution by 3, revisitied"
                 <| \_ ->
                     Expect.equal
-                        (Pages.distribute 3 alphabet
+                        (Pages.distribute (Pages.Maximum 3) alphabet
                             |> Pages.toList
                         )
                         [ [ "A", "B", "C" ]
@@ -54,7 +54,7 @@ suite =
             , test "distribution by 2"
                 <| \_ ->
                     Expect.equal
-                        (Pages.distribute 2 [ "A", "B", "C", "D", "E" ]
+                        (Pages.distribute (Pages.Maximum 2) [ "A", "B", "C", "D", "E" ]
                             |> Pages.toList
                         )
                         [ [ "A", "B" ], [ "C", "D" ], [ "E" ] ]
@@ -64,7 +64,7 @@ suite =
             [ test "distribute over zero pages"
                 <| \_ ->
                     Expect.equal
-                        (Pages.distributeOver 0 alphabet
+                        (Pages.distributeOver (Pages.Count 0) alphabet
                             |> Tuple.second
                             |> Pages.toList
                         )
@@ -72,7 +72,7 @@ suite =
             , test "distribute over one page"
                 <| \_ ->
                     Expect.equal
-                        (Pages.distributeOver 1 alphabet
+                        (Pages.distributeOver (Pages.Count 1) alphabet
                             |> Tuple.second
                             |> Pages.toList
                         )
@@ -80,7 +80,7 @@ suite =
             , test "distribute over 4 pages"
                 <| \_ ->
                     Expect.equal
-                        (Pages.distributeOver 4 alphabet
+                        (Pages.distributeOver (Pages.Count 4) alphabet
                             |> Tuple.second
                             |> Pages.toList
                         )
@@ -92,7 +92,7 @@ suite =
             , test "distribute over 5 pages"
                 <| \_ ->
                     Expect.equal
-                        (Pages.distributeOver 5 alphabet
+                        (Pages.distributeOver (Pages.Count 5) alphabet
                             |> Tuple.second
                             |> Pages.toList
                         )

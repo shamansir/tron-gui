@@ -59,7 +59,9 @@ type Tree a
     | Color (Color.Control a)
     | Toggle (Toggle.Control a)
     | Action (Button.Control a)
+    --- TODO: move focus and nest shape inside the control data (but rendering uses this info separately from control now)
     | Choice (Maybe FocusAt) NestShape (Nest.ChoiceControl ( Path.Label, Tree a ) a)
+    --- TODO: move focus and nest shape inside the control data (but rendering uses this info separately from control now)
     | Group (Maybe FocusAt) NestShape (Nest.GroupControl ( Path.Label, Tree a ) a)
     | Live (Tree a)
 

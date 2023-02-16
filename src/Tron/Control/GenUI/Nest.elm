@@ -33,7 +33,8 @@ groupTo pshape toProp (Core.Control items { form, face, page } _) =
                 _ -> GenUI.Collapsed
             , button = Maybe.withDefault GenUI.ExpandCollapse <| Maybe.map Button.faceTo face
             , allOf = Nothing
-            , page = refToPage page
+            -- , page = refToPage page
+            , page = GenUI.Page <| Pages.numifyPage page
             , pages = convertPanelShape pshape
             }
         , nestAt = Nothing
@@ -55,7 +56,13 @@ groupFrom toItem def =
                                     GenUI.Expanded -> Nest.Expanded
                                     GenUI.Collapsed -> Nest.Collapsed
                             , face = Just <| Button.faceFrom nestDef.panel.button
-                            , page = adaptPage nestDef.panel.page
+                            , page =
+                                Pages.page
+                                    <| case nestDef.panel.page of
+                                        GenUI.First -> 0
+                                        GenUI.Last -> -1 -- FIXME
+                                        GenUI.ByCurrent -> -2  -- FIXME
+                                        GenUI.Page n -> n
                             }
                             ()
                     )
@@ -73,7 +80,7 @@ choiceTo pshape toSelectItem (Core.Control items { form, face, mode, selected, p
                 , nestAt = Nothing
                 , current =
                     items
-                        |> Array.get selected
+                        |> Array.get (Pages.numifyItem selected)
                         |> Maybe.andThen (toSelectItem >> Maybe.map .value)
                         |> Maybe.withDefault ""
                 , kind =
@@ -86,7 +93,8 @@ choiceTo pshape toSelectItem (Core.Control items { form, face, mode, selected, p
                                     Nest.Detached -> GenUI.Collapsed
                                 , button = Maybe.withDefault GenUI.Focus <| Maybe.map Button.faceTo face
                                 , allOf = Nothing
-                                , page = refToPage page
+                                -- , page = refToPage page
+                                , page = GenUI.Page <| Pages.numifyPage page
                                 , pages = convertPanelShape pshape
                                 }
                         Nest.Knob ->
@@ -128,12 +136,14 @@ choiceFrom compare toItem def =
                                     passedItems
                                         |> List.indexedMap Tuple.pair
                                         |> List.foldl (\(index, value) prev -> if compare value selectDef.current then index else prev) 0
+                                        |> Pages.item
                                 , page =
                                     case selectDef.kind of
                                         GenUI.Choice { page } ->
-                                            adaptPage page
-                                        GenUI.Knob -> Pages.first -- FIXME
-                                        GenUI.Switch -> Pages.first -- FIXME
+                                            -- adaptPage page
+                                            Pages.firstPage -- FIXME
+                                        GenUI.Knob -> Pages.firstPage -- FIXME
+                                        GenUI.Switch -> Pages.firstPage -- FIXME
                                 }
                                 ()
                         )
@@ -146,16 +156,16 @@ adaptPage page = -- FIXME
         GenUI.First -> Pages.first
         GenUI.Last -> Pages.last
         GenUI.ByCurrent -> Pages.current
-        GenUI.Page n -> Pages.atPage n
+        GenUI.Page n -> Pages.at <| Pages.page n
 
 
 refToPage : Pages.Ref -> GenUI.Page
 refToPage ref =
     case ref of
-        Pages.First -> GenUI.First
+        Pages.Page_ 0 -> GenUI.First
+        Pages.Page_ n -> GenUI.Page n
         Pages.Last -> GenUI.Last
-        Pages.CurrentFocus -> GenUI.ByCurrent
-        Pages.Page n -> GenUI.Page n
+        Pages.AtFocus -> GenUI.ByCurrent
 
 {- choiceFrom : (GenUI.SelectItem -> Maybe String) -> GenUI.Def x -> Result (List GenUI.SelectItem) (ChoiceControl String ())
 choiceFrom = choiceFrom_ (==) -}
@@ -221,6 +231,6 @@ root items a =
         (Array.fromList items)
         { form = Nest.Expanded
         , face = Nothing
-        , page = Pages.First
+        , page = Pages.firstPage
         }
         a

@@ -13,6 +13,7 @@ import Tron.Control.Impl.Toggle exposing (..)
 import Tron.Control.Impl.Nest exposing (..)
 import Tron.Render.Util exposing (..)
 import Tron.Path as Path
+import Tron.Pages as Pages
 
 
 boundsDebug : BoundsF -> Svg a
@@ -95,7 +96,7 @@ propertyDebug ( label, prop )  =
                         Just (FocusAt focus) -> String.fromInt focus
                         _ -> "none"
                 , textAt 5 50
-                    <| " selected: " ++ String.fromInt state.selected
+                    <| " selected: " ++ String.fromInt (Pages.numifyItem state.selected)
                 ]
 
         Live innerProp ->

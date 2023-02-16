@@ -84,16 +84,32 @@ toList (Pages _ fst other) = fst :: other
 
 
 switchTo : Ref -> Pages a -> Pages a
-switchTo newPage (Pages _ fst other) =
-    Pages newPage fst other
+switchTo newRef (Pages _ fst other) =
+    Pages newRef fst other
 
 
-getCurrentPage : Pages a -> Maybe Page
-getCurrentPage (Pages ref _ others) =
+
+pageOf : Item -> Maximum -> Ref -> List a -> Maybe Page
+pageOf selected maximum ref =
+    distribute maximum
+        >> switchTo ref
+        >> getCurrentPage selected
+
+
+pageOf_ : Item -> Count -> Ref -> List a -> Maybe Page
+pageOf_ selected count_ ref =
+    distributeOver count_
+        >> Tuple.second
+        >> switchTo ref
+        >> getCurrentPage selected
+
+
+getCurrentPage : Item -> Pages (List a) -> Maybe Page
+getCurrentPage selected (Pages ref _ others as pages) =
     case ref of
         Page_ n -> Just <| Page n
         Last -> Just <| Page <| List.length others
-        AtFocus -> Nothing
+        AtFocus -> whereIs selected pages
 
 
 getCurrentRef : Pages a -> Ref

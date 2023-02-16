@@ -15,15 +15,15 @@ import Array exposing (Array)
 
 decodeChoice : D.Decoder item -> D.Decoder (ChoiceControl item ())
 decodeChoice decodeItem =
-    D.map3
-        (\items maybeFace maybeMode ->
+    D.map5
+        (\items maybeFace maybeMode pageStr maybePageN ->
             Core.Control
                 items
                 { form = Nest.Collapsed
                 , face = maybeFace
-                , selected = 0
+                , selected = Pages.firstItem -- FIXME
                 , prevSelected = Nothing
-                , page = 0 -- Pages.First -- FIXME
+                , page = findOutPage ( pageStr, maybePageN )
                 , mode = maybeMode |> Maybe.withDefault Nest.Pages
                 }
                 ()
@@ -31,6 +31,8 @@ decodeChoice decodeItem =
         (D.field "options" <| D.array decodeItem)
         (D.maybe <| D.field "face" Button.decodeFace)
         (D.maybe <| D.field "mode" decodeChoiceMode)
+        (D.field "page" <| D.field "page" D.string)
+        (D.field "page" <| D.maybe <| D.field "n" D.int)
 
 
 encodeChoice : (Array item -> E.Value) -> ChoiceControl item a -> List ( String, E.Value )
@@ -70,18 +72,20 @@ encodeChoice encodeNested (Core.Control items { face, form, selected, mode } _) 
 
 decodeGroup : D.Decoder item -> D.Decoder (GroupControl item ())
 decodeGroup decodeItem =
-    D.map2
-        (\items maybeFace ->
+    D.map4
+        (\items maybeFace pageStr maybePageN ->
             Core.Control
                 items
                 { form = Nest.Collapsed
                 , face = maybeFace
-                , page = 0 -- Pages.First -- FIXME
+                , page = findOutPage ( pageStr, maybePageN )
                 }
                 ()
         )
         (D.field "nest" <| D.array decodeItem)
         (D.maybe <| D.field "face" Button.decodeFace)
+        (D.field "page" <| D.field "page" D.string)
+        (D.field "page" <| D.maybe <| D.field "n" D.int)
 
 
 encodeGroup : (Array item -> E.Value) -> GroupControl item a -> List ( String, E.Value )
@@ -170,3 +174,36 @@ decodeSelected =
             (D.field "id" D.int)
             (D.field "selection" <| D.maybe D.string)
         ]
+
+
+findOutPage : ( String, Maybe Int ) -> Pages.Page
+findOutPage ( pageStr, maybePageN ) =
+    case ( pageStr, maybePageN ) of
+            ( "n", Just n ) -> Pages.page n
+            ( "current", _ ) -> Pages.firstPage  -- FIXME
+            ( "first", _ ) -> Pages.firstPage
+            ( "last", _ ) -> Pages.firstPage  -- FIXME
+            ( _, _ ) -> Pages.firstPage  -- FIXME
+
+
+
+{-
+        "page":
+            { "type": "object"
+            , "properties":
+                { "page": { "enum": [ "first", "last", "current", "n" ] }
+                , "n": { "type": "integer" }
+                }
+            , "required": [ "page" ]
+            },
+        "pages":
+            { "type": "object"
+            , "properties":
+                { "distribute": { "enum": [ "auto", "single", "values", "exact" ] }
+                , "maxInRow": { "type": "integer" }
+                , "maxInColumn": { "type": "integer" }
+                , "exact": { "type": "integer" }
+                }
+            , "required": [ "distribute" ]
+            },
+-}

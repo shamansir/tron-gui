@@ -42,7 +42,7 @@ type alias GroupControl item a
         item
         { form : Form
         , face : Maybe Button.Face
-        , page : Pages.Page
+        , page : Pages.Page -- TODO: Pages.Ref, but we don't know what is selected
         }
         a
 
